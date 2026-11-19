@@ -79,6 +79,17 @@ class DownloadRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyDownloadPrompt: Verified that the download button is displayed")
     }
 
+    fun clickDownloadAgain() {
+        val downloadAgainButton =
+            itemContainingText(getStringResource(downloadsR.string.mozac_feature_downloads_dialog_download_again))
+        Log.i(TAG, "clickDownloadAgain: Waiting for $waitingTime ms for the \"Download again\" button to exist")
+        downloadAgainButton.waitForExists(waitingTime)
+        Log.i(TAG, "clickDownloadAgain: Waited for $waitingTime ms for the \"Download again\" button to exist")
+        Log.i(TAG, "clickDownloadAgain: Trying to click the \"Download again\" button")
+        downloadAgainButton.click()
+        Log.i(TAG, "clickDownloadAgain: Clicked the \"Download again\" button")
+    }
+
     @OptIn(ExperimentalTestApi::class)
     fun verifyDownloadCompleteSnackbar(fileName: String? = null) {
         Log.i(TAG, "verifyDownloadCompleteSnackbar: Waiting for the download completed snackbar to exist")

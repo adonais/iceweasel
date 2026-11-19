@@ -12,6 +12,7 @@ import io.mockk.slot
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
@@ -34,6 +35,8 @@ class PdfToolsIntegrationGleanTest {
 
     @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
+    private val testDispatcher = StandardTestDispatcher()
+
     private val tabId = "1"
 
     private val container = CoordinatorLayout(ApplicationProvider.getApplicationContext())
@@ -53,10 +56,16 @@ class PdfToolsIntegrationGleanTest {
             container = container,
             browserStore = store,
             isAddressBarAtBottom = true,
+            mainDispatcher = testDispatcher,
         )
 
     private fun integrationWith(engineSession: EngineSession) =
         integration(store = storeOf(tab.copy(engineState = EngineState(engineSession = engineSession))))
+
+    private fun PdfToolsIntegration.addSignature() {
+        handleSignClick()
+        handleSignAddClick()
+    }
 
     @Test
     fun `GIVEN download has not been activated THEN nothing is recorded`() {
@@ -110,7 +119,7 @@ class PdfToolsIntegrationGleanTest {
 
     @Test
     fun `WHEN the signature is added THEN the interaction is recorded`() {
-        integration().handleSignAddClick()
+        integration().addSignature()
 
         val event = assertNotNull(PdfViewer.signDialogAddTapped.testGetValue())
         assertEquals(SignatureType.Typed.telemetryName, event.single().extra!!["signature_type"])
@@ -129,7 +138,7 @@ class PdfToolsIntegrationGleanTest {
         val engineSession = mockk<EngineSession>()
         val onResult = slot<() -> Unit>()
         every { engineSession.addSignatureToPdf(any(), capture(onResult), any()) } returns Unit
-        integrationWith(engineSession).handleSignAddClick()
+        integrationWith(engineSession).addSignature()
 
         onResult.captured()
 
@@ -143,7 +152,7 @@ class PdfToolsIntegrationGleanTest {
         val engineSession = mockk<EngineSession>()
         val onException = slot<(Throwable) -> Unit>()
         every { engineSession.addSignatureToPdf(any(), any(), capture(onException)) } returns Unit
-        integrationWith(engineSession).handleSignAddClick()
+        integrationWith(engineSession).addSignature()
 
         onException.captured(RuntimeException())
 
@@ -154,8 +163,22 @@ class PdfToolsIntegrationGleanTest {
     }
 
     @Test
+    fun `GIVEN the PDF viewer does not respond WHEN the signature is added THEN the timeout is recorded`() {
+        val engineSession = mockk<EngineSession>()
+        every { engineSession.addSignatureToPdf(any(), any(), any()) } returns Unit
+        val integration = integrationWith(engineSession)
+        integration.start()
+        integration.addSignature()
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val extra = assertNotNull(PdfViewer.signDialogAddFailure.testGetValue()).single().extra!!
+        assertEquals(SignatureFailure.Timeout.telemetryName, extra["reason"])
+    }
+
+    @Test
     fun `GIVEN the selected tab has no engine session WHEN the signature is added THEN the failure is recorded`() {
-        integration().handleSignAddClick()
+        integration().addSignature()
 
         val extra = assertNotNull(PdfViewer.signDialogAddFailure.testGetValue()).single().extra!!
         assertEquals(SignatureFailure.NoEngineSession.telemetryName, extra["reason"])

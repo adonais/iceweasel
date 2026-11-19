@@ -14,9 +14,6 @@ transforms:
 kind-dependencies:
     - geckodriver-signing
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 only-for-build-platforms:
     - macosx64-geckodriver/opt
 

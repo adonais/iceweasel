@@ -154,6 +154,13 @@ void av1_build_compound_diffwtd_mask_highbd_c(uint8_t *mask, DIFFWTD_MASK_TYPE m
 void av1_build_compound_diffwtd_mask_highbd_neon(uint8_t *mask, DIFFWTD_MASK_TYPE mask_type, const uint8_t *src0, int src0_stride, const uint8_t *src1, int src1_stride, int h, int w, int bd);
 #define av1_build_compound_diffwtd_mask_highbd av1_build_compound_diffwtd_mask_highbd_neon
 
+void av1_calc_centroids_dim1_c(const int16_t *data, int16_t *centroids, const uint8_t *indices, int n, int k);
+void av1_calc_centroids_dim1_neon(const int16_t *data, int16_t *centroids, const uint8_t *indices, int n, int k);
+#define av1_calc_centroids_dim1 av1_calc_centroids_dim1_neon
+
+void av1_calc_centroids_dim2_c(const int16_t *data, int16_t *centroids, const uint8_t *indices, int n, int k);
+#define av1_calc_centroids_dim2 av1_calc_centroids_dim2_c
+
 void av1_calc_indices_dim1_c(const int16_t *data, const int16_t *centroids, uint8_t *indices, int64_t *total_dist, int n, int k);
 void av1_calc_indices_dim1_neon(const int16_t *data, const int16_t *centroids, uint8_t *indices, int64_t *total_dist, int n, int k);
 #define av1_calc_indices_dim1 av1_calc_indices_dim1_neon

@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 
 #include "AccessCheck.h"
 #include "WorkerPrivate.h"
@@ -36,7 +37,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DOMException.h"
@@ -3884,7 +3884,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
     // 9.7. "Set element's custom element state to "custom"."
     // 9.8. "Set element's custom element definition to definition."
-    element->SetCustomElementData(MakeUnique<CustomElementData>(
+    element->SetCustomElementData(std::make_unique<CustomElementData>(
         definition->mType, CustomElementData::State::eCustom));
 
     element->SetCustomElementDefinition(definition);

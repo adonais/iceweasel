@@ -476,7 +476,7 @@ TEST(MozPromise, ResolveOrRejectValue)
   EXPECT_FALSE(val.IsResolve());
   EXPECT_FALSE(val.IsReject());
 
-  val.SetResolve(MakeUnique<int>(87));
+  val.SetResolve(std::make_unique<int>(87));
   EXPECT_FALSE(val.IsNothing());
   EXPECT_TRUE(val.IsResolve());
   EXPECT_FALSE(val.IsReject());
@@ -497,12 +497,12 @@ TEST(MozPromise, MoveOnlyType)
   AutoTaskQueue atq;
   RefPtr<TaskQueue> queue = atq.Queue();
 
-  MyPromise::CreateAndResolve(MakeUnique<int>(87), __func__)
+  MyPromise::CreateAndResolve(std::make_unique<int>(87), __func__)
       ->Then(
           queue, __func__, [](UniquePtr<int> aVal) { EXPECT_EQ(87, *aVal); },
           []() { EXPECT_TRUE(false); });
 
-  MyPromise::CreateAndResolve(MakeUnique<int>(87), __func__)
+  MyPromise::CreateAndResolve(std::make_unique<int>(87), __func__)
       ->Then(queue, __func__, [queue](RRValue&& aVal) {
         EXPECT_FALSE(aVal.IsNothing());
         EXPECT_TRUE(aVal.IsResolve());
@@ -532,11 +532,11 @@ TEST(MozPromise, HeterogeneousChaining)
   RefPtr<TaskQueue> queue = atq.Queue();
 
   RunOnTaskQueue(queue, [queue, &holder]() {
-    Promise1::CreateAndResolve(MakeUnique<char>(0), __func__)
+    Promise1::CreateAndResolve(std::make_unique<char>(0), __func__)
         ->Then(queue, __func__,
                [&holder]() {
                  holder.Disconnect();
-                 return Promise2::CreateAndResolve(MakeUnique<int>(0),
+                 return Promise2::CreateAndResolve(std::make_unique<int>(0),
                                                    __func__);
                })
         ->Then(queue, __func__,
@@ -547,25 +547,28 @@ TEST(MozPromise, HeterogeneousChaining)
         ->Track(holder);
   });
 
-  Promise1::CreateAndResolve(MakeUnique<char>(87), __func__)
+  Promise1::CreateAndResolve(std::make_unique<char>(87), __func__)
       ->Then(
           queue, __func__,
           [](UniquePtr<char> aVal) {
             EXPECT_EQ(87, *aVal);
-            return Promise2::CreateAndResolve(MakeUnique<int>(94), __func__);
+            return Promise2::CreateAndResolve(std::make_unique<int>(94),
+                                              __func__);
           },
           []() {
-            return Promise2::CreateAndResolve(MakeUnique<int>(95), __func__);
+            return Promise2::CreateAndResolve(std::make_unique<int>(95),
+                                              __func__);
           })
       ->Then(
           queue, __func__, [](UniquePtr<int> aVal) { EXPECT_EQ(94, *aVal); },
           []() { EXPECT_FALSE(true); });
 
-  Promise1::CreateAndResolve(MakeUnique<char>(87), __func__)
+  Promise1::CreateAndResolve(std::make_unique<char>(87), __func__)
       ->Then(queue, __func__,
              [](RRValue1&& aVal) {
                EXPECT_EQ(87, *aVal.ResolveValue());
-               return Promise2::CreateAndResolve(MakeUnique<int>(94), __func__);
+               return Promise2::CreateAndResolve(std::make_unique<int>(94),
+                                                 __func__);
              })
       ->Then(queue, __func__, [queue](RRValue2&& aVal) {
         EXPECT_EQ(94, *aVal.ResolveValue());
@@ -936,28 +939,28 @@ TEST(MozPromise, ObjectDestructionOrder)
   bool done = false;
 
   InvokeAsync(GetCurrentSerialEventTarget(), __func__,
-              [object = MakeUnique<DtorTracker>(list, 0u)]() {
+              [object = std::make_unique<DtorTracker>(list, 0u)]() {
                 return TestPromise::CreateAndResolve(42, __func__);
               })
       ->Then(queue, __func__,
-             [object = MakeUnique<DtorTracker>(list, 1u)](
+             [object = std::make_unique<DtorTracker>(list, 1u)](
                  const TestPromise::ResolveOrRejectValue& aValue) {
                ChaosMode::enterChaosMode();
                return TestPromise::CreateAndResolveOrReject(aValue, __func__);
              })
       ->Then(GetCurrentSerialEventTarget(), __func__,
-             [object = MakeUnique<DtorTracker>(list, 2u)](
+             [object = std::make_unique<DtorTracker>(list, 2u)](
                  const TestPromise::ResolveOrRejectValue& aValue) {
                return TestPromise::CreateAndResolveOrReject(aValue, __func__);
              })
       ->Then(queue, __func__,
-             [object = MakeUnique<DtorTracker>(list, 3u)](
+             [object = std::make_unique<DtorTracker>(list, 3u)](
                  const TestPromise::ResolveOrRejectValue& aValue) {
                ChaosMode::leaveChaosMode();
                return TestPromise::CreateAndResolveOrReject(aValue, __func__);
              })
       ->Then(GetCurrentSerialEventTarget(), __func__,
-             [object = MakeUnique<DtorTracker>(list, 4u),
+             [object = std::make_unique<DtorTracker>(list, 4u),
               &done](const TestPromise::ResolveOrRejectValue& aValue) {
                done = true;
                return TestPromise::CreateAndResolveOrReject(aValue, __func__);

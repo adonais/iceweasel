@@ -15,6 +15,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1648862
   "os == 'win' && opt", # bug 1605494 is more prevalent on linux, Bug 1627419
   "tsan",
+  "os == 'mac' && arch == 'x86_64' && opt", # Bug 1796283
 ]
 
 ["browser_alertDismissedAfterChangingPassword.js"]
@@ -41,9 +42,6 @@ skip-if = [
 ["browser_loginFilter.js"]
 
 ["browser_loginItemErrors.js"]
-skip-if = [
-  "debug", # Bug 1577710
-]
 
 ["browser_loginListChanges.js"]
 
@@ -74,6 +72,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1527745
 ]
 
+["browser_perDeviceSync.js"]
+
 ["browser_primaryPassword.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1569789
@@ -82,9 +82,6 @@ skip-if = [
 ["browser_removeAllDialog.js"]
 
 ["browser_sessionRestore.js"]
-skip-if = [
-  "debug", # Bug 1576876
-]
 
 ["browser_tabKeyNav.js"]
 

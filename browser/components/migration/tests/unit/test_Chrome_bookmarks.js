@@ -147,7 +147,7 @@ async function testBookmarks(
     PlacesUtils.bookmarks.menuGuid
   );
 
-  await promiseMigration(
+  let availableQuantity = await promiseMigration(
     migrator,
     MigrationUtils.resourceTypes.BOOKMARKS,
     PROFILE
@@ -186,6 +186,11 @@ async function testBookmarks(
     MigrationUtils._importQuantities.bookmarks,
     itemsSeen.bookmarks + itemsSeen.folders,
     "Telemetry reporting correct."
+  );
+  Assert.equal(
+    availableQuantity,
+    itemsSeen.bookmarks + itemsSeen.folders,
+    "Available bookmarks and folders reported correctly."
   );
   Assert.ok(observerNotified, "The observer should be notified upon migration");
 

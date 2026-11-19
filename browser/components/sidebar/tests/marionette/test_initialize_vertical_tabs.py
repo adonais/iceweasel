@@ -117,6 +117,26 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
             msg="The vertical tabstrip area has a single widget in it",
         )
 
+        # The nav-bar should have its usual defaults, followed by the widgets
+        # that move out of the horizontal tabstrip.
+        expected_nav_bar_ids = [
+            *self.marionette.execute_script(
+                "return CustomizableUI.getDefaultPlacementsForArea(CustomizableUI.AREA_NAVBAR)"
+            ),
+            "alltabs-button",
+            "smartwindow-group-tabs-button",
+            "ai-window-toggle",
+        ]
+        nav_bar_ids = [
+            "spring" if wid.startswith("customizableui-special-spring") else wid
+            for wid in self.get_area_widgets("AREA_NAVBAR")
+        ]
+        self.assertEqual(
+            [wid for wid in nav_bar_ids if wid in expected_nav_bar_ids],
+            expected_nav_bar_ids,
+            msg="The nav-bar was populated with the expected defaults",
+        )
+
         self.check_tabs_toolbar_visibilities("vertical")
 
         # Check we're able to recover if we initialize with vertical tabs enabled

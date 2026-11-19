@@ -34,6 +34,9 @@ async function runTest() {
   );
   const browser = tab.linkedBrowser;
 
+  // Wait for APZ to know the displayport, see bug 2087087.
+  await promiseApzFlushedRepaintsInPopup(browser);
+
   // Setup an active touchstart event listener, it does nothing, thus it should
   // not prevent scrolling.
   const touchstartPromise = SpecialPowers.spawn(browser, [], () => {

@@ -52,7 +52,16 @@ addAccessibleTask(
  * Test ariaNotify.
  */
 addAccessibleTask(
-  `<p id="p">abc</p>`,
+  `
+<p id="p">abc</p>
+<div id="host">
+  <template shadowrootmode="open">
+    <p id="shadow">shadow</p>
+    <slot></slot>
+  </template>
+  <p id="slotted">slotted</p>
+</div>
+  `,
   async function testAriaNotify(browser, docAcc) {
     const p = findAccessibleChildByID(docAcc, "p");
     info("p.ariaNotify a, priority unspecified");
@@ -99,6 +108,38 @@ addAccessibleTask(
     evt.QueryInterface(nsIAccessibleAnnouncementEvent);
     is(evt.announcement, "d", "announcement matches");
     is(evt.priority, nsIAccessibleAnnouncementEvent.POLITE, "priority correct");
+
+    const shadow = findAccessibleChildByID(docAcc, "shadow");
+    info("shadow.ariaNotify e");
+    announced = waitForEvent(EVENT_ANNOUNCEMENT, shadow);
+    await invokeContentTask(browser, [], () => {
+      content.document
+        .getElementById("host")
+        .shadowRoot.getElementById("shadow")
+        .ariaNotify("e");
+    });
+    evt = await announced;
+    evt.QueryInterface(nsIAccessibleAnnouncementEvent);
+    is(evt.announcement, "e", "announcement matches");
+
+    const slotted = findAccessibleChildByID(docAcc, "slotted");
+    info("slotted.ariaNotify f");
+    announced = waitForEvent(EVENT_ANNOUNCEMENT, slotted);
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("slotted").ariaNotify("f");
+    });
+    evt = await announced;
+    evt.QueryInterface(nsIAccessibleAnnouncementEvent);
+    is(evt.announcement, "f", "announcement matches");
+
+    info("disconnected.ariaNotify g");
+    await contentSpawnMutation(
+      browser,
+      { unexpected: [[EVENT_ANNOUNCEMENT, null]] },
+      () => {
+        content.document.createElement("p").ariaNotify("g");
+      }
+    );
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
 );

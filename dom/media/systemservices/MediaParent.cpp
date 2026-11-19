@@ -72,7 +72,9 @@ class OriginKeyStore {
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-        key = mKeys.InsertOrUpdate(principalString, MakeUnique<OriginKey>(salt))
+        key = mKeys
+                  .InsertOrUpdate(principalString,
+                                  std::make_unique<OriginKey>(salt))
                   .get();
       }
       if (aPersist && !key->mSecondsStamp) {
@@ -267,7 +269,8 @@ class OriginKeyStore {
         if (NS_FAILED(rv)) {
           continue;
         }
-        mKeys.InsertOrUpdate(origin, MakeUnique<OriginKey>(key, secondsstamp));
+        mKeys.InsertOrUpdate(origin,
+                             std::make_unique<OriginKey>(key, secondsstamp));
       }
       mPersistCount = mKeys.Count();
       return NS_OK;

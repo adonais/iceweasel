@@ -315,10 +315,10 @@ static Mp4parseStatus CreateSampleIterator(
     return rv;
   }
 
-  UniquePtr<IndiceWrapper> wrapper = MakeUnique<IndiceWrapper>(data);
+  auto wrapper = std::make_unique<IndiceWrapper>(data);
   auto index = MakeRefPtr<MP4SampleIndex>(*wrapper, aBuffer, trackID, false,
                                           AssertedCast<uint32_t>(timescale));
-  aIteratorOut = MakeUnique<SampleIterator>(index);
+  aIteratorOut = std::make_unique<SampleIterator>(index);
   return MP4PARSE_STATUS_OK;
 }
 
@@ -410,7 +410,7 @@ static gfx::ColorRange GetAVIFColorRange(
     const Mp4parseNclxColourInformation* aNclx,
     const gfx::ColorRange av1ColorRange) {
   return ToMaybe(aNclx)
-      .map([=](const auto& nclx) {
+      .map([=](const auto& /*nclx*/) {
         return aNclx->full_range_flag ? gfx::ColorRange::FULL
                                       : gfx::ColorRange::LIMITED;
       })
@@ -678,7 +678,7 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     return r;
   }
 
-  static void Dav1dFreeCallback_s(const uint8_t* aBuf, void* aCookie) {
+  static void Dav1dFreeCallback_s(const uint8_t* /*aBuf*/, void* aCookie) {
     MOZ_ASSERT(aCookie);
     static_cast<MediaRawData*>(aCookie)->Release();
   }
@@ -1021,7 +1021,7 @@ UniquePtr<AVIFDecodedData> Dav1dDecoder::Dav1dPictureToDecodedData(
   static_assert(std::is_same_v<int, decltype(aPicture->p.w)>);
   static_assert(std::is_same_v<int, decltype(aPicture->p.h)>);
 
-  UniquePtr<AVIFDecodedData> data = MakeUnique<AVIFDecodedData>();
+  auto data = std::make_unique<AVIFDecodedData>();
 
   data->mRenderSize.emplace(aPicture->frame_hdr->render_width,
                             aPicture->frame_hdr->render_height);
@@ -1126,7 +1126,7 @@ UniquePtr<AVIFDecodedData> AOMDecoder::AOMImageToToDecodedData(
   MOZ_ASSERT(aom_img_plane_height(colorImage, AOM_PLANE_U) ==
              aom_img_plane_height(colorImage, AOM_PLANE_V));
 
-  UniquePtr<AVIFDecodedData> data = MakeUnique<AVIFDecodedData>();
+  auto data = std::make_unique<AVIFDecodedData>();
 
   data->mRenderSize.emplace(colorImage->r_w, colorImage->r_h);
 

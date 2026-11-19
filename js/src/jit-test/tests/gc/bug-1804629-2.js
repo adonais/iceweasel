@@ -1,5 +1,5 @@
 gczeal(0);
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 setMarkStackLimit(1);
 grayRoot()[1] = {};
 gc();

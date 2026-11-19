@@ -32,7 +32,7 @@ for artifact in json.loads(os.environ["MOZ_FETCHES"]):
     if artifact.get("extract") and artifact.get("dest", "").startswith("x64"):
         print(artifact["dest"], os.path.basename(artifact["artifact"]))
 ' | while read dir artifact; do
-    if [ "$artifact" = target.crashreporter-symbols.zip ]; then
+    if [ "$artifact" = target.crashreporter-symbols.zip ] || [ "$artifact" = target.crashreporter-symbols-gtest.zip ]; then
         $GECKO_PATH/mach python $GECKO_PATH/python/mozbuild/mozbuild/action/unify_symbols.py $MOZ_FETCHES_DIR/$dir $MOZ_FETCHES_DIR/aarch64${dir#x64}
     else
         $GECKO_PATH/mach python $GECKO_PATH/python/mozbuild/mozbuild/action/unify_tests.py $MOZ_FETCHES_DIR/$dir $MOZ_FETCHES_DIR/aarch64${dir#x64}

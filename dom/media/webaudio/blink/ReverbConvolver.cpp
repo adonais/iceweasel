@@ -110,10 +110,9 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
     // at the same time
     int renderPhase = convolverRenderPhase + stagePhase;
 
-    UniquePtr<ReverbConvolverStage> stage =
-        std::make_unique<ReverbConvolverStage>(
-            response, totalResponseLength, reverbTotalLatency, stageOffset,
-            stageSize, fftSize, renderPhase, &m_accumulationBuffer);
+    auto stage = std::make_unique<ReverbConvolverStage>(
+        response, totalResponseLength, reverbTotalLatency, stageOffset,
+        stageSize, fftSize, renderPhase, &m_accumulationBuffer);
 
     bool isBackgroundStage = false;
 

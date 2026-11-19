@@ -11,11 +11,11 @@
 #include "nsThreadUtils.h"
 #include "nsIFile.h"
 #include "nsIFileURL.h"
+#include "nsIThreadShutdown.h"
 #include "nsIXPConnect.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/glean/StorageMetrics.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/Attributes.h"
@@ -61,6 +61,9 @@
 
 // Maximum size of the pages cache per connection.
 #define MAX_CACHE_SIZE_KIBIBYTES 2048  // 2 MiB
+
+// Default busy timeout for asynchronous connections.
+#define DEFAULT_ASYNC_BUSY_TIMEOUT_MS 100
 
 mozilla::LazyLogModule gStorageLog("mozStorage");
 
@@ -1478,6 +1481,14 @@ nsresult Connection::initializeInternal() {
   (void)ExecuteSimpleSQL("PRAGMA synchronous = NORMAL;"_ns);
 #endif
 
+  // Asynchronous connections never execute statements on the main thread, so
+  // they can wait for locks held by other connections, rather than failing
+  // with SQLITE_BUSY. Consumers can still change this through
+  // PRAGMA busy_timeout.
+  if (mSupportedOperations == ASYNCHRONOUS) {
+    (void)::sqlite3_busy_timeout(mDBConn, DEFAULT_ASYNC_BUSY_TIMEOUT_MS);
+  }
+
   // Initialization succeeded, we can stop guarding for failures.
   guard.release();
   return NS_OK;
@@ -1679,8 +1690,11 @@ bool Connection::isClosed(MutexAutoLock& /*lock*/) {
 
 bool Connection::isAsyncExecutionThreadAvailable() {
   MOZ_ASSERT(IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
+  if (!mAsyncExecutionThread) {
+    return false;
+  }
   MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
-  return mAsyncExecutionThread && !mAsyncExecutionThreadShuttingDown;
+  return !mAsyncExecutionThreadShuttingDown;
 }
 
 void Connection::shutdownAsyncThread() {
@@ -1693,8 +1707,25 @@ void Connection::shutdownAsyncThread() {
   }
 #endif
 
-  MOZ_ALWAYS_SUCCEEDS(mAsyncExecutionThread->Shutdown());
-  mAsyncExecutionThread = nullptr;
+  // Join the thread asynchronously: a blocking join would spin this thread's
+  // event loop, and connections are often closed while the browser is busy
+  // shutting down. nsThreadManager will reap any outstanding join at
+  // XPCOMShutdownThreads anyway.
+  nsCOMPtr<nsIThreadShutdown> shutdown;
+  if (NS_SUCCEEDED(
+          mAsyncExecutionThread->BeginShutdown(getter_AddRefs(shutdown)))) {
+    // We keep a strong reference to the connection, it keeps it alive until the
+    // thread is reaped, so mAsyncExecutionThread is cleared before
+    // ~Connection asserts on it and before the failsafe close in Release().
+    RefPtr event = NS_NewRunnableFunction(
+        "storage::Connection::asyncThreadShutdownComplete",
+        [self = RefPtr{this}] { self->mAsyncExecutionThread = nullptr; });
+    shutdown->OnCompletion(event);
+  } else {
+    // This ran late in XPCOM shutdown, after nsThreadManager already started
+    // shutting down and joining all the threads, including this one.
+    mAsyncExecutionThread = nullptr;
+  }
 }
 
 nsresult Connection::internalClose(sqlite3* aNativeConnection) {
@@ -1785,7 +1816,9 @@ int Connection::stepStatement(sqlite3* aNativeConnection,
                                    ::sqlite3_sql(aStatement));
 
   bool checkedMainThread = false;
+#ifdef NIGHTLY_BUILD
   TimeStamp startTime = TimeStamp::Now();
+#endif  // NIGHTLY_BUILD
 
   // The connection may have been closed if the executing statement has been
   // created and cached after a call to asyncClose() but before the actual
@@ -1814,22 +1847,17 @@ int Connection::stepStatement(sqlite3* aNativeConnection,
     ::sqlite3_reset(aStatement);
   }
 
+#ifdef NIGHTLY_BUILD
   // Report very slow SQL statements to Telemetry
   TimeDuration duration = TimeStamp::Now() - startTime;
   const uint32_t threshold = NS_IsMainThread()
-                                 ? Telemetry::kSlowSQLThresholdForMainThread
-                                 : Telemetry::kSlowSQLThresholdForHelperThreads;
+                                 ? Service::kSlowSQLThresholdForMainThread
+                                 : Service::kSlowSQLThresholdForHelperThreads;
   if (duration.ToMilliseconds() >= threshold) {
-    nsDependentCString statementString(::sqlite3_sql(aStatement));
-    Telemetry::RecordSlowSQLStatement(
-        statementString, mTelemetryFilename,
-        static_cast<uint32_t>(duration.ToMilliseconds()));
-
-#ifdef NIGHTLY_BUILD
     mStorageService->RecordSlowStatement(aStatement, duration,
                                          mTelemetryFilename);
-#endif  // NIGHTLY_BUILD
   }
+#endif  // NIGHTLY_BUILD
 
   (void)::sqlite3_extended_result_codes(aNativeConnection, 0);
   // Drop off the extended result bits of the result code.
@@ -1894,22 +1922,9 @@ int Connection::executeSql(sqlite3* aNativeConnection, const char* aSqlString) {
 
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR("Connection::executeSql", OTHER, aSqlString);
 
-  TimeStamp startTime = TimeStamp::Now();
   int srv =
       ::sqlite3_exec(aNativeConnection, aSqlString, nullptr, nullptr, nullptr);
   RecordQueryStatus(srv);
-
-  // Report very slow SQL statements to Telemetry
-  TimeDuration duration = TimeStamp::Now() - startTime;
-  const uint32_t threshold = NS_IsMainThread()
-                                 ? Telemetry::kSlowSQLThresholdForMainThread
-                                 : Telemetry::kSlowSQLThresholdForHelperThreads;
-  if (duration.ToMilliseconds() >= threshold) {
-    nsDependentCString statementString(aSqlString);
-    Telemetry::RecordSlowSQLStatement(
-        statementString, mTelemetryFilename,
-        static_cast<uint32_t>(duration.ToMilliseconds()));
-  }
 
   return srv;
 }
@@ -2238,9 +2253,12 @@ nsresult Connection::initializeClone(Connection* aClone, bool aReadOnly) {
   // LIMITATION WARNING!  Many of these pragmas are actually scoped to the
   // schema ("main" and any other attached databases), and this implmentation
   // fails to propagate them.  This is being addressed on trunk.
-  static const char* pragmas[] = {
-      "cache_size",  "temp_store",         "foreign_keys", "journal_size_limit",
-      "synchronous", "wal_autocheckpoint", "busy_timeout"};
+  // Don't add busy_timeout: asynchronous clones get the default busy timeout
+  // from initializeInternal(), consumers needing a different value must set
+  // it explicitly after cloning.
+  static const char* pragmas[] = {"cache_size",   "temp_store",
+                                  "foreign_keys", "journal_size_limit",
+                                  "synchronous",  "wal_autocheckpoint"};
   for (auto& pragma : pragmas) {
     // Read-only connections just need cache_size and temp_store pragmas.
     if (aReadOnly && ::strcmp(pragma, "cache_size") != 0 &&
@@ -3165,8 +3183,9 @@ Connection::LoadExtension(const nsACString& aExtensionName,
     if (!helperThread) {
       return NS_ERROR_NOT_INITIALIZED;
     }
-    MOZ_ALWAYS_SUCCEEDS(
-        helperThread->Dispatch(loadTask.forget(), NS_DISPATCH_NORMAL));
+    nsresult rv =
+        helperThread->Dispatch(loadTask.forget(), NS_DISPATCH_FALLIBLE);
+    NS_ENSURE_SUCCESS(rv, rv);
   } else {
     // In any other case we just load the extension on the current thread.
     MOZ_ALWAYS_SUCCEEDS(loadTask->Run());

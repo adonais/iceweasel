@@ -289,9 +289,9 @@ class Bootstrapper:
         if self.no_agentic_tools:
             return
 
-        if (
-            not self.instance.no_interactive
-            and not self.instance.cargo_tools_installed()
+        if not self.instance.no_interactive and not (
+            self.instance.cargo_tools_installed()
+            and self.instance.npm_tools_installed()
         ):
             if not self.instance.prompt_yesno(
                 "Will you be using agentic coding tools to work on Firefox?"
@@ -299,6 +299,8 @@ class Bootstrapper:
                 return
 
         self.instance.ensure_cargo_tools()
+        self.instance.ensure_npm_tools()
+        self.instance.ensure_mozbuild_bin_in_path()
 
     def check_code_submission(self, checkout_root: Path):
         if self.instance.no_interactive or which("moz-phab"):

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import eslintPluginImport from "eslint-plugin-import";
+import { importX } from "eslint-plugin-import-x";
 import mozilla from "eslint-plugin-mozilla";
 import sdl from "eslint-plugin-sdl";
 
@@ -27,9 +27,9 @@ export default [
       "devtools/shared/compatibility/**",
       "browser/components/storybook/**",
     ],
-    plugins: { import: eslintPluginImport },
+    plugins: { "import-x": importX },
     rules: {
-      "import/no-unresolved": "off",
+      "import-x/no-unresolved": "off",
     },
   },
   {
@@ -366,7 +366,6 @@ export default [
       "browser/extensions/newtab/**",
       "browser/extensions/pictureinpicture/**",
       "browser/extensions/webcompat/**",
-      "browser/fxr/content/permissions.js",
       "browser/modules/**",
       "browser/themes/BuiltInThemes.sys.mjs",
       "browser/tools/mozscreenshots/mozscreenshots/extension/TestRunner.sys.mjs",

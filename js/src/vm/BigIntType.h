@@ -424,6 +424,20 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
       const mozilla::Maybe<MutableHandle<BigInt*>>& remainder,
       bool quotientNegative);
 
+  // Store `multiplicand * multiplier` into `product`, which must have one more
+  // digit than `multiplicand`.
+  static void multiplyDigits(ConstDigits multiplicand, Digit multiplier,
+                             Digits product);
+  // Subtract `y` from the low `y.size()` digits of `x`, returning the borrow.
+  static Digit inplaceSubDigits(Digits x, ConstDigits y);
+  // Add `y` to the low `y.size()` digits of `x`, returning the carry.
+  static Digit inplaceAddDigits(Digits x, ConstDigits y);
+  // Knuth's Algorithm D (schoolbook division): compute `<q,u> = <u/v,u%v>`,
+  // using `qhatv` for scratch space. `q` may be empty, if the caller only needs
+  // the remainder. See the definition for full preconditions.
+  static void divideDigitsInPlace(Digits u, ConstDigits v, Digits q,
+                                  Digits qhatv);
+
   enum class LeftShiftMode { SameSizeResult, AlwaysAddOneDigit };
 
   static BigInt* absoluteLeftShiftAlwaysCopy(JSContext* cx, Handle<BigInt*> x,
@@ -437,8 +451,6 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
                                               uint64_t bits,
                                               bool resultNegative);
 
-  Digit absoluteInplaceAdd(const BigInt* summand, unsigned startIndex);
-  Digit absoluteInplaceSub(const BigInt* subtrahend, unsigned startIndex);
   void inplaceRightShiftLowZeroBits(unsigned shift);
   void inplaceMultiplyAdd(Digit multiplier, Digit part);
 
@@ -479,23 +491,35 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static BigInt* absoluteSubOne(JSContext* cx, Handle<BigInt*> x,
                                 bool resultNegative = false);
 
-  // Return `a + b`, incrementing `*carry` if the addition overflows.
+  // Return `a + b`, setting `*carry` to the carry out of the addition.
   static inline Digit digitAdd(Digit a, Digit b, Digit* carry) {
     Digit result = a + b;
-    *carry += static_cast<Digit>(result < a);
+    *carry = static_cast<Digit>(result < a);
     return result;
   }
 
-  // Return `left - right`, incrementing `*borrow` if the addition overflows.
+  // Return `a + b + c`, setting `*carry` to the carry out of the addition,
+  // which is at most 2.
+  static Digit digitAdd3(Digit a, Digit b, Digit c, Digit* carry);
+
+  // Return `left - right`, setting `*borrow` to the borrow out of the
+  // subtraction.
   static inline Digit digitSub(Digit left, Digit right, Digit* borrow) {
     Digit result = left - right;
-    *borrow += static_cast<Digit>(result > left);
+    *borrow = static_cast<Digit>(result > left);
     return result;
   }
+
+  // Return `a - b - c`, setting `*borrow` to the borrow out of the
+  // subtraction, which is at most 2.
+  static Digit digitSub3(Digit a, Digit b, Digit c, Digit* borrow);
 
   // Compute `a * b`, returning the low half of the result and putting the
   // high half in `*high`.
   static Digit digitMul(Digit a, Digit b, Digit* high);
+  // Return the low digit of `a * b + c + d`, storing the high digit in
+  // `*high`.
+  static Digit digitMulAdd(Digit a, Digit b, Digit c, Digit d, Digit* high);
 
   // Divide `(high << DigitBits) + low` by `divisor`, returning the quotient
   // and storing the remainder in `*remainder`, with the precondition that
@@ -523,6 +547,7 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static int8_t absoluteCompare(const BigInt* lhs, const BigInt* rhs);
 
  private:
+  static int8_t absoluteCompare(ConstDigits x, ConstDigits y);
   static int8_t compare(const BigInt* lhs, double rhs);
 
   template <js::AllowGC allowGC>

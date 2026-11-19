@@ -874,7 +874,7 @@ nsresult CompareNetwork::SetPrincipalInfo(nsIChannel* aChannel) {
     return rv;
   }
 
-  UniquePtr<PrincipalInfo> principalInfo = MakeUnique<PrincipalInfo>();
+  auto principalInfo = std::make_unique<PrincipalInfo>();
   rv = PrincipalToPrincipalInfo(channelPrincipal, principalInfo.get());
 
   if (NS_WARN_IF(NS_FAILED(rv))) {

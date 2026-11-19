@@ -81,6 +81,8 @@ void DOMSVGLength::CleanupWeakRefs() {
   // cycle collected), so we that don't leave behind a pointer to
   // free / soon-to-be-free memory.
   if (nsCOMPtr<DOMSVGLengthList> lengthList = do_QueryInterface(mOwner)) {
+    // The slot we clear must really be ours; otherwise we'd leave our own
+    // slot holding a dangling pointer (use-after-free).
     MOZ_RELEASE_ASSERT(lengthList->mItems[mListIndex] == this,
                        "Clearing out the wrong list index...?");
     lengthList->mItems[mListIndex] = nullptr;

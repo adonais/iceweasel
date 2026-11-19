@@ -7,9 +7,7 @@ function withPrivacyPrefs() {
   return function (testFunc) {
     return async args =>
       BrowserTestUtils.withNewTab(
-        Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
-          ? "about:preferences#permissionsData"
-          : "about:preferences#privacy",
+        "about:preferences#permissionsData",
         async browser => testFunc({ ...args, browser })
       );
   };

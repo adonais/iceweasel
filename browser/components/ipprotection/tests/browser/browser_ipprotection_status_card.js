@@ -232,6 +232,9 @@ add_task(async function test_ipprotection_events_on_toggle() {
  * Tests the excluded site state UI.
  */
 add_task(async function test_status_card_excluded() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", false]],
+  });
   let sandbox = sinon.createSandbox();
   sandbox
     .stub(IPPSiteRuleManager, "getRule")
@@ -274,6 +277,7 @@ add_task(async function test_status_card_excluded() {
   await closePanel();
   await cleanupStatusCardTest();
   sandbox.restore();
+  await SpecialPowers.popPrefEnv();
 });
 
 /**

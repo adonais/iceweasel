@@ -56,8 +56,9 @@ class AlertCaptureCallbacks final : public nsIAlertCallbacks {
     return mCallbacks ? mCallbacks->OnAlertShow() : NS_OK;
   }
 
-  NS_IMETHOD OnAlertClick(nsIAlertAction* aAction) override {
-    return mCallbacks ? mCallbacks->OnAlertClick(aAction) : NS_OK;
+  NS_IMETHOD OnAlertClick(nsIAlertAction* aAction,
+                          nsIAlertCallbacks::ApplicationState aState) override {
+    return mCallbacks ? mCallbacks->OnAlertClick(aAction, aState) : NS_OK;
   }
 
   NS_IMETHOD OnAlertDismissedFromForeground() override {
@@ -205,7 +206,8 @@ class AlertObserverToCallbacks : public nsIAlertCallbacks {
     return mObserver->Observe(nullptr, "alertshow", mCookie.get());
   }
 
-  NS_IMETHOD OnAlertClick(nsIAlertAction* aAction) override {
+  NS_IMETHOD OnAlertClick(nsIAlertAction* aAction,
+                          nsIAlertCallbacks::ApplicationState aState) override {
     return mObserver->Observe(aAction, "alertclickcallback", mCookie.get());
   }
 

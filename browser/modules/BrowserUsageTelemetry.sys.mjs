@@ -1291,6 +1291,7 @@ export let BrowserUsageTelemetry = {
   _recordPrefValues() {
     this._recordOpenNextToActiveTabSettingValue();
     this._recordNovaEnabledValue();
+    this._recordThemePickerValues();
   },
 
   /**
@@ -1315,6 +1316,25 @@ export let BrowserUsageTelemetry = {
   _recordNovaEnabledValue() {
     Glean.nova.enabled.set(
       Services.prefs.getBoolPref("browser.nova.enabled", false)
+    );
+  },
+
+  _recordThemePickerValues() {
+    let appearance = "device";
+    if (Services.prefs.prefHasUserValue("ui.systemUsesDarkTheme")) {
+      let systemUsesDark = Services.prefs.getIntPref(
+        "ui.systemUsesDarkTheme",
+        -1
+      );
+      if (systemUsesDark === 0) {
+        appearance = "light";
+      } else if (systemUsesDark === 1) {
+        appearance = "dark";
+      }
+    }
+    Glean.themePicker.appearance.set(appearance);
+    Glean.themePicker.nativeTheme.set(
+      Services.prefs.getBoolPref("browser.theme.native-theme", false)
     );
   },
 

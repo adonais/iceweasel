@@ -808,6 +808,11 @@
   value: true
   mirror: always
 
+- name: apz.pan_gesture.buffer_max_age
+  type: uint32_t
+  value: 200  # milliseconds
+  mirror: once
+
 # Fetch displayport updates early from the message queue.
 - name: apz.pinch_lock.mode
   type: RelaxedAtomicInt32
@@ -2437,6 +2442,17 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
+# When false, web custom format flavors are only exposed to a reader that is
+# same-origin with the data in the clipboard cache, or to an extension with the
+# clipboardRead permission. Data written by other
+# applications is treated as cross-origin, so reading web custom formats from
+# it also requires clipboard.readCustomFormatsFromClipboard.enabled. Writing
+# web custom formats is unaffected.
+- name: clipboard.readCrossOriginCustomFormats.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "consoleservice."
 #---------------------------------------------------------------------------
@@ -2751,7 +2767,7 @@
 # Master gate for the web custom format support in the Async Clipboard API.
 - name: dom.clipboard.customFormatSupport.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # HTML specification says the level should be 5
@@ -2933,7 +2949,7 @@
 # see https://html.spec.whatwg.org/#blocking-attributes
 - name: dom.element.blocking.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # The implementation-defined timeout of
@@ -3310,6 +3326,12 @@
 #endif
   mirror: always
   rust: true
+
+# Controls platform-specific handling of file-backed DOM blobs.
+- name: dom.file.allowMagicFiles
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
 
 # Allow the content process to create a File from a path. This is allowed just
 # on parent process, on 'file' Content process, or for testing.
@@ -3768,12 +3790,6 @@
 #endif
   mirror: always
 
-# Limit preallocated processes below this memory size (in MB)
-- name: dom.ipc.processPrelaunch.lowmem_mb
-  type: uint32_t
-  value: 4096
-  mirror: always
-
 - name: dom.ipc.processPriorityManager.enabled
   type: bool
   value: true
@@ -3812,7 +3828,7 @@
 # processes run at THREAD_PRIORITY_ABOVE_NORMAL.
 - name: dom.ipc.processPriorityManager.foregroundRaisesMainThreadPriority
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 #endif
 
@@ -3881,6 +3897,13 @@
 - name: dom.forms.always_allow_key_and_focus_events.enabled
   type: bool
   value: true
+  mirror: always
+
+# Retain existing focus when an element becomes disabled.
+# https://github.com/whatwg/html/issues/13159
+- name: dom.forms.retain_focus_on_disabled.enabled
+  type: bool
+  value: false
   mirror: always
 
 # Whether to disable only the descendants or the parent fieldset element too
@@ -5122,6 +5145,15 @@
   value: true
   mirror: always
 
+# If true, record the security.trusted_types_readiness Glean metric when a
+# document is destroyed.
+# Bug 2072122: Trusted Types readiness experiment only, to be removed together
+# with its Nimbus feature.
+- name: dom.security.trusted_types.readiness_telemetry.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # If true, all content requests will get upgraded to HTTPS://
 # (some Firefox functionality requests, like OCSP will not be affected)
 - name: dom.security.https_only_mode
@@ -5526,12 +5558,6 @@
   value: true
   mirror: always
 
-# Whether the WritableFileStream is enabled or disabled.
-- name: dom.fs.writable_file_stream.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 # A pref that is used to enable testing features.
 - name: dom.fs.testing
   type: SequentiallyConsistentAtomicBool
@@ -5852,7 +5878,7 @@
 
 - name: dom.viewTransitions.cross-document.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
@@ -6203,6 +6229,13 @@
   value: true
   mirror: always
 
+# If true, when copying, the inline style attribute is normalized by being
+# serialized from its parsed declaration block.
+- name: dom.serializer.normalize_inline_style_when_copying.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # When this pref is enabled:
 #  - Shadow DOM is not pierced by default anymore
 #  - The method accepts optional CaretPositionFromPointOptions to allow piercing
@@ -6337,6 +6370,10 @@
 
 # Domains for which WebGPU is disabled.
 #
+# This is useful for working around web compatibility problems, but
+# because it checks the global's base URI, which content can change
+# freely, it's not suitable for dealing with bad actors.
+#
 # If `nsIGlobalObject::GetBaseURI` returns a base URI in this list,
 # then `GPU::requestAdapter` always rejects.
 #
@@ -6344,12 +6381,15 @@
 # form `*.DOMAIN` blocks all subdomains of `DOMAIN`. It is interpreted
 # by `nsContentUtils::IsURIInList`.
 #
+# For example, for bug 1980392, this pref had the value
+# "easyeda.com,*.easyeda.com".
+#
 # Bugs for the current default contents:
 #
-# easyeda.com: 1980392
+# <none at the moment>
 - name: dom.webgpu.blocked-domains
   type: DataMutexString
-  value: "easyeda.com,*.easyeda.com"
+  value: ""
   mirror: always
 
 # Is support for HTMLInputElement.webkitEntries enabled?
@@ -8034,9 +8074,9 @@
   # Note that this is only checked at startup; toggling it requires a restart
   # to take effect.
 -   name: gfx.font_rendering.fontations.enabled
-    type: bool
+    type: RelaxedAtomicBool
     value: false
-    mirror: once
+    mirror: always
 #endif
 
 #if defined(XP_DARWIN)
@@ -8105,7 +8145,7 @@
 # Whether to hide legacy font formats (Type 1 and PCF) from the font list.
 -   name: gfx.font_rendering.fontconfig.skip_legacy_fonts
     type: RelaxedAtomicBool
-    value: @IS_NIGHTLY_BUILD@
+    value: true
     mirror: always
 #endif
 
@@ -8693,6 +8733,18 @@
 #endif
   mirror: always
 
+# The number of samples per pixel used to rasterize path clips: 0 for
+# analytical anti-aliasing, 1 to 4 for 4 samples, 8 otherwise. Software
+# WebRender always uses 4 samples.
+- name: gfx.webrender.path-aa.samples
+  type: int32_t
+#if defined(MOZ_WIDGET_ANDROID)
+  value: 4
+#else
+  value: 8
+#endif
+  mirror: always
+
 - name: gfx.webrender.compositor
   type: bool
 #if defined(XP_WIN) || defined(XP_DARWIN) || defined(MOZ_WIDGET_GTK)
@@ -8754,14 +8806,11 @@
   mirror: once
 
 # Number of damage rects we can give to the compositor for a new frame with
-# partial present. This controls whether partial present is used or not.
+# partial present, for the window and for OS layer swapchains. This controls
+# whether partial present is used or not.
 - name: gfx.webrender.max-partial-present-rects
   type: uint32_t
-#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
   value: 1
-#else
-  value: 0
-#endif
   mirror: once
 
 # Whether or not we can reuse the buffer contents using the GL buffer age
@@ -8882,6 +8931,20 @@
   type: bool
   value: false
   mirror: once
+
+# Use WebRender for path rendering, for example to render clip-path: path()
+# and shape() with WebRender path clips instead of mask images.
+# Only applies to hardware WebRender, see gfx.webrender.paths.swgl.
+- name: gfx.webrender.paths
+  type: bool
+  value: true
+  mirror: always
+
+# Same as gfx.webrender.paths, for software WebRender (SWGL).
+- name: gfx.webrender.paths.swgl
+  type: bool
+  value: true
+  mirror: always
 
 # When gl debug message is a high severity message, forwward it to gfx critical
 # note.
@@ -9491,6 +9554,12 @@
 
 #endif
 
+# Whether to defer decoding images that are computed to be out of the visible area.
+- name: image.decode.defer_if_not_visible
+  type: bool
+  value: true
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "intl."
 #---------------------------------------------------------------------------
@@ -10033,7 +10102,7 @@
   # Improve field initializer bytecode.
 - name: javascript.options.experimental.inline_simple_field_initializers
   type: bool
-  value: false
+  value: true
   mirror: always
   set_spidermonkey_pref: startup
 
@@ -11034,7 +11103,7 @@
 # https://drafts.csswg.org/css-box-4/#margin-trim
 - name: layout.css.margin-trim.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
@@ -11386,7 +11455,7 @@
 # Whether the CSS namespace is exposed in workers and worklets.
 - name: layout.css.namespace.exposed-in-workers-and-worklets
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Is -moz-osx-font-smoothing enabled? (Only supported in OSX builds)
@@ -11426,6 +11495,11 @@
   value: true
   mirror: always
   rust: true
+
+- name: layout.css.prefers-color-scheme.meta-tag.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_OR_DEV_EDITION@
+  mirror: always
 
 # An override for prefers-color-scheme for content documents.
 #   0: Dark
@@ -11505,7 +11579,7 @@
 # https://drafts.csswg.org/css-values-5/#random
 - name: layout.css.random.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
@@ -11682,6 +11756,13 @@
   value: true
   mirror: always
 
+# Is support for CSS text-autospace-size property enabled?
+# https://github.com/w3c/csswg-drafts/issues/8510#issuecomment-6438888621
+- name: layout.css.text-autospace-size.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # Is support for CSS text-box property enabled?
 # https://drafts.csswg.org/css-inline-3/#text-box-shorthand
 - name: layout.css.text-box.enabled
@@ -11729,6 +11810,13 @@
 - name: layout.css.zoom.enabled
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+  rust: true
+
+# Support the `match-parent` value of CSS `quotes`.
+- name: layout.css.quotes.match-parent.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
@@ -12188,7 +12276,7 @@
 # Color interfaces are additionally gated by layout.css.typed-om-color.enabled.
 - name: layout.css.typed-om.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
@@ -12407,14 +12495,6 @@
 - name: mathml.legacy_mathvariant_attribute.disabled
   type: bool
   value: @IS_NIGHTLY_BUILD@
-  mirror: always
-  rust: true
-
-# Whether to enable font-family: math in mathml instead of using the
-# internal language x-math.
-- name: mathml.font_family_math.enabled
-  type: RelaxedAtomicBool
-  value: true
   mirror: always
   rust: true
 
@@ -12862,11 +12942,7 @@
 # for platform implemented codecs in the RDD or GPU process.
 - name: media.use-remote-encoder.video.platform
   type: RelaxedAtomicBool
-#ifdef NIGHTLY_BUILD
-  value: @IS_NOT_ANDROID@
-#else
-  value: false
-#endif
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Specifies whether the PEMFactory can create PEMs for remote video encoding
@@ -12880,6 +12956,8 @@
   type: RelaxedAtomicBool
 #if defined(XP_WIN)
   value: true
+#elif defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
 #else
   value: false
 #endif
@@ -12887,8 +12965,8 @@
 
 - name: media.gpu-process-encoder
   type: RelaxedAtomicBool
-#ifdef NIGHTLY_BUILD
-  value: @IS_XP_WIN@
+#if defined(XP_WIN) || defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
 #else
   value: false
 #endif
@@ -12899,6 +12977,8 @@
 #if defined(MOZ_WIDGET_GTK)
   value: true
 #elif defined(XP_WIN)
+  value: @IS_NIGHTLY_BUILD@
+#elif defined(ANDROID)
   value: @IS_NIGHTLY_BUILD@
 #else
   value: false
@@ -12927,7 +13007,9 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
+#elif defined(XP_LINUX)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -12971,7 +13053,9 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
+#elif defined(XP_LINUX)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13004,7 +13088,9 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
+#elif defined(XP_LINUX)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13023,7 +13109,9 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
+#elif defined(XP_LINUX)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13042,7 +13130,9 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
+#elif defined(XP_LINUX)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13061,7 +13151,9 @@
   value: true
 #elif defined(XP_MACOSX)
   value: true
-#elif defined(XP_LINUX) && !defined(ANDROID)
+#elif defined(ANDROID)
+  value: @IS_NIGHTLY_BUILD@
+#elif defined(XP_LINUX)
   value: true
 #elif defined(XP_FREEBSD)
   value: true
@@ -13113,7 +13205,7 @@
   # Enable the MediaCodec PlatformDecoderModule by default.
 -   name: media.android-media-codec.enabled
     type: RelaxedAtomicBool
-    value: true
+    value: @IS_NOT_NIGHTLY_BUILD@
     mirror: always
 
   # Bug 1771196
@@ -13125,7 +13217,7 @@
 
 -   name: media.android-media-codec.preferred
     type: RelaxedAtomicBool
-    value: true
+    value: @IS_NOT_NIGHTLY_BUILD@
     mirror: always
 #endif  # ANDROID
 
@@ -13171,7 +13263,7 @@
 #if !defined(MOZ_WIDGET_ANDROID)
     value: true
 #else
-    value: false
+    value: @IS_NIGHTLY_BUILD@
 #endif
     mirror: always
 
@@ -14850,7 +14942,7 @@
 # whether to redirect the channel for auth redirects. See Bug 1820807
 - name: network.auth.use_redirect_for_retries
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # When true, authentication challenges will be sorted even if
@@ -15399,11 +15491,7 @@
 # replayable buffer. Clamped to [4096, 2^31] and rounded up to a power of two.
 - name: network.http.upload_copy_max_segment_size
   type: RelaxedAtomicUint32
-#ifdef NIGHTLY_BUILD
   value: 65536
-#else
-  value: 4096
-#endif
   mirror: always
 
 # When true (default), decode Content-Encoding (e.g. gzip) when saving to disk
@@ -15809,31 +15897,11 @@
   value: 10000
   mirror: always
 
-# Whether to use the network process or not
-# Start a separate socket process. Performing networking on the socket process
-# is control by a sepparate pref
-# ("network.http.network_access_on_socket_process.enabled").
-# Changing these prefs requires a restart.
-- name: network.process.enabled
-  type: RelaxedAtomicBool
-  mirror: always
-#if defined(ANDROID) || defined(MOZ_THUNDERBIRD) || defined(XP_IOS)
-  value: false # see bug 1641427
-#else
-  value: true
-#endif
-
 # When a protocol would be launched externally without a prompt (i.e. the
 # network.protocol-handler.external.<scheme> pref is set), require transient
 # user activation. Without activation we fall back to the external protocol
 # prompt instead of launching silently. See bug 299116.
 - name: network.protocol-handler.prompt-without-user-activation
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
-# Whether we can send OnDataAvailable to content process directly.
-- name: network.send_ODA_to_content_directly
   type: RelaxedAtomicBool
   value: true
   mirror: always
@@ -15868,14 +15936,6 @@
   type: RelaxedAtomicBool
   value: false
   mirror: always
-
-# Perform all network access on the socket process.
-# The pref requires "network.process.enabled" to be true.
-# Changing these prefs requires a restart.
-- name: network.http.network_access_on_socket_process.enabled
-  type: RelaxedAtomicBool
-  mirror: always
-  value: false
 
 # Telemetry of traffic categories. Whether or not to enable HttpTrafficAnalyzer.
 - name: network.traffic_analyzer.enabled
@@ -16281,15 +16341,10 @@
 #endif
   mirror: always
 
-- name: network.proxy.parse_pac_on_socket_process
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
 - name: network.proxy.detect_system_proxy_changes
   type: RelaxedAtomicBool
 #ifdef XP_WIN
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_NIGHTLY_BUILD@
 #else
   value: false
 #endif
@@ -16639,7 +16694,7 @@
 # Whether to use the connection info that is generated asynchronously.
 - name: network.trr.async_connInfo
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # If true, a failed TRR request that contains an extended DNS error
@@ -16713,13 +16768,19 @@
   value: true
   mirror: always
 
-# Speculatively pre-connect to the TRR server when the app returns to the
-# foreground (application-foreground), so the connection is ready before the
-# first DNS query arrives. Effective on Android; application-foreground is not
-# fired on desktop.
+# Speculatively pre-connect to the TRR server when the app comes to the
+# foreground (application-foreground, geckoview-initial-foreground), so the
+# connection is ready before the first DNS query arrives. Effective on Android;
+# neither topic is fired on desktop.
 - name: network.trr.preconnect_on_foreground
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# Allow the TRR pre-connect to RFC1918 and other local addresses.
+- name: network.trr.preconnect_allow_rfc1918
+  type: RelaxedAtomicBool
+  value: false
   mirror: always
 
 # Allow the network changed event to get sent when a network topology or setup
@@ -16923,6 +16984,17 @@
   value: 100
   mirror: always
 
+# The most an HTTP/2 session may buffer for writing, in bytes. The session
+# fails rather than growing its output queue beyond this.
+# The queue normally stays at a few tens of KB and only grows while the socket
+# can't be written to. 256 MB is far above that, and matches the largest IPC
+# message (IPC::Channel::kMaximumMessageSize), which bounds the request data a
+# content process can send.
+- name: network.http.http2.max_output_queue_size
+  type: RelaxedAtomicUint32
+  value: 256 * 1024 * 1024
+  mirror: always
+
 - name: network.http.http2.default-hpack-buffer
   type: RelaxedAtomicInt32
   value: 65536 # 64K
@@ -16948,6 +17020,13 @@
 - name: network.http.move_to_pending_list_after_network_change
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# When false, application-background only closes idle HTTP/1.x connections.
+# When true, it also marks active connections DontReuse and clears coalescing.
+- name: network.http.close_connections_on_background
+  type: bool
+  value: false
   mirror: always
 
 # Enable HTTP/3
@@ -17127,7 +17206,7 @@
 # When a Http/3 connection failed, whether to retry with a different IP address.
 - name: network.http.http3.retry_different_ip_family
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # This is for testing purpose. When true, nsUDPSocket::SendWithAddress and
@@ -17168,6 +17247,16 @@
 
 # HTTP3: Whether Spurious Congestion Event Recovery should be turned on.
 - name: network.http.http3.spurious_recovery
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+  rust: true
+
+# HTTP3: Whether to use Alternative Backoff with ECN (RFC 8511), i.e. a smaller
+# multiplicative decrease on ECN-CE congestion events than on loss.
+# Has no effect unless network.http.http3.cc_algorithm is set to 1 (Cubic) and
+# network.http.http3.ecn_mark is true.
+- name: network.http.http3.abe
   type: RelaxedAtomicBool
   value: true
   mirror: always
@@ -17439,8 +17528,8 @@
   value: 10
   mirror: always
 
-# Validate that the principal used to bind child-written alt-data could have
-# been loaded by the content process that wrote it.
+# Validate that the origin of the principal used to bind child-written
+# alt-data has been loaded by the content process that wrote it.
 - name: network.cache.alt_data.validate_binding_principal
   type: RelaxedAtomicBool
   value: true
@@ -17487,7 +17576,7 @@
 # Whether to record the telemetry event when a JAR channel is failed to load.
 - name: network.jar.record_failure_reason
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # nsJARInputStream::Available returns the size indicated by the archived entry
@@ -17547,7 +17636,7 @@
 # connecting, retry with the remaining one
 - name: network.http.retry_with_another_half_open
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 - name: network.http.basic_http_auth.enabled
@@ -17564,6 +17653,14 @@
 # upgrade (e.g. WebSocket). Gated separately so the upgrade path can be
 # rolled out independently of the main Happy Eyeballs pref.
 - name: network.http.happy_eyeballs_upgrade_enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
+# When true, Happy Eyeballs establishes the outer connection to a proxy
+# (Firefox<->proxy) instead of the legacy DnsAndConnectSocket path. Gated
+# separately so it can roll out independently of the main Happy Eyeballs pref.
+- name: network.http.happy_eyeballs_proxy_enabled
   type: RelaxedAtomicBool
   value: @IS_NIGHTLY_BUILD@
   mirror: always
@@ -17624,13 +17721,6 @@
 - name: network.mimesniff.sniff_misconfigured_types
   type: RelaxedAtomicBool
   value: true
-  mirror: always
-
-# The maximum count that we allow socket prrocess to crash. If this count is
-# reached, we won't use networking over socket process.
-- name: network.max_socket_process_failed_count
-  type: RelaxedAtomicUint32
-  value: 1
   mirror: always
 
 - name: network.allow_redirect_to_data
@@ -17755,7 +17845,7 @@
 # Enable HTTP Compression Dictionary support
 - name: network.http.dictionaries.enable
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether to collect telemetry about Akamai responses and Akamai WAF blocks.
@@ -18114,7 +18204,7 @@
 # Whether we use the CSS @page size as the paper size in PDF output.
 - name: print.save_as_pdf.use_page_rule_size_as_paper_size.enabled
   type: RelaxedAtomicBool
-  value: @IS_NOT_ANDROID@
+  value: true
   mirror: always
 
 #ifdef XP_MACOSX
@@ -18435,7 +18525,11 @@
 # Unrecognized values behave as 0.
 - name: privacy.trackingprotection.content.mirror.mode
   type: uint32_t
+#if defined(NIGHTLY_BUILD) && !defined(ANDROID)
+  value: 1
+#else
   value: 0
+#endif
   mirror: never
 
 # When true, fire an observer notification when filter lists finish loading.
@@ -18443,6 +18537,15 @@
   type: bool
   value: false
   mirror: always
+
+# Test-only. When true, the content classifier uses the test_block and
+# test_annotate engines wherever the engines prefs list the trackers engine,
+# for blocking and annotation respectively. test_block then follows the
+# trackers scoped pref.
+- name: privacy.trackingprotection.content.testing.use_test_trackers_engines
+  type: bool
+  value: false
+  mirror: never
 
 # Log level for the content classifier remote settings client.
 # Set to "Debug" for verbose output, or one of "Info", "Warn", "Error", "Off".
@@ -18455,7 +18558,11 @@
 # classifier) engine is active.
 - name: privacy.trackingprotection.urlclassifier.disable_for_channel_classifier
   type: bool
+#if defined(NIGHTLY_BUILD) && !defined(ANDROID)
+  value: true
+#else
   value: false
+#endif
   mirror: always
 
 # Enable the "baseline" allow-list for fixing severe site breakage (e.g. blank
@@ -19079,12 +19186,6 @@
   mirror: always
   do_not_use_directly: true # Consumers should use SandboxSettings to ask.
 
-- name: security.sandbox.socket.process.level
-  type: int32_t
-  value: 0
-  mirror: always
-  do_not_use_directly: true # Consumers should use SandboxSettings to ask.
-
 # This controls the strength of the GPU process sandbox on Windows
 # and macOS. Changes will require restart. Levels have different meanings
 # on Windows and macOS. For information on what the level number means on
@@ -19135,13 +19236,6 @@
     value: true
     mirror: always
 
-  # Whether win32k is disabled for socket processes.
-  # true means win32k system calls are not permitted.
--   name: security.sandbox.socket.win32k-disable
-    type: RelaxedAtomicBool
-    value: true
-    mirror: always
-
   # Whether CET User Shadow Stack compatible modules only is enabled for the
   # relevant process type.
 -   name: security.sandbox.content.shadow-stack.enabled
@@ -19150,11 +19244,6 @@
     mirror: always
 
 -   name: security.sandbox.rdd.shadow-stack.enabled
-    type: RelaxedAtomicBool
-    value: true
-    mirror: always
-
--   name: security.sandbox.socket.shadow-stack.enabled
     type: RelaxedAtomicBool
     value: true
     mirror: always
@@ -19439,6 +19528,15 @@
 - name: security.utility_pkcs11_module_process.enabled
   type: RelaxedAtomicBool
   value: false
+  mirror: always
+
+# Minimum time (in milliseconds) between IPC scans for remote certificates,
+# keys, and trust. The trade-off here is between how much of a delay there may
+# be before changes in remotely-loaded PKCS#11 modules are reflected in the
+# parent process and how much time is spent querying the remote process.
+- name: security.utility_pkcs11_module_process.scan_delay_ms
+  type: RelaxedAtomicUint32
+  value: 3000
   mirror: always
 
 - name: security.pki.cert_short_lifetime_in_days
@@ -21775,6 +21873,12 @@
 - name: widget.disable-swipe-tracker
   type: bool
   value: false
+  mirror: always
+
+# Whether to enable swipe-to-nav on touchscreen.
+- name: widget.swipe.touchscreen.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Whether to provide haptic feedback when crossing the swipe navigation threshold.

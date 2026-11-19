@@ -29,9 +29,10 @@ function testAtomRef(tenured) {
     minorgc();
     minorgc();
     finishBackgroundFree();
-    // If s2 is now an AtomRef string, then only s holds a reference to
-    // the buffer.
-    if (representation(s2).flags.includes("ATOM_REF_BIT")) {
+    // If s2 is still an AtomRef, or was forwarded to its atom during
+    // tenuring, then only s holds a reference to the buffer.
+    var flags = representation(s2).flags;
+    if (flags.includes("ATOM_REF_BIT") || flags.includes("ATOM_BIT")) {
         assertEq(representation(s).bufferRefCount, 1);
     } else {
         assertEq(representation(s).bufferRefCount, 2);

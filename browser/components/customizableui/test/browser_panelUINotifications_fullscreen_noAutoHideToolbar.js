@@ -4,35 +4,21 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
   "resource://gre/modules/AppMenuNotifications.sys.mjs"
 );
 
-function waitForDocshellActivated() {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
-    // Setting docshell activated/deactivated will trigger visibility state
-    // changes to relevant state ("visible" or "hidden"). AFAIK, there is no
-    // such event notifying docshell is being activated, so I use
-    // "visibilitychange" event rather than polling the isActive flag.
-    await ContentTaskUtils.waitForEvent(
-      content.document,
-      "visibilitychange",
-      true /* capture */,
-      () => {
-        return content.browsingContext.isActive;
+async function waitForFullscreen() {
+  let browser = gBrowser.selectedBrowser;
+  await BrowserTestUtils.waitForEvent(window, "fullscreen");
+  if (Services.appinfo.OS === "Darwin") {
+    await SpecialPowers.spawn(browser, [], async () => {
+      if (!content.browsingContext.isActive) {
+        await ContentTaskUtils.waitForEvent(
+          content.document,
+          "visibilitychange",
+          true,
+          () => content.browsingContext.isActive
+        );
       }
-    );
-  });
-}
-
-function waitForFullscreen() {
-  return Promise.all([
-    BrowserTestUtils.waitForEvent(window, "fullscreen"),
-    // In the platforms that support reporting occlusion state (e.g. Mac),
-    // enter/exit fullscreen mode will trigger docshell being set to non-activate
-    // and then set to activate back again. For those platforms, we should wait
-    // until the docshell has been activated again before starting next test,
-    // otherwise, the fullscreen request might be denied.
-    Services.appinfo.OS === "Darwin"
-      ? waitForDocshellActivated()
-      : Promise.resolve(),
-  ]);
+    });
+  }
 }
 
 add_task(async function testFullscreen() {

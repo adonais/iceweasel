@@ -18,7 +18,7 @@ MessageBufferWriter::MessageBufferWriter(MessageWriter* writer,
     bool shmem_ok = handle.IsValid();
     writer->WriteBool(shmem_ok);
     if (shmem_ok) {
-      shmem_cursor_ = mozilla::MakeUnique<mozilla::ipc::shared_memory::Cursor>(
+      shmem_cursor_ = std::make_unique<mozilla::ipc::shared_memory::Cursor>(
           std::move(handle));
       MOZ_ASSERT(shmem_cursor_->IsValid());
     } else {
@@ -84,7 +84,7 @@ MessageBufferReader::MessageBufferReader(MessageReader* reader,
         reader->FatalError("too small shared memory handle");
         return;
       }
-      shmem_cursor_ = mozilla::MakeUnique<mozilla::ipc::shared_memory::Cursor>(
+      shmem_cursor_ = std::make_unique<mozilla::ipc::shared_memory::Cursor>(
           std::move(handle));
       MOZ_ASSERT(shmem_cursor_->IsValid());
     }

@@ -21,22 +21,12 @@ prefs = [
 ["test_Object.prototype_props.html"]
 
 ["test_async_iterable.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_async_stacks.html"]
 
 ["test_attributes_on_types.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_barewordGetsWindow.html"]
 support-files = [
@@ -59,24 +49,16 @@ support-files = [
 ["test_bug862092.html"]
 
 ["test_bug1036214.html"]
+run-if = ["debug"]
 skip-if = [
-  "asan",
-  "ccov",
   "http2",
   "http3",
-  "opt",
-  "tsan",
 ]
 
 ["test_bug1041646.html"]
 
 ["test_bug1123516_maplikesetlike.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_bug1123875.html"]
 
@@ -109,22 +91,12 @@ skip-if = [
 ["test_domProxyArrayLengthGetter.html"]
 
 ["test_ecma_collection_semantics.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_enums.html"]
 
 ["test_exceptionSanitization.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_exceptionThrowing.html"]
 
@@ -133,12 +105,7 @@ skip-if = [
 ["test_exception_messages.html"]
 
 ["test_exception_options_from_jsimplemented.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_exceptions_from_jsimplemented.html"]
 tags = "webrtc"
@@ -146,61 +113,35 @@ tags = "webrtc"
 ["test_forOf.html"]
 
 ["test_immutable_arraybufferview.html"]
+run-if = ["debug"]
 skip-if = [
   "!nightly_build", # Bug 1952253
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
 ]
 
 ["test_integers.html"]
 
 ["test_interfaceLength.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_interfaceName.html"]
 
 ["test_interfaceToString.html"]
 
 ["test_iterable.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_jsimplemented_cross_realm_this.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_jsimplemented_eventhandler.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_jsimplemented_subclassing.html"]
 
 ["test_large_arraybuffers.html"]
+run-if = ["debug"]
 skip-if = [
   "arch == 'x86'", # Large ArrayBuffers are only supported on 64-bit platforms.
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
 ]
 
 ["test_large_imageData.html"]
@@ -214,48 +155,23 @@ skip-if = [
 ["test_named_getter_enumerability.html"]
 
 ["test_observablearray.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_observablearray_helper.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_observablearray_proxyhandler.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_oom_reporting.html"]
 
 ["test_prefOnConstructor.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_primitive_this.html"]
 
 ["test_promise_rejections_from_jsimplemented.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_proxy_accessors.html"]
 
@@ -267,39 +183,18 @@ skip-if = [
 support-files = [
   "file_reflected_attribute_frozenarray.js",
 ]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt", # Test WebIDL interfaces are only available in debug builds
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_remoteProxyAsPrototype.html"]
 
 ["test_resizable_arraybufferview.html"]
-skip-if = [
-  "!nightly_build", # Bug 1670026
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_returnUnion.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_sequence_detection.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_sequence_wrapping.html"]
 subsuite = "gpu"
@@ -307,22 +202,12 @@ subsuite = "gpu"
 ["test_setWithNamedGetterNoNamedSetter.html"]
 
 ["test_stringBindings.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_throwing_method_noDCE.html"]
 
 ["test_toJSON.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_traceProtos.html"]
 
@@ -331,11 +216,6 @@ skip-if = [
 ["test_unforgeablesonexpando.html"]
 
 ["test_usvstring.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_worker_UnwrapArg.html"]

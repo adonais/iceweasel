@@ -87,7 +87,7 @@ NS_IMPL_ISUPPORTS(AsyncBlockerTimerCallback, nsITimerCallback, nsINamed)
 AsyncBlockerTimerCallback::~AsyncBlockerTimerCallback() = default;
 
 NS_IMETHODIMP
-AsyncBlockerTimerCallback::Notify(nsITimer* timer) {
+AsyncBlockerTimerCallback::Notify(nsITimer* /*timer*/) {
   // If we resolve through this, it means
   // blockers.WaitUntilClear() started to wait for
   // the completion of the timeout which is not

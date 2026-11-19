@@ -40,7 +40,7 @@
       --background-color: light-dark(var(--color-gray-20), var(--color-gray-90));
 
       display: flex;
-      margin-bottom: var(--panel-padding-block);
+      margin-block-end: var(--panel-padding-block);
 
       border: var(--border-width) solid var(--border-color);
 
@@ -58,7 +58,7 @@
     gap: var(--panel-padding-block);
     grid-template-columns: var(--ai-chat-grid-columns);
     background-color: transparent;
-    margin-top: var(--space-medium);
+    margin-block-start: var(--space-medium);
     scrollbar-width: thin;
     scrollbar-color: var(--ai-chat-grid-scrollbar-color);
   }
@@ -73,7 +73,7 @@
     background-color: var(--background-color);
     border-radius: var(--card-border-radius);
     padding: 0 var(--space-xlarge);
-    margin-top: var(--space-medium);
+    margin-block-start: var(--space-medium);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Figma design */
     height: 255px;
     overflow: auto;
@@ -106,7 +106,7 @@ ai-chat-grid::part(row) {
 }
 
 [part~="row"]:first-child {
-  padding-top: 0;
+  padding-block-start: 0;
 }
 
 .list-controls moz-button {

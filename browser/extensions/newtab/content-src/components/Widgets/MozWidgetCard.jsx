@@ -16,29 +16,51 @@ const USER_ACTION_TYPES = {
 
 /**
  * The moz-widget card of a WIDGET_REGISTRY entry drawn by a widget document.
- * Its menu holds the shared widget items.
+ * Its menu holds the shared widget items, below any menuItems. Without a
+ * document, the card shows a placeholder.
  *
  * @param {object} props
  * @param {Function} props.dispatch - Redux dispatch.
  * @param {object} props.entry - the WIDGET_REGISTRY entry, merged with its
  *   ExtensionWidget
  * @param {string} props.size - the widget's size
- * @param {string} props.src - URL of the widget's document
+ * @param {string} [props.displaySize] - the size the widget is drawn at, which
+ *   can be larger than its size
+ * @param {string} props.src - URL of the widget's document, or "" for none
  * @param {object} props.widgetEnabledMap - Map of widget id to whether it is
  *   currently active, used by the Move submenu.
+ * @param {React.ReactNode} [props.menuItems] - menu items drawn above the
+ *   shared ones; omit for none
+ * @param {Function} [props.onChangeSize] - called with the size the user
+ *   chooses, after it is stored
+ * @param {{current: Element|null}} [props.cardRef] - set to the moz-widget
  */
 export function MozWidgetCard({
   dispatch,
   entry,
   size,
+  displaySize = size,
   src,
   widgetEnabledMap,
+  menuItems,
+  onChangeSize,
+  cardRef,
 }) {
   const { impressionRef, recordUserAction } = useWidgetTelemetry({
     dispatch,
     widget: entry,
     widgetSize: size,
   });
+
+  const setCardRef = useCallback(
+    el => {
+      impressionRef(el);
+      if (cardRef) {
+        cardRef.current = el;
+      }
+    },
+    [impressionRef, cardRef]
+  );
 
   const handleChangeSize = useCallback(
     newSize => {
@@ -49,6 +71,7 @@ export function MozWidgetCard({
             data: { name: entry.sizePref, value: newSize },
           })
         );
+        onChangeSize?.(newSize);
         recordUserAction(USER_ACTION_TYPES.CHANGE_SIZE, {
           source: "context_menu",
           value: newSize,
@@ -56,7 +79,7 @@ export function MozWidgetCard({
         });
       });
     },
-    [dispatch, entry.sizePref, recordUserAction]
+    [dispatch, entry.sizePref, onChangeSize, recordUserAction]
   );
 
   const handleLearnMore = () => {
@@ -65,9 +88,9 @@ export function MozWidgetCard({
 
   return (
     <moz-widget
-      ref={impressionRef}
+      ref={setCardRef}
       widget-id={entry.id}
-      size={size}
+      size={displaySize}
       padded={true}
       src={src}
       title={entry.name}
@@ -77,8 +100,19 @@ export function MozWidgetCard({
         slot="header"
         title={entry.name}
         data-l10n-id={entry.l10nId}
-      />
+      >
+        {entry.icon && (
+          <img
+            slot="leading"
+            className="moz-widget-card-icon"
+            src={entry.icon}
+            alt=""
+          />
+        )}
+      </moz-widget-header>
+      {!src && <p data-l10n-id="newtab-widget-placeholder" />}
       <panel-list slot="menu" className="panel-list-no-icons">
+        {menuItems}
         <WidgetMenuFooter
           dispatch={dispatch}
           widgetId={entry.id}
@@ -88,7 +122,7 @@ export function MozWidgetCard({
           widgetSize={size}
           learnMoreL10nId="newtab-widget-section-menu-learn-more"
           onLearnMore={handleLearnMore}
-          showDivider={false}
+          showDivider={!!menuItems}
           sizeSubmenu={
             entry.validSizes.length > 1 ? (
               <SizeSubmenu

@@ -372,10 +372,10 @@ add_task(
       await ContentTaskUtils.waitForMutationCondition(
         chipContainer.shadowRoot,
         { childList: true, subtree: true },
-        () => chipContainer.shadowRoot.querySelector("ai-website-chip")
+        () => chipContainer.shadowRoot.querySelector("smartwindow-chip")
       );
       const websiteChip =
-        chipContainer.shadowRoot.querySelector("ai-website-chip");
+        chipContainer.shadowRoot.querySelector("smartwindow-chip");
       const removeButton = websiteChip.shadowRoot.querySelector(".chip-remove");
       removeButton.click();
 

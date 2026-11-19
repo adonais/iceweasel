@@ -155,7 +155,7 @@ bool GMPInfoFileParser::Init(nsIFile* aInfoFile) {
     ToLowerCase(key);
     key.Trim(" ");
 
-    auto value = MakeUnique<nsCString>(Substring(line, colon + 1));
+    auto value = std::make_unique<nsCString>(Substring(line, colon + 1));
     value->Trim(" ");
     mValues.InsertOrUpdate(
         key,

@@ -23,7 +23,7 @@ def setup_awsy_argument_parser():
     return parser
 
 
-from awsy import ITERATIONS, MAX_TABS, PER_TAB_PAUSE, SETTLE_WAIT_TIME
+from awsy import MAX_TABS
 
 
 def run_awsy(command_context, tests, binary=None, **kwargs):
@@ -63,7 +63,6 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
         "settleWaitTime",
         "maxTabs",
         "dmd",
-        "tp5",
     ):
         if arg in kwargs and kwargs[arg] is not None:
             runtime_testvars[arg] = kwargs[arg]
@@ -82,62 +81,24 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     runtime_testvars["bin"] = binary
     runtime_testvars["run_local"] = True
 
-    page_load_test_dir = os.path.join(web_root_dir, "page_load_test")
-    if not os.path.isdir(page_load_test_dir):
-        os.makedirs(page_load_test_dir)
-
     if not os.path.isdir(runtime_testvars["resultsDir"]):
         os.makedirs(runtime_testvars["resultsDir"])
 
     runtime_testvars_path = os.path.join(awsy_tests_dir, "runtime-testvars.json")
-    if kwargs["testvars"]:
-        kwargs["testvars"].append(runtime_testvars_path)
-    else:
-        kwargs["testvars"] = [runtime_testvars_path]
+    # If '--testvars' was not specified use the same defaults as CI.
+    if not kwargs["testvars"]:
+        testvars_file = "base-testvars.json" if kwargs["base"] else "tp6-testvars.json"
+        kwargs["testvars"] = [os.path.join(awsy_source_dir, "conf", testvars_file)]
+    kwargs["testvars"].append(runtime_testvars_path)
 
     runtime_testvars_file = open(runtime_testvars_path, "w")
     runtime_testvars_file.write(json.dumps(runtime_testvars, indent=2))
     runtime_testvars_file.close()
 
-    manifest_file = os.path.join(awsy_source_dir, "tp5n-pageset.manifest")
-    tooltool_args = {
-        "args": [
-            sys.executable,
-            os.path.join(command_context.topsrcdir, "mach"),
-            "artifact",
-            "toolchain",
-            "-v",
-            f"--tooltool-manifest={manifest_file}",
-            f"--cache-dir={os.path.join(command_context._mach_context.state_dir, 'tooltool-cache')}",
-        ]
-    }
-    command_context.run_process(cwd=page_load_test_dir, **tooltool_args)
-    tp5nzip = os.path.join(page_load_test_dir, "tp5n.zip")
-    tp5nmanifest = os.path.join(page_load_test_dir, "tp5n", "tp5n.manifest")
-    if not os.path.exists(tp5nmanifest):
-        unzip_args = {"args": ["unzip", "-q", "-o", tp5nzip, "-d", page_load_test_dir]}
-        try:
-            command_context.run_process(**unzip_args)
-        except Exception as exc:
-            troubleshoot = ""
-            if mozinfo.os == "win":
-                troubleshoot = (
-                    " Try using --web-root to specify a "
-                    "directory closer to the drive root."
-                )
-
-            command_context.log(
-                logging.ERROR,
-                "awsy",
-                {"directory": page_load_test_dir, "exception": exc},
-                "Failed to unzip `tp5n.zip` into "
-                "`{directory}` with `{exception}`." + troubleshoot,
-            )
-            raise exc
-
     # If '--preferences' was not specified supply our default set.
     if not kwargs["prefs_files"]:
-        kwargs["prefs_files"] = [os.path.join(awsy_source_dir, "conf", "prefs.json")]
+        prefs_file = "base-prefs.json" if kwargs["base"] else "tp6-prefs.json"
+        kwargs["prefs_files"] = [os.path.join(awsy_source_dir, "conf", prefs_file)]
 
     # Setup DMD env vars if necessary.
     if kwargs["dmd"]:
@@ -202,10 +163,8 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=str,
     dest="pageManifest",
-    help="Path to page manifest text file containing a list "
-    "of urls to test. The urls must be served from localhost. If not "
-    "specified, defaults to page_load_test/tp5n/tp5n.manifest under "
-    "the web root.",
+    help="Path to a YAML page manifest listing the urls to test. If not "
+    "specified, defaults to conf/tp6-pages.yml.",
 )
 @CommandArgument(
     "--results",
@@ -248,7 +207,8 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=int,
     dest="iterations",
-    help=f"Number of times to run through the test suite. Defaults to {ITERATIONS}.",
+    help="Number of times to run through the test suite. Defaults to the "
+    "value in conf/tp6-testvars.json (or conf/base-testvars.json with --base).",
 )
 @CommandArgument(
     "--per-tab-pause",
@@ -256,7 +216,8 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=int,
     dest="perTabPause",
-    help=f"Seconds to wait in between opening tabs. Defaults to {PER_TAB_PAUSE}.",
+    help="Seconds to wait in between opening tabs. Defaults to the value in "
+    "conf/tp6-testvars.json (or conf/base-testvars.json with --base).",
 )
 @CommandArgument(
     "--settle-wait-time",
@@ -264,7 +225,8 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=int,
     dest="settleWaitTime",
-    help=f"Seconds to wait for things to settled down. Defaults to {SETTLE_WAIT_TIME}.",
+    help="Seconds to wait for things to settled down. Defaults to the value "
+    "in conf/tp6-testvars.json (or conf/base-testvars.json with --base).",
 )
 @CommandArgument(
     "--dmd",
@@ -273,14 +235,6 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     dest="dmd",
     default=False,
     help="Enable DMD during testing. Requires a DMD-enabled build.",
-)
-@CommandArgument(
-    "--tp5",
-    group="AWSY",
-    action="store_true",
-    dest="tp5",
-    default=False,
-    help="Use the tp5 pageset during testing.",
 )
 @CommandArgument(
     "--base",
@@ -301,19 +255,13 @@ def run_awsy_test(command_context, tests, **kwargs):
     The AWSY specific arguments can be found in the Command
     Arguments for AWSY section below.
 
-    awsy-test will automatically download the tp5n.zip talos
-    pageset from tooltool and install it under
-    topobjdir/_tests/awsy/html. You can specify your own page set
-    by specifying --web-root and --page-manifest.
-
     The results of the test will be placed in the results
     directory specified by the --results argument.
 
     On Windows, you may experience problems due to path length
-    errors when extracting the tp5n.zip file containing the
-    test pages or when attempting to write checkpoints to the
-    results directory. In that case, you should specify both
-    the --web-root and --results arguments pointing to a location
+    errors when attempting to write checkpoints to the results
+    directory. In that case, you should specify both the
+    --web-root and --results arguments pointing to a location
     with a short path. For example:
 
     --web-root=c:\\\\tmp\\\\html --results=c:\\\\tmp\\\\results

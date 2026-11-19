@@ -1,0 +1,5 @@
+[DEFAULT]
+subsuite = "newtab-trainhop"
+
+["test_trainhop_langpacks.py"]
+requirements = "build/psutil_requirements.txt"

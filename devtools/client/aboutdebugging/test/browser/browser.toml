@@ -79,9 +79,6 @@ skip-if = [
 ["browser_aboutdebugging_addons_temporary_install_error.js"]
 
 ["browser_aboutdebugging_addons_temporary_install_path.js"]
-skip-if = [
-  "debug && standalone", # Bug 2026756
-]
 
 ["browser_aboutdebugging_addons_temporary_reload_error.js"]
 

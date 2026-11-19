@@ -60,7 +60,6 @@ $in-content-page-color-dark: var(--text-color);
 
 $in-content-page-background: var(--background-color-canvas);
 $newtab-background-secondary: var(--card-background-color);
-$newtab-background-card: color-mix(in srgb, var(--card-background-color) 80%, transparent);
 
 // Photon transitions from http://design.firefox.com/photon/motion/duration-and-easing.html
 $photon-easing: cubic-bezier(0.07, 0.95, 0, 1);

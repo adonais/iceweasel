@@ -150,7 +150,7 @@ void MediaKeySystemAccessManager::Request(
     const Sequence<MediaKeySystemConfiguration>& aConfigs) {
   MOZ_ASSERT(NS_IsMainThread());
   CheckDoesWindowSupportProtectedMedia(
-      MakeUnique<PendingRequest>(aPromise, aKeySystem, aConfigs));
+      std::make_unique<PendingRequest>(aPromise, aKeySystem, aConfigs));
 }
 
 RefPtr<MediaKeySystemAccessManager::MediaKeySystemAccessPromise>
@@ -158,7 +158,8 @@ MediaKeySystemAccessManager::Request(
     const nsAString& aKeySystem,
     const Sequence<MediaKeySystemConfiguration>& aConfigs) {
   MOZ_ASSERT(NS_IsMainThread());
-  auto request = MakeUnique<PendingRequestWithMozPromise>(aKeySystem, aConfigs);
+  auto request =
+      std::make_unique<PendingRequestWithMozPromise>(aKeySystem, aConfigs);
   RefPtr<MediaKeySystemAccessPromise> promise =
       request->mAccessPromise.Ensure(__func__);
   CheckDoesWindowSupportProtectedMedia(std::move(request));

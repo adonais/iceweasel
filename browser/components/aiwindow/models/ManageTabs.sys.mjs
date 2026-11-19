@@ -60,19 +60,29 @@ function findMatchingAIWindowTabs(validUrls) {
 
 /**
  * Returns true if the matched tabs require user confirmation before acting
- * (pinned/selected tabs, current tab, all tabs of the top AI window, or
- * untrusted input).
+ * (pinned/selected tabs, grouped tabs when grouping, current tab, all tabs of
+ * the top AI window, or untrusted input).
  *
  * @param {Array<object>} tabs - list of tabs to check
  * @param {object} topAIWin - the top active AI window
  * @param {object} securityProperties - The security properties of the conversation.
+ * @param {string} action - The tab action to take
  * @returns {boolean}
  */
-function shouldRequireUserConfirmation(tabs, topAIWin, securityProperties) {
+function shouldRequireUserConfirmation(
+  tabs,
+  topAIWin,
+  securityProperties,
+  action
+) {
   if (securityProperties?.untrustedInput) {
     return true;
   }
-  if (tabs.some(({ tab }) => tab.pinned === true)) {
+  if (
+    tabs.some(
+      ({ tab }) => tab.pinned === true || (action === GROUP_TABS && tab.group)
+    )
+  ) {
     return true;
   }
   if (tabs.some(({ tab, win }) => win.gBrowser.selectedTab === tab)) {
@@ -93,7 +103,7 @@ function shouldRequireUserConfirmation(tabs, topAIWin, securityProperties) {
 }
 
 /**
- * @param {{ validUrls: Set<string>, askConfirmation: boolean, baseTelemetryInfo: object, conversation: ChatConversation, toolCallId?: string }} state
+ * @param {{ validUrls: Set<string>, askConfirmation: boolean, includeChatTab: boolean, baseTelemetryInfo: object, conversation: ChatConversation, toolCallId?: string }} state
  * @param {{ action: string, verb: string, failureError: string, failureMessage: string,
  *           takeUIAction: (gathered: object) => Promise<object>,
  *           getToolResults: (result: object, gathered: object) => object }} toolHandler
@@ -108,18 +118,28 @@ async function runManageTabsFlow(state, toolHandler) {
     return gatheredResult.earlyResult;
   }
 
-  if (toolHandler.action === GROUP_TABS) {
-    offerChatTab(gatheredResult, state.conversation);
-  }
-
-  if (
+  let needsConfirmation =
     state.askConfirmation ||
     shouldRequireUserConfirmation(
       gatheredResult.matchedTabs,
       gatheredResult.topAIWin,
-      state.conversation.securityProperties
-    )
+      state.conversation.securityProperties,
+      toolHandler.action
+    );
+
+  if (
+    toolHandler.action === GROUP_TABS &&
+    (needsConfirmation || state.includeChatTab)
   ) {
+    offerChatTab(gatheredResult, state.conversation, state.includeChatTab);
+    // Moving a pinned or grouped chat tab needs confirmation
+    const chatTab = gatheredResult.tabs.find(tab => tab.isChatTab);
+    if (chatTab?.pinned || chatTab?.inGroup) {
+      needsConfirmation = true;
+    }
+  }
+
+  if (needsConfirmation) {
     const uiType = UI_TYPE_BY_ACTION[toolHandler.action];
     if (!uiType) {
       throw new Error(`No UI mapping for action: ${toolHandler.action}`);
@@ -194,7 +214,7 @@ async function runManageTabsFlow(state, toolHandler) {
 
 /**
  * Adds the chat tab to the tabs the confirmation card offers, so the user can
- * see that it is going into the group and can untick it.
+ * see whether it is going into the group and change the selection.
  *
  * It is deliberately kept out of matchedTabs, which decides whether a card is
  * shown at all, and out of the summary sent to the model, which is never told
@@ -202,10 +222,14 @@ async function runManageTabsFlow(state, toolHandler) {
  *
  * @param {object} gathered - Result of gatherTabs, updated in place
  * @param {ChatConversation} conversation - Conversation the request came from
+ * @param {boolean} checked - Whether the chat tab starts ticked
  */
-function offerChatTab(gathered, conversation) {
+function offerChatTab(gathered, conversation, checked) {
   const chatTab = lazy.ToolUI.findChatTab(conversation?.id);
-  if (!chatTab) {
+  if (
+    !chatTab ||
+    !gathered.matchedTabs.some(({ win }) => win === chatTab.documentGlobal)
+  ) {
     return;
   }
 
@@ -217,11 +241,13 @@ function offerChatTab(gathered, conversation) {
     title: sanitizeUntrustedContent(chatTab.label),
     userContextId: chatTab.userContextId,
     pinned: chatTab.pinned,
+    inGroup: !!chatTab.group,
     selected: chatTab.documentGlobal?.gBrowser?.selectedTab === chatTab,
     iconSrc: "",
-    checked: true,
+    checked,
     // Lets createTabGroup tell this row apart from the tabs the user asked
-    // for, so it can avoid making a group out of the chat tab alone.
+    // for, so it can avoid making a group out of the chat tab alone and
+    // keeps it out of the result sent to the model.
     isChatTab: true,
   });
 }
@@ -256,6 +282,7 @@ async function gatherTabs(validUrls, baseTelemetryInfo) {
       title: sanitizeUntrustedContent(tab.label),
       userContextId: tab.userContextId,
       pinned: tab.pinned,
+      inGroup: !!tab.group,
       selected: win.gBrowser.selectedTab === tab,
       iconSrc: url ? `page-icon:${url}` : "",
       checked: true,
@@ -394,13 +421,13 @@ function makeGroupTabsToolHandler(rawLabel) {
           .map(failedTab => failedTab.tab?.linkedPanel)
           .filter(Boolean)
       );
-      const groupedTabs = gatheredResult.tabs.map(
-        ({ url, title, linkedPanel }) => ({
+      const groupedTabs = gatheredResult.tabs
+        .filter(tab => !tab.isChatTab)
+        .map(({ url, title, linkedPanel }) => ({
           url,
           title,
           grouped: !failedPanels.has(linkedPanel),
-        })
-      );
+        }));
 
       const groupedCount = groupedTabs.filter(tab => tab.grouped).length;
       const failedCount = groupedTabs.length - groupedCount;
@@ -427,7 +454,7 @@ function makeGroupTabsToolHandler(rawLabel) {
 /**
  * Tab management orchestrator to handle all tab-related actions.
  *
- * @param {{ action: string, validUrls: Set<string>, ask_confirmation: boolean, label: string, baseTelemetryInfo: object, toolCallId?: string }} params
+ * @param {{ action: string, validUrls: Set<string>, ask_confirmation: boolean, include_chat_tab?: boolean, label: string, baseTelemetryInfo: object, toolCallId?: string }} params
  * @param {ChatConversation} conversation
  * @returns {Promise<object>}
  */
@@ -436,6 +463,7 @@ export async function manageTabsAction(
     action,
     validUrls,
     ask_confirmation,
+    include_chat_tab = false,
     label = "",
     baseTelemetryInfo,
     toolCallId,
@@ -457,6 +485,7 @@ export async function manageTabsAction(
     {
       validUrls,
       askConfirmation: ask_confirmation,
+      includeChatTab: include_chat_tab,
       baseTelemetryInfo,
       conversation,
       toolCallId,

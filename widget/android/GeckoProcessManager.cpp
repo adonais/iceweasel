@@ -5,8 +5,6 @@
 #include "GeckoProcessManager.h"
 
 #include "mozilla/Services.h"
-#include "mozilla/java/GeckoAppShellWrappers.h"
-#include "nsINetworkLinkService.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -49,15 +47,6 @@ NS_IMETHODIMP GeckoProcessManager::ConnectionManager::Observe(
     return NS_OK;
   }
 
-  if (!strcmp(NS_NETWORK_LINK_TOPIC, aTopic)) {
-    const nsDependentString state(aData);
-    // state can be up, down, or unknown. For the purposes of socket process
-    // prioritization, we treat unknown as being up.
-    const bool isUp = !state.EqualsLiteral(NS_NETWORK_LINK_DATA_DOWN);
-    connMgr->OnNetworkStateChange(isUp);
-    return NS_OK;
-  }
-
   return NS_OK;
 }
 
@@ -71,20 +60,6 @@ NS_IMETHODIMP GeckoProcessManager::ConnectionManager::Observe(
   nsCOMPtr<nsIObserverService> obsServ(services::GetObserverService());
   obsServ->AddObserver(native, "application-background", false);
   obsServ->AddObserver(native, "application-foreground", false);
-}
-
-void GeckoProcessManager::ConnectionManager::ObserveNetworkNotifications() {
-  nsCOMPtr<nsIObserverService> obsServ(services::GetObserverService());
-  obsServ->AddObserver(this, NS_NETWORK_LINK_TOPIC, false);
-
-  const bool isUp = java::GeckoAppShell::IsNetworkLinkUp();
-
-  java::GeckoProcessManager::ConnectionManager::LocalRef connMgr(mJavaConnMgr);
-  if (!connMgr) {
-    return;
-  }
-
-  connMgr->OnNetworkStateChange(isUp);
 }
 
 }  // namespace mozilla

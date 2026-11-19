@@ -5470,10 +5470,6 @@ var gCSSProperties = {
       "counters(bar, '.', none)",
       "counters(foo)",
       'counter(foo, ".")',
-      'attr("title")',
-      "attr('title')",
-      "attr(2)",
-      "attr(-2)",
       "counter(2)",
       "counters(-2, '.')",
       "-moz-alt-content",
@@ -14513,6 +14509,22 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-autospace.enabled")) {
   });
 }
 
+if (IsCSSPropertyPrefEnabled("layout.css.text-autospace-size.enabled")) {
+  Object.assign(gCSSProperties, {
+    "text-autospace-size": {
+      domProp: "textAutospaceSize",
+      inherited: true,
+      type: CSS_TYPE_LONGHAND,
+      applies_to_first_letter: true,
+      applies_to_first_line: true,
+      applies_to_placeholder: true,
+      initial_values: ["0.125"],
+      other_values: ["0", "0.5", "-0.25", "calc(1 / 3)"],
+      invalid_values: ["normal", "auto", "10%", "2px", "calc(1em / 4)"],
+    },
+  });
+}
+
 if (IsCSSPropertyPrefEnabled("layout.css.prefixes.transforms")) {
   Object.assign(gCSSProperties, {
     "-moz-transform": {
@@ -14622,6 +14634,39 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.transitions")) {
       subproperties: ["transition-timing-function"],
     },
   });
+}
+
+if (IsCSSPropertyPrefEnabled("layout.css.margin-trim.enabled")) {
+  gCSSProperties["margin-trim"] = {
+    domProp: "marginTrim",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["none"],
+    other_values: [
+      "block",
+      "block-start",
+      "block-end",
+      "block-start block-end",
+      "block-end block-start",
+    ],
+    invalid_values: [
+      "block block",
+      "block block-start block-end",
+      "block-start block-end block",
+      "block-start block-start",
+      "block 10px",
+      "auto",
+      "left",
+      "none block",
+      "none block-start",
+      "inline",
+      "inline-start",
+      "inline-end",
+      "block inline",
+      "inline-start inline-end",
+      "block-start inline-start",
+    ],
+  };
 }
 
 if (IsCSSPropertyPrefEnabled("layout.css.field-sizing.enabled")) {

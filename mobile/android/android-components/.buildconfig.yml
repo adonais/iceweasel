@@ -738,6 +738,7 @@ projects:
     upstream_dependencies:
     - components:browser-engine-gecko
     - components:browser-state
+    - components:compose-base
     - components:concept-awesomebar
     - components:concept-base
     - components:concept-engine
@@ -2107,6 +2108,16 @@ projects:
     - components:support-base
     - components:support-test
     - components:tooling-fetch-tests
+    - components:tooling-lint
+  components:lib-installation-blockstore:
+    description: A library for checking reinstalls
+    path: components/lib/installation-blockstore
+    publish: true
+    upstream_dependencies:
+    - components:concept-base
+    - components:concept-fetch
+    - components:support-base
+    - components:support-test
     - components:tooling-lint
   components:lib-integrity-googleplay:
     description: A library for verifying the integrity of an installation using Google

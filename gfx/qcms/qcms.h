@@ -188,6 +188,8 @@ bool qcms_profile_is_sRGB(qcms_profile *profile);
 bool qcms_profile_get_primaries(const qcms_profile *profile,
                                 qcms_CIE_xyYTRIPLE *primaries,
                                 qcms_CIE_xyY *white_point);
+const char* qcms_profile_get_description(const qcms_profile *profile,
+                                         size_t *len);
 
 void qcms_profile_precache_output_transform(qcms_profile *profile);
 

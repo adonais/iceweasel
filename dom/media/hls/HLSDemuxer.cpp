@@ -145,11 +145,11 @@ void HLSDemuxer::OnInitialized(bool aHasAudio, bool aHasVideo) {
 
   if (aHasAudio) {
     mAudioDemuxer = new HLSTrackDemuxer(this, TrackInfo::TrackType::kAudioTrack,
-                                        MakeUnique<AudioInfo>());
+                                        std::make_unique<AudioInfo>());
   }
   if (aHasVideo) {
     mVideoDemuxer = new HLSTrackDemuxer(this, TrackInfo::TrackType::kVideoTrack,
-                                        MakeUnique<VideoInfo>());
+                                        std::make_unique<VideoInfo>());
   }
 
   mInitPromise.ResolveIfExists(NS_OK, __func__);

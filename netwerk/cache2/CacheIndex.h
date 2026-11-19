@@ -129,7 +129,7 @@ class CacheIndexRecordWrapper final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheIndexRecordWrapper)
 
-  CacheIndexRecordWrapper() : mRec(MakeUnique<CacheIndexRecord>()) {}
+  CacheIndexRecordWrapper() : mRec(std::make_unique<CacheIndexRecord>()) {}
   CacheIndexRecord* Get() { return mRec.get(); }
 
  private:

@@ -27,10 +27,10 @@ SdpImpl::SdpImpl(const SdpImpl& aOrig,
 
 UniquePtr<Sdp> SdpImpl::Clone() const {
   UniquePtr<SdpImpl> sdp(new SdpImpl(
-      *this, MakeUnique<SdpAttributeListImpl>(*mAttributeList, nullptr)));
+      *this, std::make_unique<SdpAttributeListImpl>(*mAttributeList, nullptr)));
   for (const auto& msection : mMediaSections) {
     sdp->mMediaSections.emplace_back(new SdpMediaSectionImpl(
-        *msection, MakeUnique<SdpAttributeListImpl>(
+        *msection, std::make_unique<SdpAttributeListImpl>(
                        *msection->mAttributeList, sdp->mAttributeList.get())));
   }
   return sdp;
@@ -38,7 +38,7 @@ UniquePtr<Sdp> SdpImpl::Clone() const {
 
 UniquePtr<SdpMediaSectionImpl> SdpImpl::CreateMediaSection(const size_t level) {
   return UniquePtr<SdpMediaSectionImpl>(new SdpMediaSectionImpl(
-      level, MakeUnique<SdpAttributeListImpl>(mAttributeList.get())));
+      level, std::make_unique<SdpAttributeListImpl>(mAttributeList.get())));
 }
 
 const SdpOrigin& SdpImpl::GetOrigin() const { return mOrigin; }
@@ -82,9 +82,9 @@ SdpMediaSection& SdpImpl::AddMediaSection(
   media->mPort = port;
   media->mPortCount = 0;
   media->mProtocol = protocol;
-  media->mConnection = MakeUnique<SdpConnection>(addrType, addr);
+  media->mConnection = std::make_unique<SdpConnection>(addrType, addr);
   media->GetAttributeList().SetAttribute(
-      MakeUnique<SdpDirectionAttribute>(dir));
+      std::make_unique<SdpDirectionAttribute>(dir));
   mMediaSections.emplace_back(std::move(media));
   return *mMediaSections.back();
 }

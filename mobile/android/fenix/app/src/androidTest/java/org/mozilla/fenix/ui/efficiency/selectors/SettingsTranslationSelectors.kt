@@ -27,6 +27,13 @@ object SettingsTranslationSelectors : SelectorContainer {
             readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
+    val OFFER_TO_TRANSLATE_WHEN_POSSIBLE_TOGGLE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_MERGED,
+            value = getStringResource(R.string.translation_settings_offer_to_translate),
+            description = "toggle offer to translate when possible",
+        )
+
     /**
      * A row in the Download languages list, matched on a content-description substring because the row's description
      * also carries the download size and state. Pure by design (gotcha B4): it only substitutes the caller's language

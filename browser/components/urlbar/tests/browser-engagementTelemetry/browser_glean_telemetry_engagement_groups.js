@@ -241,6 +241,20 @@ add_task(async function suggest() {
   });
 });
 
+add_task(async function temporal() {
+  await doTemporalTest({
+    trigger: () => doEnter(),
+    assert: () =>
+      assertEngagementTelemetry([
+        {
+          groups: "temporal",
+          results: "rust_temporal",
+          n_results: 1,
+        },
+      ]),
+  });
+});
+
 add_task(async function about_page() {
   await doAboutPageTest({
     trigger: () => doEnter(),
@@ -361,6 +375,7 @@ add_task(async function history_semantic() {
         {
           groups: "heuristic,general",
           results: "search_engine,history_semantic",
+          semantic_distances: ",25",
           n_results: 2,
           selected_result: "history_semantic",
         },

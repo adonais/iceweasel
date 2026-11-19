@@ -26,7 +26,6 @@
 #include "TelemetryCommon.h"
 #include "TelemetryScalarData.h"
 
-using mozilla::MakeUnique;
 using mozilla::Nothing;
 using mozilla::Preferences;
 using mozilla::Some;

@@ -116,10 +116,35 @@ panel:where([type="arrow"]) {
 
 .animatable-menupopup,
 panel[type="arrow"] {
-  transition-timing-function: var(--animation-easing-function), ease-out;
+  /* The corner the panel hangs from, which it scales out of. transform-origin
+   * takes no logical keywords, so the corner is kept as percentages that the
+   * RTL and flipped rules below swap. */
+  --panel-animation-origin-x: 100%;
+  --panel-animation-origin-y: 0%;
+  /* Which way the panel drops in from: towards its anchor, away from it when
+   * flipped, and nowhere on the platforms that only scale. */
+  --panel-animation-direction-y: 1;
+  --panel-animation-offset: calc(var(--panel-motion-translate-y) * var(--panel-animation-direction-y));
+
+  transform-origin: var(--panel-animation-origin-x) var(--panel-animation-origin-y);
 
   &:not([animate="false"]) {
-    transition-duration: 0.18s;
+    transition:
+      transform var(--panel-motion-duration-enter) var(--panel-motion-easing),
+      opacity var(--panel-motion-duration-fade) var(--panel-motion-easing),
+      -moz-window-transform var(--panel-motion-duration-enter) var(--panel-motion-easing),
+      -moz-window-opacity var(--panel-motion-duration-fade) var(--panel-motion-easing);
+  }
+
+  &:dir(rtl) {
+    --panel-animation-origin-x: 0%;
+  }
+
+  /* Flipped to open above its anchor, so it rises into place rather than
+   * dropping into it. */
+  &:where([side="bottom"]) {
+    --panel-animation-origin-y: 100%;
+    --panel-animation-direction-y: -1;
   }
 
   /* On Windows / GTK, prefers-reduced-motion is derived from a more general
@@ -127,16 +152,12 @@ panel[type="arrow"] {
    * respectively). So we disable the opacity transition there too even though
    * it's not quite a motion effect. */
   @media (not (-moz-platform: macos)) and (not (prefers-reduced-motion)) {
-    transition-property: transform, opacity;
     will-change: transform, opacity;
     opacity: 0;
-    transform: translateY(-70px);
+    transform: translateY(var(--panel-animation-offset)) scale(var(--panel-motion-scale));
 
-    &:where([side="bottom"]) {
-      transform: translateY(70px);
-    }
     /* On some platforms we can't animate the panel position easily, see
-    * bug 1385079, bug 1800368, bug 1800442 */
+     * bug 1385079, bug 1800368, bug 1800442 */
     @media not (-moz-panel-animations) {
       transform: none;
     }
@@ -151,16 +172,15 @@ panel[type="arrow"] {
    * other platforms.
    */
   @media (-moz-platform: macos) {
-    transition-property:
-      -moz-window-transform,
-      -moz-window-opacity;
-    @media not (prefers-reduced-motion) {
-      -moz-window-transform: translateY(-70px);
+    /* The panel only scales out of its corner here, with no drop. Zeroing the
+     * direction rather than the transform covers the flipped [side="bottom"]
+     * case too. */
+    --panel-animation-direction-y: 0;
 
-      &:where([side="bottom"]) {
-        -moz-window-transform: translateY(70px);
-      }
+    @media not (prefers-reduced-motion) {
+      -moz-window-transform: translateY(var(--panel-animation-offset)) scale(var(--panel-motion-scale));
     }
+
     /* Only do the fade-in animation on pre-Big Sur to avoid missing shadows on
      * Big Sur+, see bug 1672091. */
     @media not (-moz-mac-big-sur-theme) {
@@ -173,8 +193,11 @@ panel[type="arrow"] {
   }
 
   &[animate="cancel"] {
-    -moz-window-transform: none;
-    transform: none;
+    transition:
+      transform var(--panel-motion-duration-exit) var(--panel-motion-easing),
+      opacity var(--panel-motion-duration-fade) var(--panel-motion-easing),
+      -moz-window-transform var(--panel-motion-duration-exit) var(--panel-motion-easing),
+      -moz-window-opacity var(--panel-motion-duration-fade) var(--panel-motion-easing);
   }
 
   &:is([animate="false"], [animate="open"]) {
@@ -182,7 +205,6 @@ panel[type="arrow"] {
     transform: none;
     -moz-window-opacity: 1;
     -moz-window-transform: none;
-    transition-timing-function: var(--animation-easing-function), ease-in-out;
   }
 
   &[animating] {

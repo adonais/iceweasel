@@ -436,7 +436,7 @@ function getPropertiesFromAstExpression(ast) {
 
 function wrapMatchesInQuotes(matches, quote = `"`) {
   return new Set(
-    [...matches].map(p => {
+    matches.values().map(p => {
       // Escape as a double-quoted string literal
       p = JSON.stringify(p);
 

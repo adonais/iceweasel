@@ -12,7 +12,6 @@
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
 #include "nsDocShell.h"
-#include "nsIReflowObserver.h"
 #include "nsIScrollObserver.h"
 #include "nsPoint.h"
 #include "nsWeakReference.h"
@@ -54,8 +53,7 @@ class WidgetTouchEvent;
 // HTML: https://firefox-source-docs.mozilla.org/layout/AccessibleCaret.html
 // Source rst: layout/docs/AccessibleCaret.rst
 //
-class AccessibleCaretEventHub : public nsIReflowObserver,
-                                public nsIScrollObserver,
+class AccessibleCaretEventHub : public nsIScrollObserver,
                                 public nsSupportsWeakReference {
  public:
   explicit AccessibleCaretEventHub(PresShell* aPresShell);
@@ -71,20 +69,12 @@ class AccessibleCaretEventHub : public nsIReflowObserver,
 
   NS_DECL_ISUPPORTS
 
-  // nsIReflowObserver
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD Reflow(DOMHighResTimeStamp start, DOMHighResTimeStamp end) final;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD ReflowInterruptible(DOMHighResTimeStamp start,
-                                 DOMHighResTimeStamp end) final;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DidReflow();
 
   // Override nsIScrollObserver methods.
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void ScrollPositionChanged() override;
-  MOZ_CAN_RUN_SCRIPT
-  virtual void AsyncPanZoomStarted() override;
-  MOZ_CAN_RUN_SCRIPT
-  virtual void AsyncPanZoomStopped() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ScrollPositionChanged() override;
+  MOZ_CAN_RUN_SCRIPT void AsyncPanZoomStarted() override;
+  MOZ_CAN_RUN_SCRIPT void AsyncPanZoomStopped() override;
 
   // Base state
   class State;

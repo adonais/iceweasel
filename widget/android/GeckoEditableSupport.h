@@ -156,7 +156,7 @@ class GeckoEditableSupport final
         nsAppShell::LambdaEvent<Functor>::Run();
       }
     };
-    nsAppShell::PostEvent(mozilla::MakeUnique<IMEEvent>(std::move(aCall)));
+    nsAppShell::PostEvent(std::make_unique<IMEEvent>(std::move(aCall)));
   }
 
   static void SetOnBrowserChild(dom::BrowserChild* aBrowserChild);

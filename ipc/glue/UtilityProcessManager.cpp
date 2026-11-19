@@ -136,7 +136,7 @@ NS_IMETHODIMP UtilityProcessManager::ShutdownBlocker::GetName(
 }
 
 NS_IMETHODIMP UtilityProcessManager::ShutdownBlocker::BlockShutdown(
-    nsIAsyncShutdownClient* aBarrierClient) {
+    nsIAsyncShutdownClient* /*aBarrierClient*/) {
   if (mManager) {
     mManager->OnXPCOMWillShutdown();
   }
@@ -162,7 +162,7 @@ UtilityProcessManager::Observer::Observer(UtilityProcessManager* aManager)
     : mManager(aManager) {}
 
 NS_IMETHODIMP
-UtilityProcessManager::Observer::Observe(nsISupports* aSubject,
+UtilityProcessManager::Observer::Observe(nsISupports* /*aSubject*/,
                                          const char* aTopic,
                                          const char16_t* aData) {
   if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {

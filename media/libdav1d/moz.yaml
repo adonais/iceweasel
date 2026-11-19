@@ -20,11 +20,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: 99f3354ed0b9b4bf3c7c9347318dbcc522c94af5 (2026-10-01T23:15:13.000+00:00).
+  release: e5fd231fe9955a342c60600edb7e0b8777786a6a (2026-10-26T20:24:52.000+00:00).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: 99f3354ed0b9b4bf3c7c9347318dbcc522c94af5
+  revision: e5fd231fe9955a342c60600edb7e0b8777786a6a
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -57,6 +57,9 @@ vendoring:
 
   generated:
     - '{yaml_dir}/vcs_version.h'
+
+  patches:
+    - reset_n_ts_on_frame_init_failure.patch
 
   update-actions:
     - action: copy-file

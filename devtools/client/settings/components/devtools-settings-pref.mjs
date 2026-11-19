@@ -7,6 +7,7 @@
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { MozCheckbox } from "chrome://global/content/elements/moz-checkbox.mjs";
+import { MozSelect } from "chrome://global/content/elements/moz-select.mjs";
 
 import { SettingChangedEvent } from "../events.mjs";
 
@@ -35,12 +36,18 @@ export class DevToolsSettingsPref extends MozLitElement {
       return;
     }
     try {
-      const checkbox = this.querySelector("moz-checkbox");
-      if (checkbox === null) {
+      const control = this.querySelector("moz-checkbox, moz-select");
+      if (control instanceof MozCheckbox) {
+        control.checked = Services.prefs.getBoolPref(this.pref);
+      } else if (control instanceof MozSelect) {
+        if (this.#isIntPref()) {
+          control.value = String(Services.prefs.getIntPref(this.pref));
+        } else {
+          control.value = Services.prefs.getStringPref(this.pref);
+        }
+      } else {
         return;
       }
-      const checked = Services.prefs.getBoolPref(this.pref);
-      checkbox.checked = checked;
       this._errorMessage = "";
     } catch (error) {
       this._errorMessage = `Unable to render setting for "${this.pref}".`;
@@ -49,24 +56,35 @@ export class DevToolsSettingsPref extends MozLitElement {
   }
 
   /** @param {Event} event */
-  #checkboxChange = event => {
-    const checkbox = event.target;
-    if (!(checkbox instanceof MozCheckbox)) {
+  #controlChange = event => {
+    const control = event.target;
+    if (control instanceof MozCheckbox) {
+      Services.prefs.setBoolPref(this.pref, control.checked);
+    } else if (control instanceof MozSelect) {
+      if (this.#isIntPref()) {
+        Services.prefs.setIntPref(this.pref, Number(control.value));
+      } else {
+        Services.prefs.setStringPref(this.pref, control.value);
+      }
+    } else {
       return;
     }
-    Services.prefs.setBoolPref(this.pref, checkbox.checked);
     if (this.changeAction) {
       this.dispatchEvent(
-        new SettingChangedEvent({ action: this.changeAction })
+        new SettingChangedEvent({ action: this.changeAction, pref: this.pref })
       );
     }
   };
+
+  #isIntPref() {
+    return Services.prefs.getPrefType(this.pref) === Services.prefs.PREF_INT;
+  }
 
   render() {
     if (this._errorMessage) {
       return html`<p role="alert">${this._errorMessage}</p>`;
     }
-    return html`<slot @change=${this.#checkboxChange}></slot>`;
+    return html`<slot @change=${this.#controlChange}></slot>`;
   }
 }
 

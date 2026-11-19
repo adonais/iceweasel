@@ -152,6 +152,13 @@ support-files = [
 https_first_disabled = true
 support-files = ["blank.html"]
 
+["browser_sized_icon_not_tab_icon.js"]
+support-files = [
+  "file_sized_ico_and_svg.html",
+  "file_multiple.ico",
+  "file_favicon.svg",
+]
+
 ["browser_subframe_favicons_not_used.js"]
 support-files = [
   "file_bug970276_popup1.html",

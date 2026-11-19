@@ -49,19 +49,11 @@
     --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-100));
   }
 
-  @layer tokens-prefers-contrast {
-    @media (prefers-contrast) {
-      /** button **/
-      --button-text-color-ghost-disabled: var(--button-text-color-disabled);
-    }
-  }
-
   @layer tokens-forced-colors {
     @media (forced-colors) {
       /** button **/
       --button-background-color-ghost: ButtonFace;
       --button-background-color-ghost-disabled: var(--button-background-color-disabled);
-      --button-text-color-ghost-disabled: var(--button-text-color-disabled);
     }
   }
 
@@ -93,7 +85,6 @@
       @media (forced-colors) {
         /** button **/
         --button-text-color-ghost: ButtonText;
-        --button-text-color-ghost-disabled: GrayText;
       }
     }
   }

@@ -137,6 +137,7 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   mPrivateBrowsing = NS_UsePrivateBrowsing(aChannel);
 
   mIsNonRecommendedAddon = IsNonRecommendedAddonFromLoadInfo(loadInfo);
+  mAddonMayLoad = net::UrlClassifierCommon::AddonMayLoad(aChannel, uri);
 
   // Unwrap nested URI schemes (jar:, view-source:, ...) before looking
   // at the host, mirroring AsyncUrlChannelClassifier::FeatureData::

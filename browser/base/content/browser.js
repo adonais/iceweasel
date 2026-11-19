@@ -2465,7 +2465,11 @@ var XULBrowserWindow = {
       }
     }
 
-    if (TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser)) {
+    if (
+      TranslationsParent.isFullPageTranslationsRestrictedForPage(
+        gBrowser.selectedBrowser
+      )
+    ) {
       this._menuItemForTranslations.setAttribute("disabled", "true");
     } else {
       this._menuItemForTranslations.removeAttribute("disabled");
@@ -4523,6 +4527,8 @@ class TabDialogBox {
    * (among other protection mechanisms, that are not handled here, see the bug for reference).
    * @param {nsIWebProgress} [aOptions.webProgress] - If passed, use to detect when a site is being
    * navigated to in order to close the dialog. By default, this.browser.webProgress is used.
+   * @param {Event} [aOptions.triggeringEvent] - The event that made the user
+   * open the dialog, see SubDialog.open().
    * @returns {object} [result] Returns an object { closedPromise, dialog }.
    * @returns {Promise} [result.closedPromise] Resolves once the dialog has been closed.
    * @returns {SubDialog} [result.dialog] A reference to the opened SubDialog.
@@ -4538,6 +4544,7 @@ class TabDialogBox {
       allowFocusCheckbox = false,
       hideContent = false,
       webProgress = undefined,
+      triggeringEvent,
     } = {},
     ...aParams
   ) {
@@ -4581,6 +4588,7 @@ class TabDialogBox {
         closingCallback,
         closedCallback: resolveClosed,
         hideContent,
+        triggeringEvent,
       },
       ...aParams
     );
@@ -4781,7 +4789,13 @@ var gDialogBox = {
     this._nextOpenJumpsQueue = true;
   },
 
-  async open(uri, args) {
+  /**
+   * @param {string} uri - URI of the dialog document.
+   * @param {object} args - Arguments for the dialog.
+   * @param {Event} [triggeringEvent] - The event that made the user open the
+   * dialog, see SubDialog.open().
+   */
+  async open(uri, args, triggeringEvent) {
     // If we need to queue, some callers indicate they should go first.
     const queueMethod = this._nextOpenJumpsQueue ? "unshift" : "push";
     this._nextOpenJumpsQueue = false;
@@ -4790,7 +4804,13 @@ var gDialogBox = {
     // queue the next one to be opened later.
     if (this.isOpen) {
       return new Promise((resolve, reject) => {
-        this._queued[queueMethod]({ resolve, reject, uri, args });
+        this._queued[queueMethod]({
+          resolve,
+          reject,
+          uri,
+          args,
+          triggeringEvent,
+        });
       });
     }
 
@@ -4819,7 +4839,7 @@ var gDialogBox = {
     }
 
     try {
-      await this._open(uri, args);
+      await this._open(uri, args, triggeringEvent);
     } catch (ex) {
       console.error(ex);
     } finally {
@@ -4850,8 +4870,9 @@ var gDialogBox = {
 
   _openNextDialog() {
     if (!this.isOpen) {
-      let { resolve, reject, uri, args } = this._queued.shift();
-      this.open(uri, args).then(resolve, reject);
+      let { resolve, reject, uri, args, triggeringEvent } =
+        this._queued.shift();
+      this.open(uri, args, triggeringEvent).then(resolve, reject);
     }
   },
 
@@ -4867,7 +4888,7 @@ var gDialogBox = {
     }
   },
 
-  _open(uri, args) {
+  _open(uri, args, triggeringEvent) {
     // Get this offset before we touch style below, as touching style seems
     // to reset the cached layout bounds.
     let offset = window.windowUtils.getBoundsWithoutFlushing(
@@ -4914,6 +4935,7 @@ var gDialogBox = {
         closedCallback: () => {
           this._closedCallback();
         },
+        triggeringEvent,
       },
       args
     );

@@ -31,6 +31,9 @@
 #include "gmp-video-encode.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/FOGIPC.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/ProcInfoChild.h"
+#endif
 #include "mozilla/TextUtils.h"
 #include "mozilla/glean/GleanTestsTestMetrics.h"
 #include "mozilla/ipc/CrashReporterClient.h"
@@ -531,7 +534,7 @@ mozilla::ipc::IPCResult GMPChild::RecvStartPlugin(const nsString& aAdapter) {
   auto platformAPI = new GMPPlatformAPI();
   InitPlatformAPI(*platformAPI, this);
 
-  mGMPLoader = MakeUnique<GMPLoader>();
+  mGMPLoader = std::make_unique<GMPLoader>();
 #if defined(MOZ_SANDBOX) && !defined(XP_MACOSX)
   if (!mGMPLoader->CanSandbox()) {
     GMP_CHILD_LOG_DEBUG("{} Can't sandbox GMP, failing", __FUNCTION__);
@@ -708,6 +711,14 @@ mozilla::ipc::IPCResult GMPChild::RecvInitProfiler(
       mozilla::ChildProfilerController::Create(std::move(aEndpoint));
   return IPC_OK();
 }
+
+#ifdef MOZ_WIDGET_ANDROID
+mozilla::ipc::IPCResult GMPChild::RecvInitProcInfo(
+    Endpoint<PProcInfoChild>&& aEndpoint) {
+  ProcInfoChild::Create(std::move(aEndpoint));
+  return IPC_OK();
+}
+#endif
 
 mozilla::ipc::IPCResult GMPChild::RecvPreferenceUpdate(const Pref& aPref) {
   Preferences::SetPreference(aPref);

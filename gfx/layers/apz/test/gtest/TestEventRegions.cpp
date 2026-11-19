@@ -26,7 +26,8 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
     SetScrollHandoff(layers[1], root);
     SetScrollHandoff(layers[2], root);
 
-    registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+    registration =
+        std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
     rootApzc = ApzcOf(root);
   }
@@ -40,7 +41,8 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
     CreateScrollData(treeShape, layerVisibleRects);
     SetScrollableFrameMetrics(root, START_SCROLL_ID);
 
-    registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+    registration =
+        std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
     rootApzc = ApzcOf(root);
   }
@@ -74,7 +76,8 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
                               CSSRect(0, 0, 100, 100));
     SetScrollHandoff(layers[3], layers[2]);
 
-    registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+    registration =
+        std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
   }
 };

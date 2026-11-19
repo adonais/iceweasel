@@ -68,6 +68,7 @@
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/UnbindContext.h"
 #include "mozilla/dom/XULBroadcastManager.h"
 #include "mozilla/dom/XULCommandEvent.h"
 #include "mozilla/dom/XULElementBinding.h"
@@ -349,7 +350,7 @@ nsXULElement::XULFocusability nsXULElement::GetXULFocusability(
     // A disabled element cannot be focused and is not part of the tab order
     bool disabled;
     xulControl->GetDisabled(&disabled);
-    if (disabled) {
+    if (disabled && !(aFlags & IsFocusableFlags::IgnoreDisabled)) {
       return XULFocusability::NeverFocusable();
     }
     result.mDefaultFocusable = true;
@@ -530,6 +531,15 @@ static bool NeedTooltipSupport(const nsXULElement& aXULElement) {
          aXULElement.GetBoolAttr(nsGkAtoms::tooltiptext);
 }
 
+// Makes the next key event rebuild the handlers of aKeyset, if it is a keyset,
+// after one of its key elements was added, removed or changed.
+static void InvalidateKeysetHandlers(nsINode* aKeyset) {
+  Element* keyset = Element::FromNodeOrNull(aKeyset);
+  if (keyset && keyset->IsXULElement(nsGkAtoms::keyset)) {
+    XULKeySetGlobalKeyListener::InvalidateHandlers(keyset);
+  }
+}
+
 nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   nsresult rv = nsStyledElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -564,6 +574,8 @@ nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   if (NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
     // Create our XUL key listener and hook it up.
     XULKeySetGlobalKeyListener::AttachKeyHandler(this);
+  } else if (IsXULElement(nsGkAtoms::key)) {
+    InvalidateKeysetHandlers(GetParentNode());
   }
 
   RegUnRegAccessKey(true);
@@ -585,6 +597,9 @@ nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 void nsXULElement::UnbindFromTree(UnbindContext& aContext) {
   if (NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
     XULKeySetGlobalKeyListener::DetachKeyHandler(this);
+  } else if (IsXULElement(nsGkAtoms::key) && aContext.IsUnbindRoot(this) &&
+             aContext.WasInComposedDoc()) {
+    InvalidateKeysetHandlers(aContext.GetOriginalSubtreeParent());
   }
 
   RegUnRegAccessKey(false);
@@ -725,6 +740,14 @@ void nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       }
       XULBroadcastManager* broadcastManager = doc->GetXULBroadcastManager();
       broadcastManager->AddListener(this);
+    }
+
+    if (IsXULElement(nsGkAtoms::key) &&
+        (aName == nsGkAtoms::key || aName == nsGkAtoms::keycode ||
+         aName == nsGkAtoms::charcode || aName == nsGkAtoms::modifiers ||
+         aName == nsGkAtoms::reserved || aName == nsGkAtoms::event) &&
+        IsInComposedDoc()) {
+      InvalidateKeysetHandlers(GetParentNode());
     }
 
     // XXX need to check if they're changing an event handler: if

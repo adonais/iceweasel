@@ -11,6 +11,14 @@ const { FxAccounts } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccounts.sys.mjs"
 );
 
+const { FxaAuthProviderImpl } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/auth/FxaAuthProviderImpl.sys.mjs"
+);
+
+const { GuestAuthProviderImpl } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/auth/GuestAuthProviderImpl.sys.mjs"
+);
+
 /**
  * Sets up the sign-in flow so AuthProvider.runSignInFlow can be driven to any
  * of its outcomes. Resets Glean first so each task reads its own events.
@@ -112,6 +120,42 @@ add_task(async function test_signin_flow_started_reason() {
   }
 });
 
+add_task(async function test_signin_flow_provider() {
+  for (const provider of ["fxa", "guest"]) {
+    const { sb } = stubSignInFlow();
+    if (provider === "guest") {
+      sb.stub(GuestAuthProviderImpl.prototype, "signIn").resolves(true);
+      AuthProvider.setImpl(new GuestAuthProviderImpl());
+    }
+
+    try {
+      await AuthProvider.runSignInFlow(gBrowser.selectedBrowser, {
+        reason: "signed_out",
+      });
+
+      Assert.equal(
+        singleEventExtra(
+          Glean.smartWindow.signinFlowStarted,
+          "signin_flow_started"
+        ).auth_provider,
+        provider,
+        `signin_flow_started provider is ${provider}`
+      );
+      Assert.equal(
+        singleEventExtra(
+          Glean.smartWindow.signinFlowCompleted,
+          "signin_flow_completed"
+        ).auth_provider,
+        provider,
+        `signin_flow_completed provider is ${provider}`
+      );
+    } finally {
+      sb.restore();
+      AuthProvider.setImpl(new FxaAuthProviderImpl());
+    }
+  }
+});
+
 add_task(async function test_signin_flow_completed_outcome() {
   const error = new Error("sign-in failed");
   for (const { canConnect, flow, outcome, expected } of [
@@ -206,8 +250,8 @@ add_task(async function test_maybeSignIn_signs_in_when_denied() {
       "runSignInFlow is given the denial reason"
     );
     Assert.ok(
-      AuthProvider.hasToSConsent,
-      "ToS consent is recorded after signing in"
+      AuthProvider.hasToUConsent,
+      "ToU consent is recorded after signing in"
     );
   } finally {
     sb.restore();
@@ -226,7 +270,7 @@ add_task(async function test_maybeSignIn_denied_when_not_signed_in() {
       !(await AuthProvider.maybeSignIn(gBrowser.selectedBrowser)),
       "Access is denied"
     );
-    Assert.ok(!AuthProvider.hasToSConsent, "ToS consent is not recorded");
+    Assert.ok(!AuthProvider.hasToUConsent, "ToU consent is not recorded");
   } finally {
     sb.restore();
     await SpecialPowers.popPrefEnv();

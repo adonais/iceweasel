@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.FxaException
+import mozilla.appservices.sync15.EngineChoicesModel
 import mozilla.appservices.sync15.SyncTelemetryPing
 import mozilla.appservices.syncmanager.ServiceStatus
 import mozilla.appservices.syncmanager.SyncAuthInfo
@@ -650,7 +651,7 @@ internal class WorkManagerSyncWorker(
                 reason = reason.toRustSyncReason(),
                 engines = enginesToSync,
                 authInfo = syncAuthInfo,
-                enabledChanges = enabledChanges,
+                engineChoicesModel = EngineChoicesModel.Account(enabledChanges = enabledChanges),
                 persistedState = currentSyncState,
                 deviceSettings = deviceSettings,
                 localEncryptionKeys = localEncryptionKeys,

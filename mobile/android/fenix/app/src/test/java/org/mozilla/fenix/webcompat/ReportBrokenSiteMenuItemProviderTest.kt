@@ -10,7 +10,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -49,14 +48,14 @@ class ReportBrokenSiteMenuItemProviderTest {
     fun `GIVEN a webpage is shown WHEN building the menu item THEN allow reporting it as broken`() = runTest {
         val provider = provider(browserStore(url = "https://mozilla.org"))
 
-        assertEquals(expectedItem(isEnabled = true), provider.itemFlow.value)
+        assertEquals(expectedItem(isEnabled = true), provider.itemsFlow.value.single())
     }
 
     @Test
     fun `GIVEN an about page is shown WHEN building the menu item THEN don't allow reporting it as broken`() = runTest {
         val provider = provider(browserStore(url = "about:config"))
 
-        assertEquals(expectedItem(isEnabled = false), provider.itemFlow.value)
+        assertEquals(expectedItem(isEnabled = false), provider.itemsFlow.value.single())
     }
 
     @Test
@@ -64,14 +63,14 @@ class ReportBrokenSiteMenuItemProviderTest {
         runTest {
             val provider = provider(browserStore(url = "content://media/external/file/1"))
 
-            assertEquals(expectedItem(isEnabled = false), provider.itemFlow.value)
+            assertEquals(expectedItem(isEnabled = false), provider.itemsFlow.value.single())
         }
 
     @Test
     fun `GIVEN there is no selected tab WHEN building the menu item THEN don't show it`() = runTest {
         val provider = provider(BrowserStore())
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -130,7 +129,7 @@ class ReportBrokenSiteMenuItemProviderTest {
         listOf(TEST_URL, "about:config").forEach { url ->
             val provider = provider(browserStore(url = url))
 
-            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+            val events = provider.itemsFlow.value.single().reachableEvents()
 
             assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
             assertFalse(provider.handles(MenuAction.Navigate.Settings))

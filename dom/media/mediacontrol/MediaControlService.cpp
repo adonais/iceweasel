@@ -111,7 +111,7 @@ void MediaControlService::Init() {
   mMediaKeysHandler = new MediaControlKeyHandler();
   mMediaControlKeyManager = new MediaControlKeyManager();
   mMediaControlKeyManager->AddListener(mMediaKeysHandler.get());
-  mControllerManager = MakeUnique<ControllerManager>(this);
+  mControllerManager = std::make_unique<ControllerManager>(this);
 
   // Initialize the fallback title
   nsTArray<nsCString> resIds{

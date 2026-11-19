@@ -32,15 +32,13 @@ skip-if = [
 # certificates.
 skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && msix && verify-standalone",
-  "socketprocess_networking",
 ]
+
+["browser_clientAuth_dialog.js"]
 
 ["browser_clientAuth_fetch_from_extension.js"]
 
 ["browser_clientAuth_speculative_connection.js"]
-skip-if = [
-  "socketprocess_networking",
-]
 
 ["browser_clientAuth_ui.js"]
 

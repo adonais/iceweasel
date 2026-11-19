@@ -409,12 +409,28 @@ NS_IMETHODIMP NotificationCallbacksCommon::OnAlertShow() {
   return NS_OK;
 }
 
+static nsLiteralCString ApplicationStateToString(
+    nsIAlertCallbacks::ApplicationState aState) {
+  switch (aState) {
+    case nsIAlertCallbacks::ApplicationState::FOREGROUND:
+      return "foreground"_ns;
+    case nsIAlertCallbacks::ApplicationState::BACKGROUND_WINDOWS:
+      return "background_with_window"_ns;
+    case nsIAlertCallbacks::ApplicationState::BACKGROUND_NO_WINDOWS:
+      return "background_no_window"_ns;
+    case nsIAlertCallbacks::ApplicationState::UNKNOWN:
+      break;
+  }
+  return "unknown"_ns;
+}
+
 NS_IMETHODIMP NotificationCallbacksCommon::OnAlertClick(
-    nsIAlertAction* aAction) {
+    nsIAlertAction* aAction, nsIAlertCallbacks::ApplicationState aState) {
   mClicked = true;
   glean::web_notification::clicked.Record(
       Some(glean::web_notification::ClickedExtra{
           .action = Some(aAction ? "action-button"_ns : "body"_ns),
+          .appStateBeforeClick = Some(ApplicationStateToString(aState)),
           .siteCategory = mCategory}));
   return NS_OK;
 }

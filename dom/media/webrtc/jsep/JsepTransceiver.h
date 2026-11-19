@@ -26,7 +26,7 @@ class JsepUuidGenerator {
 
 class JsepTransceiver {
  public:
-  explicit JsepTransceiver(SdpMediaSection::MediaTypeInfo type,
+  explicit JsepTransceiver(const SdpMediaSection::MediaTypeInfo& type,
                            JsepUuidGenerator& aUuidGen,
                            SdpDirectionAttribute::Direction jsDirection =
                                SdpDirectionAttribute::kSendrecv)
@@ -46,7 +46,8 @@ class JsepTransceiver {
   ~JsepTransceiver() = default;
 
   void Rollback(JsepTransceiver& oldTransceiver, bool aRemote) {
-    MOZ_ASSERT(oldTransceiver.GetMediaType() == GetMediaType());
+    MOZ_ASSERT(
+        oldTransceiver.GetMediaTypeInfo().MatchesTypeOf(GetMediaTypeInfo()));
     MOZ_ASSERT(!oldTransceiver.IsNegotiated() || !oldTransceiver.HasLevel() ||
                !HasLevel() || oldTransceiver.GetLevel() == GetLevel());
     mTransport = oldTransceiver.mTransport;
@@ -184,13 +185,15 @@ class JsepTransceiver {
 
   // Convenience function
   SdpMediaSection::MediaType GetMediaType() const {
-    MOZ_ASSERT(mRecvTrack.GetMediaType() == mSendTrack.GetMediaType());
+    MOZ_ASSERT(mRecvTrack.GetMediaTypeInfo().MatchesTypeOf(
+        mSendTrack.GetMediaTypeInfo()));
     return mRecvTrack.GetMediaType();
   }
 
   // Convenience function
   SdpMediaSection::MediaTypeInfo GetMediaTypeInfo() const {
-    MOZ_ASSERT(mRecvTrack.GetMediaType() == mSendTrack.GetMediaType());
+    MOZ_ASSERT(mRecvTrack.GetMediaTypeInfo().MatchesTypeOf(
+        mSendTrack.GetMediaTypeInfo()));
     return mRecvTrack.GetMediaTypeInfo();
   }
 

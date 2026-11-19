@@ -1641,7 +1641,7 @@ export class LoginManagerParent extends JSWindowActorParent {
       : null;
   }
 
-  async #confirmLoginRemoval(loginGuid) {
+  async #confirmLoginRemoval(loginGuid, flowId) {
     const browser = this.getRootBrowser();
     const chromeWindow = this.browsingContext.topChromeWindow;
 
@@ -1663,7 +1663,8 @@ export class LoginManagerParent extends JSWindowActorParent {
 
     const confirmed = await lazy.AutocompleteRemoveRecord.confirmRemoval(
       chromeWindow,
-      "password"
+      "password",
+      flowId
     );
     if (!confirmed) {
       return;
@@ -1677,7 +1678,7 @@ export class LoginManagerParent extends JSWindowActorParent {
     }
   }
 
-  async onAutoCompleteEntrySelected(message, data) {
+  async onAutoCompleteEntrySelected(message, data, { flowId } = {}) {
     switch (message) {
       // Called when clicking the open preference entry in the autocomplete
       case "PasswordManager:OpenPreferences": {
@@ -1687,7 +1688,7 @@ export class LoginManagerParent extends JSWindowActorParent {
 
       case "PasswordManager:DeleteLogin": {
         try {
-          await this.#confirmLoginRemoval(data?.loginGuid);
+          await this.#confirmLoginRemoval(data?.loginGuid, flowId);
         } catch (ex) {
           lazy.log("Password removal flow failed:", ex);
         } finally {

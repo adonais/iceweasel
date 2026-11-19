@@ -9,11 +9,11 @@ task-defaults:
             - geckoview
     index:
         product: mobile
+    use-gradle: offline
+    use-gradle-cache: true
     worker:
         docker-image: {in-tree: android-build}
         max-run-time: 7200
-        env:
-            GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
         artifacts:
             - name: public/build/maven
               path: /builds/worker/workspace/obj-build/gradle/maven/
@@ -30,9 +30,7 @@ task-defaults:
             - name: public/build
               path: /builds/worker/artifacts/
               type: directory
-    run-on-repo-type: [hg]
     run:
-        clone-with: hg
         using: mozharness
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true

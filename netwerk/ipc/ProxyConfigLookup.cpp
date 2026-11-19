@@ -4,7 +4,6 @@
 
 #include "ProxyConfigLookup.h"
 
-#include "ProxyConfigLookupChild.h"
 #include "mozilla/Components.h"
 #include "nsContentUtils.h"
 #include "nsICancelable.h"
@@ -41,16 +40,6 @@ ProxyConfigLookup::ProxyConfigLookup(
 ProxyConfigLookup::~ProxyConfigLookup() = default;
 
 nsresult ProxyConfigLookup::DoProxyResolve(nsICancelable** aLookupCancellable) {
-  if (!XRE_IsParentProcess()) {
-    RefPtr<ProxyConfigLookup> self = this;
-    bool result = ProxyConfigLookupChild::Create(
-        mURI, mProxyResolveFlags, mIsTRRServiceChannel,
-        [self](nsIProxyInfo* aProxyinfo, nsresult aResult) {
-          self->OnProxyAvailable(nullptr, nullptr, aProxyinfo, aResult);
-        });
-    return result ? NS_OK : NS_ERROR_FAILURE;
-  }
-
   nsresult rv;
   nsCOMPtr<nsIChannel> channel;
   rv = NS_NewChannel(getter_AddRefs(channel), mURI,

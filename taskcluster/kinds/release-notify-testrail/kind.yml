@@ -14,14 +14,15 @@ kind-dependencies:
     - beetmover-android-app
 
 task-defaults:
-    run-on-repo-type: [hg]
     description: Sends Slack message to release testers that Testrail Milestone was created.
     task-context:
         from-parameters:
             level: level
+            build_number: build_number
         substitution-fields:
             - routes
             - scopes
+            - worker.env.MOZ_BUILD_NUMBER
     treeherder:
         kind: other
         tier: 2
@@ -84,6 +85,7 @@ tasks:
                 TESTRAIL_PROJECT_ID: '48'  # Focus for Android
                 TESTRAIL_TEST_SUITE_ID: '49386'  # Test Automation Release Milestone - Focus
                 UI_TEST_TASK_ID: {"task-reference": "<ui-test-apk>"}
+                MOZ_BUILD_NUMBER: '{build_number}'
 
     create-milestone-focus-release:
         attributes:
@@ -111,6 +113,7 @@ tasks:
                 TESTRAIL_PROJECT_ID: '48'  # Focus for Android
                 TESTRAIL_TEST_SUITE_ID: '49386'  # Test Automation Release Milestone - Focus
                 UI_TEST_TASK_ID: {"task-reference": "<ui-test-apk>"}
+                MOZ_BUILD_NUMBER: '{build_number}'
 
     create-milestone-fenix-beta:
         attributes:
@@ -138,6 +141,7 @@ tasks:
                 TESTRAIL_PROJECT_ID: '59'  # Fenix Browser
                 TESTRAIL_TEST_SUITE_ID: '49319'  # Test Automation Release Milestone - Fenix
                 UI_TEST_TASK_ID: {"task-reference": "<ui-test-apk>"}
+                MOZ_BUILD_NUMBER: '{build_number}'
 
     create-milestone-fenix-release:
         attributes:
@@ -165,3 +169,4 @@ tasks:
                 TESTRAIL_PROJECT_ID: '59'  # Fenix Browser
                 TESTRAIL_TEST_SUITE_ID: '49319'  # Test Automation Release Milestone - Fenix
                 UI_TEST_TASK_ID: {"task-reference": "<ui-test-apk>"}
+                MOZ_BUILD_NUMBER: '{build_number}'

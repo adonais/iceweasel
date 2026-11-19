@@ -13,7 +13,6 @@
 // 4. [paste the output into the appropriate section in
 //     security/manager/tools/PreloadedHPKPins.json]
 
-Services.prefs.setBoolPref("network.process.enabled", false);
 Services.prefs.setBoolPref("network.xhr.block_sync_system_requests", false);
 
 function downloadRoots() {

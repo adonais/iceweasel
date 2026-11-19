@@ -23,6 +23,7 @@ exclude: true
 - Added experimental [`onExitPictureInPicture`][160.8] so the application is told when the picture-in-picture window it opened should be closed. ([bug 2065581]({{bugzilla}}2065581))
 - Added experimental [`setKeepActive`][160.9] so the application can keep a session active while a picture-in-picture window shows one of its videos. ([bug 2065581]({{bugzilla}}2065581))
 - ⚠️ Removed `IPProtectionController.SERVICE_STATE_OPTED_OUT`. Gecko does not report an opted-out IP Protection service state. ([bug 2082578]({{bugzilla}}2082578))
+- Added implementation of `ScrollCaptureCallback` to [`GeckoView`][70.5]. Now GeckoView apps will support the built-in Android OS functionality for taking scrollable screenshots. ([bug 2053909]({{bugzilla}}2053909))
 
 [160.1]: {{javadoc_uri}}/GeckoSession.ContentDelegate.html#onExternalResponse(org.mozilla.geckoview.GeckoSession,org.mozilla.geckoview.WebResponse)
 [160.2]: {{javadoc_uri}}/GeckoSessionSettings.Builder.html#pictureInPictureToken(java.lang.String)
@@ -63,13 +64,14 @@ exclude: true
 [156.6]: {{javadoc_uri}}/PageExtractionController.PageMetadata.html#PageMetadata(java.lang.String[],int,java.lang.String,boolean,boolean)
 
 ## v155
-- Added [WebRequestError.ERROR_LOCAL_NETWORK_ACCESS_DENIED] to indicate that a load failed because the user denied the local network access permission on Android 17+.
+- Added [`WebRequestError.ERROR_LOCAL_NETWORK_ACCESS_DENIED`][155.4] to indicate that a load failed because the user denied the local network access permission on Android 17+.
 - Added the [`IPProxyException.ERROR_CATASTROPHIC`][155.1] and [`IPProxyException.ERROR_VPN_UNAVAILABLE`][155.2]
   error codes for the [`IPProtectioController.activate`][155.3].
 
 [155.1]: {{javadoc_uri}}/IPProtectionController.IPProxyException.html#ERROR_CATASTROPHIC
 [155.2]: {{javadoc_uri}}/IPProtectionController.IPProxyException.html#ERROR_VPN_UNAVAILABLE
 [155.3]: {{javadoc_uri}}/IPProtectionController.html#activate(boolean,boolean,java.lang.String)
+[155.4]: {{javadoc_uri}}/WebRequestError.html#ERROR_LOCAL_NETWORK_ACCESS_DENIED
 
 ## v154
 - Added [`Autofill.Node.getDatalist`][154.1] to expose predefined values by [`datalist`][154.2] elements for input fields.

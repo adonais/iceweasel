@@ -15,7 +15,7 @@
   align-items: center;
   gap: var(--space-large);
   padding-block: var(--space-xlarge);
-  margin-bottom: var(--space-large);
+  margin-block-end: var(--space-large);
 }
 
 .heading-logo {

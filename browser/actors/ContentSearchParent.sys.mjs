@@ -217,7 +217,11 @@ export let ContentSearch = {
       "healthReportKey",
     ]);
     let engine = lazy.SearchService.getEngineByName(data.engineName);
-    let submission = engine.getSubmission(data.searchString, "");
+    let submission = engine.getSubmission(
+      data.searchString,
+      "",
+      data.healthReportKey
+    );
     let win = browser.documentGlobal;
     if (!win) {
       // The browser may have been closed between the time its content sent the
@@ -254,12 +258,14 @@ export let ContentSearch = {
       };
       win.openTrustedLinkIn(submission.uri.spec, where, params);
     }
+
     lazy.BrowserSearchTelemetry.recordSearch(
       browser,
       engine,
       data.healthReportKey,
       {
         selection: data.selection,
+        submission,
       }
     );
   },

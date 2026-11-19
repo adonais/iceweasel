@@ -342,7 +342,7 @@ function useConfetti(count = 80, spread = Math.PI / 3) {
  * moz-panel-list moves the submenu into shadow DOM, so React synthetic events
  * don't reach the inner <panel-item> elements; we listen on the submenu element
  * directly and resolve the clicked item across the shadow boundary via
- * composedPath() and its data-size attribute.
+ * composedPath() and its data-size attribute (or the one datasetKey names).
  *
  * A ref callback is required because several widgets gate their whole render on
  * async data and only mount the submenu once that data loads. The ref callback
@@ -352,9 +352,10 @@ function useConfetti(count = 80, spread = Math.PI / 3) {
  * @function useSizeSubmenu
  * @param {function} onChangeSize - Called with the selected size string when a
  *   submenu item is clicked.
+ * @param {string} [datasetKey] - The dataset key holding each item's value.
  * @returns {function} A ref callback for the submenu <panel-list> element.
  */
-function useSizeSubmenu(onChangeSize) {
+function useSizeSubmenu(onChangeSize, datasetKey = "size") {
   const onChangeSizeRef = useRef(onChangeSize);
   const cleanupRef = useRef(null);
 
@@ -362,21 +363,24 @@ function useSizeSubmenu(onChangeSize) {
     onChangeSizeRef.current = onChangeSize;
   }, [onChangeSize]);
 
-  return useCallback(el => {
-    cleanupRef.current?.();
-    cleanupRef.current = null;
-    if (!el) {
-      return;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        onChangeSizeRef.current(item.dataset.size);
+  return useCallback(
+    el => {
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+      if (!el) {
+        return;
       }
-    };
-    el.addEventListener("click", listener);
-    cleanupRef.current = () => el.removeEventListener("click", listener);
-  }, []);
+      const listener = e => {
+        const item = e.composedPath().find(node => node.dataset?.[datasetKey]);
+        if (item) {
+          onChangeSizeRef.current(item.dataset[datasetKey]);
+        }
+      };
+      el.addEventListener("click", listener);
+      cleanupRef.current = () => el.removeEventListener("click", listener);
+    },
+    [datasetKey]
+  );
 }
 
 // Biggest units first, so the loop returns the coarsest one that fits.
@@ -417,7 +421,72 @@ function formatRelativeTime(timestamp, locale, now, justNowL10nId) {
   return { text: null, l10nId: justNowL10nId };
 }
 
+/**
+ * Formats a past timestamp as "Today", "Yesterday", "N days ago" (up to 6),
+ * "N weeks ago" (up to 4), "N months ago" (up to 11), and as an absolute date
+ * beyond that. Unlike formatRelativeTime, it counts local calendar days rather
+ * than elapsed time. Buckets are similar to UrlbarShared.formatDate.
+ *
+ * @param {number} timestamp ms epoch of the moment being described.
+ * @param {string} [appLocale] BCP-47 locale; falls back to the runtime default.
+ * @param {Date} [now]
+ * @returns {string}
+ */
+function formatRelativeDate(timestamp, appLocale, now = new Date()) {
+  // Intl throws on "", which App.locale holds until INIT.
+  const locale = appLocale || undefined;
+  const date = new Date(timestamp);
+  const startOfDay = d =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const daysAgo = Math.max(
+    0,
+    Math.round((startOfDay(now) - startOfDay(date)) / (24 * 60 * 60 * 1000))
+  );
+  const weeksAgo = Math.floor(daysAgo / 7);
+  const monthsAgo =
+    (now.getFullYear() - date.getFullYear()) * 12 +
+    now.getMonth() -
+    date.getMonth();
+
+  const rtf = new Intl.RelativeTimeFormat(locale, {
+    numeric: daysAgo <= 1 ? "auto" : "always",
+  });
+  let formatted;
+  if (daysAgo <= 6) {
+    formatted = rtf.format(-daysAgo, "day");
+  } else if (weeksAgo <= 4) {
+    formatted = rtf.format(-weeksAgo, "week");
+  } else if (monthsAgo <= 11) {
+    formatted = rtf.format(-monthsAgo, "month");
+  } else {
+    return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+      date
+    );
+  }
+  return formatted[0].toLocaleUpperCase(locale) + formatted.slice(1);
+}
+
+/**
+ * Focus a moz-button that may have just been created. Its inner button only
+ * exists after the first render, and focus() on the host does nothing until
+ * then, so wait for that render if one is pending.
+ *
+ * @param {HTMLElement|null} el
+ */
+function focusOnceRendered(el) {
+  if (!el) {
+    return;
+  }
+  if (el.updateComplete) {
+    el.updateComplete.then(() => el.focus());
+  } else {
+    el.focus();
+  }
+}
+
 export {
+  focusOnceRendered,
+  formatRelativeDate,
   formatRelativeTime,
   useIntersectionObserver,
   useSizeSubmenu,

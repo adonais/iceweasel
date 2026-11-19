@@ -1227,7 +1227,7 @@ static inline void set_ref_frame_for_partition(
       (cpi->svc.spatial_layer_id > 0 && cpi->svc.has_lower_quality_layer) ? 1.0
                                                                           : 0.9;
   const bool is_set_golden_ref_frame =
-      *y_sad_g < fac * *y_sad && *y_sad_g < *y_sad_alt;
+      *y_sad_g < fac * *y_sad && *y_sad_g <= *y_sad_alt;
   const bool is_set_altref_ref_frame =
       *y_sad_alt < fac * *y_sad && *y_sad_alt < *y_sad_g;
 
@@ -1463,18 +1463,20 @@ static void setup_planes(AV1_COMP *cpi, MACROBLOCK *x, unsigned int *y_sad,
     }
   }
 
+  mi->ref_frame[0] = NONE_FRAME;
+  mi->ref_frame[1] = NONE_FRAME;
+  mi->bsize = cm->seq_params->sb_size;
+  mi->mv[0].as_int = 0;
+  mi->interp_filters = av1_broadcast_interp_filter(BILINEAR);
+
   if (use_last_ref) {
-    const int source_sad_nonrd = x->content_state_sb.source_sad_nonrd;
     av1_setup_pre_planes(
         xd, 0, yv12, mi_row, mi_col,
         scaled_ref_last ? NULL : get_ref_scale_factors(cm, LAST_FRAME),
         num_planes);
     mi->ref_frame[0] = LAST_FRAME;
-    mi->ref_frame[1] = NONE_FRAME;
-    mi->bsize = cm->seq_params->sb_size;
-    mi->mv[0].as_int = 0;
-    mi->interp_filters = av1_broadcast_interp_filter(BILINEAR);
 
+    const int source_sad_nonrd = x->content_state_sb.source_sad_nonrd;
     int est_motion = cpi->sf.rt_sf.estimate_motion_for_var_based_partition;
     // TODO(b/290596301): Look into adjusting this condition.
     // There is regression on color content when

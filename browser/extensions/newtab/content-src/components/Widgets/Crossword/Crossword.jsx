@@ -10,21 +10,26 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useSelector, batch } from "react-redux";
+import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useSizeSubmenu } from "../../../lib/utils";
 import {
   WIDGET_REGISTRY,
+  resolveWidgetFrame,
   resolveWidgetSize,
-  resolveCrosswordEndpoint,
 } from "common/WidgetsRegistry.mjs";
 import { MoveSubmenu } from "../MoveSubmenu";
+import { WidgetHideMenuItem } from "../WidgetPlacement";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
 import { WidgetMenuButton } from "../WidgetMenuButton";
+import { WidgetMenuPoweredBy } from "../WidgetMenuPoweredBy";
 
 const USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
+  POWERED_BY_PARTICLE: "powered_by_particle",
 };
+
+const PARTICLE_URL = "https://particle.news";
 
 // postMessage contract with the Particle crossword bundle (per the widget's
 // postMessage API doc). Every message travels on a single channel; the widget
@@ -127,9 +132,14 @@ function Crossword({
   widgetEnabledMap,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
+  const framedWidgets = useSelector(state => state.FramedWidgets);
+  const { src, state: frameState } = resolveWidgetFrame(
+    CROSSWORD_ENTRY,
+    prefs,
+    framedWidgets
+  );
   const widgetSize = resolveWidgetSize(CROSSWORD_ENTRY, prefs);
   const hasInteracted = prefs[PREF_CROSSWORD_INTERACTION];
-  const crosswordEndpoint = resolveCrosswordEndpoint(prefs);
   const iframeRef = useRef(null);
 
   const { impressionRef, recordUserAction, recordEnabled } = useWidgetTelemetry(
@@ -165,11 +175,11 @@ function Crossword({
   // ones.
   const merinoOrigin = useMemo(() => {
     try {
-      return new URL(crosswordEndpoint).origin;
+      return new URL(src).origin;
     } catch {
       return null;
     }
-  }, [crosswordEndpoint]);
+  }, [src]);
 
   // requestId -> action for menu_action commands awaiting a command_ack, so an
   // incoming ack can be matched back to the action the user selected. A
@@ -301,32 +311,28 @@ function Crossword({
   );
 
   function handleCrosswordHide() {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: { name: CROSSWORD_ENTRY.enabledPref, value: false },
-        })
-      );
-      recordEnabled(false, { source: "context_menu" });
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: { name: CROSSWORD_ENTRY.enabledPref, value: false },
+      })
+    );
+    recordEnabled(false, { source: "context_menu" });
   }
 
   const handleChangeSize = useCallback(
     size => {
       handleInteraction();
-      batch(() => {
-        dispatch(
-          ac.OnlyToMain({
-            type: at.SET_PREF,
-            data: { name: CROSSWORD_ENTRY.sizePref, value: size },
-          })
-        );
-        recordUserAction(USER_ACTION_TYPES.CHANGE_SIZE, {
-          source: "context_menu",
-          value: size,
-          size,
-        });
+      dispatch(
+        ac.OnlyToMain({
+          type: at.SET_PREF,
+          data: { name: CROSSWORD_ENTRY.sizePref, value: size },
+        })
+      );
+      recordUserAction(USER_ACTION_TYPES.CHANGE_SIZE, {
+        source: "context_menu",
+        value: size,
+        size,
       });
     },
     [dispatch, handleInteraction, recordUserAction]
@@ -336,32 +342,19 @@ function Crossword({
 
   function handleLearnMore() {
     handleInteraction();
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.OPEN_LINK,
-          data: {
-            url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
-          },
-        })
-      );
-      recordUserAction("learn_more", { source: "context_menu" });
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.OPEN_LINK,
+        data: {
+          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+        },
+      })
+    );
+    recordUserAction("learn_more", { source: "context_menu" });
   }
 
-  function handlePoweredByParticle() {
-    handleInteraction();
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.OPEN_LINK,
-          data: {
-            url: "https://particle.news",
-          },
-        })
-      );
-      recordUserAction("powered_by_particle", { source: "context_menu" });
-    });
+  if (frameState === "hidden") {
+    return null;
   }
 
   return (
@@ -403,12 +396,14 @@ function Crossword({
               </panel-item>
             ))}
 
-            <panel-item
-              className="powered-by-particle"
-              onClick={handlePoweredByParticle}
-            >
-              Powered by Particle
-            </panel-item>
+            <WidgetMenuPoweredBy
+              dispatch={dispatch}
+              url={PARTICLE_URL}
+              l10nId="newtab-crossword-menu-powered-by-particle"
+              recordUserAction={recordUserAction}
+              userAction={USER_ACTION_TYPES.POWERED_BY_PARTICLE}
+              onClick={handleInteraction}
+            />
 
             <hr />
 
@@ -438,9 +433,9 @@ function Crossword({
               widgetEnabledMap={widgetEnabledMap}
             />
 
-            <panel-item
-              data-l10n-id="newtab-widget-menu-hide"
-              onClick={handleCrosswordHide}
+            <WidgetHideMenuItem
+              widgetId="crossword"
+              onHide={handleCrosswordHide}
             />
             <panel-item className="learn-more" onClick={handleLearnMore}>
               Learn more
@@ -454,7 +449,7 @@ function Crossword({
           ref={iframeRef}
           className="crossword-frame"
           title="Crossword"
-          src={crosswordEndpoint}
+          src={src}
           // allow-same-origin is required for the crossword to work, but is
           // currently under security review to see if it's safe to keep in our codebase right now.
           sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"

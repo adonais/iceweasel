@@ -601,7 +601,7 @@ PersistNodeFixup::PersistNodeFixup(WebBrowserPersistLocalDocument* aParent,
     NS_ENSURE_SUCCESS_VOID(rv);
     for (uint32_t i = 0; i < mapSize; ++i) {
       nsAutoCString urlFrom;
-      auto urlTo = MakeUnique<nsCString>();
+      auto urlTo = std::make_unique<nsCString>();
 
       rv = aMap->GetURIMapping(i, urlFrom, *urlTo);
       MOZ_ASSERT(NS_SUCCEEDED(rv));

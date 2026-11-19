@@ -2174,8 +2174,13 @@ void MacroAssembler::branchTestStringImpl(Condition cond, const T& t,
 void MacroAssembler::branchTestStringTruthy(bool truthy,
                                             const ValueOperand& value,
                                             Label* label) {
-  Condition c = testStringTruthy(truthy, value);
-  B(label, c);
+  vixl::UseScratchRegisterScope temps(this);
+  const Register scratch = temps.AcquireX().asUnsized();
+  MOZ_ASSERT(value.valueReg() != scratch);
+
+  unboxString(value, scratch);
+  load32(Address(scratch, JSString::offsetOfLength()), scratch);
+  branchTest32(truthy ? NonZero : Zero, scratch, scratch, label);
 }
 
 void MacroAssembler::branchTestSymbol(Condition cond, Register tag,
@@ -2235,8 +2240,13 @@ void MacroAssembler::branchTestBigIntImpl(Condition cond, const T& t,
 void MacroAssembler::branchTestBigIntTruthy(bool truthy,
                                             const ValueOperand& value,
                                             Label* label) {
-  Condition c = testBigIntTruthy(truthy, value);
-  B(label, c);
+  vixl::UseScratchRegisterScope temps(this);
+  const Register scratch = temps.AcquireX().asUnsized();
+  MOZ_ASSERT(value.valueReg() != scratch);
+
+  unboxBigInt(value, scratch);
+  load32(Address(scratch, BigInt::offsetOfDigitLength()), scratch);
+  branchTest32(truthy ? NonZero : Zero, scratch, scratch, label);
 }
 
 void MacroAssembler::branchTestNull(Condition cond, Register tag,
@@ -2257,6 +2267,19 @@ void MacroAssembler::branchTestNull(Condition cond, const BaseIndex& address,
 void MacroAssembler::branchTestNull(Condition cond, const ValueOperand& value,
                                     Label* label) {
   branchTestNullImpl(cond, value, label);
+}
+
+void MacroAssembler::branchTestNullOrUndefined(Condition cond, Register tag,
+                                               Label* label) {
+  Condition c = testNullOrUndefined(cond, tag);
+  B(label, c);
+}
+
+void MacroAssembler::branchTestNullOrUndefined(Condition cond,
+                                               const ValueOperand& value,
+                                               Label* label) {
+  Condition c = testNullOrUndefined(cond, value);
+  B(label, c);
 }
 
 template <typename T>
@@ -2291,6 +2314,11 @@ void MacroAssembler::branchTestObjectImpl(Condition cond, const T& t,
                                           Label* label) {
   Condition c = testObject(cond, t);
   B(label, c);
+}
+
+void MacroAssembler::branchTestGCThing(Condition cond, Register tag,
+                                       Label* label) {
+  branchTestGCThingImpl(cond, tag, label);
 }
 
 void MacroAssembler::branchTestGCThing(Condition cond, const Address& address,

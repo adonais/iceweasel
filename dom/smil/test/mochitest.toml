@@ -77,6 +77,8 @@ skip-if = [
 
 ["test_smilMinTiming.html"]
 
+["test_smilNoTarget.html"]
+
 ["test_smilRepeatDuration.html"]
 
 ["test_smilRepeatTiming.xhtml"]

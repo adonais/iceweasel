@@ -342,7 +342,7 @@ auto TokenizerBase<TChar>::AddCustomToken(const TAString& aValue,
   MOZ_ASSERT(!aValue.IsEmpty());
 
   UniquePtr<Token>& t = *mCustomTokens.AppendElement();
-  t = MakeUnique<Token>();
+  t = std::make_unique<Token>();
 
   t->mType = static_cast<TokenType>(++mNextCustomTokenID);
   t->mCustomCaseInsensitivity = aCaseInsensitivity;

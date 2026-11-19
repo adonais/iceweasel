@@ -28,6 +28,7 @@
 
 #include "mozilla/Assertions.h"  // MOZ_ASSERT
 #include "mozilla/Attributes.h"  // MOZ_IMPLICIT
+#include "mozilla/Maybe.h"  // mozilla::Maybe, mozilla::Nothing, mozilla::Some
 
 #include <limits>    // std::numeric_limits
 #include <stdint.h>  // uint32_t
@@ -358,6 +359,20 @@ struct TaggedColumnNumberOneOrigin {
     return TaggedColumnNumberOneOrigin(value);
   }
 
+  static mozilla::Maybe<TaggedColumnNumberOneOrigin> fromRawChecked(
+      uint32_t value) {
+    if (value & WasmFunctionTag) {
+      if ((value & ~WasmFunctionTag) > WasmFunctionIndex::Limit) {
+        return mozilla::Nothing();
+      }
+    } else {
+      if (value == 0 || value > LimitedColumnNumberOneOrigin::Limit) {
+        return mozilla::Nothing();
+      }
+    }
+    return mozilla::Some(TaggedColumnNumberOneOrigin(value));
+  }
+
   static TaggedColumnNumberOneOrigin forDifferentialTesting() {
     return TaggedColumnNumberOneOrigin(LimitedColumnNumberOneOrigin());
   }
@@ -385,8 +400,6 @@ struct TaggedColumnNumberOneOrigin {
   }
 
   uint32_t rawValue() const { return value_; }
-
-  uint32_t* addressOfValueForTranscode() { return &value_; }
 };
 
 }  // namespace JS

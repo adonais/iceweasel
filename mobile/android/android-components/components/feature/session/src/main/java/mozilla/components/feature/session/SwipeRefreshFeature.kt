@@ -55,10 +55,18 @@ class SwipeRefreshFeature(
                 flow
                     .map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
                     .ifAnyChanged {
-                        arrayOf(it?.content?.loading, it?.content?.refreshCanceled)
+                        arrayOf(
+                            it?.content?.loading,
+                            it?.content?.refreshCanceled,
+                            it?.content?.fullScreen,
+                            it?.content?.isPdf,
+                        )
                     }
                     .collect { tab ->
                         tab?.let {
+                            // Pull to refresh should not be enabled when the content is these types
+                            swipeRefreshLayout.isEnabled = !tab.content.fullScreen && !tab.content.isPdf
+
                             if (!tab.content.loading || tab.content.refreshCanceled) {
                                 swipeRefreshLayout.isRefreshing = false
                                 if (tab.content.refreshCanceled) {

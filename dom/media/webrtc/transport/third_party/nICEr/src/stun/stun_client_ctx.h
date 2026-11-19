@@ -61,16 +61,12 @@ typedef union nr_stun_client_params_ {
     nr_stun_client_stun_binding_request_params               stun_binding_request;
     nr_stun_client_stun_keepalive_params                     stun_keepalive;
 
-#ifdef USE_ICE
     nr_stun_client_ice_binding_request_params                ice_binding_request;
-#endif /* USE_ICE */
 
-#ifdef USE_TURN
     nr_stun_client_allocate_request_params                   allocate_request;
     nr_stun_client_refresh_request_params                    refresh_request;
     nr_stun_client_permission_request_params                 permission_request;
     nr_stun_client_send_indication_params                    send_indication;
-#endif /* USE_TURN */
 
 } nr_stun_client_params;
 
@@ -78,7 +74,6 @@ typedef struct nr_stun_client_stun_binding_response_results_ {
     nr_transport_addr mapped_addr;
 } nr_stun_client_stun_binding_response_results;
 
-#ifdef USE_ICE
 typedef struct nr_stun_client_ice_use_candidate_results_ {
 #ifdef WIN32  // silly VC++ gives error if no members
     int dummy;
@@ -88,9 +83,7 @@ typedef struct nr_stun_client_ice_use_candidate_results_ {
 typedef struct nr_stun_client_ice_binding_response_results_ {
     nr_transport_addr mapped_addr;
 } nr_stun_client_ice_binding_response_results;
-#endif /* USE_ICE */
 
-#ifdef USE_TURN
 typedef struct nr_stun_client_allocate_response_results_ {
     nr_transport_addr relay_addr;
     nr_transport_addr mapped_addr;
@@ -105,20 +98,15 @@ typedef struct nr_stun_client_permission_response_results_ {
     UINT4 lifetime_secs;
 } nr_stun_client_permission_response_results;
 
-#endif /* USE_TURN */
 
 typedef union nr_stun_client_results_ {
     nr_stun_client_stun_binding_response_results              stun_binding_response;
 
-#ifdef USE_ICE
     nr_stun_client_ice_use_candidate_results                  ice_use_candidate;
     nr_stun_client_ice_binding_response_results               ice_binding_response;
-#endif /* USE_ICE */
 
-#ifdef USE_TURN
     nr_stun_client_allocate_response_results                   allocate_response;
     nr_stun_client_refresh_response_results                    refresh_response;
-#endif /* USE_TURN */
 } nr_stun_client_results;
 
 struct nr_stun_client_ctx_ {
@@ -136,17 +124,13 @@ struct nr_stun_client_ctx_ {
 #define NR_STUN_CLIENT_MODE_BINDING_REQUEST_LONG_TERM_AUTH    2
 #define NR_STUN_CLIENT_MODE_BINDING_REQUEST_NO_AUTH           3
 #define NR_STUN_CLIENT_MODE_KEEPALIVE                         4
-#ifdef USE_ICE
 #define NR_ICE_CLIENT_MODE_USE_CANDIDATE                  10
 #define NR_ICE_CLIENT_MODE_BINDING_REQUEST                11
-#endif /* USE_ICE */
-#ifdef USE_TURN
 #define NR_TURN_CLIENT_MODE_ALLOCATE_REQUEST              20
 #define NR_TURN_CLIENT_MODE_REFRESH_REQUEST               21
 #define NR_TURN_CLIENT_MODE_SEND_INDICATION               22
 #define NR_TURN_CLIENT_MODE_DATA_INDICATION               24
 #define NR_TURN_CLIENT_MODE_PERMISSION_REQUEST            25
-#endif /* USE_TURN */
 
   char *label;
   nr_transport_addr my_addr;

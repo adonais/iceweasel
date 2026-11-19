@@ -51,9 +51,6 @@ class DeviceRunner(BaseRunner):
         stdout = codecs.getwriter("utf-8")(sys.stdout.buffer)
         process_args = {
             "stream": stdout,
-            "processOutputLine": self.on_output,
-            "onFinish": self.on_finish,
-            "onTimeout": self.on_timeout,
         }
         process_args.update(kwargs.get("process_args") or {})
 
@@ -69,6 +66,7 @@ class DeviceRunner(BaseRunner):
         return None
 
     def start(self, *args, **kwargs):
+        self.cleanup_ran = False
         if isinstance(self.device, BaseEmulator) and not self.device.connected:
             self.device.start()
         self.device.connect()

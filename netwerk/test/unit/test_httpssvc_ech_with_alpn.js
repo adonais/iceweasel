@@ -208,11 +208,8 @@ async function testWrapper(alpnAdvertisement) {
   let securityInfo = chan.securityInfo;
   Assert.ok(securityInfo.isAcceptedEch, "This host should have accepted ECH");
 
-  // Only check telemetry if network process is disabled.
-  if (!mozinfo.socketprocess_networking) {
-    HandshakeTelemetryHelpers.checkSuccess(["", "_ECH", "_FIRST_TRY"]);
-    HandshakeTelemetryHelpers.checkEmpty(["_CONSERVATIVE", "_ECH_GREASE"]);
-  }
+  HandshakeTelemetryHelpers.checkSuccess(["", "_ECH", "_FIRST_TRY"]);
+  HandshakeTelemetryHelpers.checkEmpty(["_CONSERVATIVE", "_ECH_GREASE"]);
 
   await trrServer.stop();
   observerService.removeObserver(observer);

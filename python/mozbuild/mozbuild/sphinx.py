@@ -308,3 +308,5 @@ def setup(app):
     export_mozbuild_symbols(manager)
 
     app.srcdir = Path(manager.staging_dir)
+
+    return {"parallel_read_safe": True, "parallel_write_safe": True}

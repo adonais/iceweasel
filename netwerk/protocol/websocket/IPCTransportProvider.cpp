@@ -50,12 +50,6 @@ TransportProviderParent::OnTransportAvailable(
 NS_IMETHODIMP
 TransportProviderParent::OnUpgradeFailed(nsresult aErrorCode) { return NS_OK; }
 
-NS_IMETHODIMP
-TransportProviderParent::OnWebSocketConnectionAvailable(
-    WebSocketConnectionBase* aConnection) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
 void TransportProviderParent::MaybeNotify() {
   if (!mListener || !mTransport) {
     return;

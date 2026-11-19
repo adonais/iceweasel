@@ -558,7 +558,7 @@ add_task(async function test_tab_group_inline_mention_renders_icon() {
       10
     );
 
-    const chipElement = editor.renderRoot.querySelector("ai-website-chip");
+    const chipElement = editor.renderRoot.querySelector("smartwindow-chip");
     await chipElement.updateComplete;
     const icon = chipElement.shadowRoot.querySelector("tab-group-icon");
 

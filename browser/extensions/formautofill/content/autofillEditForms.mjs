@@ -6,6 +6,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
   FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
 });
@@ -156,6 +157,27 @@ export class EditCreditCard extends EditAutofillForm {
       securityCode.inputEl.pattern = "[0-9]{3,4}";
       securityCode.inputEl.maxLength = 4;
     });
+    this.#updateSecurityCodeLabel();
+  }
+
+  /**
+   * Name the security code field the way the card's network does, following
+   * the card number as it is typed.
+   */
+  #updateSecurityCodeLabel() {
+    const securityCode = this._elements.securityCode;
+    if (!securityCode) {
+      return;
+    }
+    document.l10n.setAttributes(
+      securityCode,
+      "autofill-card-security-code-optional-2",
+      {
+        securityCode: lazy.CreditCard.formatSecurityCodeName({
+          "cc-number": this._elements.ccNumber.value,
+        }),
+      }
+    );
   }
 
   loadRecord(record, addresses, preserveFieldValues) {
@@ -174,6 +196,7 @@ export class EditCreditCard extends EditAutofillForm {
       // once the options are processed. Re-apply the selected values after the
       // elements have finished updating.
       this.#applySelectValues(record);
+      this.#updateSecurityCodeLabel();
     }
   }
 
@@ -308,6 +331,9 @@ export class EditCreditCard extends EditAutofillForm {
       }
     }
     super.handleInput(event);
+    if (event.target == this._elements.ccNumber) {
+      this.#updateSecurityCodeLabel();
+    }
   }
 
   /**

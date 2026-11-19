@@ -50,6 +50,10 @@ const MigrationDialog = {
       args = args.wrappedJSObject;
     }
 
+    if (args.options?.entrypoint) {
+      this._wiz.setAttribute("entrypoint", args.options.entrypoint);
+    }
+
     let observer = new ResizeObserver(() => {
       if (window.resizeDialog) {
         window.resizeDialog();

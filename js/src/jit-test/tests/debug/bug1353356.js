@@ -1,4 +1,4 @@
-// |jit-test| allow-oom; --fuzzing-safe
+// |jit-test| allow-oom
 
 var lfLogBuffer = `
 //corefuzz-dcd-endofdata

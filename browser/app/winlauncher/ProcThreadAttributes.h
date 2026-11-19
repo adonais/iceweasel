@@ -100,7 +100,7 @@ class MOZ_RAII ProcThreadAttributes final {
       }
     }
 
-    auto buf = MakeUnique<char[]>(listSize);
+    auto buf = std::make_unique<char[]>(listSize);
 
     LPPROC_THREAD_ATTRIBUTE_LIST tmpList =
         reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buf.get());

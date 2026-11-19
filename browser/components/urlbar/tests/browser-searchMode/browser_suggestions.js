@@ -16,6 +16,12 @@ let suggestionsEngine;
 let expectedFormHistoryResults = [];
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.unifiedSearchButton.always", false],
+      ["browser.urlbar.unifiedSearchButton.historyInSearchMode", false],
+    ],
+  });
   suggestionsEngine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + SUGGESTIONS_ENGINE_NAME,
   });

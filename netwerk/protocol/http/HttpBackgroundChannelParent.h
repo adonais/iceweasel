@@ -64,10 +64,6 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
                      const nsTArray<ConsoleReportCollected>& aConsoleReports,
                      TimeStamp aOnStopRequestStart);
 
-  // When ODA and OnStopRequest are sending from socket process to child
-  // process, this is the last IPC message sent from parent process.
-  bool OnConsoleReport(const nsTArray<ConsoleReportCollected>& aConsoleReports);
-
   // To send OnAfterLastPart message over background channel.
   bool OnAfterLastPart(const nsresult aStatus);
 

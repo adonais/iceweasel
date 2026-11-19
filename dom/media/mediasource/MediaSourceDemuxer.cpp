@@ -150,7 +150,7 @@ bool MediaSourceDemuxer::IsSeekable() const { return true; }
 
 UniquePtr<EncryptionInfo> MediaSourceDemuxer::GetCrypto() {
   MutexAutoLock mon(mMutex);
-  auto crypto = MakeUnique<EncryptionInfo>();
+  auto crypto = std::make_unique<EncryptionInfo>();
   *crypto = mInfo.mCrypto;
   return crypto;
 }

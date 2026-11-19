@@ -200,11 +200,11 @@ def carry():
         ),
         (
             14,
-            "os == 'linux' && debug && socketprocess_networking",
+            "os == 'linux' && debug && swgl",
             "os == 'android' && debug",
             False,
         ),
-        (15, "debug && socketprocess_networking", "os == 'android' && debug", True),
+        (15, "debug && swgl", "os == 'android' && debug", True),
         (16, "os == 'linux'", "verify", False),
         (17, "os == 'win'", "tsan", False),
         (

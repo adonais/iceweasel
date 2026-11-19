@@ -37,6 +37,27 @@ class ProcTestPoll(proctest.ProcTest):
         self.determine_status(p, True)
         p.kill()
 
+    def test_poll_after_wait_timeout(self):
+        """wait() times out while the process is running, and poll() is
+        called after the process has finished on its own."""
+        p = processhandler.ProcessHandler([
+            self.python,
+            "-c",
+            "import time; time.sleep(1)",
+        ])
+        p.run()
+        self.assertIsNone(p.wait(timeout=0.1))
+
+        for _ in range(0, 500):
+            time.sleep(processhandler.INTERVAL_PROCESS_ALIVE_CHECK)
+            returncode = p.poll()
+            if returncode is not None:
+                break
+
+        self.assertEqual(returncode, 0)
+
+        self.determine_status(p)
+
     def test_poll_after_kill(self):
         """Process is killed, and poll() is called."""
         p = processhandler.ProcessHandler(

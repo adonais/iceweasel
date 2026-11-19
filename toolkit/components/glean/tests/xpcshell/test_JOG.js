@@ -43,6 +43,7 @@ add_task(
       [{ color: "red" }],
       [{ colour: "red", diameter: "small" }],
       [{ colour: "red", diameter: 5, extra: "field" }],
+      [null],
     ];
     for (const value of invalidValues) {
       Glean.testOnly.balloons.set(value);
@@ -54,6 +55,39 @@ add_task(
     }
   }
 );
+
+add_task(function test_jog_object_works() {
+  Services.fog.testRegisterRuntimeMetric(
+    "object",
+    "jog_cat",
+    "jog_object",
+    ["test-ping"],
+    `"ping"`,
+    false,
+    false
+  );
+
+  for (const [input, expected] of [
+    [{}, {}],
+    [[], []],
+    [
+      { empty: [], unset: null, nested: { empty: [], unset: null } },
+      { nested: {} },
+    ],
+    // Array elements retain their positions, even when they are empty.
+    [
+      [{ empty: [], unset: null }, [], {}],
+      [{}, [], {}],
+    ],
+    [
+      { boolean: false, number: 0, string: "", array: [0], object: {} },
+      { boolean: false, number: 0, string: "", array: [0], object: {} },
+    ],
+  ]) {
+    Glean.jogCat.jogObject.set(input);
+    Assert.deepEqual(expected, Glean.jogCat.jogObject.testGetValue());
+  }
+});
 
 add_task(function test_jog_counter_works() {
   Services.fog.testRegisterRuntimeMetric(

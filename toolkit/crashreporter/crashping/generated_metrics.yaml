@@ -371,6 +371,27 @@ crash:
       type: object
     type: object
     version: 1
+  jump_list_shell_call_start:
+    bugs:
+    - https://bugzilla.mozilla.org/2073787
+    data_reviews:
+    - https://bugzilla.mozilla.org/2073787
+    data_sensitivity:
+    - technical
+    description: Time, in seconds since the Epoch, at which the Windows Shell call
+      currently running on the Jump List thread was started. It is cleared when the
+      call returns, so its presence in a crash report means the call never returned,
+      and CrashTime minus this value is how long it had been blocked. If calls from
+      the normal and private-browsing builders overlap, which in practice only happens
+      at startup, this reflects the most recent one.
+    expires: 165
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    time_unit: second
+    type: datetime
   last_interaction_duration:
     bugs:
     - https://bugzilla.mozilla.org/1950749

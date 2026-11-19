@@ -28,6 +28,7 @@
 #include "api/scoped_refptr.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "rtc_base/system/ignore_warnings.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -49,7 +50,12 @@ scoped_refptr<PeerConnectionFactoryInterface> CreateFactory(
     std::unique_ptr<FieldTrialsView> field_trials) {
   PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = network_thread;
+  // The deprecated CreatePeerConnectionFactory overload still forwards the
+  // worker thread supplied by the caller, so that such configurations keep
+  // being diagnosed.
+  RTC_PUSH_IGNORING_WDEPRECATED_DECLARATIONS()
   dependencies.worker_thread = worker_thread;
+  RTC_POP_IGNORING_WDEPRECATED_DECLARATIONS()
   dependencies.signaling_thread = signaling_thread;
   dependencies.event_log_factory = std::make_unique<RtcEventLogFactory>();
   dependencies.env = CreateEnvironment(std::move(field_trials));

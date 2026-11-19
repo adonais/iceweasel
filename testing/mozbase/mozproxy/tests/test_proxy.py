@@ -9,7 +9,7 @@ import mozunit
 import pytest
 import requests
 from mozproxy import get_playback
-from support import tempdir
+from support import firefox_binary, tempdir
 
 here = os.path.dirname(__file__)
 
@@ -68,16 +68,6 @@ def get_status_code(url, playback):
     return response.status_code
 
 
-def cleanup():
-    # some tests create this file as a side-effect
-    policies_file = os.path.join("distribution", "policies.json")
-    try:
-        if os.path.exists(policies_file):
-            os.remove(policies_file)
-    except PermissionError:
-        pass
-
-
 def test_mitm_check_proxy(*args):
     # test setup
     pageset_name = os.path.join(here, "files", "mitm5-linux-firefox-amazon.manifest")
@@ -88,13 +78,13 @@ def test_mitm_check_proxy(*args):
         "playback_version": "8.1.1",
         "platform": mozinfo.os,
         "run_local": "MOZ_AUTOMATION" not in os.environ,
-        "binary": "firefox",
         "app": "firefox",
         "host": "127.0.0.1",
     }
 
     with tempdir() as obj_path:
         config["obj_path"] = obj_path
+        config["binary"] = firefox_binary(obj_path)
         playback = get_playback(config)
         assert playback is not None
 
@@ -108,7 +98,6 @@ def test_mitm_check_proxy(*args):
             assert get_status_code(url, playback) == 404
         finally:
             playback.stop()
-    cleanup()
 
 
 @mock.patch("mozproxy.backends.mitm.Mitmproxy.check_proxy")
@@ -128,20 +117,19 @@ def test_mitm(*args):
         "playback_version": "8.1.1",
         "platform": mozinfo.os,
         "run_local": True,
-        "binary": "firefox",
         "app": "firefox",
         "host": "example.com",
     }
 
     with tempdir() as obj_path:
         config["obj_path"] = obj_path
+        config["binary"] = firefox_binary(obj_path)
         playback = get_playback(config)
-    assert playback is not None
-    try:
-        playback.start()
-    finally:
-        playback.stop()
-    cleanup()
+        assert playback is not None
+        try:
+            playback.start()
+        finally:
+            playback.stop()
 
 
 @mock.patch("mozproxy.backends.mitm.Mitmproxy.check_proxy")
@@ -207,20 +195,19 @@ def test_mitm_with_retry(*args):
         "playback_version": "8.1.1",
         "platform": mozinfo.os,
         "run_local": True,
-        "binary": "firefox",
         "app": "firefox",
         "host": "example.com",
     }
 
     with tempdir() as obj_path:
         config["obj_path"] = obj_path
+        config["binary"] = firefox_binary(obj_path)
         playback = get_playback(config)
-    assert playback is not None
-    try:
-        playback.start()
-    finally:
-        playback.stop()
-    cleanup()
+        assert playback is not None
+        try:
+            playback.start()
+        finally:
+            playback.stop()
 
 
 def test_mitm_direct_mode():

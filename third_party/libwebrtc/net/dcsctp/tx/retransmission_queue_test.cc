@@ -92,7 +92,7 @@ class RetransmissionQueueTest : public testing::Test {
 
   std::vector<TSN> GetTSNsForFastRetransmit(RetransmissionQueue& queue) {
     std::vector<TSN> tsns;
-    for (const auto& elem : queue.GetChunksForFastRetransmit(10000)) {
+    for (const auto& elem : queue.GetChunksForFastRetransmit(now_, 10000)) {
       tsns.push_back(elem.first);
     }
     return tsns;
@@ -479,7 +479,7 @@ TEST_F(RetransmissionQueueTest, RetransmitsOnT3Expiry) {
                           Pair(TSN(10), State::kInFlight)));
 
   // Will force chunks to be retransmitted
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
               ElementsAre(Pair(TSN(9), State::kAcked),  //
@@ -522,7 +522,7 @@ TEST_F(RetransmissionQueueTest, LimitedRetransmissionOnlyWithRfc3758Support) {
                           Pair(TSN(10), State::kInFlight)));
 
   // Will force chunks to be retransmitted
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
               ElementsAre(Pair(TSN(9), State::kAcked),  //
@@ -556,7 +556,7 @@ TEST_F(RetransmissionQueueTest, LimitsRetransmissionsAsUdp) {
   // Will force chunks to be retransmitted
   EXPECT_CALL(producer_, Discard(StreamID(1), kMessageId)).Times(1);
 
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
               ElementsAre(Pair(TSN(9), State::kAcked),  //
@@ -600,23 +600,23 @@ TEST_F(RetransmissionQueueTest, LimitsRetransmissionsToThreeSends) {
   EXPECT_CALL(producer_, Discard(StreamID(1), kMessageId)).Times(0);
 
   // Retransmission 1
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
   EXPECT_FALSE(queue.ShouldSendForwardTsn(now_));
   EXPECT_THAT(queue.GetChunksToSend(now_, 1000), SizeIs(1));
 
   // Retransmission 2
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
   EXPECT_FALSE(queue.ShouldSendForwardTsn(now_));
   EXPECT_THAT(queue.GetChunksToSend(now_, 1000), SizeIs(1));
 
   // Retransmission 3
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
   EXPECT_FALSE(queue.ShouldSendForwardTsn(now_));
   EXPECT_THAT(queue.GetChunksToSend(now_, 1000), SizeIs(1));
 
   // Retransmission 4 - not allowed.
   EXPECT_CALL(producer_, Discard(StreamID(1), kMessageId)).Times(1);
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
   EXPECT_TRUE(queue.ShouldSendForwardTsn(now_));
   EXPECT_THAT(queue.GetChunksToSend(now_, 1000), IsEmpty());
 
@@ -655,7 +655,7 @@ TEST_F(RetransmissionQueueTest, RetransmitsWhenSendBufferIsFullT3Expiry) {
   EXPECT_EQ(queue.unacked_items(), 1u);
 
   // Will force chunks to be retransmitted
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
               ElementsAre(Pair(TSN(9), State::kAcked),  //
@@ -715,7 +715,7 @@ TEST_F(RetransmissionQueueTest, ProducesValidForwardTsn) {
   EXPECT_CALL(producer_, Discard(StreamID(1), kMessageId))
       .WillOnce(Return(true));
 
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   // NOTE: The TSN=13 represents the end fragment.
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
@@ -774,7 +774,7 @@ TEST_F(RetransmissionQueueTest, ProducesValidForwardTsnWhenFullySent) {
   EXPECT_CALL(producer_, Discard(StreamID(1), kMessageId))
       .WillOnce(Return(false));
 
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
               ElementsAre(Pair(TSN(10), State::kAcked),      //
@@ -858,7 +858,7 @@ TEST_F(RetransmissionQueueTest, ProducesValidIForwardTsn) {
   EXPECT_CALL(producer_, Discard(StreamID(3), OutgoingMessageId(44)))
       .WillOnce(Return(true));
 
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
               ElementsAre(Pair(TSN(9), State::kAcked),       //
@@ -1133,7 +1133,7 @@ TEST_F(RetransmissionQueueTest, AccountsNackedAbandonedChunksAsNotOutstanding) {
 
   // Mark the message as lost.
   EXPECT_CALL(producer_, Discard(StreamID(1), kMessageId)).Times(1);
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   EXPECT_TRUE(queue.ShouldSendForwardTsn(now_));
 
@@ -1401,7 +1401,7 @@ TEST_F(RetransmissionQueueTest, AbandonsRtxLimit2WhenNackedNineTimes) {
                           Pair(TSN(18), State::kInFlight),           //
                           Pair(TSN(19), State::kInFlight)));
 
-  EXPECT_THAT(queue.GetChunksForFastRetransmit(1000),
+  EXPECT_THAT(queue.GetChunksForFastRetransmit(now_, 1000),
               ElementsAre(Pair(TSN(10), _)));
 
   // Ack TSN [14 to 16] - three more nacks - second and last retransmission.
@@ -1695,7 +1695,7 @@ TEST_F(RetransmissionQueueTest, CanAlwaysSendOnePacket) {
                                    {SackChunk::GapAckBlock(3, 3)}, {}));
 
   // Force TSN 10 to be retransmitted.
-  queue.HandleT3RtxTimerExpiry();
+  queue.HandleT3RtxTimerExpiry(now_);
 
   // Even if the receiver window is empty, it will allow TSN 10 to be sent.
   EXPECT_THAT(queue.GetChunksToSend(now_, mtu), ElementsAre(Pair(TSN(10), _)));

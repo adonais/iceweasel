@@ -68,13 +68,17 @@ export async function generateChatTitle(
     const tabInfo = current_tab || { url: "", title: "", description: "" };
     tabInfo.title = sanitizeUntrustedContent(tabInfo.title);
 
+    // The first assistant reply is context for the prompt, not a turn to
+    // continue: some providers (e.g. Mistral) reject a conversation that ends
+    // on an assistant message, which made title generation fall back to the
+    // default title. Its framing lives in the Remote Settings prompt.
     conversation.setSystemMessage(
-      renderPrompt(rawPrompt, { current_tab: JSON.stringify(tabInfo) })
+      renderPrompt(rawPrompt, {
+        current_tab: JSON.stringify(tabInfo),
+        assistant_response: assistantResponse,
+      })
     );
     conversation.addUserMessage(message);
-    if (assistantResponse) {
-      conversation.addAssistantMessage(assistantResponse);
-    }
 
     const response = await conversation.run({
       token: await AuthProvider.getToken(),

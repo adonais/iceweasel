@@ -411,19 +411,40 @@ class twinopen(PageloaderTest):
 
 @register_test()
 class pdfpaint(PageloaderTest):
-    """
-    Tests the amount of time it takes for the the first page of a PDF to
-    be rendered.
-    """
+    """Time first-page rendering with worker rendering enabled."""
 
     alert_threshold = 6.0
     tpmanifest = "${talos}/tests/pdfpaint/pdfpaint.manifest"
-    tppagecycles = 1
+    tppagecycles = 15
     timeout = 2000
     tptimeout = 60000
     pdfpaint = True
     unit = "ms"
     subtest_alerts = True
+    preferences = {
+        "pdfjs.disableWorkerRendering": False,
+        "pdfjs.enableHWA": True,
+    }
+
+
+@register_test()
+class pdfpaint_main_hwa(pdfpaint):
+    """Time first-page rendering on the main thread with canvas HWA enabled."""
+
+    preferences = {
+        "pdfjs.disableWorkerRendering": True,
+        "pdfjs.enableHWA": True,
+    }
+
+
+@register_test()
+class pdfpaint_main_sw(pdfpaint):
+    """Time first-page rendering on the main thread with a software canvas."""
+
+    preferences = {
+        "pdfjs.disableWorkerRendering": True,
+        "pdfjs.enableHWA": False,
+    }
 
 
 @register_test()
@@ -631,7 +652,7 @@ class glvideo(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = "CanvasRenderer,CanvasWorker,MediaSupervisor"
+    gecko_profile_extra_threads = "CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"
@@ -653,7 +674,7 @@ class canvas2dvideo(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = "CanvasRenderer,CanvasWorker,MediaSupervisor"
+    gecko_profile_extra_threads = "CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"
@@ -809,7 +830,7 @@ class offscreencanvas_webcodecs_main_2d_h264(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = "CanvasRenderer,CanvasWorker,MediaSupervisor"
+    gecko_profile_extra_threads = "CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"
@@ -833,7 +854,7 @@ class offscreencanvas_webcodecs_main_2d_vp9(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = "CanvasRenderer,CanvasWorker,MediaSupervisor"
+    gecko_profile_extra_threads = "CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"
@@ -857,7 +878,7 @@ class offscreencanvas_webcodecs_main_2d_av1(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = "CanvasRenderer,CanvasWorker,MediaSupervisor"
+    gecko_profile_extra_threads = "CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"
@@ -879,9 +900,7 @@ class offscreencanvas_webcodecs_worker_2d_h264(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = (
-        "DOM Worker,CanvasRenderer,CanvasWorker,MediaSupervisor"
-    )
+    gecko_profile_extra_threads = "DOM Worker,CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"
@@ -903,9 +922,7 @@ class offscreencanvas_webcodecs_worker_2d_vp9(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = (
-        "DOM Worker,CanvasRenderer,CanvasWorker,MediaSupervisor"
-    )
+    gecko_profile_extra_threads = "DOM Worker,CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"
@@ -927,9 +944,7 @@ class offscreencanvas_webcodecs_worker_2d_av1(PageloaderTest):
     tpchrome = False
     timeout = 600
     gecko_profile_interval = 2
-    gecko_profile_extra_threads = (
-        "DOM Worker,CanvasRenderer,CanvasWorker,MediaSupervisor"
-    )
+    gecko_profile_extra_threads = "DOM Worker,CanvasRenderer,MediaSupervisor"
     win_counters = linux_counters = mac_counters = None
     filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     unit = "ms"

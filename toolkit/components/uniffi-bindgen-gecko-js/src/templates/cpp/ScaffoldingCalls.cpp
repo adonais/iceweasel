@@ -135,7 +135,7 @@ UniquePtr<UniffiSyncCallHandler> GetSyncCallHandler(uint64_t aId) {
     {%- for call in lib.scaffolding_calls %}
     {%- if !call.is_async() %}
     case {{ call.id }}: {
-      return MakeUnique<{{ call.handler_class_name() }}>();
+      return std::make_unique<{{ call.handler_class_name() }}>();
     }
     {%- endif %}
     {%- endfor %}
@@ -154,7 +154,7 @@ UniquePtr<UniffiAsyncCallHandler> GetAsyncCallHandler(uint64_t aId) {
     {%- for call in lib.scaffolding_calls %}
     {%- if call.is_async() %}
     case {{ call.id }}: {
-      return MakeUnique<{{ call.handler_class_name() }}>();
+      return std::make_unique<{{ call.handler_class_name() }}>();
     }
     {%- endif %}
     {%- endfor %}

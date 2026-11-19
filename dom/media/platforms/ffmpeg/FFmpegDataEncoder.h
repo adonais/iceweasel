@@ -105,6 +105,9 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   AVCodecContext* mCodecContext;
   AVFrame* mFrame;
   DurationMap mDurationMap;
+#ifdef MOZ_WIDGET_ANDROID
+  bool mIsMediaCodec = false;
+#endif
 
   // Provide critical-section for open/close mCodecContext.
   static StaticMutex sMutex;

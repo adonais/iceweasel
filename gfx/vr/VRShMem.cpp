@@ -72,9 +72,9 @@ VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aRequiresMutex)
 // VRShMem instance.
 volatile VRExternalShmem* VRShMem::GetExternalShmem() const {
 #if defined(XP_MACOSX)
-  MOZ_ASSERT(mShmemFD == 0);
+  MOZ_RELEASE_ASSERT(mShmemFD == 0);
 #elif defined(XP_WIN)
-  MOZ_ASSERT(mShmemFile == nullptr);
+  MOZ_RELEASE_ASSERT(mShmemFile == nullptr);
 #endif
   return mExternalShmem;
 }
@@ -106,7 +106,7 @@ bool VRShMem::IsCreatedOnSharedMemory() const {
 // Callers/Processes to CreateShMem should followup with CloseShMem
 void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
   if (HasExternalShmem()) {
-    MOZ_ASSERT(mIsSharedExternalShmem && !IsCreatedOnSharedMemory());
+    MOZ_RELEASE_ASSERT(mIsSharedExternalShmem && !IsCreatedOnSharedMemory());
     return;
   }
 #if defined(XP_WIN)
@@ -137,7 +137,7 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
   // and replaces the other VRManager when enabled.
   // If the VR process is not enabled, create an in-process VRService.
   if (!aCreateOnSharedMemory) {
-    MOZ_ASSERT(mExternalShmem == nullptr);
+    MOZ_RELEASE_ASSERT(mExternalShmem == nullptr);
     // If the VR process is disabled, attempt to create a
     // VR service within the current process on the heap
     mExternalShmem = new VRExternalShmem();
@@ -146,7 +146,7 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
   }
 #endif
 
-  MOZ_ASSERT(aCreateOnSharedMemory);
+  MOZ_RELEASE_ASSERT(aCreateOnSharedMemory);
 
 #if defined(XP_MACOSX)
   if (mShmemFD == 0) {
@@ -182,7 +182,7 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
         CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0,
                            sizeof(VRExternalShmem), kShmemName);
     MOZ_ASSERT(GetLastError() == 0 || GetLastError() == ERROR_ALREADY_EXISTS);
-    MOZ_ASSERT(mShmemFile);
+    MOZ_RELEASE_ASSERT(mShmemFile);
     if (mShmemFile == nullptr) {
       // TODO - Implement logging (Bug 1558912)
       CloseShMem();
@@ -203,9 +203,9 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
     return;
   }
 #elif defined(MOZ_WIDGET_ANDROID)
-  MOZ_ASSERT(false,
-             "CreateShMem should not be called for Android. Use "
-             "CreateShMemForAndroid instead");
+  MOZ_RELEASE_ASSERT(false,
+                     "CreateShMem should not be called for Android. Use "
+                     "CreateShMemForAndroid instead");
 #endif
 }
 
@@ -258,7 +258,7 @@ void VRShMem::ClearShMem() {
 void VRShMem::CloseShMem() {
 #if !defined(MOZ_WIDGET_ANDROID)
   if (!IsCreatedOnSharedMemory()) {
-    MOZ_ASSERT(!mIsSharedExternalShmem);
+    MOZ_RELEASE_ASSERT(!mIsSharedExternalShmem);
     if (mExternalShmem) {
       delete mExternalShmem;
       mExternalShmem = nullptr;
@@ -290,7 +290,7 @@ void VRShMem::CloseShMem() {
 
 #if defined(XP_WIN)
   if (mMutex) {
-    MOZ_ASSERT(mRequiresMutex);
+    MOZ_RELEASE_ASSERT(mRequiresMutex);
     CloseHandle(mMutex);
     mMutex = nullptr;
   }
@@ -347,7 +347,7 @@ bool VRShMem::JoinShMem() {
   // TODO - Implement logging (Bug 1558912)
   mShmemFile = targetHandle;
   if (!mExternalShmem) {
-    MOZ_ASSERT(mExternalShmem);
+    MOZ_RELEASE_ASSERT(mExternalShmem);
     return false;
   }
 #else
@@ -355,7 +355,7 @@ bool VRShMem::JoinShMem() {
   //
   // TODO: ** Does this mean that ShMem only works in Windows for now? If so,
   // let's delete the code from other platforms (Bug 1563234)
-  MOZ_ASSERT(false, "JoinShMem not implemented");
+  MOZ_RELEASE_ASSERT(false, "JoinShMem not implemented");
 #endif
   return true;
 }
@@ -386,7 +386,7 @@ void VRShMem::LeaveShMem() {
   }
 #if defined(XP_WIN)
   if (mMutex) {
-    MOZ_ASSERT(mRequiresMutex);
+    MOZ_RELEASE_ASSERT(mRequiresMutex);
     CloseHandle(mMutex);
     mMutex = nullptr;
   }
@@ -448,7 +448,7 @@ void VRShMem::PullBrowserState(mozilla::gfx::VRBrowserState& aState) {
     pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->geckoMutex));
   }
   */
-  MOZ_ASSERT(false, "PullBrowserState not implemented");
+  MOZ_RELEASE_ASSERT(false, "PullBrowserState not implemented");
 #else
   bool status = true;
 #  if defined(XP_WIN)
@@ -489,7 +489,7 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
 #if defined(MOZ_WIDGET_ANDROID)
   // TODO: This code is out-of-date and fails to compile, as
   // VRService isn't compiled for Android (Bug 1563234)
-  MOZ_ASSERT(false, "JoinShMem not implemented");
+  MOZ_RELEASE_ASSERT(false, "JoinShMem not implemented");
   /*
   if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) ==
       0) {
@@ -568,7 +568,7 @@ void VRShMem::PullSystemState(
         aControllerState,
     bool& aEnumerationCompleted,
     const std::function<bool()>& aWaitCondition /* = nullptr */) {
-  MOZ_ASSERT(mExternalShmem);
+  MOZ_RELEASE_ASSERT(mExternalShmem);
   if (!mExternalShmem) {
     return;
   }
@@ -616,38 +616,6 @@ void VRShMem::PullSystemState(
 }
 #endif    // defined(MOZ_WIDGET_ANDROID)
 
-void VRShMem::PushWindowState(VRWindowState& aState) {
-#if defined(XP_WIN)
-  if (!mExternalShmem) {
-    return;
-  }
-
-  bool status = true;
-  WaitForMutex lock(mMutex);
-  status = lock.GetStatus();
-  if (status) {
-    memcpy((void*)&(mExternalShmem->windowState), (void*)&aState,
-           sizeof(VRWindowState));
-  }
-#endif  // defined(XP_WIN)
-}
-
-void VRShMem::PullWindowState(VRWindowState& aState) {
-#if defined(XP_WIN)
-  if (!mExternalShmem) {
-    return;
-  }
-
-  bool status = true;
-  WaitForMutex lock(mMutex);
-  status = lock.GetStatus();
-  if (status) {
-    memcpy((void*)&aState, (void*)&(mExternalShmem->windowState),
-           sizeof(VRWindowState));
-  }
-#endif  // defined(XP_WIN)
-}
-
 void VRShMem::PushTelemetryState(VRTelemetryState& aState) {
 #if defined(XP_WIN)
   if (!mExternalShmem) {
@@ -676,63 +644,5 @@ void VRShMem::PullTelemetryState(VRTelemetryState& aState) {
     memcpy((void*)&aState, (void*)&(mExternalShmem->telemetryState),
            sizeof(VRTelemetryState));
   }
-#endif  // defined(XP_WIN)
-}
-
-void VRShMem::SendEvent(uint64_t aWindowID,
-                        mozilla::gfx::VRFxEventType aEventType,
-                        mozilla::gfx::VRFxEventState aEventState) {
-  MOZ_ASSERT(!HasExternalShmem());
-  if (JoinShMem()) {
-    mozilla::gfx::VRWindowState windowState = {0};
-    PullWindowState(windowState);
-    windowState.windowID = aWindowID;
-    windowState.eventType = aEventType;
-    windowState.eventState = aEventState;
-    PushWindowState(windowState);
-    LeaveShMem();
-
-#if defined(XP_WIN)
-    // Notify the waiting host process that the data is now available
-    HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       // dwDesiredAccess
-                                  FALSE,                  // bInheritHandle
-                                  windowState.signalName  // lpName
-    );
-    ::SetEvent(hSignal);
-    ::CloseHandle(hSignal);
-#endif  // defined(XP_WIN)
-  }
-}
-
-void VRShMem::SendIMEState(uint64_t aWindowID,
-                           mozilla::gfx::VRFxEventState aEventState) {
-  SendEvent(aWindowID, mozilla::gfx::VRFxEventType::IME, aEventState);
-}
-
-void VRShMem::SendFullscreenState(uint64_t aWindowID, bool aFullscreen) {
-  SendEvent(aWindowID, mozilla::gfx::VRFxEventType::FULLSCREEN,
-            aFullscreen ? mozilla::gfx::VRFxEventState::FULLSCREEN_ENTER
-                        : mozilla::gfx::VRFxEventState::FULLSCREEN_EXIT);
-}
-
-// Note: this should be called from the VRShMem instance that created
-// the external shmem rather than joined it.
-void VRShMem::SendShutdowmState(uint64_t aWindowID) {
-  MOZ_ASSERT(HasExternalShmem());
-
-  mozilla::gfx::VRWindowState windowState = {0};
-  PullWindowState(windowState);
-  windowState.windowID = aWindowID;
-  windowState.eventType = mozilla::gfx::VRFxEventType::SHUTDOWN;
-  PushWindowState(windowState);
-
-#if defined(XP_WIN)
-  // Notify the waiting host process that the data is now available
-  HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       // dwDesiredAccess
-                                FALSE,                  // bInheritHandle
-                                windowState.signalName  // lpName
-  );
-  ::SetEvent(hSignal);
-  ::CloseHandle(hSignal);
 #endif  // defined(XP_WIN)
 }

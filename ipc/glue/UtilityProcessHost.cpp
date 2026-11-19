@@ -94,7 +94,7 @@ bool UtilityProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
 
   LOGD("[%p] UtilityProcessHost::Launch", this);
 
-  mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
+  mPrefSerializer = std::make_unique<ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_Utility,
                                                 /* remoteType */ {})) {
     return false;

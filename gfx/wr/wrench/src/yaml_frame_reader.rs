@@ -13,7 +13,6 @@ use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::usize;
 use webrender::api::*;
 use webrender::render_api::*;
 use webrender::api::units::*;
@@ -600,17 +599,16 @@ impl YamlFrameReader {
                 paired_with_perspective: false,
             };
 
-            let fixed_id = builder.push_reference_frame(
+            let fixed_id = builder.define_reference_frame(
                 LayoutPoint::zero(),
                 SpatialId::root_reference_frame(pipeline_id),
                 TransformStyle::Flat,
                 transform,
                 kind,
             );
-            builder.pop_reference_frame();
             self.dppx_root_reference_frame = Some(fixed_id);
 
-            let ref_frame_id = builder.push_reference_frame(
+            let ref_frame_id = builder.define_reference_frame(
                 LayoutPoint::zero(),
                 *self.spatial_id_stack.last().unwrap(),
                 TransformStyle::Flat,
@@ -634,7 +632,6 @@ impl YamlFrameReader {
 
         if dppx_reference_frame {
             self.spatial_id_stack.pop().unwrap();
-            builder.pop_reference_frame();
         }
 
         let (pipeline, payload) = builder.end();
@@ -2045,6 +2042,26 @@ impl YamlFrameReader {
             ));
         }
 
+        if !yaml["path"].is_badvalue() {
+            assert!(clip_id.is_none(), "invalid clip definition");
+
+            let path_yaml = &yaml["path"];
+            let rect = path_yaml["rect"].as_rect().expect("path clips need a rect");
+            let data = path_yaml["data"].as_str().expect("path clips need path data");
+            let fill_rule = match path_yaml["fill-rule"].as_str() {
+                Some("evenodd") => FillRule::Evenodd,
+                Some("nonzero") | None => FillRule::Nonzero,
+                Some(other) => panic!("unknown fill rule {:?}", other),
+            };
+
+            clip_id = Some(dl.define_clip_path(
+                spatial_id,
+                &parse_svg_path(data),
+                rect,
+                fill_rule,
+            ));
+        }
+
         if !complex_clips.is_empty() {
             // Only 1 complex clip is supported per clip (todo: change yaml format)
             assert_eq!(complex_clips.len(), 1);
@@ -2063,7 +2080,7 @@ impl YamlFrameReader {
         }
     }
 
-    fn push_reference_frame(
+    fn define_reference_frame(
         &mut self,
         dl: &mut DisplayListBuilder,
         default_bounds: impl Fn() -> LayoutRect,
@@ -2132,7 +2149,7 @@ impl YamlFrameReader {
             None => PropertyBinding::Value(transform_value),
         };
 
-        let reference_frame_id = dl.push_reference_frame(
+        let reference_frame_id = dl.define_reference_frame(
             bounds.min,
             *self.spatial_id_stack.last().unwrap(),
             transform_style,
@@ -2155,7 +2172,7 @@ impl YamlFrameReader {
         yaml: &Yaml,
     ) {
         let default_bounds = || LayoutRect::from_size(wrench.window_size_f32());
-        let real_id = self.push_reference_frame(dl, default_bounds, yaml);
+        let real_id = self.define_reference_frame(dl, default_bounds, yaml);
         self.spatial_id_stack.push(real_id);
 
         if let Some(yaml_items) = yaml["items"].as_vec() {
@@ -2163,10 +2180,9 @@ impl YamlFrameReader {
         }
 
         self.spatial_id_stack.pop().unwrap();
-        dl.pop_reference_frame();
     }
 
-    fn push_computed_frame(
+    fn define_computed_frame(
         &mut self,
         dl: &mut DisplayListBuilder,
         default_bounds: impl Fn() -> LayoutRect,
@@ -2178,7 +2194,7 @@ impl YamlFrameReader {
         let vertical_flip = yaml["vertical-flip"].as_bool().unwrap_or(false);
         let rotation = yaml["rotation"].as_rotation().unwrap_or(Rotation::Degree0);
 
-        let reference_frame_id = dl.push_computed_frame(
+        let reference_frame_id = dl.define_computed_frame(
             bounds.min,
             *self.spatial_id_stack.last().unwrap(),
             scale_from,
@@ -2201,7 +2217,7 @@ impl YamlFrameReader {
         yaml: &Yaml,
     ) {
         let default_bounds = || LayoutRect::from_size(wrench.window_size_f32());
-        let real_id = self.push_computed_frame(dl, default_bounds, yaml);
+        let real_id = self.define_computed_frame(dl, default_bounds, yaml);
         self.spatial_id_stack.push(real_id);
 
         if let Some(yaml_items) = yaml["items"].as_vec() {
@@ -2209,7 +2225,6 @@ impl YamlFrameReader {
         }
 
         self.spatial_id_stack.pop().unwrap();
-        dl.pop_reference_frame();
     }
 
     fn add_stacking_context_from_yaml(
@@ -2230,10 +2245,10 @@ impl YamlFrameReader {
         let has_transform = !yaml["transform"].is_badvalue() || !yaml["perspective"].is_badvalue();
         let pushed_reference_frame = if has_transform || bounds.min != LayoutPoint::zero() {
             let reference_frame_id = if has_transform {
-                self.push_reference_frame(dl, default_bounds, yaml)
+                self.define_reference_frame(dl, default_bounds, yaml)
             } else {
                 let parent_spatial_id = *self.spatial_id_stack.last().unwrap();
-                dl.push_reference_frame(
+                dl.define_reference_frame(
                     bounds.min,
                     parent_spatial_id,
                     transform_style,
@@ -2333,7 +2348,6 @@ impl YamlFrameReader {
 
         if pushed_reference_frame {
             self.spatial_id_stack.pop().unwrap();
-            dl.pop_reference_frame();
         }
     }
 
@@ -2414,5 +2428,176 @@ impl WrenchThing for YamlFrameReader {
         if self.requested_frame > 0 {
             self.requested_frame -= 1;
         }
+    }
+}
+
+/// Parse SVG path data. Arcs are not supported.
+fn parse_svg_path(data: &str) -> webrender::api::Path {
+    let mut parser = SvgPathParser { data: data.as_bytes(), pos: 0 };
+
+    let mut builder = PathBuilder::new();
+    let mut in_sub_path = false;
+    let mut current = LayoutPoint::zero();
+    let mut first = LayoutPoint::zero();
+    // The control point to reflect for the S and T commands, if the previous
+    // command was a curve of the same kind.
+    let mut prev_cubic_ctrl = None;
+    let mut prev_quadratic_ctrl = None;
+    let mut command = 0u8;
+
+    loop {
+        parser.skip_separators();
+        let Some(c) = parser.peek() else {
+            break;
+        };
+        if c.is_ascii_alphabetic() {
+            command = c;
+            parser.pos += 1;
+        } else if command == b'M' {
+            // Coordinates after a move-to are implicit line-tos.
+            command = b'L';
+        } else if command == b'm' {
+            command = b'l';
+        } else if command == 0 || command.eq_ignore_ascii_case(&b'z') {
+            panic!("path data must start with a move-to: {:?}", data);
+        }
+
+        let relative = command.is_ascii_lowercase();
+        let origin = if relative { current.to_vector() } else { LayoutVector2D::zero() };
+
+        if command.eq_ignore_ascii_case(&b'z') {
+            if in_sub_path {
+                builder.end(true);
+                in_sub_path = false;
+            }
+            current = first;
+            prev_cubic_ctrl = None;
+            prev_quadratic_ctrl = None;
+            continue;
+        }
+
+        if command.eq_ignore_ascii_case(&b'm') {
+            if in_sub_path {
+                builder.end(false);
+            }
+            current = parser.point() + origin;
+            first = current;
+            builder.begin(current);
+            in_sub_path = true;
+            prev_cubic_ctrl = None;
+            prev_quadratic_ctrl = None;
+            continue;
+        }
+
+        // Drawing after a close-path starts a new sub-path at the same point.
+        if !in_sub_path {
+            builder.begin(current);
+            first = current;
+            in_sub_path = true;
+        }
+
+        let mut cubic_ctrl = None;
+        let mut quadratic_ctrl = None;
+        match command.to_ascii_uppercase() {
+            b'L' => {
+                current = parser.point() + origin;
+                builder.line_to(current);
+            }
+            b'H' => {
+                current.x = parser.number() + origin.x;
+                builder.line_to(current);
+            }
+            b'V' => {
+                current.y = parser.number() + origin.y;
+                builder.line_to(current);
+            }
+            b'C' | b'S' => {
+                let ctrl1 = if command.eq_ignore_ascii_case(&b's') {
+                    prev_cubic_ctrl.map_or(current, |ctrl: LayoutPoint| current + (current - ctrl))
+                } else {
+                    parser.point() + origin
+                };
+                let ctrl2 = parser.point() + origin;
+                current = parser.point() + origin;
+                builder.cubic_bezier_to(ctrl1, ctrl2, current);
+                cubic_ctrl = Some(ctrl2);
+            }
+            b'Q' | b'T' => {
+                let ctrl = if command.eq_ignore_ascii_case(&b't') {
+                    prev_quadratic_ctrl.map_or(current, |ctrl: LayoutPoint| current + (current - ctrl))
+                } else {
+                    parser.point() + origin
+                };
+                current = parser.point() + origin;
+                builder.quadratic_bezier_to(ctrl, current);
+                quadratic_ctrl = Some(ctrl);
+            }
+            _ => panic!("unsupported path command {:?}", command as char),
+        }
+        prev_cubic_ctrl = cubic_ctrl;
+        prev_quadratic_ctrl = quadratic_ctrl;
+    }
+
+    if in_sub_path {
+        builder.end(false);
+    }
+
+    builder.build()
+}
+
+struct SvgPathParser<'a> {
+    data: &'a [u8],
+    pos: usize,
+}
+
+impl<'a> SvgPathParser<'a> {
+    fn peek(&self) -> Option<u8> {
+        self.data.get(self.pos).cloned()
+    }
+
+    fn skip_separators(&mut self) {
+        while let Some(c) = self.peek() {
+            if !c.is_ascii_whitespace() && c != b',' {
+                break;
+            }
+            self.pos += 1;
+        }
+    }
+
+    /// Numbers don't need to be separated when that is not ambiguous, for
+    /// example `-1.5-2` or `.5.5`.
+    fn number(&mut self) -> f32 {
+        self.skip_separators();
+        let start = self.pos;
+        if let Some(b'-') | Some(b'+') = self.peek() {
+            self.pos += 1;
+        }
+        let mut seen_dot = false;
+        while let Some(c) = self.peek() {
+            if c == b'.' && !seen_dot {
+                seen_dot = true;
+            } else if !c.is_ascii_digit() {
+                break;
+            }
+            self.pos += 1;
+        }
+        if let Some(b'e') | Some(b'E') = self.peek() {
+            self.pos += 1;
+            if let Some(b'-') | Some(b'+') = self.peek() {
+                self.pos += 1;
+            }
+            while let Some(b'0'..=b'9') = self.peek() {
+                self.pos += 1;
+            }
+        }
+
+        let token = std::str::from_utf8(&self.data[start..self.pos]).unwrap();
+        token.parse().unwrap_or_else(|_| panic!("invalid path number {:?} at {}", token, start))
+    }
+
+    fn point(&mut self) -> LayoutPoint {
+        let x = self.number();
+        let y = self.number();
+        LayoutPoint::new(x, y)
     }
 }

@@ -253,7 +253,7 @@ static const IID IID_IRemUnknown2 = {
 
 struct IIDToLiteralMapEntry {
   constexpr IIDToLiteralMapEntry(REFIID aIid, nsLiteralCString&& aStr)
-      : mIid(aIid), mStr(std::forward<nsLiteralCString>(aStr)) {}
+      : mIid(aIid), mStr(std::move(aStr)) {}
 
   REFIID mIid;
   const nsLiteralCString mStr;

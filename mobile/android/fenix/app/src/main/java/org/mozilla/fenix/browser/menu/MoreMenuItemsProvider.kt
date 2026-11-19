@@ -45,16 +45,18 @@ class MoreMenuItemsProvider(
     // What this currently expands to, as last configured by the menu.
     private var lastSubMenuItems: List<StandardMenuItem> = emptyList()
 
-    override val itemFlow: StateFlow<ExpandableMenuItem> =
+    override val itemsFlow: StateFlow<List<ExpandableMenuItem>> =
         browserStore.stateFlow
             .map { state ->
-                moreItem(isNormalTab = target.browserSessionFrom(state)?.content?.private == false)
+                listOf(moreItem(isNormalTab = target.browserSessionFrom(state)?.content?.private == false))
             }
             .stateIn(
                 scope = scope,
                 started = SharingStarted.Eagerly,
                 initialValue =
-                    moreItem(isNormalTab = target.browserSessionFrom(browserStore.state)?.content?.private == false),
+                    listOf(
+                        moreItem(isNormalTab = target.browserSessionFrom(browserStore.state)?.content?.private == false)
+                    ),
             )
 
     private fun moreItem(isNormalTab: Boolean) =

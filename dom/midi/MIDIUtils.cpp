@@ -136,7 +136,7 @@ bool ParseMessages(const nsTArray<uint8_t>& aByteBuffer,
         aMsgArray.AppendElement(*currentMsg);
       }
 
-      currentMsg = MakeUnique<MIDIMessage>();
+      currentMsg = std::make_unique<MIDIMessage>();
       currentMsg->timestamp() = aTimestamp;
     }
 

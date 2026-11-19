@@ -11,6 +11,12 @@ const PERM_NAME = "ipp-vpn";
 const ENABLE_VPN_EVENT = "IPProtection:UserEnableVPNForSite";
 const DISABLE_VPN_EVENT = "IPProtection:UserDisableVPNForSite";
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", false]],
+  });
+});
+
 /**
  * Tests that we don't show the exclusion toggle and ipprotection-excluded icon
  * when the feature pref is disabled.

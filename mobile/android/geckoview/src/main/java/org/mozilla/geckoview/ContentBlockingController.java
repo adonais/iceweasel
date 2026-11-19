@@ -24,6 +24,9 @@ import org.mozilla.gecko.util.ThreadUtils;
  */
 @AnyThread
 public class ContentBlockingController {
+  /** Public constructor for ContentBlockingController. */
+  public ContentBlockingController() {}
+
   private static final String LOGTAG = "GeckoContentBlocking";
 
   /** Content blocking event constants and data. */

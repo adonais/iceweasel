@@ -94,8 +94,8 @@ UniquePtr<XPathExpression> XPathEvaluator::CreateExpression(
     return nullptr;
   }
 
-  return MakeUnique<XPathExpression>(std::move(expression), mRecycler,
-                                     aDocument);
+  return std::make_unique<XPathExpression>(std::move(expression), mRecycler,
+                                           aDocument);
 }
 
 bool XPathEvaluator::WrapObject(JSContext* aCx,
@@ -107,7 +107,7 @@ bool XPathEvaluator::WrapObject(JSContext* aCx,
 /* static */
 UniquePtr<XPathEvaluator> XPathEvaluator::Constructor(
     const GlobalObject& aGlobal) {
-  return MakeUnique<XPathEvaluator>(nullptr);
+  return std::make_unique<XPathEvaluator>(nullptr);
 }
 
 already_AddRefed<XPathResult> XPathEvaluator::Evaluate(

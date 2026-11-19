@@ -804,12 +804,12 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
 
   FaultingCodeRange store8(Register src, const Address& address);
   FaultingCodeRange store8(Register src, const BaseIndex& address);
-  void store8(Imm32 imm, const Address& address);
+  FaultingCodeRange store8(Imm32 imm, const Address& address);
   void store8(Imm32 imm, const BaseIndex& address);
 
   FaultingCodeRange store16(Register src, const Address& address);
   FaultingCodeRange store16(Register src, const BaseIndex& address);
-  void store16(Imm32 imm, const Address& address);
+  FaultingCodeRange store16(Imm32 imm, const Address& address);
   void store16(Imm32 imm, const BaseIndex& address);
 
   template <typename T>
@@ -820,7 +820,7 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
   FaultingCodeRange store32(Register src, const Address& address);
   FaultingCodeRange store32(Register src, const BaseIndex& address);
   void store32(Register src, AbsoluteAddress address);
-  void store32(Imm32 src, const Address& address);
+  FaultingCodeRange store32(Imm32 src, const Address& address);
   void store32(Imm32 src, const BaseIndex& address);
 
   template <typename T>
@@ -828,8 +828,8 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     ma_store_unaligned(src, dest, SizeWord);
   }
 
-  void store64(Imm64 imm, Address address) {
-    storePtr(ImmWord(imm.value), address);
+  FaultingCodeRange store64(Imm64 imm, Address address) {
+    return storePtr(ImmWord(imm.value), address);
   }
   void store64(Imm64 imm, const BaseIndex& address) {
     storePtr(ImmWord(imm.value), address);

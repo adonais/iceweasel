@@ -64,6 +64,13 @@ async function buildTable() {
           "data-l10n-id",
           "customkeys-key-unchangeable"
         );
+      } else if (key.systemAssigned) {
+        row.classList.add("system-assigned");
+        keyDescription.className = "text-deemphasized";
+        keyDescription.setAttribute(
+          "data-l10n-id",
+          "customkeys-key-system-assigned"
+        );
       }
       keyLabelContainer.append(keyLabel);
       keyLabelContainer.append(keyDescription);
@@ -162,7 +169,10 @@ async function maybeHandleConflict(data) {
       return false;
     }
     const conflictDesc = row.dataset.label;
-    if (row.classList.contains("internal")) {
+    if (
+      row.classList.contains("internal") ||
+      row.classList.contains("system-assigned")
+    ) {
       const [title, body] = await document.l10n.formatValues([
         { id: "customkeys-conflict-unusable-title" },
         {

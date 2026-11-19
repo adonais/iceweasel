@@ -63,6 +63,26 @@ add_task(async function test() {
       "Test that the more actions button has a title"
     );
 
+    info("Test that the menu stays open when the button is released");
+    const menu = document.querySelector("panel-list");
+    const shown = BrowserTestUtils.waitForEvent(menu, "shown");
+    EventUtils.synthesizeMouseAtCenter(
+      moreActionsButton,
+      { type: "mousedown" },
+      browser.contentWindow
+    );
+    await shown;
+    EventUtils.synthesizeMouseAtCenter(
+      moreActionsButton,
+      { type: "mouseup" },
+      browser.contentWindow
+    );
+    ok(menu.open, "The menu is still open after releasing the button");
+    ok(menu.matches(":popover-open"), "The menu is still showing");
+    const hidden = BrowserTestUtils.waitForEvent(menu, "hidden");
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.contentWindow);
+    await hidden;
+
     info("Test that the button is clickable");
     // The second argument is the event object. By passing an empty object, this
     // tells the utility function to generate a mousedown then a mouseup, that

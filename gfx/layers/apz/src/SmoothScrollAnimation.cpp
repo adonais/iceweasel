@@ -95,10 +95,10 @@ SmoothScrollAnimation::SmoothScrollAnimation(ScrollAnimationKind aKind,
       smallestVisibleIncrement = CSSPixel::ToAppUnits(
           ParentLayerCoord(1) / mApzc.GetFrameMetrics().GetZoom());
     }
-    mAnimationPhysics = MakeUnique<ScrollAnimationMSDPhysics>(
+    mAnimationPhysics = std::make_unique<ScrollAnimationMSDPhysics>(
         mKind, mFinalDestination, smallestVisibleIncrement);
   } else {
-    mAnimationPhysics = MakeUnique<ScrollAnimationBezierPhysics>(
+    mAnimationPhysics = std::make_unique<ScrollAnimationBezierPhysics>(
         mFinalDestination,
         apz::ComputeBezierAnimationSettingsForOrigin(aOrigin));
   }

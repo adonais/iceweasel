@@ -54,6 +54,7 @@ class LIRGeneratorARM64 : public LIRGeneratorShared {
                    MDefinition* lhs, MDefinition* rhs);
   bool lowerForALUWithShiftedOperand(JSOp op, MBinaryInstruction* mir,
                                      MDefinition* lhs, MDefinition* rhs);
+  bool canStoreConstantWithoutRegister(MDefinition* value);
 
   void lowerForALUInt64(LInstructionHelper<INT64_PIECES, INT64_PIECES, 0>* ins,
                         MDefinition* mir, MDefinition* input);

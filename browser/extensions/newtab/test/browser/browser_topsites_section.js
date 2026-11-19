@@ -527,10 +527,6 @@ add_task(async function test_search_topsite_remove_engine() {
     await SearchService.getEngineByAlias(topSiteAlias)
   );
 
-  registerCleanupFunction(() => {
-    SearchService.restoreDefaultEngines();
-  });
-
   await SpecialPowers.spawn(
     browser,
     [numTopSites],
@@ -548,6 +544,10 @@ add_task(async function test_search_topsite_remove_engine() {
       );
     }
   );
+
+  // A cleanup function would run after SearchTestUtils has already restored
+  // the default config, which no longer contains the hidden engine.
+  SearchService.restoreDefaultEngines();
 
   BrowserTestUtils.removeTab(tab);
 });

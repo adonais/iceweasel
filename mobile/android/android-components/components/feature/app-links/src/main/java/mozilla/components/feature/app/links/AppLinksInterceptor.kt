@@ -51,8 +51,8 @@ private val ALLOWED_SCHEMES_IN_SUBFRAME: List<String> =
  * @param context Context the feature is associated with.
  * @param engineSupportedSchemes List of schemes that the engine supports.
  * @param alwaysDeniedSchemes List of schemes that will never be opened in a third-party app
- * @param launchInApp If {true} then launch app links in third party app(s). Default to false because of security
- *   concerns.
+ * @param launchInApp Given the request url, returns {true} if the link should be launched in a third party app. Default
+ *   returns false because of security concerns.
  * @param useCases These use cases allow for the detection of, and opening of links that other apps have registered to
  *   open.
  * @param launchFromInterceptor If {true} then the interceptor will launch the link in third-party apps if available,
@@ -63,7 +63,7 @@ class AppLinksInterceptor(
     private val context: Context,
     private val engineSupportedSchemes: Set<String> = ENGINE_SUPPORTED_SCHEMES,
     private val alwaysDeniedSchemes: AlwaysDeniedSchemes = AlwaysDeniedSchemes(ALWAYS_DENY_SCHEMES),
-    private var launchInApp: () -> Boolean = { false },
+    private var launchInApp: (String) -> Boolean = { false },
     private val useCases: AppLinksUseCases =
         AppLinksUseCases(
             context,
@@ -106,7 +106,7 @@ class AppLinksInterceptor(
                 engineSupportsScheme && isSameDomainNavigation && !isPossibleAuthentication(tabSessionState) -> true
 
                 // If scheme not in supported list then follow user preference
-                !launchInApp() && !isPossibleAuthentication(tabSessionState) && engineSupportsScheme -> true
+                !launchInApp(uri) && !isPossibleAuthentication(tabSessionState) && engineSupportsScheme -> true
                 // Never go to an external app when scheme is in blocklist
                 alwaysDeniedSchemes.shouldDeny(uriScheme) -> true
                 else -> false
@@ -129,7 +129,7 @@ class AppLinksInterceptor(
         }
 
         // Now that we have the package name,  check again if this is not authentication.
-        if (!launchInApp() && !isAuthenticationFlow && engineSupportsScheme) {
+        if (!launchInApp(uri) && !isAuthenticationFlow && engineSupportsScheme) {
             return null
         }
 
@@ -168,7 +168,7 @@ class AppLinksInterceptor(
         uri: String,
         tabId: String,
     ): RequestInterceptor.InterceptionResponse? {
-        if (!launchInApp()) {
+        if (!launchInApp(uri)) {
             redirect.fallbackUrl?.let {
                 return RequestInterceptor.InterceptionResponse.Url(it)
             }

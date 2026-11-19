@@ -94,6 +94,48 @@ add_task(async function test_extension_sidebar_actions() {
   );
 });
 
+add_task(async function test_extension_update_keeps_other_panel_header() {
+  const extension = ExtensionTestUtils.loadExtension({ ...extData });
+  await extension.startup();
+  await extension.awaitMessage("sidebar");
+  const extensionCommandID = SidebarController.currentID;
+
+  await SidebarTestUtils.showPanel(window, "viewHistorySidebar");
+  const header = SidebarController.panelHeader;
+  const historyTitle = header.heading;
+
+  // Updating the extension's title must not change the header.
+  await sendMessage(extension, "set-title", "Updated Title");
+  Assert.equal(
+    header.heading,
+    historyTitle,
+    "Header unchanged after setTitle."
+  );
+
+  // Installing another sidebar extension must not change the header.
+  const extension2 = ExtensionTestUtils.loadExtension({
+    ...extData,
+    manifest: {
+      sidebar_action: {
+        ...extData.manifest.sidebar_action,
+        default_title: "Second Extension",
+        open_at_install: false,
+      },
+    },
+  });
+  await extension2.startup();
+  Assert.equal(header.heading, historyTitle, "Header unchanged after install.");
+
+  // Opening the extension panel shows its (updated) title.
+  await SidebarTestUtils.showPanel(window, extensionCommandID);
+  await extension.awaitMessage("sidebar");
+  Assert.equal(header.heading, "Updated Title", "Extension header is shown.");
+
+  SidebarTestUtils.closePanel(window);
+  await extension2.unload();
+  await extension.unload();
+});
+
 add_task(async function test_open_new_window_after_install() {
   const extension = ExtensionTestUtils.loadExtension({ ...extData });
   await extension.startup();

@@ -15,11 +15,11 @@ import {
   FORM_REVIEW_STATES,
 } from "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button-group.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-input-text.mjs";
 
 /** @typedef {import("chrome://global/content/vendor/lit.all.mjs").TemplateResult} TemplateResult */

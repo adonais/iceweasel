@@ -20,7 +20,8 @@
 #  ./import-irregexp.py --path path/to/v8/src/regexp
 #
 # Alternatively, without the --path argument, import-irregexp.py will
-# clone v8 from github into a temporary directory.
+# fetch v8 into a temporary directory: the given revision if there is one
+# (`./mach vendor` passes the revision it is vendoring), otherwise v8's main.
 #
 # After running this script, changes to the shim code may be necessary
 # to account for changes in upstream irregexp.
@@ -30,6 +31,21 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+# The same repository as the vendoring url in moz.yaml, which is where
+# `./mach vendor` resolves the revision it passes us.
+V8_GIT_URL = "https://chromium.googlesource.com/v8/v8.git"
+
+
+def checkout_v8(repo, revision, shallow=False):
+    # Fetch exactly the revision being vendored (or the tip of main), rather
+    # than updating a branch: the result must match the revision mach records
+    # in moz.yaml.
+    fetch = ["git", "fetch"] + (["--depth", "1"] if shallow else [])
+    subprocess.run(fetch + [V8_GIT_URL, revision or "main"], check=True, cwd=repo)
+    subprocess.run(
+        ["git", "checkout", "--force", "--detach", "FETCH_HEAD"], check=True, cwd=repo
+    )
 
 
 def copy_and_update_includes(src_path, dst_path):
@@ -121,14 +137,18 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Import irregexp from v8")
     parser.add_argument("-p", "--path", help="path to v8/src/regexp", required=False)
+    parser.add_argument(
+        "revision", nargs="?", help="v8 revision to import (default: main)"
+    )
     args = parser.parse_args()
 
     if args.path:
         src_path = Path(args.path)
         provided_path = "the command-line"
     elif "TASK_ID" in os.environ:
-        src_path = Path("/builds/worker/v8/")
-        subprocess.run("git pull origin master", check=True, shell=True, cwd=src_path)
+        # The taskcluster image has a copy of v8 from when it was built; bring it
+        # to the revision we are vendoring.
+        checkout_v8(Path("/builds/worker/v8"), args.revision)
 
         src_path = Path("/builds/worker/v8/src/regexp")
         provided_path = "the hardcoded path in the taskcluster image"
@@ -137,9 +157,8 @@ if __name__ == "__main__":
         provided_path = "the V8_GIT environment variable"
     else:
         tempdir = tempfile.TemporaryDirectory()
-        v8_git = "https://github.com/v8/v8.git"
-        clone = f"git clone --depth 1 {v8_git} {tempdir.name}"
-        os.system(clone)
+        subprocess.run(["git", "init", "--quiet", tempdir.name], check=True)
+        checkout_v8(Path(tempdir.name), args.revision, shallow=True)
         src_path = Path(tempdir.name) / "src/regexp"
         provided_path = "the temporary git checkout"
 

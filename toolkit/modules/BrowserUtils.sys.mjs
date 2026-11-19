@@ -113,32 +113,49 @@ ChromeUtils.defineLazyGetter(lazy, "CatManListenerManager", () => {
 // use, and the dotted identifier shape of their `object.method` consumers
 // and of error names. Entries registered at runtime, e.g. through the
 // experimental WebExtension API, can name an arbitrary URI or object, which
-// is reported as UNREPORTABLE_VALUE instead of being recorded as-is.
-const REPORTABLE_MODULE_SCHEMES = ["moz-src://", "resource://", "chrome://"];
+// is reported as UNREPORTABLE_VALUE instead of being recorded as-is. The
+// file an error was created in is held to the same schemes: a local path
+// can contain the user's name and a moz-extension:// URI a per-profile UUID.
+// A URI must not contain whitespace, because script file names chain the
+// loading and loaded URIs, e.g. "resource://a.sys.mjs -> moz-extension://b"
+// (XPCJSRuntime.cpp) or "chrome://a.js line 7 > eval" (JSScript.cpp).
+const REPORTABLE_URI = /^(moz-src|resource|chrome):\/\/\S*$/;
 const REPORTABLE_IDENTIFIER = /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/;
 const UNREPORTABLE_VALUE = "other";
 
 /**
- * The name of the error a category consumer threw.
+ * What the value a category consumer threw says about itself.
  *
  * @param {any} ex
  *        The value the consumer threw.
- * @returns {string}
- *        A JS error or DOMException name such as "TypeError", the
+ * @returns {{name: string, fileName: string|undefined, lineNumber: number|undefined}}
+ *        `name` is a JS error or DOMException name such as "TypeError", the
  *        `NS_ERROR_*` name if the consumer threw an XPCOM exception or a bare
- *        nsresult, or "" for a thrown value that has neither.
+ *        nsresult, or "" for a thrown value that has neither. `fileName` and
+ *        `lineNumber` are where the error was created, from a JS error's
+ *        `fileName` or an XPCOM exception or DOMException's `filename`; each
+ *        is undefined if the thrown value does not carry it, and exceptions
+ *        report line 0 for an unknown line.
  */
-function consumerErrorName(ex) {
+function describeConsumerError(ex) {
+  let name;
   if (DOMException.isInstance(ex)) {
-    return ex.name;
+    name = ex.name;
+  } else if (ex instanceof Ci.nsIException) {
+    name = ChromeUtils.getXPCOMErrorName(ex.result);
+  } else if (typeof ex == "number") {
+    name = ChromeUtils.getXPCOMErrorName(ex);
+  } else {
+    name = typeof ex?.name == "string" ? ex.name : "";
   }
-  if (ex instanceof Ci.nsIException) {
-    return ChromeUtils.getXPCOMErrorName(ex.result);
-  }
-  if (typeof ex == "number") {
-    return ChromeUtils.getXPCOMErrorName(ex);
-  }
-  return typeof ex?.name == "string" ? ex.name : "";
+  let fileName = ex?.fileName ?? ex?.filename;
+  let lineNumber = ex?.lineNumber;
+  return {
+    name,
+    fileName: typeof fileName == "string" && fileName ? fileName : undefined,
+    lineNumber:
+      Number.isInteger(lineNumber) && lineNumber > 0 ? lineNumber : undefined,
+  };
 }
 
 /**
@@ -156,15 +173,19 @@ function reportCategoryConsumerError(categoryName, fn, ex) {
   Glean.browserUtils.categoryConsumerResult.get(categoryName, "failure").add(1);
   let reportableIdentifier = value =>
     !value || REPORTABLE_IDENTIFIER.test(value) ? value : UNREPORTABLE_VALUE;
+  let { name, fileName, lineNumber } = describeConsumerError(ex);
+  if (!fileName || !REPORTABLE_URI.test(fileName)) {
+    fileName = fileName ? UNREPORTABLE_VALUE : undefined;
+    // A line is only meaningful alongside its file.
+    lineNumber = undefined;
+  }
   Glean.browserUtils.categoryDispatchError.record({
     category: categoryName,
-    module: REPORTABLE_MODULE_SCHEMES.some(scheme =>
-      fn._module.startsWith(scheme)
-    )
-      ? fn._module
-      : UNREPORTABLE_VALUE,
+    module: REPORTABLE_URI.test(fn._module) ? fn._module : UNREPORTABLE_VALUE,
     consumer: reportableIdentifier(fn._descriptiveName),
-    errorName: reportableIdentifier(consumerErrorName(ex)),
+    errorName: reportableIdentifier(name),
+    fileName,
+    lineNumber,
   });
 }
 

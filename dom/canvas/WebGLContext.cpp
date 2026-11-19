@@ -1210,7 +1210,7 @@ void InitSwapChain(gl::GLContext& gl, gl::SwapChain& swapChain,
   }
   if (!swapChain.mFactory) {
     NS_WARNING("Failed to make an ideal SurfaceFactory.");
-    swapChain.mFactory = MakeUnique<gl::SurfaceFactory_Basic>(gl);
+    swapChain.mFactory = std::make_unique<gl::SurfaceFactory_Basic>(gl);
   }
   MOZ_ASSERT(swapChain.mFactory);
   if (useAsync) {

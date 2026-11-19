@@ -30,10 +30,10 @@ AudioDriftCorrection::AudioDriftCorrection(
     uint32_t aSourceRate, uint32_t aTargetRate,
     const PrincipalHandle& aPrincipalHandle)
     : mTargetRate(aTargetRate),
-      mDriftController(MakeUnique<DriftController>(aSourceRate, aTargetRate,
-                                                   mDesiredBuffering)),
-      mResampler(MakeUnique<AudioResampler>(aSourceRate, aTargetRate, 0,
-                                            aPrincipalHandle)) {}
+      mDriftController(std::make_unique<DriftController>(
+          aSourceRate, aTargetRate, mDesiredBuffering)),
+      mResampler(std::make_unique<AudioResampler>(aSourceRate, aTargetRate, 0,
+                                                  aPrincipalHandle)) {}
 
 AudioDriftCorrection::~AudioDriftCorrection() = default;
 

@@ -12,10 +12,14 @@ import {
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
   resolveWidgetSize,
+  resolveWidgetDisplaySize,
+  getChosenOption,
   resolveWidgetOrder,
   resolveWidgetHasSidebar,
-  resolveCrosswordEndpoint,
-  resolveWidgetSrc,
+  resolveSidebarWidget,
+  hasContentAreaWidgets,
+  isAllowedFrameUrl,
+  resolveWidgetFrame,
   resolvePrivacyBlankChance,
   resolvePrivacyMaxCount,
   resolvePrivacyDisplayCount,
@@ -291,6 +295,7 @@ describe("getWidgetOrder", () => {
       "horoscopes",
       "travel",
       "solitaire",
+      "wrexhamAFC",
     ]);
   });
 
@@ -308,6 +313,7 @@ describe("getWidgetOrder", () => {
       "horoscopes",
       "travel",
       "solitaire",
+      "wrexhamAFC",
     ]);
   });
 
@@ -325,6 +331,7 @@ describe("getWidgetOrder", () => {
       "horoscopes",
       "travel",
       "solitaire",
+      "wrexhamAFC",
     ]);
   });
 
@@ -349,6 +356,7 @@ describe("getWidgetOrder", () => {
       "horoscopes",
       "travel",
       "solitaire",
+      "wrexhamAFC",
     ]);
     expect(result.length).toBe(registryIds.length);
   });
@@ -377,6 +385,7 @@ describe("resolveWidgetOrder", () => {
       "horoscopes",
       "travel",
       "solitaire",
+      "wrexhamAFC",
     ]);
   });
 
@@ -399,6 +408,7 @@ describe("resolveWidgetOrder", () => {
       "horoscopes",
       "travel",
       "solitaire",
+      "wrexhamAFC",
     ]);
   });
 
@@ -421,6 +431,7 @@ describe("resolveWidgetOrder", () => {
       "horoscopes",
       "travel",
       "solitaire",
+      "wrexhamAFC",
     ]);
   });
 });
@@ -686,6 +697,69 @@ describe("isWidgetEnabled", () => {
   });
 });
 
+describe("getChosenOption and resolveWidgetDisplaySize", () => {
+  const VIEW = {
+    type: "choice",
+    id: "view",
+    l10nId: "tally-view",
+    pref: "widgets.tally.view",
+    options: [
+      { value: "day", l10nId: "tally-view-day" },
+      { value: "week", l10nId: "tally-view-week", size: "large" },
+    ],
+  };
+  const WIDGET = {
+    id: "tally",
+    card: "FramedWidgetCard",
+    sizePref: "widgets.tally.size",
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    menu: [VIEW],
+  };
+
+  it("chooses the option the pref holds, or the first while it holds none", () => {
+    expect(getChosenOption(VIEW, { "widgets.tally.view": "week" }).value).toBe(
+      "week"
+    );
+    expect(getChosenOption(VIEW, {}).value).toBe("day");
+    expect(getChosenOption(VIEW, { "widgets.tally.view": "month" }).value).toBe(
+      "day"
+    );
+  });
+
+  it("grows to the size a chosen option needs", () => {
+    expect(
+      resolveWidgetDisplaySize(WIDGET, { "widgets.tally.view": "week" }, true)
+    ).toBe("large");
+  });
+
+  it("keeps the widget's size for an option without one", () => {
+    expect(resolveWidgetDisplaySize(WIDGET, {}, true)).toBe("medium");
+  });
+
+  it("keeps the widget's size where the layout does not allow resizing", () => {
+    expect(
+      resolveWidgetDisplaySize(WIDGET, { "widgets.tally.view": "week" }, false)
+    ).toBe("medium");
+  });
+
+  it("keeps the size of a widget not drawn by FramedWidgetCard", () => {
+    expect(
+      resolveWidgetDisplaySize(
+        { ...WIDGET, card: undefined },
+        { "widgets.tally.view": "week" },
+        true
+      )
+    ).toBe("medium");
+  });
+
+  it("is the widget's size for a widget without a menu", () => {
+    expect(
+      resolveWidgetDisplaySize({ ...WIDGET, menu: undefined }, {}, true)
+    ).toBe("medium");
+  });
+});
+
 describe("resolveWidgetSize", () => {
   const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
 
@@ -826,36 +900,119 @@ describe("resolveWidgetHasSidebar", () => {
   });
 });
 
-describe("resolveCrosswordEndpoint", () => {
-  const dedicatedEndpoint = "https://dedicated.example.com/index.html";
-  const sharedEndpoint = "https://shared.example.com/index.html";
-  const prefEndpoint = "https://pref.example.com/index.html";
+describe("resolveSidebarWidget", () => {
+  const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
+  const privacyWidget = WIDGET_REGISTRY.find(w => w.id === "privacy");
 
-  it("prefers the dedicated widgetCrossword endpoint over the shared key and pref", () => {
+  const weatherSmall = {
+    "widgets.enabled": true,
+    [weatherWidget.enabledPref]: true,
+    [weatherWidget.systemEnabledPref]: true,
+    [weatherWidget.sizePref]: "small",
+  };
+  const privacySmall = {
+    "widgets.enabled": true,
+    [privacyWidget.enabledPref]: true,
+    [privacyWidget.systemEnabledPref]: true,
+    [privacyWidget.sizePref]: "small",
+    trainhopConfig: {
+      widgets: { [privacyWidget.trainhopSidebarKey]: true },
+    },
+  };
+
+  it("returns null when nothing qualifies", () => {
+    expect(resolveSidebarWidget({ "widgets.enabled": true })).toBeNull();
+  });
+
+  it("returns weather when it is enabled and small", () => {
+    expect(resolveSidebarWidget(weatherSmall)).toBe(weatherWidget);
+  });
+
+  it("honors an explicit widgetsEnabled argument over the pref", () => {
     expect(
-      resolveCrosswordEndpoint({
-        "widgets.crossword.endpoint": prefEndpoint,
+      resolveSidebarWidget({ ...weatherSmall, "widgets.enabled": false }, true)
+    ).toBe(weatherWidget);
+  });
+
+  it("returns null when the widget is not small", () => {
+    expect(
+      resolveSidebarWidget({
+        ...weatherSmall,
+        [weatherWidget.sizePref]: "medium",
+      })
+    ).toBeNull();
+  });
+
+  it("does not place privacy in the sidebar by default", () => {
+    expect(
+      resolveSidebarWidget({ ...privacySmall, trainhopConfig: {} })
+    ).toBeNull();
+  });
+
+  it("returns privacy when trainhop turns its sidebar placement on at small", () => {
+    expect(resolveSidebarWidget(privacySmall)).toBe(privacyWidget);
+  });
+
+  it("returns only the first qualifying widget in registry order", () => {
+    const both = { ...weatherSmall, ...privacySmall };
+    expect(resolveSidebarWidget(both)).toBe(weatherWidget);
+  });
+});
+
+describe("hasContentAreaWidgets", () => {
+  const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
+  const privacyWidget = WIDGET_REGISTRY.find(w => w.id === "privacy");
+  const listsWidget = WIDGET_REGISTRY.find(w => w.id === "lists");
+
+  const weatherSmall = {
+    "widgets.enabled": true,
+    [weatherWidget.enabledPref]: true,
+    [weatherWidget.systemEnabledPref]: true,
+    [weatherWidget.sizePref]: "small",
+  };
+  const privacyEnabled = {
+    [privacyWidget.enabledPref]: true,
+    [privacyWidget.systemEnabledPref]: true,
+  };
+  const listsEnabled = {
+    [listsWidget.enabledPref]: true,
+    [listsWidget.systemEnabledPref]: true,
+  };
+
+  it("is false when no widget is enabled", () => {
+    expect(hasContentAreaWidgets({ "widgets.enabled": true })).toBe(false);
+  });
+
+  it("is false when the only enabled widget sits in the sidebar", () => {
+    expect(hasContentAreaWidgets(weatherSmall)).toBe(false);
+  });
+
+  it("is true when another widget is enabled beside the sidebar one", () => {
+    expect(hasContentAreaWidgets({ ...weatherSmall, ...listsEnabled })).toBe(
+      true
+    );
+  });
+
+  it("is false when privacy is the only widget and it sits in the sidebar", () => {
+    expect(
+      hasContentAreaWidgets({
+        "widgets.enabled": true,
+        ...privacyEnabled,
+        [privacyWidget.sizePref]: "small",
         trainhopConfig: {
-          widgetCrossword: { endpoint: dedicatedEndpoint },
-          widgets: { crosswordEndpoint: sharedEndpoint },
+          widgets: { [privacyWidget.trainhopSidebarKey]: true },
         },
       })
-    ).toBe(dedicatedEndpoint);
+    ).toBe(false);
   });
 
-  it("falls back to the shared widgets endpoint when no dedicated endpoint", () => {
+  it("uses the widgetsEnabled argument instead of the pref", () => {
     expect(
-      resolveCrosswordEndpoint({
-        "widgets.crossword.endpoint": prefEndpoint,
-        trainhopConfig: { widgets: { crosswordEndpoint: sharedEndpoint } },
-      })
-    ).toBe(sharedEndpoint);
-  });
-
-  it("falls back to the raw pref when no trainhop override is present", () => {
+      hasContentAreaWidgets({ "widgets.enabled": false, ...listsEnabled }, true)
+    ).toBe(true);
     expect(
-      resolveCrosswordEndpoint({ "widgets.crossword.endpoint": prefEndpoint })
-    ).toBe(prefEndpoint);
+      hasContentAreaWidgets({ "widgets.enabled": true, ...listsEnabled }, false)
+    ).toBe(false);
   });
 });
 
@@ -864,19 +1021,99 @@ const testWidget = {
   src: "https://static.example.com/widget.html",
   trainhopNamespace: "widgetTest",
 };
+const framedWidget = {
+  id: "testFramed",
+  framed: true,
+  trainhopNamespace: "widgetTestFramed",
+};
+const frameUrl = "https://frame.example.mozgcp.net/index.html";
+const FRAME_HOST_PREFS = {
+  "widgets.framed.allowedHostSuffixes": ".mozgcp.net, .mozilla.com",
+};
 
-describe("resolveWidgetSrc", () => {
-  it("prefers the trainhop namespace src over the static src", () => {
+describe("resolveWidgetFrame", () => {
+  it("prefers the trainhop namespace iframeSrcOverride over the static src", () => {
     const trainhopSrc = "https://trainhop.example.com/widget.html";
     expect(
-      resolveWidgetSrc(testWidget, {
-        trainhopConfig: { widgetTest: { src: trainhopSrc } },
+      resolveWidgetFrame(testWidget, {
+        trainhopConfig: { widgetTest: { iframeSrcOverride: trainhopSrc } },
       })
-    ).toBe(trainhopSrc);
+    ).toEqual({ src: trainhopSrc, state: "ok" });
   });
 
-  it("falls back to the static entry src", () => {
-    expect(resolveWidgetSrc(testWidget, {})).toBe(testWidget.src);
+  it("uses the static src for a non-framed widget", () => {
+    expect(resolveWidgetFrame(testWidget, {}, {})).toEqual({
+      src: testWidget.src,
+      state: "ok",
+    });
+  });
+
+  it("loads the url of a manifest entry", () => {
+    expect(
+      resolveWidgetFrame(framedWidget, {}, { testFramed: { url: frameUrl } })
+    ).toEqual({ src: frameUrl, state: "ok" });
+  });
+
+  it("is hidden when the manifest has no entry", () => {
+    expect(resolveWidgetFrame(framedWidget, {}, {}).state).toBe("hidden");
+    expect(resolveWidgetFrame(framedWidget, {}, undefined).state).toBe(
+      "hidden"
+    );
+  });
+
+  it("ignores a framed widget's iframeSrcOverride that isAllowedFrameUrl rejects", () => {
+    expect(
+      resolveWidgetFrame(
+        framedWidget,
+        {
+          ...FRAME_HOST_PREFS,
+          trainhopConfig: {
+            widgetTestFramed: {
+              iframeSrcOverride: "https://evil.example.com/",
+            },
+          },
+        },
+        { testFramed: { url: frameUrl } }
+      )
+    ).toEqual({ src: frameUrl, state: "ok" });
+  });
+
+  it("lets the trainhop iframeSrcOverride override a hidden framed widget", () => {
+    const trainhopSrc =
+      "https://hotfix.merino.prod.webservices.mozgcp.net/index.html";
+    expect(
+      resolveWidgetFrame(
+        framedWidget,
+        {
+          ...FRAME_HOST_PREFS,
+          trainhopConfig: {
+            widgetTestFramed: { iframeSrcOverride: trainhopSrc },
+          },
+        },
+        {}
+      )
+    ).toEqual({ src: trainhopSrc, state: "ok" });
+  });
+});
+
+describe("isAllowedFrameUrl", () => {
+  it("rejects everything when the pref is empty", () => {
+    expect(
+      isAllowedFrameUrl("https://frame.example.mozgcp.net/", {
+        "widgets.framed.allowedHostSuffixes": "",
+      })
+    ).toBe(false);
+  });
+
+  it.each([
+    ["https://prod-games-particle.merino.prod.webservices.mozgcp.net/", true],
+    ["https://example.mozilla.com/", true],
+    ["ftp://prod-games-particle.merino.prod.webservices.mozgcp.net/", false],
+    ["https://evil.example.com/", false],
+    ["https://mozgcp.net.evil.example/", false],
+    ["not a url", false],
+  ])("%s -> %p", (url, expected) => {
+    expect(isAllowedFrameUrl(url, FRAME_HOST_PREFS)).toBe(expected);
   });
 });
 
@@ -1219,6 +1456,7 @@ describe("WIDGET_REGISTRY customize panel fields", () => {
     horoscopes: "WIDGET_HOROSCOPES",
     travel: "WIDGET_TRAVEL",
     solitaire: "WIDGET_SOLITAIRE",
+    wrexhamAFC: "WIDGET_WREXHAMAFC",
   };
 
   it("gives every active entry a customizeL10nId", () => {

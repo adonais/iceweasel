@@ -129,7 +129,7 @@ class MediaDataEncoderTest : public testing::Test {
       const auto& cbcrSize = sizes->mCbCr;
       size_t bufferSize =
           mYUV.mYStride * ySize.height + 2 * mYUV.mCbCrStride * cbcrSize.height;
-      mBuffer = MakeUnique<uint8_t[]>(bufferSize);
+      mBuffer = std::make_unique<uint8_t[]>(bufferSize);
       std::fill_n(mBuffer.get(), bufferSize, 0x7F);
       mYUV.mYChannel = mBuffer.get();
       mYUV.mCbChannel = mYUV.mYChannel + mYUV.mYStride * ySize.height;
@@ -838,7 +838,7 @@ static already_AddRefed<MediaData> CreateNV12Frame(const gfx::IntSize& aSize) {
   const size_t yBytes = static_cast<size_t>(data.mYStride) * ySize.height;
   const size_t cbcrBytes =
       static_cast<size_t>(data.mCbCrStride) * cbcrSize.height;
-  auto buffer = MakeUnique<uint8_t[]>(yBytes + cbcrBytes);
+  auto buffer = std::make_unique<uint8_t[]>(yBytes + cbcrBytes);
   std::fill_n(buffer.get(), yBytes, static_cast<uint8_t>(235));
   std::fill_n(buffer.get() + yBytes, cbcrBytes, static_cast<uint8_t>(128));
   data.mYChannel = buffer.get();

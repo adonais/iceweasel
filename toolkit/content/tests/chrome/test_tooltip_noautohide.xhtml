@@ -29,7 +29,6 @@ function runTests()
   synthesizeMouse(button, 2, 2, { type: "mouseover" });
   synthesizeMouse(button, 4, 4, { type: "mousemove" });
   synthesizeMouse(button, 6, 6, { type: "mousemove" });
-  windowUtils.disableNonTestMouseEvents(false);
 }
 
 function tooltipStillShown()
@@ -39,6 +38,9 @@ function tooltipStillShown()
 }
 
 SimpleTest.waitForExplicitFinish();
+SimpleTest.registerCleanupFunction(() => {
+  window.windowUtils.disableNonTestMouseEvents(false);
+});
 SimpleTest.waitForFocus(runTests);
 
 ]]>

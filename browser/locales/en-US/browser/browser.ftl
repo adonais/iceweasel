@@ -1506,7 +1506,7 @@ reset-pbm-toolbar-button2 =
     .label = Clear private session
     .tooltiptext = Clear private session
 reset-pbm-panel-heading2 = Clear data and start a fresh private session?
-reset-pbm-panel-description2 = This deletes history, cookies, and all other site data without closing your Private Window.
+reset-pbm-panel-description3 = This clears your history and cookies, and signs you out of sites. Your Private Windows will close, and a fresh one will open.
 reset-pbm-panel-always-ask-checkbox =
      .label = Always ask me
      .accesskey = A
@@ -1521,8 +1521,8 @@ reset-pbm-panel-complete = Private session data deleted
 ## Fire button. Clears the whole browsing session, then closes every window and
 ## opens a new one.
 
-fire-button-toolbar-button =
-    .label = Delete some or all of your browsing data
+fire-button-toolbar-button2 =
+    .label = Delete some or all data
     .tooltiptext = Delete some or all of your browsing data
 fire-button-panel-heading = Delete all browsing data?
 fire-button-panel-description = This deletes history, cookies, and site data. You’ll be signed out of sites. This window will close, and { -brand-short-name } will open a new one.
@@ -1655,6 +1655,29 @@ file-picker-crashed-save-nowhere = The Windows file-dialog has crashed. No defau
 file-picker-crashed-show-in-folder =
     .label = Show in Folder
     .accessKey = F
+
+## Unsigned add-ons notification
+
+unsigned-addons-disabled-message = One or more installed add-ons cannot be verified and have been disabled.
+unsigned-addons-disabled-learn-more =
+    .label = Learn More
+    .accesskey = L
+
+## Process hang notification ("ProcessHangMonitor.sys.mjs")
+
+process-hang-selected-tab-message = This page is slowing down { -brand-short-name }. To speed up your browser, stop this page.
+process-hang-nonspecific-tab-message = A web page is slowing down { -brand-short-name }. To speed up your browser, stop that page.
+# Variables:
+#   $title (String): the title of the tab.
+process-hang-specific-tab-message = “{ $title }” is slowing down { -brand-short-name }. To speed up your browser, stop that page.
+# Variables:
+#   $addonName (String): the name of the extension.
+process-hang-addon-message = “{ $addonName }” is slowing down { -brand-short-name }. To speed up your browser, stop that extension.
+process-hang-addon-learn-more =
+    .value = Learn more
+process-hang-stop-button =
+    .label = Stop
+    .accesskey = S
 
 ## Onboarding Finish Setup checklist
 

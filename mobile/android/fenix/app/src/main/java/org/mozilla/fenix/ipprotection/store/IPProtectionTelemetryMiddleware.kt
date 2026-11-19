@@ -13,15 +13,13 @@ import mozilla.components.feature.ipprotection.store.ActivationOperation
 import mozilla.components.feature.ipprotection.store.CachedLocationStatus
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
-import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.Country
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.Location
-import mozilla.components.feature.ipprotection.store.state.ProxyStatus
 import mozilla.components.feature.ipprotection.store.state.Recommended
-import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import mozilla.components.support.ktx.kotlin.toSnakeCase
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.IPProtectionController.IPProxyException
@@ -54,12 +52,14 @@ internal class IPProtectionTelemetryMiddleware(
         // is nothing stopping them accessing the feature very quickly through the menu or settings, and running into
         // the said problem.
         when (action) {
-            is IPProtectionAction.ToggleFailed -> handleToggleFailedAction(store.state, action.error, action.operation)
-            is IPProtectionAction.LocationSwitchFailed -> handleLocationSwitchFailed(store.state, action.error)
-            is IPProtectionAction.LocationUpdateFailed -> handleLocationUpdateFailed(action.error)
-            is IPProtectionAction.LocationChanged -> handleLocationChanged(store.state, action)
-            is IPProtectionAction.LocationReset -> handleLocationReset(store.state, action)
-            is IPProtectionAction.PersistedLocationUnavailable ->
+            is IPProtectionAction.ActivationAction.ToggleFailed ->
+                handleToggleFailedAction(store.state, action.error, action.operation)
+            is IPProtectionAction.LocationAction.LocationSwitchFailed ->
+                handleLocationSwitchFailed(store.state, action.error)
+            is IPProtectionAction.LocationAction.LocationUpdateFailed -> handleLocationUpdateFailed(action.error)
+            is IPProtectionAction.LocationAction.LocationChanged -> handleLocationChanged(store.state, action)
+            is IPProtectionAction.LocationAction.LocationReset -> handleLocationReset(store.state, action)
+            is IPProtectionAction.LocationAction.PersistedLocationUnavailable ->
                 handlePersistedLocationUnavailable(store.state, action)
             else -> {
                 // no-op
@@ -149,33 +149,36 @@ internal class IPProtectionTelemetryMiddleware(
         Vpn.errorEncountered.record(
             Vpn.ErrorEncounteredExtra(
                 errorCode = errorCodeOf(error),
-                operation = operation.label,
-                serviceState = state.serviceStatus.label,
-                proxyState = state.proxyStatus.label,
-                accountState = state.accountState.status.label,
+                operation = operation.name.toSnakeCase(),
+                serviceState = state.serviceStatus.name.toSnakeCase(),
+                proxyState = state.proxyStatus.toString().toSnakeCase(),
+                accountState = state.accountState.status.name.toSnakeCase(),
             )
         )
     }
 
-    private fun handleLocationChanged(state: IPProtectionState, action: IPProtectionAction.LocationChanged) {
+    private fun handleLocationChanged(
+        state: IPProtectionState,
+        action: IPProtectionAction.LocationAction.LocationChanged,
+    ) {
         val operation = if (action.userAction) LocationChangeOperation.UserAction else LocationChangeOperation.Restore
         Vpn.locationChanged.record(
             Vpn.LocationChangedExtra(
                 to = action.location.label,
-                operation = operation.label,
-                proxyState = state.proxyStatus.label,
+                operation = operation.name.toSnakeCase(),
+                proxyState = state.proxyStatus.toString().toSnakeCase(),
             )
         )
     }
 
-    private fun handleLocationReset(state: IPProtectionState, action: IPProtectionAction.LocationReset) {
+    private fun handleLocationReset(state: IPProtectionState, action: IPProtectionAction.LocationAction.LocationReset) {
         val countryCode = action.countryCode ?: return
         recordLocationReset(state, countryCode, action.status, LocationResetOperation.Refresh)
     }
 
     private fun handlePersistedLocationUnavailable(
         state: IPProtectionState,
-        action: IPProtectionAction.PersistedLocationUnavailable,
+        action: IPProtectionAction.LocationAction.PersistedLocationUnavailable,
     ) {
         recordLocationReset(state, action.countryCode, action.status, LocationResetOperation.Restore)
     }
@@ -190,13 +193,13 @@ internal class IPProtectionTelemetryMiddleware(
         Vpn.locationReset.record(
             Vpn.LocationResetExtra(
                 location = countryCode,
-                reason = status.label,
-                operation = operation.label,
+                reason = status.name.toSnakeCase(),
+                operation = operation.name.toSnakeCase(),
                 listSize = countries.size,
                 availableCount = countries.count { it.available },
-                serviceState = state.serviceStatus.label,
-                proxyState = state.proxyStatus.label,
-                accountState = state.accountState.status.label,
+                serviceState = state.serviceStatus.name.toSnakeCase(),
+                proxyState = state.proxyStatus.toString().toSnakeCase(),
+                accountState = state.accountState.status.name.toSnakeCase(),
             )
         )
     }
@@ -206,8 +209,8 @@ internal class IPProtectionTelemetryMiddleware(
         Vpn.locationChanged.record(
             Vpn.LocationChangedExtra(
                 to = (state.locationState.previousLocation ?: Recommended).label,
-                operation = LocationChangeOperation.Reset.label,
-                proxyState = state.proxyStatus.label,
+                operation = LocationChangeOperation.Reset.name.toSnakeCase(),
+                proxyState = state.proxyStatus.toString().toSnakeCase(),
             )
         )
     }
@@ -237,15 +240,6 @@ internal class IPProtectionTelemetryMiddleware(
     }
 }
 
-// Written out rather than taken from enum names, so a rename cannot silently change the recorded
-// data. Each `when` is exhaustive: a new state is a compile error, not an unlabelled value.
-private val ActivationOperation.label: String
-    get() =
-        when (this) {
-            ActivationOperation.Activate -> "activate"
-            ActivationOperation.Deactivate -> "deactivate"
-        }
-
 private val Location.label: String
     get() = countryCode ?: "recommended"
 
@@ -255,68 +249,7 @@ private enum class LocationChangeOperation {
     Reset,
 }
 
-private val LocationChangeOperation.label: String
-    get() =
-        when (this) {
-            LocationChangeOperation.UserAction -> "user_action"
-            LocationChangeOperation.Restore -> "restore"
-            LocationChangeOperation.Reset -> "reset"
-        }
-
 private enum class LocationResetOperation {
     Refresh,
     Restore,
 }
-
-private val LocationResetOperation.label: String
-    get() =
-        when (this) {
-            LocationResetOperation.Refresh -> "refresh"
-            LocationResetOperation.Restore -> "restore"
-        }
-
-private val CachedLocationStatus.label: String
-    get() =
-        when (this) {
-            CachedLocationStatus.Missing -> "missing"
-            CachedLocationStatus.Unavailable -> "unavailable"
-        }
-
-private val ServiceState.label: String
-    get() =
-        when (this) {
-            ServiceState.Uninitialized -> "uninitialized"
-            ServiceState.Unavailable -> "unavailable"
-            ServiceState.Unauthenticated -> "unauthenticated"
-            ServiceState.Ready -> "ready"
-        }
-
-private val ProxyStatus.label: String
-    get() =
-        when (this) {
-            Uninitialized -> "uninitialized"
-            Authorized.Idle -> "idle"
-            Authorized.Activating -> "activating"
-            Authorized.Active -> "active"
-            Authorized.DataLimitReached -> "data_limit_reached"
-            Authorized.ConnectionError -> "connection_error"
-        }
-
-private val AccountStatus.label: String
-    get() =
-        when (this) {
-            AccountStatus.Uninitialized -> "uninitialized"
-            AccountStatus.WarmingUp -> "warming_up"
-            AccountStatus.NoAccount -> "no_account"
-            AccountStatus.NeedsAuthentication -> "needs_authentication"
-            AccountStatus.RequestingAuthentication -> "requesting_authentication"
-            AccountStatus.NeedsAuthorization -> "needs_authorization"
-            AccountStatus.RequestingAuthorization -> "requesting_authorization"
-            AccountStatus.AwaitingAuthentication -> "awaiting_authentication"
-            AccountStatus.AwaitingAuthorization -> "awaiting_authorization"
-            AccountStatus.AwaitingEnrollment -> "awaiting_enrollment"
-            AccountStatus.AuthFailed -> "auth_failed"
-            AccountStatus.Authenticated -> "authenticated"
-            AccountStatus.EnrolledAndEntitled -> "enrolled_and_entitled"
-            AccountStatus.TryAgain -> "try_again"
-        }

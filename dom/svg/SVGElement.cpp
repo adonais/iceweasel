@@ -386,11 +386,6 @@ bool SVGElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                 const nsAString& aValue,
                                 nsIPrincipal* aMaybeScriptedPrincipal,
                                 nsAttrValue& aResult) {
-  if (!aAttribute->IsStatic()) {
-    return SVGElementBase::ParseAttribute(aNamespaceID, aAttribute, aValue,
-                                          aMaybeScriptedPrincipal, aResult);
-  }
-
   nsresult rv = NS_OK;
   bool foundMatch = false;
   bool didSetResult = false;

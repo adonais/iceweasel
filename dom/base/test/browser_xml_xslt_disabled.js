@@ -10,13 +10,13 @@ const HEADER_URL =
 const XSLT_DISABLED_MESSAGE =
   "It uses XSLT, which the browser does not support";
 
-async function checkXSLTDisabledMessage(url, xsltEnabled) {
+async function checkXSLTDisabledMessage(url, xsltEnabled, expected) {
   await SpecialPowers.pushPrefEnv({ set: [["dom.xslt.enabled", xsltEnabled]] });
 
   await BrowserTestUtils.withNewTab(url, async function (browser) {
     await SpecialPowers.spawn(
       browser,
-      [XSLT_DISABLED_MESSAGE, !xsltEnabled],
+      [XSLT_DISABLED_MESSAGE, expected],
       (message, expected) => {
         const docElement = content.document.documentElement;
         const shadowRoot = docElement?.openOrClosedShadowRoot;
@@ -32,17 +32,18 @@ async function checkXSLTDisabledMessage(url, xsltEnabled) {
 }
 
 add_task(async function xslt_disabled() {
-  await checkXSLTDisabledMessage(PI_URL, false);
+  await checkXSLTDisabledMessage(PI_URL, false, true);
 });
 
 add_task(async function xslt_enabled() {
-  await checkXSLTDisabledMessage(PI_URL, true);
+  await checkXSLTDisabledMessage(PI_URL, true, false);
 });
 
+// XSLT in Link headers is not supported, so the header is ignored.
 add_task(async function xslt_disabled_header() {
-  await checkXSLTDisabledMessage(HEADER_URL, false);
+  await checkXSLTDisabledMessage(HEADER_URL, false, false);
 });
 
 add_task(async function xslt_enabled_header() {
-  await checkXSLTDisabledMessage(HEADER_URL, true);
+  await checkXSLTDisabledMessage(HEADER_URL, true, false);
 });

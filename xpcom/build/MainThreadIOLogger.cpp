@@ -9,7 +9,6 @@
 #include "mozilla/IOInterposer.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsThreadUtils.h"
 
@@ -22,6 +21,7 @@
 #include <prprf.h>
 #include <prthread.h>
 
+#include <memory>
 #include <vector>
 
 namespace {
@@ -191,7 +191,7 @@ namespace mozilla {
 namespace MainThreadIOLogger {
 
 bool Init() {
-  auto impl = MakeUnique<MainThreadIOLoggerImpl>();
+  auto impl = std::make_unique<MainThreadIOLoggerImpl>();
   if (!impl->Init()) {
     return false;
   }

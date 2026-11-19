@@ -69,16 +69,13 @@ const PROMO_L10N_IDS = {
   theme: ["find-more-themes-promo", "find-more-themes-promo-open-amo-button"],
 };
 
-function checkExtraContents(doc, type, opts = {}) {
-  let { showThemeRecommendationFooter = type === "theme" } = opts;
+function checkExtraContents(doc, type) {
   let footer = doc.querySelector("footer");
   let amoButton = footer.querySelector('button[action="open-amo"]');
   let footerPromo = footer.querySelector("addons-promo");
   let promoAmoBtn = footer.querySelector('moz-button[action="open-amo"]');
   let privacyPolicyLink = footer.querySelector(".privacy-policy-link");
   let themeRecommendationFooter = footer.querySelector(".theme-recommendation");
-  let themeRecommendationLink =
-    themeRecommendationFooter && themeRecommendationFooter.querySelector("a");
   let taarNotice = doc.querySelector("taar-notice");
 
   is_element_visible(footer, "The footer is visible");
@@ -93,64 +90,33 @@ function checkExtraContents(doc, type, opts = {}) {
     throw new Error(`Unexpected type ${type}`);
   }
 
-  if (Services.prefs.getBoolPref("browser.nova.enabled")) {
-    // An addons-promo element is expected to be shown in both
-    // the extensions and themes list view.
-    is_element_visible(footerPromo, "The promo card is shown");
-    is_element_visible(
-      promoAmoBtn,
-      "The promo card slotted AMO button is shown"
-    );
-    // The legacy AMO button that has been replaced with the addons-promo
-    // should be hidden when Nova is enabled.
-    is_element_hidden(amoButton, "The AMO button is hidden");
+  // An addons-promo element is expected to be shown in both
+  // the extensions and themes list view.
+  is_element_visible(footerPromo, "The promo card is shown");
+  is_element_visible(promoAmoBtn, "The promo card slotted AMO button is shown");
+  // The legacy AMO button that has been replaced with the addons-promo
+  // should be hidden.
+  is_element_hidden(amoButton, "The AMO button is hidden");
 
-    let [promoId, promoButtonId] = PROMO_L10N_IDS[type];
-    is(
-      footerPromo.getAttribute("data-l10n-id"),
-      promoId,
-      "The promo card has the expected l10n id"
-    );
-    is(
-      promoAmoBtn.getAttribute("data-l10n-id"),
-      promoButtonId,
-      "The promo card AMO button has the expected l10n id"
-    );
-  } else {
-    // With Nova disabled the addons-promo are expected to be hidden
-    // and the previously shown Nova button to be visible.
-    is_element_visible(amoButton, "The AMO button is shown");
-    is_element_hidden(footerPromo, "The promo card is hidden");
-  }
+  let [promoId, promoButtonId] = PROMO_L10N_IDS[type];
+  is(
+    footerPromo.getAttribute("data-l10n-id"),
+    promoId,
+    "The promo card has the expected l10n id"
+  );
+  is(
+    promoAmoBtn.getAttribute("data-l10n-id"),
+    promoButtonId,
+    "The promo card AMO button has the expected l10n id"
+  );
 
-  if (
-    Services.prefs.getBoolPref("browser.nova.enabled") ||
-    !showThemeRecommendationFooter
-  ) {
-    ok(
-      !themeRecommendationFooter ||
-        BrowserTestUtils.isHidden(themeRecommendationFooter),
-      "There's no theme recommendation"
-    );
-  } else {
-    // Additional pre-Nova assertion for the legacy themes list view footer.
-    is_element_visible(
-      themeRecommendationFooter,
-      "There's a theme recommendation footer"
-    );
-    is_element_visible(themeRecommendationLink, "There's a link to the theme");
-    is(themeRecommendationLink.target, "_blank", "The link opens in a new tab");
-    is(
-      themeRecommendationLink.href,
-      "https://example.com/theme",
-      "The link goes to the pref's URL"
-    );
-    is(
-      doc.l10n.getAttributes(themeRecommendationFooter).id,
-      "recommended-theme-1",
-      "The recommendation has the right l10n-id"
-    );
-  }
+  // NOTE: Firefox Color recommendation footer link is always hidden
+  // with Nova enabled.
+  ok(
+    !themeRecommendationFooter ||
+      BrowserTestUtils.isHidden(themeRecommendationFooter),
+    "There's no theme recommendation"
+  );
 }
 
 async function installAddon({ card, recommendedList, manifestExtra = {} }) {
@@ -309,24 +275,6 @@ add_task(async function testError() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function testThemesNoRecommendationUrl() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.recommendations.themeRecommendationUrl", ""]],
-  });
-
-  let win = await loadInitialView("theme");
-  let doc = win.document;
-
-  // Wait for the list to render, rendering is tested with the discovery pane.
-  let recommendedList = doc.querySelector("recommended-addon-list");
-  await recommendedList.cardsReady;
-
-  checkExtraContents(doc, "theme", { showThemeRecommendationFooter: false });
-
-  await closeView(win);
-  await SpecialPowers.popPrefEnv();
-});
-
 add_task(async function testRecommendationsDisabled() {
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.htmlaboutaddons.recommendations.enabled", false]],
@@ -371,49 +319,73 @@ add_task(async function testRecommendationsFooterAmoButtonUtmContent() {
     return tabUrl;
   }
 
-  // Extension list: Nova promo button vs legacy AMO button.
+  // Extension list: promo button.
   {
     let win = await loadInitialView("extension");
-    if (Services.prefs.getBoolPref("browser.nova.enabled")) {
-      await clickAndCheckUtm(
-        win,
-        'footer moz-button[action="open-amo"]',
-        "find-more-promo-bottom"
-      );
-    } else {
-      await clickAndCheckUtm(
-        win,
-        'footer button[action="open-amo"]',
-        "find-more-link-bottom"
-      );
-    }
+    await clickAndCheckUtm(
+      win,
+      'footer moz-button[action="open-amo"]',
+      "find-more-promo-bottom"
+    );
     await closeView(win);
   }
 
-  // Theme list: footer AMO button opens themes path with correct utm_content,
-  // Nova promo button vs legacy AMO button.
+  // Theme list: footer AMO button opens themes path with correct utm_content.
   {
     let win = await loadInitialView("theme");
-    let tabUrl;
-    if (Services.prefs.getBoolPref("browser.nova.enabled")) {
-      tabUrl = await clickAndCheckUtm(
-        win,
-        'footer moz-button[action="open-amo"]',
-        "find-more-promo-bottom"
-      );
-    } else {
-      tabUrl = await clickAndCheckUtm(
-        win,
-        'footer button[action="open-amo"]',
-        "find-more-link-bottom"
-      );
-    }
+    let tabUrl = await clickAndCheckUtm(
+      win,
+      'footer moz-button[action="open-amo"]',
+      "find-more-promo-bottom"
+    );
     ok(
       tabUrl.pathname.includes("/themes"),
       "AMO URL includes the /themes path"
     );
     await closeView(win);
   }
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function testRecommendedThemesCardExpandedState() {
+  const PREF =
+    "extensions.htmlaboutaddons.themes-listview.recommended-themes-expanded";
+  await SpecialPowers.pushPrefEnv({ clear: [[PREF]] });
+
+  let win = await loadInitialView("theme");
+  let card = win.document.querySelector("recommended-themes-section moz-card");
+  let list = card.querySelector("recommended-addon-list");
+  await Promise.all([card.updateComplete, list.cardsReady]);
+  ok(card.expanded, "Recommended themes card is expanded by default");
+  ok(list.checkVisibility(), "Recommended themes list is visible");
+
+  let toggled = BrowserTestUtils.waitForEvent(card, "toggle");
+  card.detailsEl.open = false;
+  await toggled;
+  ok(
+    !Services.prefs.getBoolPref(PREF, true),
+    "Collapsing the card updates the pref"
+  );
+  ok(
+    !list.checkVisibility(),
+    "Recommended themes list is hidden when collapsed"
+  );
+
+  await switchView(win, "extension");
+  await switchView(win, "theme");
+  card = win.document.querySelector("recommended-themes-section moz-card");
+  list = card.querySelector("recommended-addon-list");
+  await Promise.all([card.updateComplete, list.cardsReady]);
+  ok(
+    !card.expanded,
+    "Recommended themes card is collapsed after switching views"
+  );
+  ok(
+    !list.checkVisibility(),
+    "Recommended themes list is hidden after switching views"
+  );
+  await closeView(win);
 
   await SpecialPowers.popPrefEnv();
 });

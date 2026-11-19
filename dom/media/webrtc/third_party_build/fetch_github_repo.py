@@ -61,6 +61,10 @@ def fetch_repo(github_path, force_fetch, tar_path):
     # (and into hg for instance)
     run_git("git config --local core.autocrlf false", github_path)
 
+    # prevent gc from running in the background and spoiling our tar
+    # command
+    run_git("git config gc.autoDetach false", github_path)
+
     # do a sanity fetch in case this was not a freshly cloned copy of the
     # repo.
     run_git("git fetch --all", github_path)

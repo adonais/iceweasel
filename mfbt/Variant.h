@@ -409,7 +409,7 @@ struct VariantIndex {
  * the variant types.
  *
  *     Variant<char, uint32_t> v1('a');
- *     Variant<UniquePtr<A>, B, C> v2(MakeUnique<A>());
+ *     Variant<UniquePtr<A>, B, C> v2(std::make_unique<A>());
  *     Variant<bool, char> v3(VariantType<char>, 0); // disambiguation needed
  *     Variant<int, int> v4(VariantIndex<1>, 0); // 2nd int
  *
@@ -504,7 +504,7 @@ struct VariantIndex {
  * Additionally, you can turn a `Variant` that `is<T>` into a `T` by moving it
  * out of the containing `Variant` instance with the `extract<T>` method:
  *
- *     Variant<UniquePtr<A>, B, C> v(MakeUnique<A>());
+ *     Variant<UniquePtr<A>, B, C> v(std::make_unique<A>());
  *     auto ptr = v.extract<UniquePtr<A>>();
  *
  * Finally, you can exhaustively match on the contained variant and branch into

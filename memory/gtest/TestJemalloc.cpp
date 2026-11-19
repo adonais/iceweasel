@@ -4,7 +4,6 @@
 
 #include "mozilla/Literals.h"
 #include "mozilla/mozalloc.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 #include "mozilla/gtest/MozHelpers.h"
 #include "mozmemory.h"
@@ -17,6 +16,8 @@
 #  include "PHC.h"
 #endif
 #include "BaseAlloc.h"
+
+#include <memory>
 
 using namespace mozilla;
 
@@ -221,7 +222,7 @@ TEST(Jemalloc, PtrInfo)
   ASSERT_TRUE(InfoEq(info, TagUnknown, nullptr, 0U, 0U));
 
   // Chunk header.
-  UniquePtr<int> p = MakeUnique<int>();
+  auto p = std::make_unique<int>();
   size_t chunksizeMask = stats.chunksize - 1;
   char* chunk = (char*)(uintptr_t(p.get()) & ~chunksizeMask);
   size_t chunkHeaderSize =

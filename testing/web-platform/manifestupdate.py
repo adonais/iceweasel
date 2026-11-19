@@ -8,6 +8,7 @@ import errno
 import hashlib
 import os
 import sys
+import tempfile
 
 import manifestdownload
 from mach.util import get_state_dir
@@ -227,8 +228,12 @@ def generate_config(logger, repo_root, wpt_dir, dest_path, force_rewrite=False):
     )
     parser.set("paths", "ws_extra", ws_extra_paths)
 
-    with open(dest_config_path, "w") as config_file:
+    with tempfile.NamedTemporaryFile(
+        "w", dir=dest_path, prefix="wptrunner.local.", suffix=".ini", delete=False
+    ) as config_file:
         parser.write(config_file)
+    os.chmod(config_file.name, 0o644)
+    os.replace(config_file.name, dest_config_path)
 
     return dest_config_path
 

@@ -528,7 +528,8 @@ class MP4ContainerParser : public ContainerParser,
       // consumers of ParseStartAndEndTimestamps to add their timestamp offset
       // manually. This allows the ContainerParser to be shared across different
       // timestampOffsets.
-      mParser = MakeUnique<MoofParser>(mStream, AsVariant(ParseAllTracks{}),
+      mParser =
+          std::make_unique<MoofParser>(mStream, AsVariant(ParseAllTracks{}),
                                        /* aIsAudio = */ false);
       DDLINKCHILD("parser", mParser.get());
       mInitData = new MediaByteBuffer();
@@ -742,18 +743,18 @@ UniquePtr<ContainerParser> ContainerParser::CreateForMIMEType(
     const MediaContainerType& aType) {
   if (aType.Type() == MEDIAMIMETYPE(VIDEO_WEBM) ||
       aType.Type() == MEDIAMIMETYPE(AUDIO_WEBM)) {
-    return MakeUnique<WebMContainerParser>(aType);
+    return std::make_unique<WebMContainerParser>(aType);
   }
 
   if (aType.Type() == MEDIAMIMETYPE(VIDEO_MP4) ||
       aType.Type() == MEDIAMIMETYPE(AUDIO_MP4)) {
-    return MakeUnique<MP4ContainerParser>(aType);
+    return std::make_unique<MP4ContainerParser>(aType);
   }
   if (aType.Type() == MEDIAMIMETYPE("audio/aac")) {
-    return MakeUnique<ADTSContainerParser>(aType);
+    return std::make_unique<ADTSContainerParser>(aType);
   }
 
-  return MakeUnique<ContainerParser>(aType);
+  return std::make_unique<ContainerParser>(aType);
 }
 
 #undef MSE_DEBUG

@@ -436,6 +436,96 @@ add_task(async function test_callModulesFromCategory_error_telemetry_runtime() {
   Services.catMan.deleteCategory(RUNTIME_CAT);
 });
 
+// fileName and lineNumber name where the thrown error was created, and are
+// held to the same URI schemes as the module extra.
+add_task(
+  async function test_callModulesFromCategory_error_telemetry_location() {
+    const LOCATION_CAT = "somelocationtelemetrycat";
+    const MODULE = "resource://test/my_catman_1.sys.mjs";
+
+    Services.fog.testResetFOG();
+
+    for (let [module, consumer] of [
+      [MODULE, "Module1.throwingFunction"],
+      ["file:///tmp/my_catman_local.js", "LocalObj.fail"],
+      ["file:///tmp/my_catman_chained.js", "ChainedObj.fail"],
+      ["file:///tmp/my_catman_eval.js", "EvalObj.fail"],
+      ["file:///tmp/my_catman_nofile.js", "NoFileObj.fail"],
+    ]) {
+      let catManUpdated = TestUtils.topicObserved("xpcom-category-entry-added");
+      Services.catMan.addCategoryEntry(
+        LOCATION_CAT,
+        module,
+        consumer,
+        false,
+        false
+      );
+      await catManUpdated;
+    }
+
+    // LocalObj throws from this test file, whose fileName is a local path.
+    // The others pass Error's fileName and lineNumber arguments to stand in
+    // for a script loaded by another, evaluated code, and a value with a
+    // line but no file.
+    let jsGlobal = {
+      LocalObj: {
+        fail() {
+          throw new Error("Local consumer failed.");
+        },
+      },
+      ChainedObj: {
+        fail() {
+          throw new Error(
+            "Chained consumer failed.",
+            "resource://gre/modules/ExtensionCommon.sys.mjs -> moz-extension://uuid/api.js",
+            3
+          );
+        },
+      },
+      EvalObj: {
+        fail() {
+          throw new Error(
+            "Evaluated consumer failed.",
+            "chrome://browser/content/browser.js line 7 > eval",
+            1
+          );
+        },
+      },
+      NoFileObj: {
+        fail() {
+          throw new Error("Consumer without a file failed.", "", 5);
+        },
+      },
+    };
+    await BrowserUtils.callModulesFromCategory({
+      categoryName: LOCATION_CAT,
+      jsGlobal,
+    });
+
+    let locations = Object.fromEntries(
+      Glean.browserUtils.categoryDispatchError
+        .testGetValue()
+        .map(e => [
+          e.extra.consumer,
+          { fileName: e.extra.fileName, lineNumber: e.extra.lineNumber },
+        ])
+    );
+    Assert.deepEqual(
+      locations,
+      {
+        "Module1.throwingFunction": { fileName: MODULE, lineNumber: "10" },
+        "LocalObj.fail": { fileName: "other", lineNumber: undefined },
+        "ChainedObj.fail": { fileName: "other", lineNumber: undefined },
+        "EvalObj.fail": { fileName: "other", lineNumber: undefined },
+        "NoFileObj.fail": { fileName: undefined, lineNumber: undefined },
+      },
+      "The error's file and line are recorded only for a single URI with an allowed scheme."
+    );
+
+    Services.catMan.deleteCategory(LOCATION_CAT);
+  }
+);
+
 // The errorName extra names XPCOM exceptions and bare nsresults by their
 // NS_ERROR_* name, and DOMExceptions by their DOM name.
 add_task(async function test_callModulesFromCategory_error_telemetry_names() {

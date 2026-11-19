@@ -122,8 +122,8 @@ class KnowsCompositor {
 
   WebRenderBackend GetWebRenderBackend() const {
     auto lock = mData.Lock();
-    MOZ_ASSERT(lock.ref().mTextureFactoryIdentifier.mParentBackend ==
-               layers::LayersBackend::LAYERS_WR);
+    MOZ_RELEASE_ASSERT(lock.ref().mTextureFactoryIdentifier.mParentBackend ==
+                       layers::LayersBackend::LAYERS_WR);
     return lock.ref().mTextureFactoryIdentifier.mWebRenderBackend;
   }
 

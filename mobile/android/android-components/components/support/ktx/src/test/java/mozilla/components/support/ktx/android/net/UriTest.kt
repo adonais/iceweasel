@@ -8,10 +8,13 @@ import android.content.ContentResolver
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.database.StaleDataException
+import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -365,5 +368,12 @@ class UriTest {
         val result = uri.isReadable(resolver)
 
         assertFalse(result)
+    }
+
+    @Test
+    fun `toFileUri returns a uri whose path is the copied file`() {
+        val source = File(testContext.filesDir, "my photo%20.jpg").apply { writeText("content") }
+        val result = Uri.fromFile(source).toFileUri(testContext, "/uploads")
+        assertEquals(File(testContext.cacheDir, "uploads/my photo%20.jpg").absolutePath, result.path)
     }
 }

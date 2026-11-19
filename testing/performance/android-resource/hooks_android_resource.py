@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import os
 import pathlib
+import shutil
 
 from mozperftest.utils import ON_TRY
 
@@ -14,9 +15,12 @@ def before_runs(env):
         for file in fetches_dir.glob("xmlstarlet"):
             os.environ["XMLSTARLET"] = f"{fetches_dir / file}"
             found = True
-        if not found:
+        if not found and not shutil.which("xmllint"):
             raise Exception(
-                f"xmlstarlet could not be found in these files: {list(fetches_dir.iterdir())}"
+                "Neither xmlstarlet (in fetches) nor xmllint (on PATH) could be "
+                f"found. Files in fetches: {list(fetches_dir.iterdir())}"
             )
     else:
-        print("Test is expecting `xmlstarlet` to be available in the path already")
+        print(
+            "Test is expecting `xmlstarlet` or `xmllint` to be available in the path already"
+        )

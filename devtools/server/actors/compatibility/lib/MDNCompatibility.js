@@ -63,12 +63,11 @@ class MDNCompatibility {
       summaries.push(this._getCSSPropertyCompatSummary(browsers, property));
     }
 
-    // Classify to aliases summaries and normal summaries.
-    const { aliasSummaries, normalSummaries } =
-      this._classifyCSSCompatSummaries(summaries, browsers);
-
     // Finally, convert to CSS issues.
-    return this._toCSSIssues(normalSummaries.concat(aliasSummaries));
+    return this._toCSSIssues(
+      // Classify to aliases summaries and normal summaries.
+      this._classifyCSSCompatSummaries(summaries, browsers)
+    );
   }
 
   /**
@@ -82,11 +81,7 @@ class MDNCompatibility {
    * @param {Array} browsers
    *                All browsers that to check
    *                e.g. [{ id: "firefox", name: "Firefox", version: "68" }, ...]
-   * @return Object
-   *                {
-   *                  aliasSummaries: Array of alias summary,
-   *                  normalSummaries: Array of normal summary
-   *                }
+   * @return {Iterator} iterator of the alias and normal summaries
    */
   _classifyCSSCompatSummaries(summaries, browsers) {
     const aliasSummariesMap = new Map();
@@ -137,12 +132,12 @@ class MDNCompatibility {
       return false;
     });
 
-    const aliasSummaries = [...aliasSummariesMap.values()].map(s => {
+    const aliasSummaries = aliasSummariesMap.values().map(s => {
       s.prefixNeeded = s.prefixNeededBrowsers.length !== 0;
       return s;
     });
 
-    return { aliasSummaries, normalSummaries };
+    return Iterator.concat(normalSummaries, aliasSummaries);
   }
 
   _getAlias(compatNode, terms) {

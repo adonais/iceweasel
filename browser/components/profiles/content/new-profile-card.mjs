@@ -4,7 +4,7 @@
 
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { EditProfileCard } from "chrome://browser/content/profiles/edit-profile-card.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
 
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";

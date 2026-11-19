@@ -181,8 +181,8 @@ TEST(GeckoProfiler, ThreadRegistrationInfo)
 
       tsThread = trInfoThread.RegisterTime();
       threadThreadId = trInfoThread.ThreadId();
-      trInfoThreadPtr =
-          MakeUnique<profiler::ThreadRegistrationInfo>(std::move(trInfoThread));
+      trInfoThreadPtr = std::make_unique<profiler::ThreadRegistrationInfo>(
+          std::move(trInfoThread));
     });
     testThread.join();
 
@@ -1117,12 +1117,12 @@ TEST(GeckoProfiler, ThreadRegistry_DataAccess)
       int ranTest = 0;
       TRy::WithOffThreadRef(
           profiler_current_thread_id(),
-          [&](TRy::OffThreadRef aOffThreadRef) { ++ranTest; });
+          [&](TRy::OffThreadRef /*aOffThreadRef*/) { ++ranTest; });
       EXPECT_EQ(ranTest, 0);
 
       EXPECT_FALSE(TRy::WithOffThreadRefOr(
           profiler_current_thread_id(),
-          [&](TRy::OffThreadRef aOffThreadRef) {
+          [&](TRy::OffThreadRef /*aOffThreadRef*/) {
             ++ranTest;
             return true;
           },
@@ -1194,12 +1194,13 @@ TEST(GeckoProfiler, ThreadRegistration_RegistrationEdgeCases)
       ASSERT_TRUE(TR::IsRegistered());
 
       int ranTest = 0;
-      TRy::WithOffThreadRef(testThreadId, [&](TRy::OffThreadRef aOffThreadRef) {
-        if (registrationCount % 2000 == 0) {
-          PR_Sleep(PR_MillisecondsToInterval(1));
-        }
-        ++ranTest;
-      });
+      TRy::WithOffThreadRef(testThreadId,
+                            [&](TRy::OffThreadRef /*aOffThreadRef*/) {
+                              if (registrationCount % 2000 == 0) {
+                                PR_Sleep(PR_MillisecondsToInterval(1));
+                              }
+                              ++ranTest;
+                            });
       EXPECT_EQ(ranTest, 1);
 
       if (registrationCount % 1000 == 0) {
@@ -2342,7 +2343,7 @@ class MockClassOfService final : public nsIClassOfService {
     return NS_OK;
   }
 
-  NS_IMETHOD SetClassOfService(mozilla::net::ClassOfService s) override {
+  NS_IMETHOD SetClassOfService(mozilla::net::ClassOfService /*s*/) override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -2515,10 +2516,10 @@ TEST(GeckoProfiler, Markers)
   // Create three strings: two that are the maximum allowed length, and one that
   // is one char longer.
   static const size_t kMax = ProfileBuffer::kMaxFrameKeyLength;
-  UniquePtr<char[]> okstr1 = MakeUnique<char[]>(kMax);
-  UniquePtr<char[]> okstr2 = MakeUnique<char[]>(kMax);
-  UniquePtr<char[]> longstr = MakeUnique<char[]>(kMax + 1);
-  UniquePtr<char[]> longstrCut = MakeUnique<char[]>(kMax + 1);
+  auto okstr1 = std::make_unique<char[]>(kMax);
+  auto okstr2 = std::make_unique<char[]>(kMax);
+  auto longstr = std::make_unique<char[]>(kMax + 1);
+  auto longstrCut = std::make_unique<char[]>(kMax + 1);
   for (size_t i = 0; i < kMax; i++) {
     okstr1[i] = 'a';
     okstr2[i] = 'b';
@@ -4417,15 +4418,15 @@ class GTestStackCollector final : public ProfilerStackCollector {
 
   virtual void SetIsMainThread() { mSetIsMainThread++; }
 
-  virtual void CollectNativeLeafAddr(void* aAddr) { mFrames++; }
-  virtual void CollectJitReturnAddr(void* aAddr) { mFrames++; }
-  virtual void CollectWasmOrSyncJITFrame(JS::ProfilingCategoryPair aCategory,
-                                         const char* aLabel,
-                                         uint32_t aSourceId) {
+  virtual void CollectNativeLeafAddr(void* /*aAddr*/) { mFrames++; }
+  virtual void CollectJitReturnAddr(void* /*aAddr*/) { mFrames++; }
+  virtual void CollectWasmOrSyncJITFrame(
+      JS::ProfilingCategoryPair /*aCategory*/, const char* /*aLabel*/,
+      uint32_t /*aSourceId*/) {
     mFrames++;
   }
   virtual void CollectProfilingStackFrame(
-      const js::ProfilingStackFrame& aFrame) {
+      const js::ProfilingStackFrame& /*aFrame*/) {
     mFrames++;
   }
 
@@ -5905,7 +5906,8 @@ class GeckoProfilerMarkerBench : public ::testing::Test {
         ProfilerFeature::NoStackSampling | ProfilerFeature::MarkersAllThreads;
     profiler_start(BufferCapacity(), PROFILER_DEFAULT_INTERVAL, features,
                    nullptr, 0, 0);
-    mThreadPool = MakeUnique<MarkerBenchThreadPool>(kMarkerInsertionThreads);
+    mThreadPool =
+        std::make_unique<MarkerBenchThreadPool>(kMarkerInsertionThreads);
     PrepareBuffer();
   }
 

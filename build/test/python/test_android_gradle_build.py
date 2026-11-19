@@ -103,7 +103,7 @@ def create_mozconfig(test_dir, name):
                 ac_add_options --enable-artifact-builds
                 ac_add_options --target=aarch64-linux-android
                 mk_add_options MOZ_OBJDIR="{objdir.as_posix()}"
-                export GRADLE_FLAGS="-PbuildMetricsOutputDir={objdir.as_posix()}/gradle/build/metrics -PbuildMetricsFileSuffix=test"
+                export GRADLE_FLAGS="{os.environ.get("GRADLE_FLAGS", "")} -PbuildMetricsOutputDir={objdir.as_posix()}/gradle/build/metrics -PbuildMetricsFileSuffix=test"
             """
         )
     )
@@ -425,11 +425,13 @@ def test_mach_tasks_up_to_date(objdir, mozconfig, run_mach):
         mozconfig_path.write_text(original_content)
 
 
+@pytest.mark.app_build
 def test_minify_fenix_incremental_build(objdir, mozconfig, run_mach):
     """Verify that minifyReleaseWithR8 is UP-TO-DATE on a subsequent
     run when there are no code changes.
     """
 
+    assert_success(*run_mach(["build"]))
     # Ensure a clean state
     assert_success(*run_mach(["gradle", ":fenix:cleanMinifyReleaseWithR8"]))
     assert_success(*run_mach(["gradle", ":fenix:minifyReleaseWithR8"]))
@@ -439,6 +441,7 @@ def test_minify_fenix_incremental_build(objdir, mozconfig, run_mach):
     assert_ordered_task_outcomes(objdir, [(":fenix:minifyReleaseWithR8", "UP-TO-DATE")])
 
 
+@pytest.mark.app_build
 def test_geckoview_build(objdir, mozconfig, run_mach):
     assert_success(*run_mach(["build"]))
     assert_success(*run_mach(["gradle", "geckoview:clean"]))
@@ -449,6 +452,7 @@ def test_geckoview_build(objdir, mozconfig, run_mach):
     assert_all_task_statuses(objdir, ["UP-TO-DATE", "SKIPPED"])
 
 
+@pytest.mark.app_build
 def test_fenix_build(objdir, mozconfig, run_mach):
     assert_success(*run_mach(["build"]))
     assert_success(
@@ -467,6 +471,7 @@ def test_fenix_build(objdir, mozconfig, run_mach):
     assert_all_task_statuses(objdir, ["UP-TO-DATE", "SKIPPED"])
 
 
+@pytest.mark.app_build
 def test_focus_build(objdir, mozconfig, run_mach):
     assert_success(*run_mach(["build"]))
     assert_success(*run_mach(["gradle", "focus:clean"]))
@@ -499,7 +504,17 @@ def test_android_export(objdir, mozconfig, run_mach):
     assert_ordered_task_outcomes(objdir, [(":verifyGleanVersion", "UP-TO-DATE")])
 
 
-def test_mach_environment_configuration_cache(primary_config, secondary_config):
+@pytest.fixture(scope="session")
+def built_configs(primary_config, secondary_config):
+    for mozconfig, objdir in (primary_config, secondary_config):
+        assert_success(*run_mach_with_config(mozconfig, ["build"]))
+        assert (objdir / "config.status.json").exists(), (
+            f"{objdir} should have config.status.json"
+        )
+    return primary_config, secondary_config
+
+
+def test_mach_environment_configuration_cache(built_configs):
     """Test that Gradle's configuration cache invalidates when objdir-determining inputs change."""
 
     def get_config_cache_status(output):
@@ -508,18 +523,7 @@ def test_mach_environment_configuration_cache(primary_config, secondary_config):
                 return "reused"
         return None
 
-    primary_mozconfig, primary_objdir = primary_config
-    secondary_mozconfig, secondary_objdir = secondary_config
-
-    assert_success(*run_mach_with_config(primary_mozconfig, ["build"]))
-    assert_success(*run_mach_with_config(secondary_mozconfig, ["build"]))
-
-    assert (primary_objdir / "config.status.json").exists(), (
-        f"{primary_objdir} should have config.status.json"
-    )
-    assert (secondary_objdir / "config.status.json").exists(), (
-        f"{secondary_objdir} should have config.status.json"
-    )
+    (primary_mozconfig, _), (secondary_mozconfig, _) = built_configs
 
     returncode, output = run_gradle(secondary_mozconfig, ["help"])
     assert_success(returncode, output)
@@ -583,7 +587,7 @@ def test_mach_environment_configuration_cache(primary_config, secondary_config):
         secondary_mozconfig.write_text(original_content)
 
 
-def test_mach_environment_local_topobjdir_cache(primary_config, secondary_config):
+def test_mach_environment_local_topobjdir_cache(built_configs):
     """Test that local topobjdir caching avoids running `./mach environment` unnecessarily."""
 
     def get_local_cache_status(output):
@@ -594,13 +598,7 @@ def test_mach_environment_local_topobjdir_cache(primary_config, secondary_config
                 return "miss"
         return None
 
-    primary_mozconfig, primary_objdir = primary_config
-    secondary_mozconfig, secondary_objdir = secondary_config
-
-    assert_success(*run_mach_with_config(primary_mozconfig, ["build"]))
-    assert_success(*run_mach_with_config(secondary_mozconfig, ["build"]))
-    assert (primary_objdir / "config.status.json").exists()
-    assert (secondary_objdir / "config.status.json").exists()
+    (primary_mozconfig, _), (secondary_mozconfig, _) = built_configs
 
     local_cache_dir = Path(topsrcdir) / ".gradle" / "mach-environment-cache"
 

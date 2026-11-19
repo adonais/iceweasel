@@ -521,10 +521,9 @@ _cairo_recording_surface_region_array_destroy (cairo_recording_surface_t       *
     free (region_array);
 }
 
-static cairo_status_t
-_cairo_recording_surface_finish (void *abstract_surface)
+static void
+_cairo_recording_surface_reset (cairo_recording_surface_t *surface)
 {
-    cairo_recording_surface_t *surface = abstract_surface;
     cairo_command_t **elements;
     int i, num_elements;
     cairo_recording_regions_array_t *region_array, *region_next;
@@ -592,13 +591,27 @@ _cairo_recording_surface_finish (void *abstract_surface)
     }
 
     _cairo_array_fini (&surface->commands);
+    _cairo_array_init (&surface->commands, sizeof (cairo_command_t *));
 
     if (surface->bbtree.left)
 	bbtree_del (surface->bbtree.left);
     if (surface->bbtree.right)
 	bbtree_del (surface->bbtree.right);
+    surface->bbtree.left = surface->bbtree.right = NULL;
+    surface->bbtree.chain = INVALID_CHAIN;
 
     free (surface->indices);
+    surface->indices = NULL;
+    surface->num_indices = 0;
+}
+
+static cairo_status_t
+_cairo_recording_surface_finish (void *abstract_surface)
+{
+    cairo_recording_surface_t *surface = abstract_surface;
+
+    _cairo_recording_surface_reset (surface);
+    CAIRO_MUTEX_FINI (surface->mutex);
 
     return CAIRO_STATUS_SUCCESS;
 }
@@ -770,21 +783,6 @@ _cairo_recording_surface_commit (cairo_recording_surface_t *surface,
 {
     _cairo_recording_surface_break_self_copy_loop (surface);
     return _cairo_array_append (&surface->commands, &command);
-}
-
-static void
-_cairo_recording_surface_reset (cairo_recording_surface_t *surface)
-{
-    /* Reset the commands and temporaries */
-    _cairo_recording_surface_finish (surface);
-
-    surface->bbtree.left = surface->bbtree.right = NULL;
-    surface->bbtree.chain = INVALID_CHAIN;
-
-    surface->indices = NULL;
-    surface->num_indices = 0;
-
-    _cairo_array_init (&surface->commands, sizeof (cairo_command_t *));
 }
 
 static cairo_int_status_t

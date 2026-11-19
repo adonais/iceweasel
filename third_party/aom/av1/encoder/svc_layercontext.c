@@ -237,6 +237,7 @@ void av1_restore_layer_context(AV1_COMP *const cpi) {
   const int postencode_drop = cpi->rc.postencode_drop;
   const int static_since_last_scene_change =
       cpi->rc.static_since_last_scene_change;
+  const int percent_blocks_inactive = cpi->rc.percent_blocks_inactive;
   // Restore layer rate control.
   cpi->rc = lc->rc;
   cpi->ppi->p_rc = lc->p_rc;
@@ -255,6 +256,10 @@ void av1_restore_layer_context(AV1_COMP *const cpi) {
   cpi->rc.max_consec_drop = max_consec_drop;
   cpi->rc.postencode_drop = postencode_drop;
   cpi->rc.static_since_last_scene_change = static_since_last_scene_change;
+  // The active map is set for the full resolution frame, so keep it only
+  // without spatial layers.
+  if (svc->number_spatial_layers == 1)
+    cpi->rc.percent_blocks_inactive = percent_blocks_inactive;
   // For spatial-svc, allow cyclic-refresh to be applied on the spatial layers,
   // for the base temporal layer.
   if (cpi->oxcf.q_cfg.aq_mode == CYCLIC_REFRESH_AQ &&
@@ -302,12 +307,10 @@ void av1_svc_update_buffer_slot_refreshed(AV1_COMP *const cpi) {
       rtc_ref->buffer_spatial_layer[i] = svc->spatial_layer_id;
     }
   } else if (rtc_ref->set_ref_frame_config) {
-    for (unsigned int i = 0; i < INTER_REFS_PER_FRAME; i++) {
-      const int ref_frame_map_idx = rtc_ref->ref_idx[i];
-      if (rtc_ref->refresh[ref_frame_map_idx]) {
-        rtc_ref->buffer_time_index[ref_frame_map_idx] = current_frame;
-        rtc_ref->buffer_spatial_layer[ref_frame_map_idx] =
-            svc->spatial_layer_id;
+    for (unsigned int i = 0; i < REF_FRAMES; i++) {
+      if (rtc_ref->refresh[i]) {
+        rtc_ref->buffer_time_index[i] = current_frame;
+        rtc_ref->buffer_spatial_layer[i] = svc->spatial_layer_id;
       }
     }
   }

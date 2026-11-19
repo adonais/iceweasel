@@ -277,6 +277,9 @@ class BuildMonitor(MozbuildObject):
         self.resources.start()
         self._resources_started = True
 
+        if self.resources.forwarding:
+            return
+
         if "MOZ_AUTOMATION" in os.environ and "UPLOAD_PATH" in os.environ:
             self._build_resources_profile_path = mozpath.join(
                 os.environ["UPLOAD_PATH"], "profile_build_resources.json"
@@ -397,6 +400,8 @@ class BuildMonitor(MozbuildObject):
         self.warnings_database.save_to_file(self._warnings_path)
 
     def record_usage(self):
+        if self.resources.forwarding:
+            return
         try:
             with open(
                 self._build_resources_profile_path, "w", encoding="utf-8", newline="\n"
@@ -495,7 +500,7 @@ class BuildMonitor(MozbuildObject):
     @property
     def have_resource_usage(self):
         """Whether resource usage is available."""
-        return self.resources.start_time is not None
+        return self.resources.start_time is not None and not self.resources.forwarding
 
     def get_resource_usage(self):
         """Produce a data structure containing the low-level resource usage information.

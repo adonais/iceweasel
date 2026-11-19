@@ -56,7 +56,7 @@ AsyncGtkClipboardRequest::AsyncGtkClipboardRequest(ClipboardDataType aDataType,
                                                    const char* aMimeType) {
   GtkClipboard* clipboard =
       gtk_clipboard_get(GetSelectionAtom(aWhichClipboard));
-  mDataRequest = MakeUnique<DataRequestGtk>(aDataType);
+  mDataRequest = std::make_unique<DataRequestGtk>(aDataType);
 
   MOZ_CLIPBOARD_LOG(
       "AsyncGtkClipboardRequest::AsyncGtkClipboardRequest [%p] mDataRequest "
@@ -287,7 +287,7 @@ AsyncWaylandClipboardRequest::AsyncWaylandClipboardRequest(
   MOZ_CLIPBOARD_LOG(
       "AsyncWaylandClipboardRequest::AsyncWaylandClipboardRequest()");
   mDataRequest =
-      MakeUnique<DataRequestWayland>(aDataType, aDataOffer, aMimeType);
+      std::make_unique<DataRequestWayland>(aDataType, aDataOffer, aMimeType);
 }
 #endif
 

@@ -10,6 +10,7 @@
 
 #include "sdk/objc/native/src/objc_video_encoder_factory.h"
 
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -264,7 +265,7 @@ std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
     id<RTC_OBJC_TYPE(RTCVideoEncoderSelector)> selector =
         [encoder_factory_ encoderSelector];
     if (selector) {
-      return absl::make_unique<ObjcVideoEncoderSelector>(selector);
+      return std::make_unique<ObjcVideoEncoderSelector>(selector);
     }
   }
   return nullptr;

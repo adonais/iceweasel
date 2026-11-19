@@ -63,7 +63,6 @@ support-files = ["file_print_images.html"]
 
 ["browser_print_in_container.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
   "os == 'win' && os_version == '11.26200' && debug && verify",
 ]
 

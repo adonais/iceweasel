@@ -456,17 +456,12 @@ onboarding-checklist-remove-2 = Remove checklist
 tab-groups-onboarding-feature-callout-title = Try tab groups for less clutter, more focus
 tab-groups-onboarding-feature-callout-subtitle = Get organized by dragging one tab on top of another to create your first group.
 
-# The text "Search and Manage Tabs" refers to the string tabs-toolbar-list-all-tabs-2
-tab-groups-onboarding-create-group-title-4 = Find your tab groups in the “Search and manage tabs” menu anytime.
 tab-groups-onboarding-create-group-no-alltabs-button-title = Find your groups by searching for them in the address bar.
-
-# The text "Search and manage tabs" refers to the string tabs-toolbar-list-all-tabs-2
-tab-groups-onboarding-saved-groups-title-4 = When you close a tab group, reopen it from the “Search and manage tabs” menu anytime.
 tab-groups-onboarding-saved-groups-no-alltabs-button-title-2 = Find your closed groups by searching for them in the address bar.
-
-# The text "Search and manage tabs" refers to the string tabs-toolbar-list-all-tabs-2
-tab-groups-onboarding-session-restore-title-3 = Reopen your tab groups from the “Search and manage tabs” menu anytime.
 tab-groups-onboarding-dismiss = OK
+
+# "here" refers to the application menu button
+tab-groups-onboarding-auto-saved-title = Tab groups are auto-saved. Find them here.
 
 ## Multi Profiles feature onboarding messages
 
@@ -626,12 +621,16 @@ onboarding-refresh-data-collection-link = Manage data collection settings
 onboarding-refresh-primary-button = Continue
 
 onboarding-refresh-fro-import-header = Bring in your data
+# "It" in "It stays yours" means the browsing data the user is importing (bookmarks, passwords, history).
+# Refers to personal data, indicating that ownership of imported data remains with the user.
+onboarding-refresh-fro-import-subtitle = It stays yours. { -brand-product-name } never sells personal data.
 onboarding-refresh-fro-import-body = Your personal data stays personal. { -brand-product-name } will never sell it.
 onboarding-refresh-fro-skip-button = Skip
 
 onboarding-refresh-fro-theme-header = Play with your look
 
 onboarding-refresh-tab-layout-header = Try a different tab layout
+onboarding-refresh-fro-tab-layout-title = Choose a new tab layout
 onboarding-refresh-tab-layout-top = On top
 onboarding-refresh-tab-layout-side = On the side
 onboarding-refresh-tab-layout-minimal = Minimal
@@ -701,3 +700,39 @@ welcome-back-onboarding-card-label-tabs = Tidy up with vertical tabs and groups
 welcome-back-onboarding-card-label-vpn = Stay hidden with built-in VPN
 welcome-back-onboarding-card-label-pdf = Highlight, sign, and work with PDFs
 welcome-back-onboarding-card-tilebutton-label = Try it
+
+## New Tab Onboarding cards
+
+hnt-card-import-header = Set up your { -brand-short-name } in seconds
+hnt-card-import-body = Bring in your bookmarks, passwords, and more from another browser.
+hnt-card-import-primary-button = Import your data
+
+hnt-card-default-body = { -brand-product-name } is the only major browser built to protect you, not track you.
+hnt-card-default-primary-button = Open links with { -brand-short-name }
+
+hnt-card-pin-header = Keep { -brand-short-name } a click away
+hnt-card-pin-body = { PLATFORM() ->
+    [macos] Jump back in to protected browsing from your dock.
+   *[other] Jump back in to protected browsing from your taskbar.
+}
+
+hnt-card-mobile-header = Get built-in protection on your phone
+hnt-card-mobile-body = Download { -brand-product-name } for mobile for extra privacy on the go.
+hnt-card-mobile-primary-button = Get { -brand-product-name } for mobile.
+
+hnt-card-wallpaper-header = Pick a fresh wallpaper
+hnt-card-wallpaper-body = Make this screen feel like home with a background you love.
+hnt-card-wallpaper-primary-button = Start customizing
+
+hnt-card-taskbar-tabs-header = Add your favorite sites to your Windows taskbar
+hnt-card-taskbar-tabs-body = Open your most visited sites like an app with all of { -brand-product-name }’s protections.
+hnt-card-taskbar-tabs-primary-button = Add sites to taskbar
+
+hnt-card-extensions-header = Boost { -brand-short-name } with extensions
+hnt-card-extensions-body = Customize your browsing with our most loved extensions.
+hnt-card-extensions-primary-button = Explore
+
+# "Do your thing" is an idiom meaning to do what you are interested in or skilled at,
+# rather than simply doing what everyone else does.
+hnt-card-last-card-header-start = All set. Go do your thing.
+hnt-card-last-card-header-end = Tracking protection is on.

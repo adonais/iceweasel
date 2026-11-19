@@ -33,3 +33,6 @@ disabled = "Disabled as we want to run this only as perftest, not regular CI"
 
 ["browser_removeManySpellingErrors.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
+
+["browser_testCSSVisibilityChange.js"]
+disabled = "Disabled as we want to run this only as perftest, not regular CI"

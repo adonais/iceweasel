@@ -96,21 +96,15 @@ add_task(async function test_windowRealm_isSandbox() {
   Assert.equal(realm2.isSandbox, true);
 });
 
-add_task(async function test_windowRealm_userActivationEnabled() {
+add_task(async function test_windowRealm_notifyUserActivation() {
   const windowlessBrowser = Services.appShell.createWindowlessBrowser(false);
   const contentWindow = windowlessBrowser.docShell.domWindow;
   const userActivation = contentWindow.navigator.userActivation;
 
   const realm = new WindowRealm(contentWindow);
 
-  Assert.equal(realm.userActivationEnabled, false);
   Assert.equal(userActivation.isActive && userActivation.hasBeenActive, false);
 
-  realm.userActivationEnabled = true;
-  Assert.equal(realm.userActivationEnabled, true);
+  realm.notifyUserActivation();
   Assert.equal(userActivation.isActive && userActivation.hasBeenActive, true);
-
-  realm.userActivationEnabled = false;
-  Assert.equal(realm.userActivationEnabled, false);
-  Assert.equal(userActivation.isActive && userActivation.hasBeenActive, false);
 });

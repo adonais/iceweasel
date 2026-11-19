@@ -258,7 +258,7 @@ nsresult LSObject::CreateForWindow(nsPIDOMWindowInner* aWindow,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  auto principalInfo = MakeUnique<PrincipalInfo>();
+  auto principalInfo = std::make_unique<PrincipalInfo>();
   rv = PrincipalToPrincipalInfo(principal, principalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -266,7 +266,7 @@ nsresult LSObject::CreateForWindow(nsPIDOMWindowInner* aWindow,
 
   MOZ_ASSERT(principalInfo->type() == PrincipalInfo::TContentPrincipalInfo);
 
-  auto storagePrincipalInfo = MakeUnique<PrincipalInfo>();
+  auto storagePrincipalInfo = std::make_unique<PrincipalInfo>();
   rv = PrincipalToPrincipalInfo(storagePrincipal, storagePrincipalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -348,7 +348,7 @@ nsresult LSObject::CreateForPrincipal(nsPIDOMWindowInner* aWindow,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  auto principalInfo = MakeUnique<PrincipalInfo>();
+  auto principalInfo = std::make_unique<PrincipalInfo>();
   rv = PrincipalToPrincipalInfo(aPrincipal, principalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -357,7 +357,7 @@ nsresult LSObject::CreateForPrincipal(nsPIDOMWindowInner* aWindow,
   MOZ_ASSERT(principalInfo->type() == PrincipalInfo::TContentPrincipalInfo ||
              principalInfo->type() == PrincipalInfo::TSystemPrincipalInfo);
 
-  auto storagePrincipalInfo = MakeUnique<PrincipalInfo>();
+  auto storagePrincipalInfo = std::make_unique<PrincipalInfo>();
   rv = PrincipalToPrincipalInfo(aStoragePrincipal, storagePrincipalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

@@ -52,7 +52,7 @@ DownloadPlatform* DownloadPlatform::GetDownloadPlatform() {
 
 #ifdef MOZ_WIDGET_GTK
 static void gio_set_metadata_done(GObject* source_obj, GAsyncResult* res,
-                                  gpointer user_data) {
+                                  [[maybe_unused]] gpointer user_data) {
   GError* err = nullptr;
   g_file_set_attributes_finish(G_FILE(source_obj), res, nullptr, &err);
   if (err) {
@@ -112,11 +112,10 @@ static void AddToRecentDocs(nsIFile* aTarget, nsAutoString& aPath) {
 }
 #endif
 
-nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer,
-                                        nsIFile* aTarget,
-                                        const nsACString& aContentType,
-                                        bool aIsPrivate, JSContext* aCx,
-                                        Promise** aPromise) {
+nsresult DownloadPlatform::DownloadDone(
+    nsIURI* aSource, [[maybe_unused]] nsIURI* aReferrer, nsIFile* aTarget,
+    [[maybe_unused]] const nsACString& aContentType, bool aIsPrivate,
+    JSContext* aCx, Promise** aPromise) {
   nsIGlobalObject* globalObject =
       xpc::NativeGlobal(JS::CurrentGlobalOrNull(aCx));
 
@@ -257,8 +256,9 @@ nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer,
 }
 
 nsresult DownloadPlatform::MaybeWriteDownloadOriginInformation(
-    nsIFile* aTargetFile, nsIURI* aSourceUrl, nsIReferrerInfo* aReferrerInfo,
-    bool aIsPrivate, JSContext* aCx, dom::Promise** aPromise) {
+    [[maybe_unused]] nsIFile* aTargetFile, [[maybe_unused]] nsIURI* aSourceUrl,
+    [[maybe_unused]] nsIReferrerInfo* aReferrerInfo,
+    [[maybe_unused]] bool aIsPrivate, JSContext* aCx, dom::Promise** aPromise) {
   NS_ENSURE_ARG(aCx);
   NS_ENSURE_ARG(aPromise);
 

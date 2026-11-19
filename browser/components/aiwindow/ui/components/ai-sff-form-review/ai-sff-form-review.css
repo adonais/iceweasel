@@ -100,7 +100,7 @@
 /* TODO: Bug 2067225 make the jump-to-bottom a reusable component in aiwindow */
 .form-review-jump-to-bottom-button {
   --button-opacity-disabled: 1;
-  bottom: var(--space-large);
+  inset-block-end: var(--space-large);
   inset-inline: 0;
   margin-inline: auto;
   opacity: 0;

@@ -178,7 +178,7 @@ class CompositableForwarder : public KnowsCompositor {
 
   virtual bool InForwarderThread() = 0;
 
-  void AssertInForwarderThread() { MOZ_ASSERT(InForwarderThread()); }
+  void AssertInForwarderThread() { MOZ_RELEASE_ASSERT(InForwarderThread()); }
 
   void TrackFwdTransaction(const RefPtr<FwdTransactionTracker>& aTracker) {
     if (aTracker) {

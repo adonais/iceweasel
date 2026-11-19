@@ -78,6 +78,16 @@ class BasePythonSupport:
         """
         pass
 
+    def modify_env(self, env, test):
+        """Used to modify the environment of the Browsertime process.
+
+        The `env` arg holds the environment variables browsertime will run
+        with. It can be changed directly.
+
+        The `test` arg is the test itself with all of its current settings.
+        """
+        pass
+
     def handle_result(self, bt_result, raw_result, last_result=False, **kwargs):
         """Parse a result for the required results.
 

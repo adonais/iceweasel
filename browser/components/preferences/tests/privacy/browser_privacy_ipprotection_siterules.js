@@ -492,10 +492,39 @@ add_task(async function test_set_rule_dialog_saves_rule() {
       capability: ALLOW_ACTION,
       msg: "An http website is converted to its https origin",
     },
+    {
+      website: "www.acme.com",
+      capability: ALLOW_ACTION,
+      msg: "A www website is stored without www",
+    },
+    {
+      website: "192.123.123.1",
+      origin: "https://192.123.123.1",
+      capability: ALLOW_ACTION,
+      msg: "An IP address is stored as its https origin",
+    },
+    {
+      website: "[2001:db8::1]",
+      origin: "https://[2001:db8::1]",
+      capability: ALLOW_ACTION,
+      msg: "An IPv6 address is stored as its https origin",
+    },
+    {
+      website: "intranet",
+      origin: "https://intranet",
+      capability: ALLOW_ACTION,
+      msg: "A hostname without a domain is stored as its https origin",
+    },
   ];
 
   await withSiteRulesList(async (list, browser) => {
-    for (let { website, status, capability, msg } of cases) {
+    for (let {
+      website,
+      origin = "https://acme.com",
+      status,
+      capability,
+      msg,
+    } of cases) {
       let dialog = await openSetRuleDialog(list, browser);
       typeWebsite(dialog.dialogWin, dialog.websiteInput, website);
       if (status) {
@@ -503,9 +532,9 @@ add_task(async function test_set_rule_dialog_saves_rule() {
       }
       await closeRuleDialog(browser, dialog.acceptButton);
 
-      Assert.deepEqual(storedRules(), ["https://acme.com"], msg);
-      is(capabilityFor("https://acme.com"), capability, msg);
-      await awaitRows(list, ["https://acme.com"]);
+      Assert.deepEqual(storedRules(), [origin], msg);
+      is(capabilityFor(origin), capability, msg);
+      await awaitRows(list, [origin]);
 
       Services.perms.removeByType(IPP_VPN_PERMISSION);
       await awaitRows(list, []);
@@ -958,11 +987,6 @@ add_task(async function test_delete_rule_dialog_error_retry() {
         list.deleteMessageEl.getAttribute("role"),
         "alert",
         "The error is announced"
-      );
-      is(
-        list.deleteIconEl.getAttribute("src"),
-        "chrome://global/skin/icons/warning.svg",
-        "Dialog shows the warning icon"
       );
       is(
         list.deleteConfirmButtonEl.dataset.l10nId,

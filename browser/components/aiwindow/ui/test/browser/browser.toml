@@ -133,7 +133,6 @@ skip-if = [
 
 ["browser_aiwindow_firstrun.js"]
 skip-if = [
-  "debug && standalone", # Bug 2025711
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2012723
 ]
 
@@ -239,7 +238,6 @@ skip-if = [
 ["browser_aiwindow_smartbar_telemetry.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 2055099
 ]
 
@@ -248,9 +246,6 @@ skip-if = [
 ["browser_aiwindow_stop_generation.js"]
 
 ["browser_aiwindow_switcher.js"]
-skip-if = [
-  "debug && standalone", # Bug 2025711
-]
 
 ["browser_aiwindow_tab_close_integration.js"]
 

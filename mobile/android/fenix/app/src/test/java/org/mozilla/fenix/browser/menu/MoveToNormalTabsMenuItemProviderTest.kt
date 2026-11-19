@@ -8,7 +8,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
@@ -40,7 +39,7 @@ class MoveToNormalTabsMenuItemProviderTest {
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_external_link_24),
                 onClickEvent = MenuAction.MoveToNonPrivateTab,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -48,14 +47,14 @@ class MoveToNormalTabsMenuItemProviderTest {
     fun `GIVEN a normal tab WHEN building the menu item THEN don't show it`() {
         val provider = createProvider(browserStore(isPrivate = false))
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
     fun `GIVEN there is no selected tab WHEN building the menu item THEN don't show it`() {
         val provider = createProvider(BrowserStore())
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -82,7 +81,7 @@ class MoveToNormalTabsMenuItemProviderTest {
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
         val provider = createProvider(browserStore(isPrivate = true))
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.FindInPage))

@@ -1126,6 +1126,58 @@ TEST_F(BasicPortAllocatorTest,
             1);
 }
 
+TEST_F(BasicPortAllocatorTest,
+       NetworkChangeBeforeFirstPhaseDoesNotDuplicateUdp) {
+  ResetWithNoServersOrNat();
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  time_controller_.AdvanceTime(TimeDelta::Millis(1000));
+  candidate_allocation_done_ = false;
+
+  // Both notifications run DoAllocate() before the sequence created by the
+  // first one gets to its UDP phase.
+  AddInterface(kClientAddr);
+  network_manager_.NotifyNetworksChanged();
+  ASSERT_TRUE(waiter_.Until([&] { return candidate_allocation_done_; }));
+  EXPECT_EQ(CountPorts(ports_, IceCandidateType::kHost, PROTO_UDP, kClientAddr),
+            1);
+  EXPECT_EQ(CountPorts(ports_, IceCandidateType::kHost, PROTO_TCP, kClientAddr),
+            1);
+}
+
+TEST_F(BasicPortAllocatorTest, ConcurrentSessionsDoNotDuplicatePorts) {
+  constexpr int kNumSessions = 10;
+  ResetWithNoServersOrNat();
+  AddInterface(kClientAddr);
+
+  // Each session subscribes to the shared network manager, whose
+  // StartUpdating() signals all sessions. Start each one a task after the
+  // previous one so these signals hit the others at every stage of gathering.
+  std::vector<std::unique_ptr<PortAllocatorSession>> sessions;
+  absl::AnyInvocable<void()> start_next = [&] {
+    sessions.push_back(CreateSession("session", ICE_CANDIDATE_COMPONENT_RTP));
+    sessions.back()->StartGettingPorts();
+    if (sessions.size() < kNumSessions) {
+      thread_->PostTask([&] { start_next(); });
+    }
+  };
+  start_next();
+  ASSERT_TRUE(waiter_.Until([&] {
+    return sessions.size() == kNumSessions &&
+           absl::c_all_of(sessions, [](const auto& session) {
+             return session->CandidatesAllocationDone();
+           });
+  }));
+
+  for (const auto& session : sessions) {
+    std::vector<PortInterface*> ports = session->ReadyPorts();
+    EXPECT_EQ(
+        CountPorts(ports, IceCandidateType::kHost, PROTO_UDP, kClientAddr), 1);
+    EXPECT_EQ(
+        CountPorts(ports, IceCandidateType::kHost, PROTO_TCP, kClientAddr), 1);
+  }
+}
+
 // Test that when the same network interface is brought down and up, the
 // port allocator session will restart a new allocation sequence if
 // it is not stopped.

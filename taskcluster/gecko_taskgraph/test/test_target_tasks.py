@@ -9,11 +9,13 @@ import unittest
 import pytest
 from mozunit import main
 from taskgraph.graph import Graph
+from taskgraph.parameters import Parameters
 from taskgraph.target_tasks import get_method
 from taskgraph.task import Task
 from taskgraph.taskgraph import TaskGraph
 
 from gecko_taskgraph import target_tasks
+from gecko_taskgraph.filter_tasks import target_tasks_try_auto
 
 
 class TestTargetTasks(unittest.TestCase):
@@ -841,6 +843,40 @@ def test_desktop_nightly_filter_on_project_branches(
         {"macosx64-shippable"}, {"trust-domain": "gecko"}
     )
     assert nightly_filter(task, params) == expected
+
+
+@pytest.mark.parametrize(
+    "platform", ["linux64", "macosx64", "win32", "win64", "android-aarch64"]
+)
+def test_try_auto_excludes_beetmover_integration(platform):
+    build_label = f"build-{platform}/opt"
+    beetmover_label = f"beetmover-integration-{platform}/opt"
+    tasks = {
+        label: Task(
+            kind=kind,
+            label=label,
+            attributes={"run_on_projects": ["autoland-only"]},
+            task={},
+        )
+        for label, kind in (
+            (build_label, "build"),
+            (beetmover_label, "beetmover-integration"),
+        )
+    }
+    graph = TaskGraph(tasks, Graph(nodes=set(tasks), edges=set()))
+    params = Parameters(
+        project="try",
+        repository_type="git",
+        tasks_for="github-push",
+        head_ref="refs/heads/main",
+        hg_branch="default",
+        try_task_config={},
+    )
+
+    assert set(target_tasks_try_auto(graph, params, {})) == {build_label}
+    assert set(
+        target_tasks.target_tasks_default(graph, dict(params, project="autoland"), {})
+    ) == set(tasks)
 
 
 if __name__ == "__main__":

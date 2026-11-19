@@ -20,7 +20,9 @@ add_task(async function nonsponsored() {
 
 // Tests a non-sponsored best match row with a help button.
 add_task(async function nonsponsoredHelpButton() {
-  let result = makeBestMatchResult({ helpUrl: "https://example.com/help" });
+  let result = makeBestMatchResult({
+    payload: { helpUrl: "https://example.com/help" },
+  });
   await withProvider(result, async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -33,7 +35,7 @@ add_task(async function nonsponsoredHelpButton() {
 
 // Tests a sponsored best match row.
 add_task(async function sponsored() {
-  let result = makeBestMatchResult({ isSponsored: true });
+  let result = makeBestMatchResult({ payload: { isSponsored: true } });
   await withProvider(result, async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -47,8 +49,10 @@ add_task(async function sponsored() {
 // Tests a sponsored best match row with a help button.
 add_task(async function sponsoredHelpButton() {
   let result = makeBestMatchResult({
-    isSponsored: true,
-    helpUrl: "https://example.com/help",
+    payload: {
+      isSponsored: true,
+      helpUrl: "https://example.com/help",
+    },
   });
   await withProvider(result, async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -60,11 +64,45 @@ add_task(async function sponsoredHelpButton() {
   });
 });
 
+// Tests a result that sets `bestMatchType` to `SMALL`.
+add_task(async function bestMatchType_small() {
+  let result = makeBestMatchResult({
+    bestMatchType: UrlbarShared.BEST_MATCH_TYPE.SMALL,
+    payload: { isSponsored: true },
+  });
+  await withProvider(result, async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkBestMatchRow({ result, isSponsored: true });
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+});
+
+// Tests a result that sets `bestMatchType` to `LARGE`.
+add_task(async function bestMatchType_large() {
+  let result = makeBestMatchResult({
+    bestMatchType: UrlbarShared.BEST_MATCH_TYPE.LARGE,
+    payload: { isSponsored: true },
+  });
+  await withProvider(result, async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkBestMatchRow({ result, isSponsored: true });
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+});
+
 // Tests keyboard selection.
 add_task(async function keySelection() {
   let result = makeBestMatchResult({
-    isSponsored: true,
-    helpUrl: "https://example.com/help",
+    payload: {
+      isSponsored: true,
+      helpUrl: "https://example.com/help",
+    },
   });
 
   await withProvider(result, async () => {
@@ -130,13 +168,28 @@ async function checkBestMatchRow({ result, hasHelpUrl = false }) {
   let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   let { row } = details.element;
 
-  Assert.ok(
-    row.hasAttribute("is-top-pick"),
-    "Row should have is-top-pick attribute"
+  Assert.equal(
+    row.getAttribute("top-pick-type"),
+    result.bestMatchType,
+    "Row should have expected top-pick-type attribute"
   );
 
   let favicon = row._elements.get("favicon");
   Assert.ok(favicon, "Row has a favicon");
+
+  let expectedIconSize =
+    result.bestMatchType == UrlbarShared.BEST_MATCH_TYPE.SMALL ? 28 : 58;
+  let iconRect = favicon.getBoundingClientRect();
+  Assert.equal(
+    iconRect.width,
+    expectedIconSize,
+    "Icon width should match: " + result.bestMatchType
+  );
+  Assert.equal(
+    iconRect.height,
+    expectedIconSize,
+    "Icon height should match: " + result.bestMatchType
+  );
 
   let title = row._elements.get("title");
   Assert.ok(title, "Row has a title");
@@ -182,15 +235,16 @@ async function withProvider(result, callback) {
   }
 }
 
-function makeBestMatchResult(payloadExtra = {}) {
+function makeBestMatchResult(resultExtra = {}) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
     source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
+    ...resultExtra,
     payload: {
       title: "Test best match",
       url: "https://example.com/best-match",
-      ...payloadExtra,
+      ...(resultExtra.payload ?? {}),
     },
   });
 }

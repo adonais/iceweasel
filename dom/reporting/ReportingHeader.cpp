@@ -193,7 +193,7 @@ void ReportingHeader::ReportingFromChannel(nsIHttpChannel* aChannel) {
 
   if (NS_SUCCEEDED(
           aChannel->GetResponseHeader("Reporting-Endpoints"_ns, header))) {
-    client = MakeUnique<Client>();
+    client = std::make_unique<Client>();
     size_t parsedItems = ParseReportingEndpointsHeader(
         header, uri,
         [&](const nsACString& aKey, nsCOMPtr<nsIURI> aEndpointUrl) {
@@ -385,7 +385,7 @@ ReportingHeader::ParseReportToHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
     return nullptr;
   }
 
-  UniquePtr<Client> client = MakeUnique<Client>();
+  auto client = std::make_unique<Client>();
 
   for (const dom::ReportingItem& item : data.mItems.Value()) {
     nsAutoCString groupName;

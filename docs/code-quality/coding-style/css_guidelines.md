@@ -227,6 +227,11 @@ In general, it's good to first think of how some CSS could be written
 cleanly without the CSS variable(s) and then think of how the CSS
 variable could improve that CSS.
 
+A custom property defined in a shipped stylesheet and never referenced from CSS
+fails `browser_parsable_css.js` unless an entry in that test's
+`propNameAllowlist` matches it. An allowlist entry that no longer matches
+anything fails the test too, on the platforms the entry applies to.
+
 ### Using variables
 
 #### Use the variable according to its naming
@@ -372,7 +377,10 @@ the same in both, and most of the differences are invisible in the source.
   three different lengths across chrome, New Tab and the web. `em` is affected
   the same way in most cases, since the font size it resolves against is
   system-dependent too. Hardcoded `px` font sizes are a lint error in any case:
-  the `use-design-tokens` rule covers `font-size`.
+  the `use-design-tokens` rule covers `font-size`. Menus and many popups reset
+  `font` to `menu`, `message-box` or `-moz-pull-down-menu` (`menu.css`,
+  `xul.css`), so a change to the root font size does not reach their text,
+  while their `rem` lengths still follow the root.
 - **Chrome-only conditions never match in a page.**
   `:root[uidensity="compact"]`, the `:root[lwt-*]` theme selectors, anything
   relying on `xul.css` defaults such as `user-select` or `-moz-user-focus`, and
@@ -380,6 +388,23 @@ the same in both, and most of the differences are invisible in the source.
   sheet's chrome branches are dead code, so check which realm a rule can reach
   before fixing it, and do not assume a compact-density rule protects the in-page
   case.
+
+### UI density
+
+`browser.uidensity` is 0 for normal, 1 for compact and 2 for touch density
+(`gUIDensity` in `browser.js`). Compact and touch set `uidensity="compact"` or
+`uidensity="touch"` on the window's root, and normal density removes the
+attribute. The pref is not the only input:
+
+- With Nova enabled and no user value for `browser.uidensity`, a window
+  compacts itself when it is small: when 36px is more than
+  `browser.compactmode.auto.threshold` (0.05) of its height, i.e. under 720px,
+  or, while the sidebar launcher is shown collapsed, when 56px is more than that
+  share of its width, i.e. under 1120px. Popups and windows sized for
+  fingerprinting resistance skip this.
+- In Windows tablet mode, touch density takes over when the density is
+  automatic in that same sense, or when it is normal and
+  `browser.touchmode.auto` is set.
 
 ### Colors
 
@@ -403,13 +428,30 @@ opacities of the platform color.
 Two more axes resolve differently in chrome than in the content area, with no
 preference that looks wrong on either side:
 
-- **The color scheme.** Chrome's comes from `browser.theme.toolbar-theme` and
-  content's from `browser.theme.content-theme`
-  (`PreferenceSheet::ColorSchemeSettingForChrome` and
-  `ThemeDerivedColorSchemeForContent`), each 0 for dark, 1 for light and
-  anything else for system. They can disagree, so one `light-dark()` value
-  resolves to different sides in the two realms. Under Windows high contrast
-  mode the light set is additionally forced
+- **The color scheme.** Chrome's comes from `browser.theme.toolbar-theme`
+  (`PreferenceSheet::ColorSchemeSettingForChrome`): 0 for dark, 1 for light and
+  anything else for system. Content's comes from
+  `layout.css.prefers-color-scheme.content-override`, with the same 0 and 1,
+  and for any other value from `browser.theme.content-theme`
+  (`ThemeDerivedColorSchemeForContent`), read the same way. While a page's
+  colors are replaced by the user's preferred colors, content instead takes the
+  scheme from how dark that background color is (`PreferenceSheet::Prefs::Load`).
+  `LightweightThemeConsumer` writes both `browser.theme.*` prefs when
+  `updateGlobalThemeData` is true, so these updates can replace values set at
+  launch. AI windows and the private-window theme skip these writes, and so
+  does darkening a private window while the system scheme is light. For
+  `toolbar-theme`, a theme with a dark variant, Alpenglow for one, gets 0 or 1
+  for the variant in use. The default theme counts as having one only under a
+  dark system scheme, where it gets 0. Otherwise `color_scheme` selects dark
+  (0), light (1) or system (2); the built-in Light and Dark themes declare one.
+  Without a declared scheme, the default and in-app themes get 2 and any other
+  theme gets how dark its toolbar is. `ui.systemUsesDarkTheme` overrides the
+  system scheme. With `browser.theme.unified-color-scheme` false,
+  `content-theme` takes `content_color_scheme` or `color_scheme`, and 2 when
+  neither declares a scheme; when that pref is true, `content-theme` follows the
+  toolbar scheme. The two realms can disagree, so one `light-dark()` value
+  resolves to different sides in them.
+  Under Windows high contrast mode the light set is additionally forced
   (`mMustUseLightSystemColors`): always in chrome, and in content only once
   colors are being forced there.
 - **Stand-ins for native colors.** With `privacy.resistFingerprinting` or
@@ -420,6 +462,15 @@ preference that looks wrong on either side:
 
 [Colors and high contrast mode](/accessible/ColorsAndHighContrastMode.md)
 describes how Gecko picks between those palettes in `PreferenceSheet::Load`.
+
+#### Focus rings
+
+The UA's `:focus-visible` rule sets `outline: 1px auto` (`ua.css`), and an
+`auto` outline paints its ring in the element's `accent-color`, subject to
+forced colors, whatever `outline-color` says (`Theme::PaintAutoStyleOutline`).
+A rule that sets only `outline-color` therefore changes nothing on screen,
+although the computed value reads back as set. Set `outline-style` together
+with the color, or use the `outline` shorthand.
 
 ### High contrast mode
 
@@ -546,6 +597,21 @@ with a system background color and vice-versa.
 Note that using system colors is only useful for the chrome area, since
 content area colors are overridden by Gecko anyway.
 
+To put a window's chrome under forced colors on any platform, set
+`window.browsingContext.forcedColorsOverride = "active"` from chrome JS. The
+override is checked before any pref (`nsPresContext::UpdateForcedColors`), so
+the chrome reaches the `active` state and its declarations are rewritten as
+described below. The override applies to the top-level browsing context, and
+each tab's browser is its own top-level context, so the pages stay out. Windows
+high contrast mode puts chrome in the `requested` state instead. Adding
+`forced-color-adjust: none` on the chrome root stops the rewriting, but the
+state stays `active`: a bare `(forced-colors)` query still matches, while
+`(forced-colors: active)` and `(forced-colors: requested)` queries answer the
+other way round from Windows. The override does not make `prefers-contrast`
+match either. On Windows, setting `ui.useAccessibilityTheme` to 1 without the
+override reaches the `requested` state and matches `prefers-contrast`, but the
+system colors stay those of the OS theme.
+
 #### The forced-color adjustment
 
 Once a document is actually forcing colors - the `active` state above, not
@@ -555,14 +621,23 @@ exempt: rules from the UA and User origins, anything under
 `forced-color-adjust: none`, and CSS-wide keywords. Everything else is filtered,
 and the filter is not the same for every property:
 
-- A bare system color and `currentcolor` are honored everywhere.
-- A *derived* color is not honored uniformly. `color-mix(in srgb, currentcolor
-  25%, transparent)` survives as a `background-color` and is replaced as a
-  `border-color`, so one variable reads as a subtle wash behind a box and a
-  solid `CanvasText` line around it.
+- A bare system color and `currentcolor` are honored in every color property
+  except the ones listed below as reverting whatever they are set to.
 - `transparent` is honored for `background-color` and `color`, but not for
   `border-color`; that carve-out was removed in [bug
   1740924](https://bugzilla.mozilla.org/show_bug.cgi?id=1740924).
+  `outline-color`, `column-rule-color`, `text-decoration-color`,
+  `text-emphasis-color`, `-webkit-text-fill-color` and
+  `-webkit-text-stroke-color` follow the `border-color` rule.
+- A `var()` is judged by its substituted value.
+- A `light-dark()`, `color-mix()` or `contrast-color()` is kept when every color
+  inside it would be kept (`Color::honored_in_forced_colors_mode`). So
+  `color-mix(in srgb, currentcolor 25%, transparent)` survives as a
+  `background-color` and is replaced as a `border-color`, and one variable reads
+  as a faint fill behind a box and a solid `CanvasText` line around it. A
+  relative color such as `rgb(from ButtonText r g b / 50%)` is rejected even
+  when its origin is a system color, unless it resolves to `transparent` where
+  `transparent` is honored.
 - A rejected `background-color` becomes the canvas background with its alpha
   preserved. Any other rejected color reverts to its UA value.
 - `box-shadow`, `text-shadow`, `accent-color`, `caret-color`,
@@ -571,15 +646,22 @@ and the filter is not the same for every property:
 - A `background-image` with only `url()` and `none` layers is kept, as long as
   `browser.display.permit_backplate` is on (the default). Any other layer, such
   as a gradient, reverts the whole declaration to `none`.
+- `fill`, `stroke`, `stop-color`, `flood-color`, `lighting-color`, `opacity`
+  and `filter` are not filtered at all. An icon follows the regime only through
+  `currentcolor` or a system color in its own `fill` or `stroke`, including one
+  it receives as `context-fill` or `context-stroke`.
 
 The filter therefore fails in both directions, and both shapes exist in the tree:
 
 - **A line drawn with `background-color` vanishes.** An `hr` styled as a 1px
   separator, a `::before` hairline or a divider `div` each become exactly the
   surface they sit on. Drawing the line as a border survives instead, because a
-  rejected border reverts to its UA value: `currentcolor` on most elements,
-  `ButtonBorder` on `button`, `input` and `select`, and `ThreeDFace` on
-  `fieldset`. The swap is not geometrically free,
+  rejected border reverts to its UA value: `ButtonBorder` on text inputs,
+  `textarea`, `select` and buttons (`-moz-buttonhoverborder` on hover,
+  `-moz-buttonactiveborder` on `:active:hover`), `ThreeDFace` on `fieldset`,
+  `ThreeDShadow` and `ThreeDHighlight` on `progress`, and `currentcolor`
+  elsewhere, radio, checkbox and range inputs included.
+  The swap is not geometrically free,
   though: a used border width floors to whole device pixels where a height does
   not, so keep the box's block size and add `box-sizing: border-box`.
 - **A transparent border used as a spacer becomes a frame.** The
@@ -645,9 +727,11 @@ Not this:
 
 Whether chrome-only features are available is a parse-time property of the
 stylesheet's URL (`chrome_rules_enabled()`), not of the document the sheet ends
-up in. So `-moz-native-theme`, `-moz-pref()` and the rest still evaluate inside
-a `chrome://` stylesheet loaded into an `about:` page. Meanwhile
-`matchMedia("(-moz-native-theme)")` called from that page's own script parses at
+up in. Chrome rules parse in `chrome://` and `resource://` sheets, in `about:`
+sheets that are not content-accessible (`URLExtraData::ChromeRulesEnabled`),
+and in UA and user sheets. So `-moz-native-theme`, `-moz-pref()` and the rest
+still evaluate inside a `chrome://` stylesheet loaded into an `about:` page.
+Meanwhile `matchMedia("(-moz-native-theme)")` called from that page's own script parses at
 content origin, does not know the feature, and always reports false.
 
 Reading the page's `matchMedia` and concluding the sheet took the other branch is
@@ -656,12 +740,32 @@ that only that branch sets.
 
 ## Theme support
 
-Firefox comes built-in with 3 themes: default, light and dark. The
-built-in light/dark themes are a bit special as they load the
-`compacttheme.css` stylesheet. In addition to this, Firefox supports a
-variety of WebExtension themes that can be installed from AMO. For
+Besides the default theme, Firefox comes with three built-in themes
+(`BuiltInThemeConfig.sys.mjs`): Light and Dark, which are in-app themes, and
+Alpenglow, which behaves like a WebExtension theme. In addition to this, Firefox
+supports a variety of WebExtension themes that can be installed from AMO. For
 testing purposes, [here is an example of a WebExtension
 theme.](https://addons.mozilla.org/en-US/firefox/addon/arc-dark-theme-we/)
+
+`LightweightThemeConsumer.sys.mjs` applies the theme to a window. In ordinary
+windows, `theme-in-app` on the root marks a selected default or in-app theme,
+`lwtheme` marks an effective WebExtension theme, and `theme-effective-id` names
+the effective theme. AI windows with cached theme data always set
+`theme-in-app`. It sets `forceNonNativeTheme` on the document for every
+effective theme but the default.
+While `(forced-colors)` matches, it applies the default theme in place of any
+other, unless `browser.theme.forced-colors-override.enabled` is false. With a
+WebExtension theme selected, this substitution can leave both `theme-in-app`
+and `lwtheme` absent in an ordinary window.
+
+For a WebExtension theme, Alpenglow included, the theme's colors are written
+inline on the root element as custom properties, through `ThemeVariableMap.sys.mjs`
+and the toolkit map in `LightweightThemeConsumer.sys.mjs`. The default and in-app
+themes write none, so their colors come from the app's own CSS. A themed surface
+follows a WebExtension theme only where its stylesheet reads the custom property
+the map writes. A rule that redefines that property on a descendant replaces the
+theme color there, as `#DateTimePickerPanel` does in `content-area.css`. So check
+the stylesheet that styles a wrong-looking surface before the theme's manifest.
 
 ### Writing theme-friendly CSS
 
@@ -673,8 +777,8 @@ theme.](https://addons.mozilla.org/en-US/firefox/addon/arc-dark-theme-we/)
   the theme colors, so `currentcolor`/inheritance is again a good
   idea for theme support.
 
-- Never write CSS specially for the built-in light/dark theme in
-  `compacttheme.css` unless that CSS isn't supposed to affect
+- Never write CSS specially for the built-in Light and Dark themes, for
+  example under `:root[theme-in-app]`, unless that CSS isn't supposed to affect
   WebExtension themes.
 
 - These selectors can be used to target themed areas, though in general it's
@@ -736,18 +840,29 @@ However, if only 1x and 2x PNG assets are available, you can use this
 
 #### Some properties are rounded to device pixels, but not others
 
-A used `border-width` is rounded down to whole device pixels. `padding`,
-`margin`, `gap` and `height` are not. Trading a border for padding of the same
-length, or a 1px-tall background box for a 1px border, is therefore not
-geometry-neutral unless the length lands on whole device pixels, and what has to
-be integral is the length in *device* pixels rather than in CSS pixels. A whole
-number of CSS pixels is not exempt: at a device pixel ratio of 1.25 a `1px`
-border is used as 0.8px while `1px` of padding stays 1px, so the box changes
-size and everything after it moves.
+A declared `border-*-width`, `outline-width` or `column-rule-width` is rounded
+down to whole device pixels when it is computed, with a floor of one device
+pixel for a width that is not zero (`snap_as_border_width`). A width left at its
+initial `medium` value is not rounded and stays 3 CSS pixels. `outline-offset`
+is rounded the same way where `layout.css.outline-offset.snapping` asks for it:
+1 rounds it everywhere and is the Nightly default, and 2 rounds it only in
+chrome documents and is the default elsewhere. `padding`, `margin`, `gap` and
+`height` are not rounded. Trading a border for padding of the same length, or a
+1px-tall background box for a 1px border, is therefore not geometry-neutral
+unless the length lands on whole device pixels, and what has to be integral is
+the length in *device* pixels rather than in CSS pixels. A whole number of CSS
+pixels is not exempt: at a device pixel ratio of 1.25 a `1px` border is used as
+0.8px while `1px` of padding stays 1px, so the box changes size and everything
+after it moves.
 
 The consequences are easy to miss because the default ratio hides them, so set
 `layout.css.devPixelsPerPx` (a string pref; `"-1.0"` restores automatic) and
 check the fractional ratios 1.25, 1.5 and 1.75 before calling such a swap neutral.
+A device pixel is a whole number of app units, of which a CSS pixel has 60.
+`ComputeAppUnitsPerDevPixelForWidgetScale` rounds 60 divided by the scale to the
+nearest integer, at least 1, and the ratio you get is 60 divided by that
+integer, which is not always the representable ratio nearest the one you asked
+for: `devPixelsPerPx` set to 1.75 runs at 60/34, about 1.7647.
 Where padding has to reproduce the snapping, `round(down, X, env(hairline))`
 does it, with a `max(env(hairline), ...)` guard against rounding to zero;
 `browser/themes/shared/urlbar.css` uses that form. The CSSWG has
@@ -755,9 +870,12 @@ does it, with a `max(env(hairline), ...)` guard against rounding to zero;
 as the syntax for this, which nothing implements yet. Keeping the original height
 and adding `box-sizing: border-box` is the other way to hold a box exactly.
 
-`env(hairline)` is one device pixel. Like the chrome-only media features it is
-gated on the stylesheet's URL rather than the document's, so it resolves in a
-`chrome://` sheet in either realm and in `about:newtab`'s own CSS, and yields
-nothing in a stylesheet loaded from another origin. There the declaration is
-invalid at computed-value time and acts as `unset`: 0 for `padding` or
-`margin`, but `medium` for a border width with a border style.
+`env(hairline)` is one device pixel. Unlike the chrome-only media features that
+also go by origin, it uses the stylesheet's URL alone. It resolves in a sheet
+with a `chrome://`, `resource://` or eligible `about:` URL, in either realm,
+`about:newtab`'s own CSS included. UA or user origin alone does not enable it,
+so a `file:` sheet such as `userChrome.css` gets no value. Where it has no
+value, the declaration behaves as `unset`:
+a `padding` or a `margin` computes to 0, a `border` shorthand loses its style
+and reads 0px, and a `border-width` longhand with its style declared separately
+falls back to `medium` (3px).

@@ -19,7 +19,6 @@
 #include "mozilla/StopGapEventTarget.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/Blob.h"
-#include "mozilla/dom/PMediaTransport.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/net/NeckoTargetHolder.h"
 #include "nsCOMPtr.h"
@@ -28,6 +27,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "transport/MediaTransportTypes.h"
 #include "transport/transportlayer.h"  // For TransportLayer::State
 
 namespace mozilla {

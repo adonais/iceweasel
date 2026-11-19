@@ -58,6 +58,7 @@ if toolkit in ("android", "cocoa", "gtk", "uikit", "windows"):
 
 if toolkit == "cocoa":
     XPIDL_SOURCES += [
+        "nsICocoaAppShellTestUtils.idl",
         "nsIMacDockSupport.idl",
         "nsIMacFinderProgress.idl",
         "nsIMacSharingService.idl",

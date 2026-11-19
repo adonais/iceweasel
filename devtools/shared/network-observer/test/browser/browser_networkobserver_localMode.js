@@ -15,6 +15,10 @@ const TEST_FOLDER_PAGE_URL = `${TEST_FOLDER_URL}test.html`;
 const TEST_404_URL = `${TEST_URL}404`;
 // It's important that the URL ends up with two `/`:
 const TEST_URL_INVALID_PATH = `https://${TEST_ORIGIN}//`;
+// %00 path will be invalid when trying to lookup the filesystem
+const TEST_URL_INVALID_PATH_2 = `${TEST_URL}%00`;
+const TEST_UNICODE_PERCENT_ENCODED_URL = `${TEST_URL}%10`;
+const TEST_MATCHING_PERCENT_ENCODED_URL = `${TEST_URL}%25`;
 
 const TEST_UNICODE_ORIGIN = "ʂ.com";
 const TEST_UNICODE_URL = `https://${TEST_UNICODE_ORIGIN}/`;
@@ -143,6 +147,48 @@ add_task(async function testLocalMode() {
     }
   );
 
+  // Only run the following test on linux as '<' and '>' characters
+  // are invalid on windows.
+  if (AppConstants.platform === "linux") {
+    info("Write a file to the local folder path");
+    const fileWithEntitiesInName = PathUtils.join(
+      folder.path,
+      "folder",
+      "<img>"
+    );
+    await IOUtils.writeUTF8(fileWithEntitiesInName, "");
+
+    await loadURL(gBrowser.selectedBrowser, TEST_FOLDER_URL);
+
+    const linkLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    info(
+      "Assert that the correct local file content is displayed for the mapping's folder"
+    );
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+      is(
+        content.document.contentType,
+        "text/html",
+        "the html file is served with the right mime type"
+      );
+      const [linkWithHtmlString, linkToHtmlFile] =
+        content.document.querySelectorAll("a");
+      is(
+        linkToHtmlFile.textContent,
+        "test.html",
+        "The link is for the folder unique file"
+      );
+      is(
+        linkWithHtmlString.textContent,
+        "<img>",
+        "The link is for the file whose name includes html entity"
+      );
+      info("Navigate via a <a> link");
+      linkToHtmlFile.click();
+    });
+    info("Wait for click on the link to navigate to the new test page");
+    await linkLoaded;
+  }
+
   await loadURL(gBrowser.selectedBrowser, TEST_404_URL);
   info(
     "Assert that the 404 page shows when there is no local file found for the mapping"
@@ -183,12 +229,88 @@ add_task(async function testLocalMode() {
       is(
         content.document.querySelector("p").textContent,
         "No local file for: //",
+        "The content of the HTML is the 400 error page"
+      );
+      is(
+        content.location.href,
+        pageUrl,
+        "The location of the page is the invalid path url"
+      );
+    }
+  );
+
+  await loadURL(gBrowser.selectedBrowser, TEST_URL_INVALID_PATH_2);
+  info("Assert that invalid URL triggers a 400 http error code");
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [TEST_URL_INVALID_PATH_2],
+    async pageUrl => {
+      is(
+        content.browsingContext.docShell.currentDocumentChannel.responseStatus,
+        400,
+        "The page has a 400 HTTP Response code"
+      );
+      is(
+        content.document.querySelector("p").textContent,
+        "400 Bad request",
+        "The content of the HTML is the 400 error page"
+      );
+      is(
+        content.location.href,
+        pageUrl,
+        "The location of the page is the invalid url"
+      );
+    }
+  );
+
+  await loadURL(gBrowser.selectedBrowser, TEST_UNICODE_PERCENT_ENCODED_URL);
+  info(
+    "Assert that percent encoded URL with a unicode character encoded via %10 which can't match any valid file name"
+  );
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [TEST_UNICODE_PERCENT_ENCODED_URL],
+    async pageUrl => {
+      is(
+        content.browsingContext.docShell.currentDocumentChannel.responseStatus,
+        404,
+        "The page has a 404 HTTP Response code"
+      );
+      is(
+        content.document.querySelector("p").textContent,
+        "No local file for: /%10",
         "The content of the HTML is the 404 error page"
       );
       is(
         content.location.href,
         pageUrl,
-        "The location of the page is the 404 url"
+        "The location of the page is the unicode percent encoded url"
+      );
+    }
+  );
+
+  await loadURL(gBrowser.selectedBrowser, TEST_MATCHING_PERCENT_ENCODED_URL);
+  info(
+    "Assert that percent encoded URL with a valid file name can be functional"
+  );
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [TEST_MATCHING_PERCENT_ENCODED_URL],
+    async pageUrl => {
+      is(
+        content.browsingContext.docShell.currentDocumentChannel.responseStatus,
+        200,
+        "The page has a 200 HTTP Response code"
+      );
+      is(
+        content.document.body.textContent,
+        "percent file content\n",
+        "The content of the content of '%' file"
+      );
+      is(
+        content.location.href,
+        pageUrl,
+        "The location of the page is the percent encoded url"
       );
     }
   );

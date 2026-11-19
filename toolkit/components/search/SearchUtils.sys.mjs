@@ -245,6 +245,9 @@ export var SearchUtils = {
     newtab_searchbar: "newtab",
     about_home: "newtab",
     about_newtab: "newtab",
+    urlbar_handoff: "urlbar",
+    urlbar_searchmode: "urlbar",
+    urlbar_persisted: "urlbar",
   }),
 
   /**

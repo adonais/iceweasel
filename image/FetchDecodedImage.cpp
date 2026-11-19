@@ -46,8 +46,8 @@ class FetchDecodedImageHelper : public imgIContainerCallback,
     return NS_OK;
   }
 
-  void Notify(imgIRequest* aRequest, int32_t aType,
-              const nsIntRect* aData) override {
+  void Notify(imgIRequest* /*aRequest*/, int32_t aType,
+              const nsIntRect* /*aData*/) override {
     if (!mImage) {
       return;
     }

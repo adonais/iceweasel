@@ -330,6 +330,14 @@ async function deferBackgroundTasks(context, commands) {
         );
         await SessionSaver.run();
       },
+      // Collect and compact the parent's startup garbage now. Without a
+      // settle delay, the startup GCs would otherwise run during the
+      // measurement.
+      "garbage collection": () => {
+        Cu.forceGC();
+        Cu.forceCC();
+        Cu.forceShrinkingGC();
+      },
     };
     (async () => {
       const failures = [];

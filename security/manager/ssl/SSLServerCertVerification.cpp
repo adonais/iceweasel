@@ -69,26 +69,6 @@
 // interrupt the PR_Poll that may waiting for I/O on the socket for which we
 // are validating the cert.
 //
-// When socket process is enabled, libssl is running on socket process. To
-// perform certificate authentication with CertVerifier, we have to send all
-// needed information to parent process and send the result back to socket
-// process via IPC. The workflow is described below.
-// 1. In AuthCertificateHookInternal(), we call RemoteProcessCertVerification()
-//    instead of SSLServerCertVerificationJob::Dispatch when we are on socket
-//    process.
-// 2. In RemoteProcessCertVerification(), PVerifySSLServerCert actors will be
-//    created on IPDL background thread for carrying needed information via IPC.
-// 3. On parent process, VerifySSLServerCertParent is created and it calls
-//    SSLServerCertVerificationJob::Dispatch for doing certificate verification
-//    on one of CertVerificationThreads.
-// 4. When validation is done, OnVerifiedSSLServerCertSuccess IPC message is
-//    sent through the IPDL background thread when
-//    CertVerifier::VerifySSLServerCert returns Success. Otherwise,
-//    OnVerifiedSSLServerCertFailure is sent.
-// 5. After setp 4, PVerifySSLServerCert actors will be released. The
-//    verification result will be dispatched via
-//    SSLServerCertVerificationResult.
-
 #include "SSLServerCertVerification.h"
 
 #include "CertVerifier.h"
@@ -99,7 +79,6 @@
 #include "RootCertificateTelemetryUtils.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
-#include "VerifySSLServerCertChild.h"
 #include "cert.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
@@ -515,8 +494,7 @@ void GatherCertificateTransparencyTelemetry(
 }
 
 // This function collects telemetry about certs. It will be called on one of
-// CertVerificationThread. When the socket process is used this will be called
-// on the parent process.
+// CertVerificationThread.
 static void CollectCertTelemetry(
     mozilla::pkix::Result aCertVerificationResult, EVStatus aEVStatus,
     CertVerifier::OCSPStaplingStatus aOcspStaplingStatus,
@@ -734,8 +712,7 @@ SECStatus SSLServerCertVerificationJob::Dispatch(
     Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
     Maybe<DelegatedCredentialInfo>& dcInfo, uint32_t providerFlags, Time time,
-    uint32_t certVerifierFlags,
-    BaseSSLServerCertVerificationResult* aResultTask) {
+    uint32_t certVerifierFlags, SSLServerCertVerificationResult* aResultTask) {
   // Runs on the socket transport thread
   if (!aResultTask || peerCertChain.IsEmpty()) {
     MOZ_ASSERT_UNREACHABLE(
@@ -897,14 +874,6 @@ SECStatus AuthCertificateHookInternal(
   uint64_t addr = reinterpret_cast<uintptr_t>(aPtrForLogging);
   RefPtr resultTask =
       MakeRefPtr<SSLServerCertVerificationResult>(socketControl);
-
-  if (XRE_IsSocketProcess()) {
-    return RemoteProcessCertVerification(
-        std::move(peerCertChain), hostName, socketControl->GetPort(),
-        socketControl->GetOriginAttributes(), stapledOCSPResponse,
-        sctsFromTLSExtension, dcInfo, providerFlags, certVerifierFlags,
-        resultTask);
-  }
 
   // We *must* do certificate verification on a background thread because
   // we need the socket transport thread to be free for our OCSP requests,

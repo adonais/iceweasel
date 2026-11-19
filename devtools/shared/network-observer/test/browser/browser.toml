@@ -21,9 +21,6 @@ support-files = [
 ["browser_networkobserver.js"]
 
 ["browser_networkobserver_auth_listener.js"]
-skip-if = [
-  "asan", # Disabled for frequent leaks.
-]
 
 ["browser_networkobserver_data_url.js"]
 

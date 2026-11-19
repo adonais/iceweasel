@@ -229,11 +229,8 @@ add_task(async function testConnectWithECH() {
   let chan = makeChan(`https://ech-private.example.com`);
   await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
   checkSecurityInfo(chan, true, true);
-  // Only check telemetry if network process is disabled.
-  if (!mozinfo.socketprocess_networking) {
-    HandshakeTelemetryHelpers.checkSuccess(["", "_ECH", "_FIRST_TRY"]);
-    HandshakeTelemetryHelpers.checkEmpty(["_CONSERVATIVE", "_ECH_GREASE"]);
-  }
+  HandshakeTelemetryHelpers.checkSuccess(["", "_ECH", "_FIRST_TRY"]);
+  HandshakeTelemetryHelpers.checkEmpty(["_CONSERVATIVE", "_ECH_GREASE"]);
 
   observerService.removeObserver(observer);
   observerService.observeConnection = false;
@@ -306,24 +303,21 @@ add_task(async function testEchRetry() {
   let chan = makeChan(`https://ech-private.example.com`);
   await channelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
   checkSecurityInfo(chan, true, true);
-  // Only check telemetry if network process is disabled.
-  if (!mozinfo.socketprocess_networking) {
-    for (let f of ["", "_ECH"]) {
-      HandshakeTelemetryHelpers.assertHistogramMap(
-        HandshakeTelemetryHelpers.resultDelta(f),
-        new Map([
-          ["Success", 1],
-          ["SSL_ERROR_ECH_RETRY_WITH_ECH", 1],
-        ])
-      );
-    }
-    HandshakeTelemetryHelpers.checkEntry(
-      ["_FIRST_TRY"],
-      "SSL_ERROR_ECH_RETRY_WITH_ECH",
-      1
+  for (let f of ["", "_ECH"]) {
+    HandshakeTelemetryHelpers.assertHistogramMap(
+      HandshakeTelemetryHelpers.resultDelta(f),
+      new Map([
+        ["Success", 1],
+        ["SSL_ERROR_ECH_RETRY_WITH_ECH", 1],
+      ])
     );
-    HandshakeTelemetryHelpers.checkEmpty(["_CONSERVATIVE", "_ECH_GREASE"]);
   }
+  HandshakeTelemetryHelpers.checkEntry(
+    ["_FIRST_TRY"],
+    "SSL_ERROR_ECH_RETRY_WITH_ECH",
+    1
+  );
+  HandshakeTelemetryHelpers.checkEmpty(["_CONSERVATIVE", "_ECH_GREASE"]);
 });
 
 async function H3ECHTest(
@@ -449,12 +443,10 @@ async function checkEchTelemetry(label, histEntries) {
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
   /* eslint-disable mozilla/no-arbitrary-setTimeout */
   await new Promise(resolve => setTimeout(resolve, 1000));
-  if (!mozinfo.socketprocess_networking) {
-    HandshakeTelemetryHelpers.assertHistogramMap(
-      _echOutcomeDelta(label),
-      histEntries
-    );
-  }
+  HandshakeTelemetryHelpers.assertHistogramMap(
+    _echOutcomeDelta(label),
+    histEntries
+  );
 }
 
 add_task(async function testH3WithNoEch() {

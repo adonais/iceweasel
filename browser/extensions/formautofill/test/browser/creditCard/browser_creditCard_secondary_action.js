@@ -12,6 +12,21 @@ const DELETE_TOOLTIP = AC_L10N.formatValueSync(
   "autocomplete-delete-payment-method"
 );
 
+// Checks every autocomplete event since the last reset shares one flow id.
+function assertOneFlow() {
+  const events = [
+    Glean.autocomplete.dropdownShown,
+    Glean.autocomplete.dropdownClosed,
+    Glean.autocomplete.recordInteraction,
+    Glean.autocomplete.recordDialogInteraction,
+  ].flatMap(metric => metric.testGetValue() ?? []);
+  const flowIds = new Set(events.map(e => e.extra.flow_id));
+  is(flowIds.size, 1, "Every event shares one flow id");
+  const [flowId] = flowIds;
+  ok(flowId, "The shared flow id is not empty");
+  return flowId;
+}
+
 add_setup(async function setup_storage() {
   await setStorage(TEST_CREDIT_CARD_1);
 });
@@ -133,12 +148,24 @@ async function clickTrashButton(rowItem) {
 // Opens the dropdown on a selected row with device sign in stubbed out, so the
 // tests below never depend on a real OS prompt. `verifyArgs` records what the
 // parent asked for, and `restore` puts the real implementation back.
-async function openDeleteTarget(browser, { verified = true } = {}) {
+// `hidesDropdown` closes the dropdown first, as a real OS prompt does.
+async function openDeleteTarget(
+  browser,
+  { verified = true, hidesDropdown = false } = {}
+) {
   const originalVerify = FormAutofillUtils.verifyUserOSAuth;
   const verifyArgs = [];
-  FormAutofillUtils.verifyUserOSAuth = (...args) => {
+  FormAutofillUtils.verifyUserOSAuth = async (...args) => {
     verifyArgs.push(args);
-    return Promise.resolve(verified);
+    if (hidesDropdown) {
+      const popup = browser.autoCompletePopup;
+      popup.hidePopup();
+      await TestUtils.waitForCondition(
+        () => popup.state == "closed",
+        "Wait for the dropdown to close before device sign in resolves"
+      );
+    }
+    return verified;
   };
 
   await openPopupOn(browser, "#cc-number");
@@ -233,6 +260,12 @@ add_task(async function test_delete_asks_for_device_sign_in_then_confirms() {
         "payment",
         "The event names the payment record type"
       );
+      ok(clickEvents[0].extra.flow_id, "The interaction has a flow id");
+      is(
+        events[0].extra.flow_id,
+        clickEvents[0].extra.flow_id,
+        "The dialog event shares the interaction's flow id"
+      );
 
       const { FormAutofill } = ChromeUtils.importESModule(
         "resource://autofill/FormAutofill.sys.mjs"
@@ -279,11 +312,12 @@ add_task(async function test_delete_skips_confirm_when_device_sign_in_fails() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: CC_URL },
     async browser => {
+      Services.fog.testResetFOG();
       const { rowItem, verifyArgs, restore } = await openDeleteTarget(browser, {
         verified: false,
+        hidesDropdown: true,
       });
 
-      Services.fog.testResetFOG();
       await clickTrashButton(rowItem);
       await TestUtils.waitForCondition(
         () => verifyArgs.length,
@@ -318,8 +352,31 @@ add_task(async function test_delete_skips_confirm_when_device_sign_in_fails() {
         "Declining device sign in leaves the payment method in place"
       );
 
+      await TestUtils.waitForCondition(
+        () => browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to come back after device sign in"
+      );
       restore();
       await closePopup(browser);
+      Assert.deepEqual(
+        Glean.autocomplete.dropdownShown
+          .testGetValue()
+          ?.map(e => e.extra.reopened_after_removal),
+        ["false", "true"],
+        "Only the automatic reopen is marked as reopened after a removal"
+      );
+      Assert.deepEqual(
+        Glean.autocomplete.dropdownClosed
+          .testGetValue()
+          ?.map(e => e.extra.close_reason),
+        ["removal_prompt", "dismissed"],
+        "The device sign in prompt and the final close are both recorded"
+      );
+      is(
+        assertOneFlow(),
+        clickEvents[0].extra.flow_id,
+        "The reopened dropdown keeps the interaction's flow id"
+      );
     }
   );
   Services.obs.removeObserver(observer, "common-dialog-loaded");
@@ -335,12 +392,11 @@ add_task(async function test_delete_removes_the_payment_method() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: CC_URL },
     async browser => {
+      Services.fog.testResetFOG();
       const { rowItem, restore } = await openDeleteTarget(browser);
       const rowCount = getDisplayedPopupItems(browser).length;
 
-      Services.fog.testResetFOG();
       await acceptRemoval(rowItem);
-      restore();
 
       const events = Glean.autocomplete.recordInteraction.testGetValue();
       is(events?.length, 1, "One interaction event is recorded");
@@ -392,6 +448,41 @@ add_task(async function test_delete_removes_the_payment_method() {
         () => getDisplayedPopupItems(browser).length == rowCount - 1,
         "Wait for the restored dropdown to drop the removed row"
       );
+
+      // The last payment method: nothing is left to show, so no reopen.
+      const item = getDisplayedPopupItems(browser)[0];
+      await selectFirstRow(browser, item);
+      await acceptRemoval(item.querySelector("autocomplete-row-item"));
+      restore();
+      await TestUtils.waitForCondition(
+        () => !browser.autoCompletePopup.popupOpen,
+        "Wait for the dropdown to stay closed after the last removal"
+      );
+      is(
+        Glean.autocomplete.recordInteraction.testGetValue()?.length,
+        2,
+        "Two interaction events are recorded"
+      );
+      is(
+        Glean.autocomplete.recordDialogInteraction.testGetValue()?.length,
+        2,
+        "Two dialog interaction events are recorded"
+      );
+      Assert.deepEqual(
+        Glean.autocomplete.dropdownShown
+          .testGetValue()
+          ?.map(e => e.extra.reopened_after_removal),
+        ["false", "true"],
+        "The dropdown is reopened only after the first removal"
+      );
+      Assert.deepEqual(
+        Glean.autocomplete.dropdownClosed
+          .testGetValue()
+          ?.map(e => e.extra.close_reason),
+        ["removal_prompt", "removal_prompt"],
+        "Each confirmation dialog closes the dropdown as removal_prompt"
+      );
+      assertOneFlow();
 
       await closePopup(browser);
     }

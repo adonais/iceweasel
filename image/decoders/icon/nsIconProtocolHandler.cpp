@@ -31,7 +31,7 @@ nsIconProtocolHandler::GetScheme(nsACString& result) {
 }
 
 NS_IMETHODIMP
-nsIconProtocolHandler::AllowPort(int32_t port, const char* scheme,
+nsIconProtocolHandler::AllowPort(int32_t /*port*/, const char* /*scheme*/,
                                  bool* _retval) {
   // don't override anything.
   *_retval = false;

@@ -20,7 +20,6 @@
 #include "nsTHashtable.h"
 
 using mozilla::MakeRefPtr;
-using mozilla::MakeUnique;
 using mozilla::SupportsThreadSafeWeakPtr;
 using mozilla::ThreadSafeWeakPtr;
 using mozilla::UniquePtr;
@@ -494,7 +493,7 @@ auto MakeEmptyBaseHashtable() {
 
 template <typename TypeParam>
 auto MakeUniqueEmptyBaseHashtable() {
-  return MakeUnique<
+  return std::make_unique<
       nsBaseHashtable<nsUint64HashKey, typename TypeParam::DataType,
                       typename TypeParam::UserDataType>>();
 }
@@ -1161,7 +1160,7 @@ TEST(Hashtables, ClassHashtable)
     // InsertOrUpdate.
     EntToUniClass.InsertOrUpdate(
         nsDependentCString(entity.mStr),
-        mozilla::MakeUnique<TestUniCharDerived>(entity.mUnicode));
+        std::make_unique<TestUniCharDerived>(entity.mUnicode));
   }
 
   TestUniChar* myChar;
@@ -1193,8 +1192,9 @@ TEST(Hashtables, ClassHashtable_RangeBasedFor)
   nsClassHashtable<nsCStringHashKey, TestUniChar> EntToUniClass(ENTITY_COUNT);
 
   for (auto& entity : gEntities) {
-    EntToUniClass.InsertOrUpdate(nsDependentCString(entity.mStr),
-                                 MakeUnique<TestUniChar>(entity.mUnicode));
+    EntToUniClass.InsertOrUpdate(
+        nsDependentCString(entity.mStr),
+        std::make_unique<TestUniChar>(entity.mUnicode));
   }
 
   // const range-based for
@@ -1479,7 +1479,7 @@ TEST(Hashtables, ClassHashtable_GetOrInsertNew_Present)
   for (const auto& entity : gEntities) {
     EntToUniClass.InsertOrUpdate(
         nsDependentCString(entity.mStr),
-        mozilla::MakeUnique<TestUniCharDerived>(entity.mUnicode));
+        std::make_unique<TestUniCharDerived>(entity.mUnicode));
   }
 
   auto* entry = EntToUniClass.GetOrInsertNew("uml"_ns, 42);
@@ -1502,11 +1502,11 @@ TEST(Hashtables, ClassHashtable_LookupOrInsertWith_Present)
   for (const auto& entity : gEntities) {
     EntToUniClass.InsertOrUpdate(
         nsDependentCString(entity.mStr),
-        mozilla::MakeUnique<TestUniCharDerived>(entity.mUnicode));
+        std::make_unique<TestUniCharDerived>(entity.mUnicode));
   }
 
   const auto& entry = EntToUniClass.LookupOrInsertWith(
-      "uml"_ns, [] { return mozilla::MakeUnique<TestUniCharDerived>(42); });
+      "uml"_ns, [] { return std::make_unique<TestUniCharDerived>(42); });
   EXPECT_EQ(168u, entry->GetChar());
 }
 
@@ -1516,7 +1516,7 @@ TEST(Hashtables, ClassHashtable_LookupOrInsertWith_NotPresent)
 
   // This is going to insert a TestUniCharDerived.
   const auto& entry = EntToUniClass.LookupOrInsertWith(
-      "uml"_ns, [] { return mozilla::MakeUnique<TestUniCharDerived>(42); });
+      "uml"_ns, [] { return std::make_unique<TestUniCharDerived>(42); });
   EXPECT_EQ(42u, entry->GetChar());
 }
 

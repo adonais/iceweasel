@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** @import { ExperimentStore } from "./ExperimentStore.sys.mjs" */
+/** @import { EnrollmentStatus } from "./Telemetry.sys.mjs" */
 /** @import { DeferredTask } from "../../../modules/DeferredTask.sys.mjs" */
 /** @import { OpenedConnection, Sqlite } from "../../../modules/Sqlite.sys.mjs" */
 
@@ -12,6 +12,7 @@ const lazy = XPCOMUtils.declareLazy({
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTelemetry: "resource://nimbus/lib/Telemetry.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ProfilesDatastoreService:
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
   RemoteSettingsSyncError:
@@ -32,27 +33,78 @@ const lazy = XPCOMUtils.declareLazy({
  */
 const FLUSH_DELAY_MS = 1500;
 
-// We read this prefs *once* at startup because the ExperimentStore (and
-// SharedDataMap) have different initialization logic based on the state of these prefs.
-//
-// To ensure that changing them doesn't result in inconsistent behavaiour, they
-// will only take affect after a restart.
-//
-// They are only mutable so they can be updated for tests.
-let DATABASE_ENABLED = Services.prefs.getBoolPref(
-  "nimbus.profilesdatastoreservice.enabled",
-  false
-);
-let READ_FROM_DATABASE_ENABLED = Services.prefs.getBoolPref(
-  "nimbus.profilesdatastoreservice.read.enabled",
-  false
-);
-let SYNC_ENROLLMENTS_ENABLED = Services.prefs.getBoolPref(
-  "nimbus.profilesdatastoreservice.sync.enabled",
-  false
+const PERSISTENCE_ENABLED = Services.prefs.getBoolPref(
+  "nimbus.persistence.enabled",
+  true
 );
 
+const PendingWriteKind = Object.freeze({
+  INSERT: "insert",
+  UPDATE: "update",
+  DELETE: "delete",
+});
+
+/**
+ * @typedef {object} _PendingInsert
+ * A pending write for an enrollment or an unenrollment that has not yet had its
+ * enrollment written to the database.
+ *
+ * @property {"insert"} kind
+ * The kind of the pending write.
+ *
+ * @property {object} enrollment
+ * The enrollment being recorded in the database.
+ *
+ * @property {object} recipe
+ * The recipe for the enrollment.
+ */
+
+/**
+ * @typedef {object} _PendingUpdate
+ * A pending write for an unenrollment.
+ *
+ * @property {"update"} kind
+ * The kind of the pending write.
+ *
+ * @property {object} enrollment
+ * The enrollment being updated to inactive in the database.
+ */
+
+/**
+ * @typedef {object} _PendingDelete
+ * A pending delete for an enrollment.
+ *
+ * @property {"delete"} kind
+ * The kind of the pending write.
+ */
+
+/**
+ * @typedef {_PendingInsert | _PendingUpdate | _PendingDelete} PendingWrite
+ *
+ * A pending write to the `NimbusEnrollments` database.
+ */
+
+/**
+ * @typedef {object} EnrollmentStatusEntry
+ * A database entry for an enrollment status that occurred in the past.
+ *
+ * @property {EnrollmentStatus} status
+ * The enrollment status event payload.
+ *
+ * @property {Date} timestamp
+ * The timestamp when the enrollment status event was recorded.
+ *
+ * @property {number} index
+ * A per-slug monotonically increasing identifier.
+ *
+ * This field is used to determine which enrollment status entry is the latest
+ * so that we do not have to deal with time-specific issues (e.g., clock drift),
+ * or the reuse of `rowid`s.
+ */
+
 export class PendingWrites {
+  static Kind = PendingWriteKind;
+
   /**
    * Create a new `PendingWrites` object.
    *
@@ -62,12 +114,7 @@ export class PendingWrites {
     /**
      * Enrollment changes to flush to the database.
      *
-     * The keys are enrollment slugs and the values are optional recipes. If the
-     * recipe is present, a new enrollment will be created in the database.
-     * Otherwise, an existing enrollment will be updated to be inactive (or
-     * deleted if it cannot be found in the `ExperimentStore`).
-     *
-     * @type {Map<string, object | null>}
+     * @type {Map<string, PendingWrite>}
      */
     this.enrollments = new Map(other?.enrollments.entries() ?? []);
 
@@ -77,6 +124,13 @@ export class PendingWrites {
      * @type {Map<string, object | null>}
      */
     this.syncTimestamps = new Map(other?.syncTimestamps.entries() ?? []);
+
+    /**
+     * @type {Map<string, EnrollmentStatusEntry[]>}
+     */
+    this.enrollmentStatuses = new Map(
+      other?.enrollmentStatuses.entries() ?? []
+    );
   }
 
   /**
@@ -85,25 +139,78 @@ export class PendingWrites {
    * @returns {boolean}
    */
   get hasPendingWrites() {
-    return this.enrollments.size > 0 || this.syncTimestamps.size > 0;
+    return (
+      this.enrollments.size > 0 ||
+      this.syncTimestamps.size > 0 ||
+      this.enrollmentStatuses.size > 0
+    );
   }
 
   /**
-   * Register an enrollment update.
+   * Record a new enrollment or re-enrollment.
    *
-   * @param {string} slug The slug of the enrollment that is changing.
-   * @param {object | undefined} recipe If this update is for an enrollment event,
-   * the recipe that resulted in the enrollment.
+   * @param {object} enrollment The enrollment.
+   * @param {string} enrollment.slug The slug of the enrollment.
+   * @param {object} recipe The recipe for the enrollment.
    */
-  updateEnrollment(slug, recipe) {
-    // Don't overwrite a pending entry that has a recipe with one that has none
-    // or we will try to do the wrong query (UPDATE instead of INSERT).
+  recordEnrollment(enrollment, recipe) {
+    this.enrollments.set(enrollment.slug, {
+      kind: PendingWriteKind.INSERT,
+      enrollment: structuredClone(enrollment),
+      recipe,
+    });
+  }
+
+  /**
+   * Record an unenrollment.
+   *
+   * @param {object} enrollment The enrollment.
+   * @param {string} enrollment.slug The slug of the enrollment.
+   */
+  recordUnenrollment(enrollment) {
+    // If there is no existing pending write for this enrollment, create a new
+    // update.
     //
-    // We explicitly check for the presence of the value, not the key, in case
-    // this is a re-enrollment following an unenrollment.
-    if (!this.enrollments.has(slug) || recipe) {
-      this.enrollments.set(slug, recipe);
+    // Otherwise if there is a pending insertion, update the associated
+    // unenrollment, which will cause the insert to write an inactive enrollment.
+    //
+    // It is **impossible** for an enrollment:
+    // - to follow a previous enrollment; or
+    // - to follow a deletion.
+    const existingWrite = this.enrollments.get(enrollment.slug);
+    if (!existingWrite) {
+      this.enrollments.set(enrollment.slug, {
+        kind: PendingWriteKind.UPDATE,
+        enrollment: structuredClone(enrollment),
+      });
+    } else if (existingWrite.kind === PendingWriteKind.INSERT) {
+      existingWrite.enrollment = structuredClone(enrollment);
     }
+  }
+
+  /**
+   * Delete an enrollmment and all its enrollment statuses.
+   *
+   * This only happens when garbage collecting old enrollments.
+   *
+   * @param {string} slug The slug of the enrollment to remove.
+   */
+  deleteEnrollment(slug) {
+    this.enrollments.set(slug, { kind: PendingWriteKind.DELETE });
+    this.enrollmentStatuses.delete(slug);
+  }
+
+  /**
+   * Record an enrollment status entry.
+   *
+   * @param {string} slug
+   * The slug of enrollment whose status is being updated.
+   *
+   * @param {EnrollmentStatusEntry} entry
+   * The enrollment status entry to record.
+   */
+  recordEnrollmentStatus(slug, entry) {
+    this.enrollmentStatuses.getOrInsertComputed(slug, () => []).push(entry);
   }
 
   /**
@@ -123,9 +230,33 @@ export class PendingWrites {
     }
 
     const merged = new PendingWrites(first);
-    for (const [slug, recipe] of second.enrollments.entries()) {
-      merged.updateEnrollment(slug, recipe);
+
+    // `deleteEnrollment` also deletes the corresponding enrollment statuses.
+    // Merge the enrollment statuses first so that we do not end up with
+    // dangling statuses, e.g., if `first` contains an enrollment and `second`
+    // contains a delete.
+    for (const [slug, entries] of second.enrollmentStatuses.entries()) {
+      merged.enrollmentStatuses
+        .getOrInsertComputed(slug, () => [])
+        .push(...entries);
     }
+
+    for (const [slug, pendingWrite] of second.enrollments.entries()) {
+      switch (pendingWrite.kind) {
+        case PendingWriteKind.INSERT:
+          merged.recordEnrollment(pendingWrite.enrollment, pendingWrite.recipe);
+          break;
+
+        case PendingWriteKind.UPDATE:
+          merged.recordUnenrollment(pendingWrite.enrollment);
+          break;
+
+        case PendingWriteKind.DELETE:
+          merged.deleteEnrollment(slug);
+          break;
+      }
+    }
+
     for (const [collection, lastModified] of second.syncTimestamps.entries()) {
       merged.syncTimestamps.set(collection, lastModified);
     }
@@ -145,13 +276,6 @@ export class NimbusEnrollments {
    * @type {boolean}
    */
   #initialized;
-
-  /**
-   * The ExperimentStore.
-   *
-   * @type {ExperimentStore}
-   */
-  #store;
 
   /**
    * The task that will flush the changes to the database on a timer.
@@ -192,9 +316,25 @@ export class NimbusEnrollments {
    */
   #syncTimestamps;
 
-  constructor(store) {
+  /**
+   * The most recent enrollment status entry for each slug.
+   *
+   * Recency is determined by the {@link EnrollmentStatusEntry.index index}
+   * field.
+   *
+   * @type {Map<string, EnrollmentStatusEntry>}
+   */
+  #latestEnrollmentStatuses;
+
+  /**
+   * Whether or not to submit reduced enrollment status telemetry.
+   *
+   * @type {boolean| undefined}
+   */
+  #reducedTelemetryEnabled;
+
+  constructor() {
     this.#initialized = false;
-    this.#store = store;
 
     this.#flushTask = new lazy.DeferredTask(
       this.#flush.bind(this),
@@ -210,6 +350,23 @@ export class NimbusEnrollments {
 
     this.#pendingWrites = new PendingWrites();
     this.#syncTimestamps = null;
+    this.#reducedTelemetryEnabled = undefined;
+  }
+
+  /**
+   * Whether or not to submit reduced enrollment status telemetry.
+   *
+   * @returns {boolean}
+   */
+  get reducedTelemetryEnabled() {
+    if (typeof this.#reducedTelemetryEnabled === "undefined") {
+      this.#reducedTelemetryEnabled =
+        lazy.NimbusFeatures.nimbusTelemetry.getVariable(
+          "reducedEnrollmentStatusTelemetryEnabled"
+        ) ?? false;
+    }
+
+    return this.#reducedTelemetryEnabled;
   }
 
   async init() {
@@ -221,11 +378,10 @@ export class NimbusEnrollments {
 
     const conn = await lazy.ProfilesDatastoreService.getConnection();
     return conn.executeTransaction(async txn => {
-      // Only load enrollments if the database is the source-of-truth for reads.
-      const enrollments = NimbusEnrollments.readFromDatabaseEnabled
-        ? await NimbusEnrollments.loadEnrollments(txn)
-        : null;
+      const enrollments = await NimbusEnrollments.loadEnrollments(txn);
       this.#syncTimestamps = await NimbusEnrollments.loadSyncTimestamps(txn);
+      this.#latestEnrollmentStatuses =
+        await NimbusEnrollments.loadEnrollmentStatuses(txn);
 
       return enrollments;
     });
@@ -239,24 +395,116 @@ export class NimbusEnrollments {
   }
 
   /**
-   * Queue an update to the database for the given enrollment.
+   * Queue writing an enrollment (or re-enrollment) to the database.
    *
-   * @param {string} slug The slug of the enrollment.
-   * @param {object | undefined} recipe If this update is for an enrollment event,
-   * the recipe that resulted in the enrollment.
+   * @param {object} enrollment The enrollment.
+   * @param {string} enrollment.slug The slug of the enrollment.
+   * @param {object} recipe The recipe for the enrollment.
    */
-  updateEnrollment(slug, recipe) {
+  recordEnrollment(enrollment, recipe) {
     if (this.#finalized) {
       lazy.log.debug(
-        `Did not queue update for enrollment ${slug}: already finalized`
+        `Did not queue update for enrollment ${enrollment.slug}: already finalized`
       );
       return;
     }
 
-    lazy.log.debug(`Queued update for enrollment ${slug}`);
-
-    this.#pendingWrites.updateEnrollment(slug, recipe);
+    this.#pendingWrites.recordEnrollment(enrollment, recipe);
     this.#flushSoon();
+
+    lazy.log.debug(`Queued insert for enrollment ${enrollment.slug}`);
+  }
+
+  /**
+   * Queue writing an unenrollment to the database.
+   *
+   * @param {object} enrollment The enrollment.
+   * @param {string} enrollment.slug The slug of the enrollment.
+   */
+  recordUnenrollment(enrollment) {
+    if (this.#finalized) {
+      lazy.log.debug(
+        `Did not queue update for enrollment ${enrollment.slug}: already finalized`
+      );
+      return;
+    }
+
+    this.#pendingWrites.recordUnenrollment(enrollment);
+    this.#flushSoon();
+
+    lazy.log.debug(`Queued update for enrollment ${enrollment.slug}`);
+  }
+
+  /**
+   * Queue removal from the database for the enrollments pertaining to the given
+   * slugs.
+   *
+   * @param {string[]} slugs The slugs of enrollments to remove.
+   */
+  deleteEnrollments(slugs) {
+    if (!slugs.length) {
+      return;
+    }
+
+    if (this.#finalized) {
+      lazy.log.debug(`Did not queue removal: already finalized`);
+      return;
+    }
+
+    for (const slug of slugs) {
+      this.#pendingWrites.deleteEnrollment(slug);
+      this.#latestEnrollmentStatuses.delete(slug);
+    }
+    this.#flushSoon();
+
+    lazy.log.debug(`Queued removal for ${slugs.length} enrollments`);
+  }
+
+  /**
+   * @param {string} slug
+   * @param {EnrollmentStatus} status
+   */
+  recordEnrollmentStatus(slug, status) {
+    const lastEnrollmentStatus = this.#latestEnrollmentStatuses.get(slug);
+
+    if (
+      !lastEnrollmentStatus ||
+      !NimbusEnrollments.enrollmentStatusEqual(
+        lastEnrollmentStatus.status,
+        status
+      )
+    ) {
+      const entry = {
+        index: (lastEnrollmentStatus?.index ?? 0) + 1,
+        status,
+        timestamp: NimbusEnrollments.now(),
+      };
+      this.#pendingWrites.recordEnrollmentStatus(slug, entry);
+      this.#latestEnrollmentStatuses.set(slug, entry);
+
+      this.#flushSoon();
+
+      if (this.reducedTelemetryEnabled) {
+        NimbusEnrollments.#recordEnrollmentStatusTelemetry(slug, status);
+      }
+    }
+
+    if (!this.reducedTelemetryEnabled) {
+      NimbusEnrollments.#recordEnrollmentStatusTelemetry(slug, status);
+    }
+  }
+
+  /**
+   * Return a copy of the the latest enrollment status entry for the given slug.
+   *
+   * @param {string} slug The slug whose enrollment status is to be returned.
+   *
+   * @returns {EnrollmentStatusEntry | null}
+   * The latest enrollment status entry for the given slug, or `null` if one
+   * does not exist.
+   */
+  getLatestEnrollmentStatus(slug) {
+    return structuredClone(this.#latestEnrollmentStatuses.get(slug));
   }
 
   /**
@@ -369,7 +617,7 @@ export class NimbusEnrollments {
     this.#pendingWrites = new PendingWrites();
 
     lazy.log.debug(
-      `Flushing ${pendingWrites.enrollments.size} enrollments, ${pendingWrites.syncTimestamps.size} timestamps to database`
+      `Flushing ${pendingWrites.enrollments.size} enrollments, ${pendingWrites.syncTimestamps.size} timestamps, ${pendingWrites.enrollmentStatuses.size} enrollment statuses to database`
     );
 
     let success = true;
@@ -389,22 +637,43 @@ export class NimbusEnrollments {
       }
 
       await conn.executeTransaction(async txn => {
-        for (const [slug, recipe] of pendingWrites.enrollments.entries()) {
-          const enrollment = this.#store.get(slug);
-          if (enrollment) {
-            await NimbusEnrollments.#insertOrUpdateEnrollment(
-              txn,
-              enrollment,
-              recipe
-            );
-          } else {
-            await NimbusEnrollments.#deleteEnrollment(txn, slug);
+        const deletedEnrollmentSlugs = new Set();
+        for (const [
+          slug,
+          pendingWrite,
+        ] of pendingWrites.enrollments.entries()) {
+          switch (pendingWrite.kind) {
+            case PendingWriteKind.INSERT:
+              await NimbusEnrollments.#insertEnrollment(
+                txn,
+                pendingWrite.enrollment,
+                pendingWrite.recipe
+              );
+              break;
+
+            case PendingWriteKind.UPDATE:
+              await NimbusEnrollments.#updateEnrollment(
+                txn,
+                pendingWrite.enrollment
+              );
+              break;
+
+            case PendingWriteKind.DELETE:
+              await NimbusEnrollments.#deleteEnrollment(txn, slug);
+              deletedEnrollmentSlugs.add(slug);
+              break;
           }
         }
 
         await NimbusEnrollments.#flushSyncTimestamps(
           txn,
           pendingWrites.syncTimestamps
+        );
+
+        await NimbusEnrollments.#flushEnrollmentStatuses(
+          txn,
+          pendingWrites.enrollmentStatuses,
+          deletedEnrollmentSlugs
         );
       });
     } catch (e) {
@@ -449,102 +718,119 @@ export class NimbusEnrollments {
   }
 
   /**
-   * Insert or update an enrollment.
+   * Record an enrollment or re-enrollment to the database.
    *
-   * @param {OpenedConnection} conn The connection to the database.
-   * @param {object} enrollment The enrollment.
-   * @param {object | null} recipe The recipe for the enrollment. Only non-null
-   * when the initial enrollment has not already been flushed.
+   * If a previous enrollment exists it will be overwritten.
+   *
+   * @param {OpenedConnection} conn
+   * The database connection.
+   *
+   * @param {object} enrollment
+   * The enrollment being written to the database.
+   *
+   * @param {object} recipe
+   * The recipe for the enrollment.
    */
-  static async #insertOrUpdateEnrollment(conn, enrollment, recipe) {
-    if (recipe) {
-      // This was a new enrollment at the time. It may have since unenrolled.
-      await conn.executeCached(
-        `
-          INSERT INTO NimbusEnrollments(
-            profileId,
-            slug,
-            branchSlug,
-            recipe,
-            active,
-            unenrollReason,
-            lastSeen,
-            setPrefs,
-            prefFlips,
-            source
-          )
-          VALUES(
-            :profileId,
-            :slug,
-            :branchSlug,
-            jsonb(:recipe),
-            :active,
-            :unenrollReason,
-            :lastSeen,
-            jsonb(:setPrefs),
-            jsonb(:prefFlips),
-            :source
-          )
-          ON CONFLICT(profileId, slug)
-          DO UPDATE SET
-            branchSlug = excluded.branchSlug,
-            recipe = excluded.recipe,
-            active = excluded.active,
-            unenrollReason = excluded.unenrollReason,
-            lastSeen = excluded.lastSeen,
-            setPrefs = excluded.setPrefs,
-            prefFlips = excluded.prefFlips,
-            source = excluded.source;
-        `,
-        {
-          profileId: lazy.ExperimentAPI.profileId,
-          slug: enrollment.slug,
-          branchSlug: enrollment.branch.slug,
-          recipe: JSON.stringify(recipe),
-          active: enrollment.active,
-          unenrollReason: enrollment.unenrollReason ?? null,
-          lastSeen: enrollment.lastSeen,
-          setPrefs:
-            enrollment.active && enrollment.prefs
-              ? JSON.stringify(enrollment.prefs)
-              : null,
-          prefFlips:
-            enrollment.active && enrollment.prefFlips
-              ? JSON.stringify(enrollment.prefFlips)
-              : null,
-          source: enrollment.source,
-        }
-      );
+  static async #insertEnrollment(conn, enrollment, recipe) {
+    await conn.executeCached(
+      `
+        INSERT INTO NimbusEnrollments(
+          profileId,
+          slug,
+          branchSlug,
+          recipe,
+          active,
+          unenrollReason,
+          lastSeen,
+          setPrefs,
+          prefFlips,
+          source
+        )
+        VALUES(
+          :profileId,
+          :slug,
+          :branchSlug,
+          jsonb(:recipe),
+          :active,
+          :unenrollReason,
+          :lastSeen,
+          jsonb(:setPrefs),
+          jsonb(:prefFlips),
+          :source
+        )
+        ON CONFLICT(profileId, slug)
+        DO UPDATE SET
+          branchSlug = excluded.branchSlug,
+          recipe = excluded.recipe,
+          active = excluded.active,
+          unenrollReason = excluded.unenrollReason,
+          lastSeen = excluded.lastSeen,
+          setPrefs = excluded.setPrefs,
+          prefFlips = excluded.prefFlips,
+          source = excluded.source;
+      `,
+      {
+        profileId: lazy.ExperimentAPI.profileId,
+        slug: enrollment.slug,
+        branchSlug: enrollment.branch.slug,
+        recipe: JSON.stringify(recipe),
+        active: enrollment.active,
+        unenrollReason: enrollment.unenrollReason ?? null,
+        lastSeen: enrollment.lastSeen,
+        setPrefs:
+          enrollment.active && enrollment.prefs
+            ? JSON.stringify(enrollment.prefs)
+            : null,
+        prefFlips:
+          enrollment.active && enrollment.prefFlips
+            ? JSON.stringify(enrollment.prefFlips)
+            : null,
+        source: enrollment.source,
+      }
+    );
 
-      lazy.log.debug(
-        `Created ${enrollment.active ? "active" : "inactive"} enrollment ${enrollment.slug}`
-      );
-    } else {
-      // This was an unenrollment.
-      await conn.executeCached(
-        `
-          UPDATE NimbusEnrollments SET
-            active = false,
-            unenrollReason = :unenrollReason,
-            setPrefs = null,
-            prefFlips = null
-          WHERE
-            profileId = :profileId AND
-            slug = :slug;
-        `,
-        {
-          profileId: lazy.ExperimentAPI.profileId,
-          slug: enrollment.slug,
-          unenrollReason: enrollment.unenrollReason,
-        }
-      );
-
-      lazy.log.debug(`Updated enrollment ${enrollment.slug} to be inactive`);
-    }
+    lazy.log.debug(
+      `Created ${enrollment.active ? "active" : "inactive"} enrollment ${enrollment.slug}`
+    );
   }
 
   /**
-   * Remove an expired enrollment from the NimbusEnrollments table.
+   * Record an update to an existing enrollment.
+   *
+   * In practice, this always corresponds to an unenrollment.
+   *
+   * @param {OpenedConnection} conn
+   * The database connection
+   *
+   * @param {object} enrollment
+   * The enrollment being updated in the database.
+   */
+  static async #updateEnrollment(conn, enrollment) {
+    await conn.executeCached(
+      `
+        UPDATE NimbusEnrollments SET
+          active = false,
+          unenrollReason = :unenrollReason,
+          setPrefs = null,
+          prefFlips = null
+        WHERE
+          profileId = :profileId AND
+          slug = :slug;
+      `,
+      {
+        profileId: lazy.ExperimentAPI.profileId,
+        slug: enrollment.slug,
+        unenrollReason: enrollment.unenrollReason,
+      }
+    );
+
+    lazy.log.debug(`Updated enrollment ${enrollment.slug} to be inactive`);
+  }
+
+  /**
+   * Remove an expired enrollment from the `NimbusEnrollments` table.
+   *
+   * This will also remove all `NimbusEnrollmentStatuses` rows for that slug.
    *
    * @param {OpenedConnection} conn The connection to the database.
    * @param {string} slug The slug of the enrollment to delete.
@@ -561,6 +847,16 @@ export class NimbusEnrollments {
         profileId: lazy.ExperimentAPI.profileId,
         slug,
       }
+    );
+
+    await conn.execute(
+      `
+        DELETE FROM NimbusEnrollmentStatuses
+        WHERE
+          profileId = :profileId AND
+          slug = :slug;
+      `,
+      { profileId: lazy.ExperimentAPI.profileId, slug }
     );
 
     lazy.log.debug(`Deleted expired enrollment ${slug}`);
@@ -588,6 +884,15 @@ export class NimbusEnrollments {
     this.#shutdownBlocker = null;
   }
 
+  /**
+   * Flush the sync timestamps to the database.
+   *
+   * @param {OpenedConnection} conn
+   * The database connection.
+   *
+   * @param {Map<string, number>} timestamps
+   * The sync timestamps.
+   */
   static async #flushSyncTimestamps(conn, timestamps) {
     for (const [collection, lastModified] of timestamps) {
       await conn.executeCached(
@@ -616,33 +921,82 @@ export class NimbusEnrollments {
   }
 
   /**
-   * Whether or not writing to the NimbusEnrollments table is enabled.
+   * Flush all pending enrollment status entries to the database.
    *
-   * This should only be false in xpcshell tests.
+   * @param {OpenedConnection} conn
+   * The database connection.
+   *
+   * @param {Map<string, EnrollmentStatusEntry[]>} entries
+   * The entries to write to the database.
    */
-  static get databaseEnabled() {
-    // TODO(bug 1967779): require the ProfilesDatastoreService to be initialized
-    // and remove this.
-    return DATABASE_ENABLED;
+  static async #flushEnrollmentStatuses(conn, statuses) {
+    for (const [slug, entries] of statuses.entries()) {
+      for (const entry of entries) {
+        await conn.executeCached(
+          `
+          INSERT INTO NimbusEnrollmentStatuses(
+            profileId,
+            slug,
+            timestamp,
+            entryIndex,
+            status
+          )
+          VALUES(
+            :profileId,
+            :slug,
+            :timestamp,
+            :entryIndex,
+            jsonb(:status)
+          );
+          `,
+          {
+            profileId: lazy.ExperimentAPI.profileId,
+            slug,
+            timestamp: entry.timestamp.toISOString(),
+            entryIndex: entry.index,
+            status: JSON.stringify(entry.status),
+          }
+        );
+      }
+    }
   }
 
   /**
-   * Whether or not reading from the NimbusEnrollments table is enabled.
-   *
-   * This is true by default except in xpcshell tests.
+   * @param {string} slug
+   * @param {EnrollmentStatus} enrollmentStatus
    */
-  static get readFromDatabaseEnabled() {
-    // TODO(bug 1967779): require the ProfilesDatastoreService to be initialized
-    // and remove this.
-    return DATABASE_ENABLED && READ_FROM_DATABASE_ENABLED;
+  static #recordEnrollmentStatusTelemetry(slug, enrollmentStatus) {
+    const { status, reason, branch, error, conflictSlugs, migration } =
+      enrollmentStatus;
+
+    // Do not record unsupported feature telemetry.
+    if (
+      reason === lazy.NimbusTelemetry.EnrollmentStatusReason.ERROR &&
+      error ===
+        lazy.NimbusTelemetry.ValidationFailureReason.UNSUPPORTED_FEATURES
+    ) {
+      return;
+    }
+
+    Glean.nimbusEvents.enrollmentStatus.record({
+      slug,
+      status,
+      reason,
+      branch,
+      error_string: error,
+      conflict_slug: conflictSlugs?.join(","),
+      migration,
+    });
   }
 
-  static get syncEnrollmentsEnabled() {
-    // TODO(bug 1967779): require the ProfilesDatastoreService to be initialized
-    // and remove this.
-    return (
-      DATABASE_ENABLED && READ_FROM_DATABASE_ENABLED && SYNC_ENROLLMENTS_ENABLED
-    );
+  /**
+   * Whether or not reading from and writing to the NimbusEnrollments table is
+   * enabled.
+   *
+   * This can only be false in test environments.
+   */
+  static get persistenceEnabled() {
+    return PERSISTENCE_ENABLED;
   }
 
   /**
@@ -820,9 +1174,61 @@ export class NimbusEnrollments {
   }
 
   /**
+   *
+   */
+  static async loadEnrollmentStatuses(txn) {
+    function processRow(row) {
+      const slug = row.getResultByName("slug");
+      const index = row.getResultByName("entryIndex");
+      const timestamp = new Date(row.getResultByName("timestamp"));
+      const status = JSON.parse(row.getResultByName("status"));
+
+      return [
+        slug,
+        {
+          index,
+          timestamp,
+          status,
+        },
+      ];
+    }
+
+    const conn = txn ?? (await lazy.ProfilesDatastoreService.getConnection());
+    const rows = await conn.execute(
+      `
+        SELECT
+          slug,
+          entryIndex,
+          timestamp,
+          status
+        FROM
+          (
+            SELECT
+              slug,
+              entryIndex,
+              timestamp,
+              json(status) AS status,
+              RANK() OVER window AS entryRank
+            FROM NimbusEnrollmentStatuses
+            WHERE
+              profileId = :profileId
+            WINDOW window AS (PARTITION BY slug ORDER BY entryIndex DESC)
+          )
+        WHERE
+          entryRank = 1;
+      `,
+      {
+        profileId: lazy.ExperimentAPI.profileId,
+      }
+    );
+
+    return new Map(rows.map(processRow));
+  }
+
+  /**
    * Load the slugs of all experiments from other profiles that have unenrolled.
    *
-   * @returns {Set<string>} The slugs of the experiments.
+   * @returns {Promise<Set<string>>} The slugs of the experiments.
    */
   static async loadUnenrolledExperimentSlugsFromOtherProfiles() {
     const conn = await lazy.ProfilesDatastoreService.getConnection();
@@ -845,22 +1251,38 @@ export class NimbusEnrollments {
   }
 
   /**
-   * Reload the database-related prefs
+   * Return whether two enrollment statuses are equal.
    *
-   * ** TEST ONLY **
+   * @param {EnrollmentStatus} prev
+   * The most recent recorded enrollment status.
+   *
+   * @param {EnrollmentStatus} next
+   * The new enrollment status.
+   *
+   * @returns {boolean}
+   * Whether the enrollment statuses are equal
    */
-  static _reloadPrefsForTests() {
-    DATABASE_ENABLED = Services.prefs.getBoolPref(
-      "nimbus.profilesdatastoreservice.enabled",
-      false
+  static enrollmentStatusEqual(prev, next) {
+    return (
+      prev.status === next.status &&
+      prev.reason === next.reason &&
+      prev.branch === next.branch &&
+      prev.error === next.error &&
+      ((prev.conflictSlugs === undefined && next.conflictSlugs === undefined) ||
+        (prev.conflictSlugs.length === next.conflictSlugs.length &&
+          prev.conflictSlugs.every(
+            (slug, i) => slug === next.conflictSlugs[i]
+          ))) &&
+      prev.migration === next.migration
     );
-    READ_FROM_DATABASE_ENABLED = Services.prefs.getBoolPref(
-      "nimbus.profilesdatastoreservice.read.enabled",
-      false
-    );
-    SYNC_ENROLLMENTS_ENABLED = Services.prefs.getBoolPref(
-      "nimbus.profilesdatastoreservice.sync.enabled",
-      false
-    );
+  }
+
+  /**
+   * Return the next timestamp for an {@link EnrollmentStatusEntry}.
+   *
+   * N.B.: This function only exists to allow mocking in tests.
+   */
+  static now() {
+    return new Date();
   }
 }

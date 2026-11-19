@@ -14,9 +14,6 @@ kind-dependencies:
     - fetch
     - system-symbols
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     system-symbols-upload:
         description: Upload Symbols

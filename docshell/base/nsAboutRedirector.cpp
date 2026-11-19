@@ -31,8 +31,8 @@ class CrashChannel final : public nsBaseChannel {
  public:
   explicit CrashChannel(nsIURI* aURI) { SetURI(aURI); }
 
-  nsresult OpenContentStream(bool async, nsIInputStream** stream,
-                             nsIChannel** channel) override {
+  nsresult OpenContentStream(bool /*async*/, nsIInputStream** /*stream*/,
+                             nsIChannel** /*channel*/) override {
     nsAutoCString spec;
     mURI->GetSpec(spec);
 

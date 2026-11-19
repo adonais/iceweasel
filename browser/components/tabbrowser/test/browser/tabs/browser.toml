@@ -73,6 +73,8 @@ tags = "vertical-tabs"
 
 ["browser_ctrlTab.js"]
 
+["browser_discardBrowser_discarded_attribute.js"]
+
 ["browser_discarded_tab_move.js"]
 
 ["browser_dont_process_switch_204.js"]
@@ -147,9 +149,6 @@ support-files = [
   "wait-a-bit.sjs",
 ]
 tags = "vertical-tabs"
-fail-if =  [
-  "vertical_tab", # Bug 1932786, fails in the "vertical-tabs" variant
-]
 
 ["browser_link_in_tab_title_and_url_prefilled_normal_page_by_script.js"]
 support-files = [
@@ -159,9 +158,6 @@ support-files = [
   "wait-a-bit.sjs",
 ]
 tags = "vertical-tabs"
-fail-if =  [
-  "vertical_tab", # Bug 1932786, fails in the "vertical-tabs" variant
-]
 
 ["browser_link_in_tab_title_and_url_prefilled_normal_page_no_target.js"]
 support-files = [
@@ -171,9 +167,6 @@ support-files = [
   "wait-a-bit.sjs",
 ]
 tags = "vertical-tabs"
-fail-if =  [
-  "vertical_tab", # Bug 1932786, fails in the "vertical-tabs" variant
-]
 
 ["browser_link_in_tab_title_and_url_prefilled_normal_page_other_target.js"]
 support-files = [
@@ -183,9 +176,6 @@ support-files = [
   "wait-a-bit.sjs",
 ]
 tags = "vertical-tabs"
-fail-if =  [
-  "vertical_tab", # Bug 1932786, fails in the "vertical-tabs" variant
-]
 
 ["browser_list_all_tabs_menu_items.js"]
 
@@ -227,9 +217,6 @@ tags = "vertical-tabs"
 
 ["browser_multiselect_tabs_close_using_shortcuts.js"]
 tags = "vertical-tabs"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1970731
-]
 
 ["browser_multiselect_tabs_copy_through_drag_and_drop.js"]
 tags = "vertical-tabs"
@@ -300,7 +287,7 @@ run-if = [
   "os != 'mac'", # Skipped because macOS keyboard support requires changing system settings
 ]
 tags = "vertical-tabs"
-fail-if =  [
+skip-if = [
   "vertical_tab", # Bug 1932790, fails in the "vertical-tabs" variant
 ]
 
@@ -346,9 +333,6 @@ support-files = ["file_new_tab_page.html"]
 
 ["browser_newwindow_tabstrip_overflow.js"]
 tags = "vertical-tabs"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1648512
-]
 
 ["browser_openTabFromDiscardedOwner.js"]
 
@@ -413,9 +397,6 @@ tags = "vertical-tabs"
 
 ["browser_reload_deleted_file.js"]
 tags = "vertical-tabs"
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && vertical_tab", # Bug 1936168
-]
 
 ["browser_removeAllTabsBut.js"]
 tags = "vertical-tabs"
@@ -555,9 +536,6 @@ tags = "vertical-tabs"
 tags = "vertical-tabs"
 
 ["browser_tab_groups_tab_interactions_telemetry.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov", # Bug 1968371
-]
 
 ["browser_tab_groups_telemetry.js"]
 
@@ -580,9 +558,6 @@ tags = "vertical-tabs"
 
 ["browser_tab_manager_groups.js"]
 tags = "vertical-tabs"
-skip-if = [
-  "opt && standalone", # Bug 2028649
-]
 
 ["browser_tab_manager_keyboard_access.js"]
 tags = "vertical-tabs"
@@ -607,6 +582,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 2010318
 ]
 
+["browser_tab_scroll_into_view_vertical.js"]
+
 ["browser_tab_splitview.js"]
 
 ["browser_tab_splitview_about_opentabs.js"]
@@ -622,9 +599,6 @@ skip-if = [
 ["browser_tab_splitview_content_size.js"]
 
 ["browser_tab_splitview_contextmenu.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
-]
 
 ["browser_tab_splitview_findbar.js"]
 

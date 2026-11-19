@@ -249,4 +249,25 @@ describe("StockSearch", () => {
     });
     expect(onClose).toHaveBeenCalledTimes(2);
   });
+
+  describe("back button direction", () => {
+    afterEach(() => {
+      document.dir = "";
+    });
+
+    it("points the back arrow left in left-to-right layouts", () => {
+      const { container } = renderSearch();
+      expect(
+        container.querySelector(".stocks-search-back").getAttribute("iconSrc")
+      ).toBe("chrome://global/skin/icons/arrow-left.svg");
+    });
+
+    it("points the back arrow right in right-to-left layouts", () => {
+      document.dir = "rtl";
+      const { container } = renderSearch();
+      expect(
+        container.querySelector(".stocks-search-back").getAttribute("iconSrc")
+      ).toBe("chrome://global/skin/icons/arrow-right.svg");
+    });
+  });
 });

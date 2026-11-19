@@ -22,11 +22,6 @@ const { ctypes } = ChromeUtils.importESModule(
 const HIGH_FD = 4500;
 
 add_task(async function test_socket_above_old_fd_setsize() {
-  Assert.ok(
-    !Services.io.socketProcessLaunched,
-    "Sockets must live in this process for the descriptor numbers to matter"
-  );
-
   const libc = ctypes.open("libSystem.B.dylib");
   const rlimit = new ctypes.StructType("rlimit", [
     { cur: ctypes.uint64_t },

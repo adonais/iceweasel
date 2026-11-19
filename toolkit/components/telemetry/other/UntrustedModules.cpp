@@ -9,7 +9,6 @@
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/TelemetryMetrics.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/RDDChild.h"
@@ -136,11 +135,6 @@ MultiGetUntrustedModulesData::GetUntrustedModuleLoadEvents() {
   dom::ContentParent::GetAll(contentParents);
   for (auto&& contentParent : contentParents) {
     AddPending(contentParent->SendGetUntrustedModulesData());
-  }
-
-  if (RefPtr<net::SocketProcessParent> socketActor =
-          net::SocketProcessParent::GetSingleton()) {
-    AddPending(socketActor->SendGetUntrustedModulesData());
   }
 
   if (RDDProcessManager* rddMgr = RDDProcessManager::Get()) {

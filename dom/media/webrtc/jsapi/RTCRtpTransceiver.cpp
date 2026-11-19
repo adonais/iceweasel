@@ -849,10 +849,8 @@ static auto JsepCodecDescToVideoCodecConfig(
     return Nothing();
   }
 
-  UniquePtr<VideoCodecConfigH264> h264Config;
-
   if (aCodec.mName == "H264") {
-    h264Config = MakeUnique<VideoCodecConfigH264>();
+    auto h264Config = std::make_unique<VideoCodecConfigH264>();
     size_t spropSize = sizeof(h264Config->sprop_parameter_sets);
     strncpy(h264Config->sprop_parameter_sets,
             aCodec.mSpropParameterSets.c_str(), spropSize);
@@ -1358,7 +1356,7 @@ RefPtr<RTCStatsPromise> RTCRtpTransceiver::ApplyCodecStats(
                   // We have all the data we need to register codec stats and
                   // assign codecIds for this transceiver's rtp stream stats.
 
-                  auto report = MakeUnique<RTCStatsCollection>();
+                  auto report = std::make_unique<RTCStatsCollection>();
                   FlattenStats(std::move(aTransceiverStats), report.get());
 
                   // Find the codec stats we are looking for, based on the
@@ -1431,7 +1429,7 @@ RefPtr<RTCStatsPromise> RTCRtpTransceiver::ApplyCodecStats(
           GetMainThreadSerialEventTarget(), __func__,
           [finalCodecStats = std::move(finalCodecStats)](
               nsTArray<UniquePtr<RTCStatsCollection>> aStats) mutable {
-            auto finalStats = MakeUnique<RTCStatsCollection>();
+            auto finalStats = std::make_unique<RTCStatsCollection>();
             FlattenStats(std::move(aStats), finalStats.get());
             MOZ_ASSERT(finalStats->mCodecStats.IsEmpty());
             if (!finalStats->mCodecStats.SetCapacity(finalCodecStats->size(),

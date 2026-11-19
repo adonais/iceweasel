@@ -1,7 +1,7 @@
 schema: 1
 
 bugzilla:
-  product: Toolkit
+  product: Core
   component: "General"
 
 origin:
@@ -10,10 +10,26 @@ origin:
 
   url: https://github.com/google/brotli
 
-  release: 4792c8e4c4235f6b501f13dbd07a8b4b253eee21 (2026-04-08T19:24:31Z).
-  revision: 4792c8e4c4235f6b501f13dbd07a8b4b253eee21
+  release: 089e71983611a42643d75194fedfde086c5e58af (2026-10-27T09:32:21Z).
+  revision: 089e71983611a42643d75194fedfde086c5e58af
 
   license: MIT
+
+updatebot:
+  maintainer-phab: jesup
+  maintainer-bz: rjesup@jesup.org
+  fuzzy-query: "'xpcshell | 'web-platform-tests | 'reftest !webrtc !webcodecs !eme !webgpu !canvas !nofis !swr !msix !-dc !nogpu !isolated !java-media !verify !-pb !-s-"
+  fuzzy-paths:
+    - layout/reftests/font-face
+    - netwerk/test/unit
+    - testing/web-platform/tests/compression
+    - testing/web-platform/tests/css/WOFF2
+    - testing/web-platform/tests/fetch/compression-dictionary
+    - testing/web-platform/tests/fetch/content-encoding
+  tasks:
+    - type: vendoring
+      enabled: true
+      frequency: 1 week
 
 vendoring:
   url: https://github.com/google/brotli

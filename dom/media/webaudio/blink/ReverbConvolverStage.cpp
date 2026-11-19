@@ -46,9 +46,9 @@ ReverbConvolverStage::ReverbConvolverStage(
   MOZ_ASSERT(impulseResponse);
   MOZ_ASSERT(accumulationBuffer);
 
-  m_fftKernel = MakeUnique<FFTBlock>(fftSize);
+  m_fftKernel = std::make_unique<FFTBlock>(fftSize);
   m_fftKernel->PadAndMakeScaledDFT(impulseResponse + stageOffset, stageLength);
-  m_fftConvolver = MakeUnique<FFTConvolver>(fftSize, renderPhase);
+  m_fftConvolver = std::make_unique<FFTConvolver>(fftSize, renderPhase);
 
   // The convolution stage at offset stageOffset needs to have a corresponding
   // delay to cancel out the offset.

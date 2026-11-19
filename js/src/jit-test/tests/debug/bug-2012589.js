@@ -1,7 +1,5 @@
-// |jit-test| error: Error
-
 const g = newGlobal({newCompartment: true});
-g.enableShellAllocationMetadataBuilder();
+g.enableTrackAllocations();
 const dbg = new Debugger();
 dbg.memory.trackingAllocationSites = true;
 dbg.addDebuggee(g);

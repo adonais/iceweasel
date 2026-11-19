@@ -76,6 +76,25 @@ def presets(command_context):
     return MergedHandler(*preset_paths)
 
 
+def fuzzy_preset_for_perf(parser, name, preset):
+    """Convert a fuzzy preset so that `mach try perf` selects the same tasks
+    from the same task set, and pushes them for both the base and the local
+    revision."""
+    full = preset.pop("full", False)
+    supported = {action.dest for action in parser._actions}
+    unsupported = sorted(set(preset) - supported)
+    if unsupported:
+        print(
+            f"error: preset '{name}' uses options that 'mach try perf' does not "
+            f"support: {', '.join(unsupported)}"
+        )
+        sys.exit(1)
+
+    preset["show_all"] = True
+    preset["full_task_graph"] = full
+    return preset
+
+
 def handle_presets(
     command_context, preset_action=None, save=None, preset=None, **kwargs
 ):
@@ -125,6 +144,8 @@ def handle_presets(
 
         if not subcommand:
             subcommand = selector
+        elif subcommand == "perf" and selector == "fuzzy":
+            preset = fuzzy_preset_for_perf(parser, name, preset)
         elif subcommand != selector:
             print(
                 f"error: preset '{name}' exists for a different selector "

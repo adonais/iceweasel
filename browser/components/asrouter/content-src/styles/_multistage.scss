@@ -1279,6 +1279,8 @@ html {
       --card-stack-secondary-height: 150px;
       --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 2);
       --card-stack-border: 1px solid var(--card-border-color);
+      // border-radius-xlarge is only defined within nova styles
+      --card-stack-border-radius: var(--border-radius-xlarge, 24px);
       // Resting offsets of the two cards drawn behind the front one.
       --card-stack-layer-1-offset: 8px;
       --card-stack-layer-2-offset: 16px;
@@ -1301,7 +1303,7 @@ html {
         --card-stack-border: 1px solid var(--text-color);
       }
 
-      border-radius: var(--border-radius-medium);
+      border-radius: var(--card-stack-border-radius);
       box-sizing: border-box;
       height: 204px;
       min-height: 204px;
@@ -1322,7 +1324,7 @@ html {
         position: absolute;
         box-sizing: border-box;
         border: var(--card-stack-border);
-        border-radius: var(--border-radius-medium);
+        border-radius: var(--card-stack-border-radius);
       }
 
       .card-stack-front {
@@ -1385,20 +1387,53 @@ html {
         align-items: center;
         justify-content: center;
         background-color: transparent;
-        border-start-start-radius: var(--border-radius-medium);
-        border-end-start-radius: var(--border-radius-medium);
+        border-start-start-radius: var(--card-stack-border-radius);
+        border-end-start-radius: var(--card-stack-border-radius);
         border-start-end-radius: 0;
         border-end-end-radius: 0;
         overflow: hidden;
 
+        &.card-stack-image-float {
+          background: var(--card-stack-bkg);
+        }
+
+        &.card-stack-image-bleed {
+          background: var(--card-stack-bkg);
+
+          @container card-stack (width <= #{$card-stack-narrow-width}) {
+            background: var(--card-stack-bkg-uncropped);
+          }
+        }
+
+        &.card-stack-image-banner {
+          background: var(--card-stack-bkg);
+
+          @container card-stack (width <= #{$card-stack-narrow-width}) {
+            background: var(--card-stack-bkg-medium);
+          }
+
+          @container card-stack (width <= #{$card-stack-stacked-width}) {
+            background: var(--card-stack-bkg-small);
+          }
+        }
+
         @container card-stack (width <= #{$card-stack-narrow-width}) {
           width: 180px;
           margin-inline-start: 12px;
+
+          &.card-stack-image-banner {
+            // A banner style image needs to touch the box edge,
+            // we can also compensate for the width so the text
+            // and buttons don't move
+            width: 192px;
+            margin-inline-start: auto;
+            background-position-y: bottom;
+          }
         }
 
         @container card-stack (width <= #{$card-stack-stacked-width}) {
           height: var(--card-stack-secondary-height);
-          margin-block: 12px;
+          margin-block: 12px 0;
           margin-inline: auto;
         }
       }
@@ -1418,8 +1453,8 @@ html {
           border: none;
           border-start-start-radius: 0;
           border-end-start-radius: 0;
-          border-start-end-radius: var(--border-radius-medium);
-          border-end-end-radius: var(--border-radius-medium);
+          border-start-end-radius: var(--card-stack-border-radius);
+          border-end-end-radius: var(--card-stack-border-radius);
           overflow: hidden;
           box-shadow: none;
           display: flex;
@@ -1430,11 +1465,16 @@ html {
           padding-block: var(--space-xxlarge);
           width: auto;
 
+          @container card-stack (width <= #{$card-stack-stacked-width}) {
+            padding-block: var(--space-xlarge);
+          }
+
           .main-content-inner {
             justify-content: center;
 
             @container card-stack (width <= #{$card-stack-stacked-width}) {
               align-items: center;
+              padding-block: var(--space-large);
             }
           }
         }
@@ -1466,6 +1506,7 @@ html {
         h2 {
           font-size: var(--font-size-small);
           font-weight: var(--font-weight);
+          color: var(--text-color-deemphasized);
         }
       }
 
@@ -1484,6 +1525,18 @@ html {
           font-size: var(--font-size-root);
           font-weight: var(--font-weight-semibold);
           line-height: 1;
+        }
+
+        @container card-stack (width <= #{$card-stack-stacked-width}) {
+          flex-direction: column;
+          gap: var(--space-xxsmall);
+          width: 100%;
+
+          .primary,
+          .secondary,
+          .secondary-cta {
+            width: inherit;
+          }
         }
       }
 
@@ -1511,7 +1564,7 @@ html {
         }
 
         .section-main .main-content {
-          border-radius: var(--border-radius-medium);
+          border-radius: var(--card-stack-border-radius);
         }
 
         .welcome-text {
@@ -1812,17 +1865,6 @@ html {
 
           .main-content-inner {
             min-height: 330px;
-
-            .mobile-download-buttons {
-              padding: 0;
-              margin-inline-start: -5px;
-              display: flex;
-
-              button {
-                cursor: pointer;
-                border-radius: 0;
-              }
-            }
 
             .qr-code-image {
               margin: 5px 0 10px;
@@ -3780,40 +3822,6 @@ html {
 
       &:hover {
         background: none;
-      }
-    }
-
-    .ios button {
-      background-image: url('chrome://app-marketplace-icons/locale/ios.svg');
-    }
-
-    .android button {
-      background-image: url('chrome://app-marketplace-icons/locale/android.png');
-    }
-  }
-
-  .mobile-download-buttons {
-    list-style: none;
-    padding: 10px 0;
-    margin: 0;
-
-    li {
-      display: inline-block;
-
-      button {
-        display: inline-block;
-        height: 45px;
-        width: 152px;
-        background-repeat: no-repeat;
-        background-size: contain;
-        background-position: center;
-        box-shadow: none;
-        border: 0;
-        border-radius: 0;
-      }
-
-      &:not(:first-child) {
-        margin-inline: 5px 0;
       }
     }
   }

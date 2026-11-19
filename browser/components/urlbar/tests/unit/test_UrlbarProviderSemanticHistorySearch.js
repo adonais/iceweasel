@@ -14,6 +14,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const { UrlbarProviderSemanticHistorySearch } = ChromeUtils.importESModule(
   "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs"
 );
+const { UrlbarTelemetryUtils } = ChromeUtils.importESModule(
+  "chrome://browser/content/urlbar/UrlbarTelemetryUtils.mjs"
+);
 const { getPlacesSemanticHistoryManager } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs"
 );
@@ -164,9 +167,10 @@ add_task(async function test_isActive_conditions() {
   const engineSearchMode = createContext("hello world", {
     searchMode: { engineName: "testEngine" },
   });
-  Assert.ok(
-    !(await provider.isActive(engineSearchMode)),
-    "Should not be active when in search engine mode"
+  Assert.equal(
+    await provider.isActive(engineSearchMode),
+    UrlbarPrefs.get("unifiedSearchButton.historyInSearchMode"),
+    "Should only be active in search engine mode with historyInSearchMode"
   );
 
   const historySearchMode = createContext("hello world", {
@@ -270,14 +274,17 @@ add_task(async function test_switchTab() {
         id: 1,
         title: "Test Page 1",
         url: url1,
+        distance: 0.1,
       },
       {
         id: 2,
         title: "Test Page 2",
         url: url2,
+        distance: 0.2,
       },
     ],
   });
+  const expectedDistances = { [url1]: 10, [url2]: 20 };
 
   function AssertSwitchToTabResult(result, url, userContextId, groupId = null) {
     Assert.equal(
@@ -296,6 +303,11 @@ add_task(async function test_switchTab() {
       result.payload.icon,
       UrlbarShared.getIconForUrl(url),
       "Check icon"
+    );
+    Assert.strictEqual(
+      result.payload.semanticDistance,
+      expectedDistances[url],
+      "Check semantic distance"
     );
   }
   function isUrlResult(result, url) {
@@ -354,6 +366,207 @@ add_task(async function test_switchTab() {
   AssertSwitchToTabResult(added[1], url1, userContextId2);
   AssertSwitchToTabResult(added[2], url2, userContextId1);
   AssertSwitchToTabResult(added[3], url2, userContextId2, tabGroudId2);
+
+  inferStub.restore();
+});
+
+add_task(async function test_getDomainScope() {
+  const tests = [
+    ["github.com/firefox", { host: "github.com", searchText: "firefox" }],
+    [
+      "github.com firefox bugs",
+      { host: "github.com", searchText: "firefox bugs" },
+    ],
+    ["cnn.com DUI", null],
+    ["cnn.com/DUI", null],
+    ["cnn.com news", { host: "cnn.com", searchText: "news" }],
+    ["cnn.com/news", { host: "cnn.com", searchText: "news" }],
+    ["cnn.com", null],
+    ["http://cnn.com", null],
+    ["cnn.com/", null],
+    ["https://cnn.com/", null],
+    ["cnn.com ab", null],
+    ["cnn.com - !", null],
+    [
+      "http://www.github.com/mozilla/semantic-history_bugs",
+      { host: "github.com", searchText: "semantic history bugs" },
+    ],
+    [
+      "gist.github.com/some%20topic here",
+      { host: "gist.github.com", searchText: "some topic here" },
+    ],
+    ["^ github.com firefox", { host: "github.com", searchText: "firefox" }],
+    ["github.com. firefox", { host: "github.com", searchText: "firefox" }],
+    ["github.com", null],
+    ["https://github.com", null],
+    ["firefox bugs", null],
+    ["foo/bar", null],
+    ["node.js tutorial", null],
+    ["not a url.com/foo", null],
+    ["user@github.com/foo", null],
+    ["ftp://github.com/foo", null],
+    ["192.168.1.1/foo", null],
+    ["192.168.1.1 foo", null],
+    ["[::1]/foo", null],
+    ["[2001:db8::1] foo", null],
+  ];
+
+  UrlbarPrefs.set("suggest.semanticHistory.domainScopedSearch", true);
+  for (let [searchString, expected] of tests) {
+    Assert.deepEqual(
+      UrlbarProviderSemanticHistorySearch.getDomainScope(
+        createContext(searchString)
+      ),
+      expected,
+      `Domain scope for "${searchString}"`
+    );
+  }
+  UrlbarPrefs.clear("suggest.semanticHistory.domainScopedSearch");
+
+  Assert.equal(
+    UrlbarProviderSemanticHistorySearch.getDomainScope(
+      createContext("github.com/firefox")
+    ),
+    null,
+    "No domain scope when the pref is disabled"
+  );
+});
+
+add_task(async function test_startQuery_domain_scoped() {
+  const provider = new UrlbarProviderSemanticHistorySearch();
+  let scopedUrl = "https://github.com/scoped";
+  let unscopedUrl = "https://example.com/unscoped";
+  let inferStub = sinon.stub(semanticManager, "infer").resolves({
+    results: [{ id: 1, title: "Unscoped", url: unscopedUrl, frecency: 100 }],
+  });
+  let inferWithDomainStub = sinon
+    .stub(semanticManager, "inferWithDomain")
+    .resolves({
+      results: [{ id: 2, title: "Scoped", url: scopedUrl, frecency: 100 }],
+    });
+
+  async function startQuery(searchString) {
+    let added = [];
+    await provider.startQuery(createContext(searchString), (_p, result) =>
+      added.push(result)
+    );
+    return added.map(r => r.payload.url);
+  }
+
+  UrlbarPrefs.set("suggest.semanticHistory.domainScopedSearch", true);
+
+  Assert.deepEqual(await startQuery("github.com firefox bugs"), [scopedUrl]);
+  Assert.ok(
+    inferWithDomainStub.calledOnceWith("firefox bugs", "github.com"),
+    "inferWithDomain should be called with the search text and host"
+  );
+  Assert.ok(inferStub.notCalled, "infer should not be called");
+
+  info("Fall back to infer when the domain has no indexed pages.");
+  inferWithDomainStub.resolves(null);
+  Assert.deepEqual(await startQuery("main.py error"), [unscopedUrl]);
+  Assert.ok(inferStub.calledOnce, "infer should be called as a fallback");
+
+  UrlbarPrefs.clear("suggest.semanticHistory.domainScopedSearch");
+  inferStub.restore();
+  inferWithDomainStub.restore();
+});
+
+add_task(async function test_semantic_distance_telemetry() {
+  const provider = new UrlbarProviderSemanticHistorySearch();
+  const queryContext = createContext("distance test", { isPrivate: false });
+  let url = "https://example.com/distance";
+  let distance = 0.3;
+  let inferStub = sinon.stub(semanticManager, "infer").callsFake(async () => ({
+    results: [{ id: 1, title: "Distance", url, frecency: 100, distance }],
+  }));
+
+  async function query() {
+    let added = [];
+    await provider.startQuery(queryContext, (_provider, result) => {
+      added.push(result);
+    });
+    Assert.equal(added.length, 1, "One result should be added");
+    return added[0];
+  }
+
+  let result = await query();
+  Assert.strictEqual(
+    result.payload.semanticDistance,
+    30,
+    "Distance is scaled to an integer"
+  );
+
+  distance = 1.5;
+  result = await query();
+  Assert.strictEqual(
+    result.payload.semanticDistance,
+    100,
+    "Distance is clamped to 100"
+  );
+
+  distance = NaN;
+  result = await query();
+  Assert.strictEqual(
+    result.payload.semanticDistance,
+    undefined,
+    "No distance when it is NaN"
+  );
+
+  distance = 0.3;
+  result = await query();
+
+  let other = new UrlbarResult({
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
+    payload: { url: "https://example.com/other", title: "Other" },
+  });
+  let buildEvent = visibleResults =>
+    UrlbarTelemetryUtils.buildEventInfo({
+      method: "abandonment",
+      action: "blur",
+      interaction: "typed",
+      numChars: 13,
+      numWords: 2,
+      searchSource: "urlbar",
+      searchMode: null,
+      visibleResults,
+      viewIsOpen: true,
+      windowMode: "classic",
+    }).eventInfo;
+
+  Assert.equal(
+    buildEvent([other, result, other]).semantic_distances,
+    `,${result.payload.semanticDistance},`,
+    "Distances are aligned with the results"
+  );
+  Assert.ok(
+    !("semantic_distances" in buildEvent([other])),
+    "No semantic_distances without semantic results"
+  );
+
+  let inputFieldEvent = UrlbarTelemetryUtils.buildEventInfo({
+    method: "engagement",
+    action: "enter",
+    interaction: "typed",
+    numChars: 13,
+    numWords: 2,
+    searchSource: "urlbar",
+    searchMode: null,
+    selIndex: -1,
+    visibleResults: [other, result],
+    viewIsOpen: false,
+    windowMode: "classic",
+  }).eventInfo;
+  Assert.equal(
+    inputFieldEvent.selected_result,
+    "input_field",
+    "The input field was confirmed"
+  );
+  Assert.ok(
+    !("semantic_distances" in inputFieldEvent),
+    "No semantic_distances when confirming the input field with a closed view"
+  );
 
   inferStub.restore();
 });

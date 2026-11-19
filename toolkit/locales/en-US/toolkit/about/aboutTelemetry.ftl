@@ -32,12 +32,10 @@ about-telemetry-histograms-section = Histograms
 about-telemetry-keyed-histogram-section = Keyed Histograms
 about-telemetry-events-section = Events
 about-telemetry-simple-measurements-section = Simple Measurements
-about-telemetry-slow-sql-section = Slow SQL Statements
 about-telemetry-addon-details-section = Add-on Details
 about-telemetry-late-writes-section = Late Writes
 about-telemetry-raw-payload-section = Raw Payload
 about-telemetry-raw = Raw JSON
-about-telemetry-full-sql-warning = NOTE: Slow SQL debugging is enabled. Full SQL strings may be displayed below but they will not be submitted to Telemetry.
 about-telemetry-fetch-stack-symbols = Fetch function names for stacks
 about-telemetry-hide-stack-symbols = Show raw stack data
 # Selects the correct release version
@@ -105,12 +103,6 @@ about-telemetry-current-data-sidebar = current data
 about-telemetry-telemetry-ping-type-all = all
 # button label to copy the histogram
 about-telemetry-histogram-copy = Copy
-# these strings are used in the “Slow SQL Statements” section
-about-telemetry-slow-sql-main = Slow SQL Statements on Main Thread
-about-telemetry-slow-sql-other = Slow SQL Statements on Helper Threads
-about-telemetry-slow-sql-hits = Hits
-about-telemetry-slow-sql-average = Avg. Time (ms)
-about-telemetry-slow-sql-statement = Statement
 # these strings are used in the “Add-on Details” section
 about-telemetry-addon-table-id = Add-on ID
 about-telemetry-addon-table-details = Details

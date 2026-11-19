@@ -211,7 +211,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
   /** This value is for the display member of Web App Manifests */
   @Retention(RetentionPolicy.SOURCE)
-  /** Display mode type definitions for web app manifest display modes. */
   @IntDef({
     DISPLAY_MODE_BROWSER,
     DISPLAY_MODE_MINIMAL_UI,

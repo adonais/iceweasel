@@ -1,2 +1,2 @@
-/* eslint-disable import/no-unassigned-import, import/no-unresolved */
+/* eslint-disable import-x/no-unassigned-import, import-x/no-unresolved */
 import "invalid specifier";

@@ -14,13 +14,13 @@ import {
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { SmartwindowOverflowRowMixin } from "chrome://browser/content/aiwindow/components/SmartwindowOverflowRow.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/smartwindow-chip.mjs";
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-grouped-chip-container.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-panel-list.mjs";
 
 /** @typedef {import("chrome://browser/content/urlbar/SmartbarInput.mjs").ContextWebsite} ContextWebsite */
@@ -33,12 +33,10 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
 ) {
   static properties = {
     websites: { type: Array },
-    chipType: { type: String },
     removable: { type: Boolean },
     shouldGroupChips: { type: Boolean }, // true if we want 3 or more chips to display as ai-grouped-chip-container
     autoOverflow: { type: Boolean },
     visibleChipCount: { type: Number },
-    chipSize: { type: String, attribute: "chip-size", reflect: true },
     isPanelOpen: { type: Boolean, state: true },
   };
 
@@ -46,12 +44,10 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
     super();
     /** @type {ContextWebsite[]} */
     this.websites = [];
-    this.chipType = "context-chip";
     this.removable = false;
     this.shouldGroupChips = false;
     this.autoOverflow = false;
     this.visibleChipCount = null;
-    this.chipSize = "default";
     this.isPanelOpen = false;
   }
 
@@ -106,7 +102,7 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
   #onRemoveWebsite(website, event) {
     event.stopPropagation();
     this.dispatchEvent(
-      new CustomEvent("ai-website-chip:remove", {
+      new CustomEvent("smartwindow-chip:remove", {
         bubbles: true,
         composed: true,
         detail: {
@@ -119,9 +115,8 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
   }
 
   #renderStackedChips(website) {
-    return html`<ai-website-chip
-      .type=${this.chipType}
-      .size=${this.chipSize}
+    return html`<smartwindow-chip
+      type="context"
       .label=${website.label}
       .href=${website.url ?? ""}
       .iconSrc=${website.iconSrc ?? ""}
@@ -129,8 +124,8 @@ export class WebsiteChipContainer extends SmartwindowOverflowRowMixin(
       .tabGroupColor=${website.color ?? ""}
       .tabGroupId=${website.groupId ?? ""}
       .removable=${this.removable}
-      @ai-website-chip:remove=${e => this.#onRemoveWebsite(website, e)}
-    ></ai-website-chip>`;
+      @smartwindow-chip:remove=${e => this.#onRemoveWebsite(website, e)}
+    ></smartwindow-chip>`;
   }
 
   #renderGroupedChips(chips) {

@@ -219,7 +219,7 @@ mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnStart(
     const nsACString& aProtocol, const nsACString& aExtensions,
     const nsAString& aEffectiveURL, const bool& aEncrypted,
     const uint64_t& aHttpChannelId) {
-  mEventQ->RunOrEnqueue(MakeUnique<EventTargetDispatcher>(
+  mEventQ->RunOrEnqueue(std::make_unique<EventTargetDispatcher>(
       this, new StartEvent(aProtocol, aExtensions, aEffectiveURL, aEncrypted,
                            aHttpChannelId)));
 
@@ -270,8 +270,8 @@ class StopEvent : public WebSocketEvent {
 
 mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnStop(
     const nsresult& aStatusCode) {
-  mEventQ->RunOrEnqueue(
-      MakeUnique<EventTargetDispatcher>(this, new StopEvent(aStatusCode)));
+  mEventQ->RunOrEnqueue(std::make_unique<EventTargetDispatcher>(
+      this, new StopEvent(aStatusCode)));
 
   return IPC_OK();
 }
@@ -318,7 +318,7 @@ bool WebSocketChannelChild::RecvOnMessageAvailableInternal(
     return false;
   }
 
-  mEventQ->RunOrEnqueue(MakeUnique<EventTargetDispatcher>(
+  mEventQ->RunOrEnqueue(std::make_unique<EventTargetDispatcher>(
       this, new MessageEvent(mReceivedMsgBuffer, aBinary)));
   mReceivedMsgBuffer.Truncate();
   return true;
@@ -344,7 +344,7 @@ mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnMessageAvailable(
   if (!RecvOnMessageAvailableInternal(aMsg, aMoreData, false)) {
     LOG(("WebSocketChannelChild %p append message failed", this));
     mEventQ->RunOrEnqueue(
-        MakeUnique<EventTargetDispatcher>(this, new OnErrorEvent()));
+        std::make_unique<EventTargetDispatcher>(this, new OnErrorEvent()));
   }
   return IPC_OK();
 }
@@ -370,7 +370,7 @@ mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnBinaryMessageAvailable(
   if (!RecvOnMessageAvailableInternal(aMsg, aMoreData, true)) {
     LOG(("WebSocketChannelChild %p append message failed", this));
     mEventQ->RunOrEnqueue(
-        MakeUnique<EventTargetDispatcher>(this, new OnErrorEvent()));
+        std::make_unique<EventTargetDispatcher>(this, new OnErrorEvent()));
   }
   return IPC_OK();
 }
@@ -405,8 +405,8 @@ class AcknowledgeEvent : public WebSocketEvent {
 
 mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnAcknowledge(
     const uint32_t& aSize) {
-  mEventQ->RunOrEnqueue(
-      MakeUnique<EventTargetDispatcher>(this, new AcknowledgeEvent(aSize)));
+  mEventQ->RunOrEnqueue(std::make_unique<EventTargetDispatcher>(
+      this, new AcknowledgeEvent(aSize)));
 
   return IPC_OK();
 }
@@ -442,7 +442,7 @@ class ServerCloseEvent : public WebSocketEvent {
 
 mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnServerClose(
     const uint16_t& aCode, const nsACString& aReason) {
-  mEventQ->RunOrEnqueue(MakeUnique<EventTargetDispatcher>(
+  mEventQ->RunOrEnqueue(std::make_unique<EventTargetDispatcher>(
       this, new ServerCloseEvent(aCode, aReason)));
 
   return IPC_OK();

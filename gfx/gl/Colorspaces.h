@@ -836,6 +836,8 @@ inline float SampleOutByIn(const C& outByIn, const float in) {
       return outByIn.at(0);
   }
   MOZ_ASSERT(outByIn.size() >= 2);
+  // NaN would survive the clamp below and turn into a garbage index.
+  if (std::isnan(in)) return in;
 
   // Estimate based on nearest (first) derivative:
   // Find the nearest point to `in` in `outByIn`.

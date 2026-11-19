@@ -14,23 +14,23 @@
 
 #include "nsIXULStore.h"
 
+#include <memory>
+
 namespace mozilla {
 class XULStoreIterator final {
  public:
   bool HasMore() const;
   nsresult GetNext(nsAString* item);
 
+  struct Deleter {
+    void operator()(XULStoreIterator*);
+  };
+
  private:
   XULStoreIterator() = delete;
   XULStoreIterator(const XULStoreIterator&) = delete;
   XULStoreIterator& operator=(const XULStoreIterator&) = delete;
   ~XULStoreIterator() = delete;
-};
-
-template <>
-class DefaultDelete<XULStoreIterator> {
- public:
-  void operator()(XULStoreIterator* ptr) const;
 };
 
 namespace XULStore {
@@ -46,21 +46,14 @@ nsresult GetValue(const nsAString& doc, const nsAString& id,
                   const nsAString& attr, nsAString& value);
 nsresult RemoveValue(const nsAString& doc, const nsAString& id,
                      const nsAString& attr);
-nsresult GetIDs(const nsAString& doc, UniquePtr<XULStoreIterator>& iter);
-nsresult GetAttrs(const nsAString& doc, const nsAString& id,
-                  UniquePtr<XULStoreIterator>& iter);
+nsresult GetIDs(
+    const nsAString& doc,
+    std::unique_ptr<XULStoreIterator, XULStoreIterator::Deleter>& iter);
+nsresult GetAttrs(
+    const nsAString& doc, const nsAString& id,
+    std::unique_ptr<XULStoreIterator, XULStoreIterator::Deleter>& iter);
 nsresult Shutdown();
 };  // namespace XULStore
 };  // namespace mozilla
-
-namespace std {
-
-// Should always use a custom deleter
-template <>
-struct default_delete<mozilla::XULStoreIterator> {
-  default_delete() = delete;
-};
-
-}  // namespace std
 
 #endif  // mozilla_XULStore_h

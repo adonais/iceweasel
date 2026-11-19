@@ -148,7 +148,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
     // Sites greater than what is visible in the New Tab Page, because the
     // additional ones couldn't be managed from the page.
     let numTopSites = Math.min(
-      lazy.UrlbarPrefs.get("maxRichResults"),
+      queryContext.maxResults,
       lazy.TOP_SITES_MAX_SITES_PER_ROW * UrlbarProviderTopSites.topSitesRows
     );
     sites = sites.slice(0, numTopSites);

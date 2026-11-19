@@ -57,7 +57,7 @@ add_task(async function test_omnibox_searchMode() {
     fireInputEvent: true,
   });
 
-  assertNoOmniboxResult(window);
+  await assertNoOmniboxResult(window);
 
   await extension.unload();
   await UrlbarTestUtils.exitSearchMode(window);
@@ -103,7 +103,7 @@ add_task(async function test_omnibox_searchMode_switch() {
     entry: "oneoff",
   });
 
-  assertNoOmniboxResult(window);
+  await assertNoOmniboxResult(window);
 
   await extension.unload();
   await UrlbarTestUtils.exitSearchMode(window);
@@ -112,12 +112,14 @@ add_task(async function test_omnibox_searchMode_switch() {
 async function assertNoOmniboxResult(win) {
   let count = await UrlbarTestUtils.getResultCount(win);
   Assert.greaterOrEqual(count, 1, "There should be at least one result");
+  let hasOmniboxResult = false;
   for (let i = 0; i < count; ++i) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(win, i);
-    Assert.notEqual(
-      result.type,
-      UrlbarShared.RESULT_TYPE.OMNIBOX,
-      "Result is not Omnibox"
-    );
+    hasOmniboxResult ||= result.type == UrlbarShared.RESULT_TYPE.OMNIBOX;
   }
+  Assert.equal(
+    hasOmniboxResult,
+    UrlbarPrefs.get("unifiedSearchButton.historyInSearchMode"),
+    "Omnibox results are only shown in search mode with historyInSearchMode"
+  );
 }

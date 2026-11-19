@@ -495,7 +495,7 @@ nsresult ChannelMediaResource::CopySegmentToCache(
 
   RefPtr<ChannelMediaResource> self = closure->mResource;
   uint32_t loadID = closure->mLoadID;
-  UniquePtr<uint8_t[]> data = MakeUnique<uint8_t[]>(aCount);
+  auto data = std::make_unique<uint8_t[]>(aCount);
   memcpy(data.get(), aFromSegment, aCount);
   cacheStream->OwnerThread()->Dispatch(NS_NewRunnableFunction(
       "MediaCacheStream::NotifyDataReceived",

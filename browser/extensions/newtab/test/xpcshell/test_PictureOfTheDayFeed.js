@@ -99,6 +99,23 @@ add_task(async function test_region_resolves_after_init() {
   sandbox.restore();
 });
 
+add_task(async function test_disable_keeps_picture_in_store() {
+  const sandbox = sinon.createSandbox();
+  const feed = makeFeed(sandbox, {
+    prefs: { ...ENABLED_PREFS, "widgets.pictureOfTheDay.enabled": false },
+  });
+  feed.loaded = true;
+
+  await feed.onAction({
+    type: actionTypes.PREF_CHANGED,
+    data: { name: "widgets.pictureOfTheDay.enabled", value: false },
+  });
+
+  Assert.strictEqual(feed.loaded, false, "marks the feed as not loaded");
+  Assert.ok(!findUpdate(feed), "does not send an empty picture to content");
+  sandbox.restore();
+});
+
 add_task(async function test_getEndpoint_allowlist() {
   const sandbox = sinon.createSandbox();
   Assert.equal(

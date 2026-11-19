@@ -4,19 +4,20 @@
 
 #include "NetworkConnectivityService.h"
 
-#include "DNSUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsICancelable.h"
 #include "nsIChannel.h"
+#include "nsIDNSService.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsINetworkLinkService.h"
 #include "nsIOService.h"
+#include "nsNetUtil.h"
 #include "nsSocketTransport2.h"
 #include "xpcpublic.h"
 
@@ -359,13 +360,6 @@ NetworkConnectivityService::RecheckDNS() {
     return NS_OK;
   }
 
-  if (nsIOService::UseSocketProcess()) {
-    RefPtr<SocketProcessParent> parent = SocketProcessParent::GetSingleton();
-    if (parent) {
-      (void)parent->SendRecheckDNS();
-    }
-  }
-
   nsresult rv;
   nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
   OriginAttributes attrs;
@@ -485,39 +479,28 @@ already_AddRefed<nsIChannel> NetworkConnectivityService::SetupIPCheckChannel(
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   nsCOMPtr<nsIChannel> channel;
-  if (XRE_IsSocketProcess()) {
-    rv = DNSUtils::CreateChannelHelper(uri, getter_AddRefs(channel));
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-    channel->SetLoadFlags(
-        nsIRequest::LOAD_BYPASS_CACHE |  // don't read from the cache
-        nsIRequest::INHIBIT_CACHING |    // don't write the response to cache
-        nsIRequest::LOAD_ANONYMOUS);
-  } else {
-    rv = NS_NewChannel(
-        getter_AddRefs(channel), uri, nsContentUtils::GetSystemPrincipal(),
-        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-        nsIContentPolicy::TYPE_OTHER,
-        nullptr,  // nsICookieJarSettings
-        nullptr,  // aPerformanceStorage
-        nullptr,  // aLoadGroup
-        nullptr,
-        nsIRequest::LOAD_BYPASS_CACHE |    // don't read from the cache
-            nsIRequest::INHIBIT_CACHING |  // don't write the response to cache
-            nsIRequest::LOAD_ANONYMOUS);   // prevent privacy leaks
-    NS_ENSURE_SUCCESS(rv, nullptr);
+  rv = NS_NewChannel(
+      getter_AddRefs(channel), uri, nsContentUtils::GetSystemPrincipal(),
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+      nsIContentPolicy::TYPE_OTHER,
+      nullptr,  // nsICookieJarSettings
+      nullptr,  // aPerformanceStorage
+      nullptr,  // aLoadGroup
+      nullptr,
+      nsIRequest::LOAD_BYPASS_CACHE |    // don't read from the cache
+          nsIRequest::INHIBIT_CACHING |  // don't write the response to cache
+          nsIRequest::LOAD_ANONYMOUS);   // prevent privacy leaks
+  NS_ENSURE_SUCCESS(rv, nullptr);
 
-    {
-      // Prevent HTTPS-Only Mode from upgrading the OCSP request.
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-      uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-      httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
-      loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+  {
+    // Prevent HTTPS-Only Mode from upgrading the OCSP request.
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
+    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
+    loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
 
-      // allow deprecated HTTP request from SystemPrincipal
-      loadInfo->SetAllowDeprecatedSystemRequests(true);
-    }
+    // allow deprecated HTTP request from SystemPrincipal
+    loadInfo->SetAllowDeprecatedSystemRequests(true);
   }
 
   rv = channel->SetTRRMode(nsIRequest::TRR_DISABLED_MODE);
@@ -541,13 +524,6 @@ NetworkConnectivityService::RecheckIPConnectivity() {
       Preferences::GetBool("network.connectivity-service.enabled", false);
   if (!enabled) {
     return NS_OK;
-  }
-
-  if (nsIOService::UseSocketProcess()) {
-    RefPtr<SocketProcessParent> parent = SocketProcessParent::GetSingleton();
-    if (parent) {
-      (void)parent->SendRecheckIPConnectivity();
-    }
   }
 
   if (xpc::AreNonLocalConnectionsDisabled() &&

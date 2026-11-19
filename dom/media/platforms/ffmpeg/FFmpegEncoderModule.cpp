@@ -36,6 +36,9 @@ template <int V>
   if (!XRE_IsGPUProcess())
 #  else
   if (!XRE_IsRDDProcess() &&
+#    ifdef MOZ_WIDGET_ANDROID
+      !XRE_IsGPUProcess() &&
+#    endif
       !(XRE_IsParentProcess() && PR_GetEnv("MOZ_RUN_GTEST")))
 #  endif
   {
@@ -126,6 +129,14 @@ EncodeSupportSet FFmpegEncoderModule<V>::Supports(
     }
   }
   auto support = SupportsCodec(aConfig.mCodec);
+#ifdef MOZ_WIDGET_ANDROID
+  // mediacodecenc doesn't expose MediaCodec temporal layering (ts-schema), and
+  // per-frame layer ids are only reported on Android 17+ by encoders supporting
+  // a webrtc.svc schema.
+  if (aConfig.mScalabilityMode != ScalabilityMode::None) {
+    support -= EncodeSupport::HardwareEncode;
+  }
+#endif
   if (aConfig.mHardwarePreference == HardwarePreference::RequireHardware &&
       !support.contains(EncodeSupport::HardwareEncode)) {
     return {};
@@ -150,28 +161,46 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
 #endif
   EncodeSupportSet supports;
 #ifdef MOZ_USE_HWDECODE
-  if (StaticPrefs::media_ffvpx_hw_enabled()) {
+  if (StaticPrefs::media_ffvpx_hw_enabled()
+#  ifdef MOZ_WIDGET_ANDROID
+      && !ShouldEncodeInGPUProcess()
+#  endif
+  ) {
     // We don't need to check the gfxVars again because we check them when we
     // populated sSupportedHWCodecs.
     auto hwCodecs = sSupportedHWCodecs.Lock();
     if (hwCodecs->Contains(static_cast<uint32_t>(id))) {
 #  ifdef MOZ_WIDGET_ANDROID
-      // Because we don't provide software implementations of H264 or HEVC on
-      // Android, we must use the platform software encoders even if true
-      // hardware encoding support is missing.
+      // We don't provide software implementations of H264 or HEVC on Android,
+      // so advertise whichever of MediaCodec's software and hardware encoders
+      // are available.
       switch (id) {
         case AV_CODEC_ID_H264:
-          supports += gfx::gfxVars::UseH264HwEncode()
-                          ? EncodeSupport::HardwareEncode
-                          : EncodeSupport::SoftwareEncode;
+          if (media::MCSInfo::SupportsSoftwareEncode(
+                  gfx::gfxVars::PlatformMediaCodecsSupported(),
+                  media::MediaCodec::H264)) {
+            supports += EncodeSupport::SoftwareEncode;
+          }
+          if (gfx::gfxVars::UseH264HwEncode()) {
+            supports += EncodeSupport::HardwareEncode;
+          }
           break;
         case AV_CODEC_ID_HEVC:
-          supports += gfx::gfxVars::UseHEVCHwEncode()
-                          ? EncodeSupport::HardwareEncode
-                          : EncodeSupport::SoftwareEncode;
+          if (media::MCSInfo::SupportsSoftwareEncode(
+                  gfx::gfxVars::PlatformMediaCodecsSupported(),
+                  media::MediaCodec::HEVC)) {
+            supports += EncodeSupport::SoftwareEncode;
+          }
+          if (gfx::gfxVars::UseHEVCHwEncode()) {
+            supports += EncodeSupport::HardwareEncode;
+          }
           break;
         default:
-          supports += EncodeSupport::HardwareEncode;
+          // FFmpegVideoEncoder::ShouldTryHardware will refuse to use
+          // MediaCodec for these codecs when minimal.
+          if (!StaticPrefs::media_ffvpx_hw_minimal()) {
+            supports += EncodeSupport::HardwareEncode;
+          }
           break;
       }
 #  else
@@ -180,12 +209,58 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
     }
   }
 #endif
+  // Pure software encoding is not permitted in the GPU process.
   if ((XRE_IsParentProcess() || XRE_IsContentProcess() ||
-       StaticPrefs::media_use_remote_encoder_video_software()) &&
+       (!XRE_IsGPUProcess() &&
+        StaticPrefs::media_use_remote_encoder_video_software())) &&
       FFmpegDataEncoder<V>::FindSoftwareEncoder(mLib, id)) {
     supports += EncodeSupport::SoftwareEncode;
   }
   return supports;
+}
+
+#ifdef MOZ_WIDGET_ANDROID
+template <int V>
+/* static */ bool FFmpegEncoderModule<V>::ShouldEncodeInGPUProcess() {
+  return XRE_IsRDDProcess() &&
+         StaticPrefs::media_use_remote_encoder_video_platform() &&
+         StaticPrefs::media_gpu_process_encoder() &&
+         gfx::gfxVars::GPUProcessEnabled();
+}
+#endif
+
+template <int V>
+RefPtr<PlatformEncoderModule::CreateEncoderPromise>
+FFmpegEncoderModule<V>::AsyncCreateEncoder(
+    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) {
+  if (!XRE_IsGPUProcess() || !aConfig.IsVideo()) {
+    return PlatformEncoderModule::AsyncCreateEncoder(aConfig, aTaskQueue);
+  }
+
+  // Ensure that encoding is exclusively performed using HW encoding in the GPU
+  // process. Since we cannot know if the encoder could create a HW (or on
+  // Android, MediaCodec) encoding context until it is initialized, we must do
+  // so now to allow PEMFactory to select an alternative encoder module, or the
+  // content process to select another process, if not available.
+  RefPtr<MediaDataEncoder> encoder = CreateVideoEncoder(aConfig, aTaskQueue);
+  if (!encoder) {
+    return CreateEncoderPromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                    "Error creating FFmpeg video encoder"_ns),
+        __func__);
+  }
+
+  return encoder->Init()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [encoder](MediaDataEncoder::InitPromise::ResolveOrRejectValue&& aValue) {
+        if (aValue.IsReject()) {
+          FFMPEGV_LOG("FFmpeg video encoder can't perform hw encoding, abort!");
+          (void)encoder->Shutdown();
+          return CreateEncoderPromise::CreateAndReject(aValue.RejectValue(),
+                                                       __func__);
+        }
+        return CreateEncoderPromise::CreateAndResolve(encoder, __func__);
+      });
 }
 
 template <int V>

@@ -352,7 +352,7 @@ void FontFaceImpl::DoLoad() {
 }
 
 void FontFaceImpl::SetStatus(FontFaceLoadStatus aStatus) {
-  gfxFontUtils::AssertSafeThreadOrServoFontMetricsLocked();
+  gfxFontUtils::AssertSafeThreadOrServoFFILocked();
 
   if (mStatus == aStatus) {
     return;

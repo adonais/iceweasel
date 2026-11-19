@@ -369,7 +369,7 @@ void FontFaceSet::InsertRuleFontFace(FontFace* aFontFace, StyleOrigin aOrigin) {
 void FontFaceSet::DidRefresh() { mImpl->CheckLoadingFinished(); }
 
 void FontFaceSet::DispatchLoadingEventAndReplaceReadyPromise() {
-  gfxFontUtils::AssertSafeThreadOrServoFontMetricsLocked();
+  gfxFontUtils::AssertSafeThreadOrServoFFILocked();
 
   if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
     // See comments in Gecko_GetFontMetrics.

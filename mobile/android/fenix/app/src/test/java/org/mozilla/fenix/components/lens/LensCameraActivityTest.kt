@@ -43,6 +43,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.BuildConfig
+import org.mozilla.fenix.GleanMetrics.GoogleLens
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.LensImageUploader
@@ -67,6 +68,7 @@ class LensCameraActivityTest {
     private lateinit var settings: Settings
     private val uploader: LensImageUploader = mockk()
     private val pickedImageUri = Uri.parse("content://test/picked_image.jpg")
+    private val capturedImageUri = Uri.parse("content://test/lens_capture.jpg")
     private val pickedImage = Bitmap.createBitmap(80, 40, Bitmap.Config.ARGB_8888)
 
     @Before
@@ -336,25 +338,67 @@ class LensCameraActivityTest {
     }
 
     @Test
-    fun `WHEN the fragment result carries a captured image URI THEN the activity returns RESULT_OK tagged as the camera source`() {
-        val controller = Robolectric.buildActivity(LensCameraActivity::class.java).setup()
-        val activity = controller.get()
-        val imageUri = Uri.parse("content://test/lens_capture.jpg")
+    fun `WHEN the camera returns a captured image THEN the camera gives way to the upload screen and the activity stays open`() {
+        coEvery { uploader.decodeImage(capturedImageUri) } returns pickedImage
+        coEvery { uploader.uploadImage(any(), any()) } coAnswers
+            {
+                CompletableDeferred<LensImageUploader.UploadResult>().await()
+            }
+        val activity = cameraActivityController().get()
 
-        activity.supportFragmentManager.setFragmentResult(
-            LensCameraFragment.RESULT_REQUEST_KEY,
-            Bundle().apply { putParcelable(LensCameraFragment.RESULT_IMAGE_URI, imageUri) },
-        )
-        activity.supportFragmentManager.executePendingTransactions()
+        returnCapturedImage(activity)
+
+        assertNull(activity.supportFragmentManager.findFragmentById(R.id.lens_fragment_container_view))
+        assertTrue(activity.findViewById<ComposeView>(R.id.lens_upload_overlay).isVisible)
+        assertFalse(activity.isFinishing)
+    }
+
+    @Test
+    fun `GIVEN a captured image WHEN the upload succeeds THEN the activity returns the Lens result URL and records a camera search`() {
+        coEvery { uploader.decodeImage(capturedImageUri) } returns pickedImage
+        coEvery { uploader.uploadImage(any(), any()) } returns
+            LensImageUploader.UploadResult(resultUrl = LENS_RESULT_URL, httpStatusCode = 200)
+        val activity = cameraActivityController(isPrivate = true).get()
+
+        returnCapturedImage(activity)
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         val shadow = Shadows.shadowOf(activity)
         assertEquals(Activity.RESULT_OK, shadow.resultCode)
-        assertEquals(imageUri, shadow.resultIntent.data)
-        assertEquals(
-            LensCameraActivity.IMAGE_SOURCE_CAMERA,
-            shadow.resultIntent.getStringExtra(LensCameraActivity.EXTRA_IMAGE_SOURCE),
-        )
+        assertEquals(LENS_RESULT_URL, shadow.resultIntent.getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL))
+        assertTrue(shadow.resultIntent.getBooleanExtra(LensCameraActivity.EXTRA_IS_PRIVATE, false))
+        assertNull(shadow.resultIntent.data)
         assertTrue(activity.isFinishing)
+        coVerify { uploader.uploadImage(pickedImage, isPrivate = true) }
+        val events = assertNotNull(GoogleLens.searchCompleted.testGetValue())
+        assertEquals(LensCameraActivity.IMAGE_SOURCE_CAMERA, events.single().extra?.get("source"))
+    }
+
+    @Test
+    fun `GIVEN a captured image WHEN the upload fails and Try again is tapped THEN the camera comes back and the capture is uploaded again as a camera search`() {
+        coEvery { uploader.decodeImage(capturedImageUri) } returns pickedImage
+        coEvery { uploader.uploadImage(any(), any()) } returns
+            LensImageUploader.UploadResult(resultUrl = null, httpStatusCode = 500) andThen
+            LensImageUploader.UploadResult(resultUrl = LENS_RESULT_URL, httpStatusCode = 200)
+        val activity = cameraActivityController().get()
+        returnCapturedImage(activity)
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        assertIs<LensCameraFragment>(
+            activity.supportFragmentManager.findFragmentById(R.id.lens_fragment_container_view)
+        )
+        assertFalse(activity.isFinishing)
+
+        assertNotNull(activity.uploadOverlay.failureSnackbarState?.action).onClick()
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue(activity.isFinishing)
+        coVerify(exactly = 2) { uploader.decodeImage(capturedImageUri) }
+        val events = assertNotNull(GoogleLens.searchCompleted.testGetValue())
+        assertEquals(
+            listOf(LensCameraActivity.IMAGE_SOURCE_CAMERA, LensCameraActivity.IMAGE_SOURCE_CAMERA),
+            events.map { it.extra?.get("source") },
+        )
     }
 
     @Test
@@ -421,7 +465,7 @@ class LensCameraActivityTest {
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         val snackbarState = assertNotNull(activity.uploadOverlay.failureSnackbarState)
-        assertEquals(testContext.getString(R.string.lens_camera_image_load_failed), snackbarState.message)
+        assertEquals(testContext.getString(R.string.lens_camera_image_load_failed_v2), snackbarState.message)
         assertNull(snackbarState.action)
         assertTrue(activity.uploadOverlay.failureSnackbar?.isShownOrQueued == true)
         assertFalse(activity.findViewById<ComposeView>(R.id.lens_upload_overlay).isVisible)
@@ -545,6 +589,14 @@ class LensCameraActivityTest {
             activity.supportFragmentManager.findFragmentById(R.id.lens_fragment_container_view)
         )
         assertFalse(activity.findViewById<ComposeView>(R.id.lens_upload_overlay).isVisible)
+    }
+
+    private fun returnCapturedImage(activity: LensCameraActivity) {
+        activity.supportFragmentManager.setFragmentResult(
+            LensCameraFragment.RESULT_REQUEST_KEY,
+            Bundle().apply { putParcelable(LensCameraFragment.RESULT_IMAGE_URI, capturedImageUri) },
+        )
+        activity.supportFragmentManager.executePendingTransactions()
     }
 
     private fun uploadNeverFinishes() {

@@ -14,7 +14,6 @@ support-files = [
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan && swgl", # Bug 1864085
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1864085
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1864085
 ]
 
 ["browser_domFS_statuspanel.js"]
@@ -25,6 +24,9 @@ support-files = [
   "fullscreen.html",
   "FullscreenFrame.sys.mjs",
 ]
+
+["browser_fullscreen_autohide_leave_window.js"]
+tags = "vertical-tabs"
 
 ["browser_fullscreen_autohide_toolbox_height.js"]
 
@@ -85,6 +87,9 @@ skip-if = [
 ]
 
 ["browser_fullscreen_warning.js"]
+skip-if = [
+  "macos_vm", # Bug 2084943 - fails only on the macOS tart VMs
+]
 support-files = ["fullscreen.html"]
 
 ["browser_fullscreen_window_focus.js"]

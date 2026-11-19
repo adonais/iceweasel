@@ -94,7 +94,7 @@ private fun DownloadsTopAppBarPreview() {
                     contentDescription = stringResource(R.string.content_description_menu),
                 ) {
                     Icon(
-                        painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                        painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.inverseOnSurface,
                     )

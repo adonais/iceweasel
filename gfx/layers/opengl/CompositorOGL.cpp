@@ -870,7 +870,7 @@ GLuint CompositorOGL::CreateTexture(const IntRect& aRect, bool aCopyFromSource,
 
       // RGBA
       size_t bufferSize = clampedRectWidth * clampedRectHeight * 4;
-      auto buf = MakeUnique<uint8_t[]>(bufferSize);
+      auto buf = std::make_unique<uint8_t[]>(bufferSize);
 
       mGLContext->fReadPixels(clampedRect.X(), clampedRect.Y(),
                               clampedRectWidth, clampedRectHeight,

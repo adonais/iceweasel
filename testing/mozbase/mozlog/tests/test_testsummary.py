@@ -284,7 +284,6 @@ def test_testsummary_strips_noise_fields():
         "extra",
         "tests",
         "js_source",
-        "minidump_path",
         "crashing_thread_stack",
         "stackwalk_stdout",
         "stackwalk_stderr",
@@ -295,6 +294,7 @@ def test_testsummary_strips_noise_fields():
     assert result["status"] == "FAIL"
     assert result["expected"] == "PASS"
     assert result["stack"] == "stack/trace\nlines"
+    assert result["minidump_path"] == "/tmp/foo.dmp"
 
 
 def test_testsummary_log_error_keeps_only_level_and_message():
@@ -428,6 +428,51 @@ def test_testsummary_crash_keeps_stack():
     assert result["stack"] == "frame1\nframe2"
     assert "thread" not in result
     assert "pid" not in result
+
+
+def test_testsummary_crash_keeps_the_minidump_path():
+    fmt = TestSummaryFormatter()
+    minidump_path = (
+        "/var/folders/ss/l_yg30rn4777np9phmknlrgw000014/T/xpc-vmxo7brg"
+        "/xpc-other-p9w3v69p/33672F0C-6F69-4499-AAE6-85A13340212B.dmp"
+    )
+    reason = (
+        "MOZ_ASSERT(staticPrefValue == preferenceValue) (Preference"
+        " 'dom.ipc.processLaunch.useMacPlists' got modified since"
+        " StaticPrefs::dom_ipc_processLaunch_useMacPlists_AtStartup was"
+        " initialized. Consider using an `always` mirror kind instead)"
+    )
+    record = {
+        "action": "crash",
+        "time": 1792157632661,
+        "thread": "MainThread",
+        "pid": 13322,
+        "source": "xpcshell",
+        "process": None,
+        "test": "extensions/pref/autoconfig/test/unit/test_autoconfig_profile_prefs.js",
+        "signature": "@ mozilla::StaticPrefs::InitOncePrefs()::$_13::operator()",
+        "minidump_path": minidump_path,
+        "stackwalk_stdout": "Operating system: Mac OS X\n...",
+        "stackwalk_stderr": None,
+        "stackwalk_retcode": 0,
+        "stackwalk_errors": [],
+        "crashing_thread_stack": [{"frame": 0}],
+        "process_type": "main",
+        "reason": reason,
+        "quiet": False,
+    }
+    result = json.loads(fmt(record))
+    assert result == {
+        "action": "crash",
+        "time": 1792157632661,
+        "process": None,
+        "test": "extensions/pref/autoconfig/test/unit/test_autoconfig_profile_prefs.js",
+        "signature": "@ mozilla::StaticPrefs::InitOncePrefs()::$_13::operator()",
+        "minidump_path": minidump_path,
+        "process_type": "main",
+        "reason": reason,
+        "quiet": False,
+    }
 
 
 def test_testsummary_ubsan_error_keeps_stack():

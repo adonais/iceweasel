@@ -43,8 +43,7 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
 
 #if defined(HAVE_RES_NINIT)
   if (!sThreadRes.get()) {
-    UniquePtr<struct __res_state> resState =
-        std::make_unique<struct __res_state>();
+    auto resState = std::make_unique<struct __res_state>();
     memset(resState.get(), 0, sizeof(struct __res_state));
     {
       StaticMutexAutoLock lock(sMutex);

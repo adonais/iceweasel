@@ -106,7 +106,7 @@ void SettingsChangeObserver::OnAntiTrackingSettingsChanged(
     }
 
     gSettingsChangedCallbacks =
-        MakeUnique<nsTArray<AntiTrackingSettingsChangedCallback>>();
+        std::make_unique<nsTArray<AntiTrackingSettingsChangedCallback>>();
 
     initialized = true;
   }

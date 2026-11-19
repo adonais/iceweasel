@@ -33,7 +33,7 @@ class CoalescedMouseMoveFlusher final : public CoalescedInputFlusher {
  public:
   explicit CoalescedMouseMoveFlusher(BrowserChild* aBrowserChild);
 
-  void WillRefresh(mozilla::TimeStamp aTime) override;
+  MOZ_CAN_RUN_SCRIPT void WillRefresh(mozilla::TimeStamp aTime) override;
 
  private:
   ~CoalescedMouseMoveFlusher() override;

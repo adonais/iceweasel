@@ -137,6 +137,11 @@ class FFmpegVideoDecoder<LIBAV_VER>
   static bool MediaCodecSupportsColorDepth(AVCodecID aCodec,
                                            const nsACString& aMimeType,
                                            gfx::ColorDepth aColorDepth);
+
+  // Whether or not platform decoding must be performed in the GPU process
+  // instead of this process. We only fallback to the RDD process if the GPU
+  // process is disabled.
+  static bool ShouldDecodeInGPUProcess();
 #endif
 
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION

@@ -535,12 +535,16 @@ table[bordercolor] > * > tr > th {
 
 /* inlines */
 
-q:before {
+q::before {
   content: open-quote;
 }
 
-q:after {
+q::after {
   content: close-quote;
+}
+
+q q {
+  quotes: match-parent;
 }
 
 b,
@@ -712,9 +716,13 @@ hr[size="1"] {
  * broken. But non-broken images/inputs will have a replaced box, and thus we
  * won't we don't generate the pseudo-element anyways. This prevents
  * unnecessary reframing when images become broken / non-broken. */
-input[type="image"]::before,
 img::before {
-  content: -moz-alt-content !important;
+  content: attr(alt, "") !important;
+  unicode-bidi: isolate;
+}
+
+input[type="image"]::before {
+  content: attr(alt, attr(value, env(-moz-submit-string))) !important;
   unicode-bidi: isolate;
 }
 
@@ -781,8 +789,7 @@ html:focus-visible {
  *
  * Exceptions:
  *
- *  * area declaration needs to be !important, see below / bug 135040.  That's
- *    hacky and broken.
+ *  * area declaration needs to be !important, see below.
  *
  *  * [hidden] is implemented as a presentation attribute to avoid a global
  *    selector in a UA sheet.
@@ -805,7 +812,7 @@ title {
 }
 
 area {
-  /* Don't give it frames other than its imageframe */
+  /* Never give it a frame, the image frame handles image maps */
   display: none !important;
 }
 

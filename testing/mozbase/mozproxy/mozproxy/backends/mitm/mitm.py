@@ -424,7 +424,7 @@ class Mitmproxy(Playback):
         # playback mode
         elif len(self.playback_files) > 0:
             if (
-                self.config.get("test_name") == "nav-bench"
+                self.config.get("test_name", "").startswith("nav-bench")
                 and self.config["playback_version"] == "12.2.1"
             ):
                 # Common dynamic / anti-bot / session params to strip from

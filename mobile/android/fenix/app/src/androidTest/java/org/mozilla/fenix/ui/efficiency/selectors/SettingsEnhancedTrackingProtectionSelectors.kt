@@ -156,4 +156,36 @@ object SettingsEnhancedTrackingProtectionSelectors : SelectorContainer {
             groups = setOf(Group.ETPSECTION),
             scrollDirection = SwipeDirection.UP,
         )
+
+    val CUSTOM_COOKIES_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preference_enhanced_tracking_protection_custom_cookies),
+            description = "Custom tracking protection Cookies option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val CUSTOM_TRACKING_CONTENT_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preference_enhanced_tracking_protection_custom_tracking_content),
+            description = "Custom tracking protection Tracking content option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val CUSTOM_CRYPTOMINERS_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preference_enhanced_tracking_protection_custom_cryptominers),
+            description = "Custom tracking protection Cryptominers option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val CUSTOM_KNOWN_FINGERPRINTERS_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preference_enhanced_tracking_protection_custom_known_fingerprinters),
+            description = "Custom tracking protection Known Fingerprinters option",
+            scrollDirection = SwipeDirection.UP,
+        )
 }

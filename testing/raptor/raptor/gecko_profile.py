@@ -9,6 +9,7 @@ Module to handle Gecko profiling.
 import os
 import tempfile
 import zipfile
+from pathlib import Path
 
 import mozfile
 from logger.logger import RaptorLogger
@@ -126,11 +127,11 @@ class GeckoProfile(RaptorProfiling):
                     continue
 
                 LOG.info(f"Symbolicating profile from {profile_path}")
-                # The archive deflates its entries already, so the symbolicated
-                # profile is written uncompressed: profiler-edit writes plain
-                # JSON for a ".json" output name whatever the input's
-                # compression. On failure we archive the profile as it came.
-                sym_path = os.path.join(sym_dir, f"{index}.json")
+                # profiler-edit picks the output format from the extension.
+                # JSLB is much smaller than JSON, and worth gzipping even
+                # though the archive deflates its entries again. On failure
+                # we archive the profile as it came.
+                sym_path = os.path.join(sym_dir, f"{index}.jslb.gz")
                 archived_path = (
                     sym_path
                     if self._symbolicate_profile(profile_path, sym_path)
@@ -146,12 +147,12 @@ class GeckoProfile(RaptorProfiling):
             # If any file name collides, all profiles include the page alias.
             # The file names are formatted as <ITERATION-TYPE>-<ITERATION>
             # to clearly indicate without redundant information.
-            # For example, "browser-cycle-1.json".
+            # For example, "browser-cycle-1.jslb.gz".
             archive_paths = _profile_archive_paths(
                 self.test_config,
                 [profile_info for profile_info, _ in symbolicated],
                 [
-                    ".json.gz" if archived_path.endswith(".gz") else ".json"
+                    "".join(Path(archived_path).suffixes)
                     for _, archived_path in symbolicated
                 ],
             )

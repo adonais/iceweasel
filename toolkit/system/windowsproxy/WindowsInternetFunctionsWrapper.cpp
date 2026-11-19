@@ -89,7 +89,7 @@ void WindowsInternetFunctionsWrapper::Init() {
           u"Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings"_ns,
           KeyMode::Notify);
   if (key) {
-    mKeyWatcher = MakeUnique<KeyWatcher>(
+    mKeyWatcher = std::make_unique<KeyWatcher>(
         std::move(key), GetCurrentSerialEventTarget(), [self = RefPtr{this}] {
           LOG(
               ("WindowsInternetFunctionsWrapper %p: registry change, "

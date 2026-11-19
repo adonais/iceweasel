@@ -186,7 +186,7 @@ void MemoryTelemetry::Poke() {
   // Even idle processes have some events, so we only want to create the timer
   // if there's been several events in the last small window.
   if (!mPokeWindow) {
-    mPokeWindow = MakeUnique<TimeStampWindow>();
+    mPokeWindow = std::make_unique<TimeStampWindow>();
   }
   mPokeWindow->push(now);
   if (mPokeWindow->numEvents() < kPokeWindowEvents) {

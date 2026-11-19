@@ -623,7 +623,9 @@ class MochitestServer:
         # care about races in xpcshell. So disable TSan for the server.
         env["TSAN_OPTIONS"] = "report_bugs=0"
 
-        # Don't use socket process for the xpcshell server.
+        # Trainhop runs this xpcshell against a Beta/Release libxul that can
+        # still launch the socket process.
+        # TODO: remove once Release no longer has the socket process (bug 2077172).
         env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
 
         if mozinfo.isWin:
@@ -1778,9 +1780,11 @@ class MochitestDesktop:
             )
 
             if options.testingModulesDir is not None:
-                manifestFile.write(
-                    f"resource testing-common file:///{options.testingModulesDir}\n"
-                )
+                modulesDir = options.testingModulesDir
+                if not modulesDir.startswith("/"):
+                    modulesDir = "/" + modulesDir
+                manifestFile.write(f"resource testing-common file://{modulesDir}\n")
+
         if options.store_chrome_manifest:
             shutil.copyfile(manifest, options.store_chrome_manifest)
         return manifest
@@ -3816,10 +3820,6 @@ toolbar#nav-bar {
             "http2": options.useHttp2Server,
             "inc_origin_init": os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1",
             "sessionHistoryInParent": True,
-            "socketprocess_e10s": self.extraPrefs.get("network.process.enabled", False),
-            "socketprocess_networking": self.extraPrefs.get(
-                "network.http.network_access_on_socket_process.enabled", False
-            ),
             "standalone": options.restartBetweenTests,
             "swgl": self.extraPrefs.get("gfx.webrender.software", False),
             "verify": options.verify,
@@ -4220,11 +4220,6 @@ toolbar#nav-bar {
                 self.log.info(
                     "runtests.py | Running with cross-origin iframes: {}".format(
                         mozinfo.info.get("xorigin", False)
-                    )
-                )
-                self.log.info(
-                    "runtests.py | Running with socketprocess_e10s: {}".format(
-                        mozinfo.info.get("socketprocess_e10s", False)
                     )
                 )
                 self.log.info(f"runtests.py | Running {scheme} tests: start.\n")

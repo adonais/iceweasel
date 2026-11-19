@@ -177,3 +177,284 @@ add_task(async function test_network_error_when_activating_offline() {
   await closePanel();
   cleanupService();
 });
+
+/**
+ * Tests that switching to offline mode while the VPN is on shows the network
+ * error, and that turning the VPN off afterwards clears it.
+ */
+add_task(async function test_network_error_work_offline_while_active() {
+  // The blocking alert is covered by browser_ipprotection_alert_manager.js.
+  const sandbox = sinon.createSandbox();
+  let showErrorPromptsStub = sandbox.stub(
+    IPProtectionAlertManager,
+    "showErrorPrompts"
+  );
+
+  setupService({
+    isReady: true,
+  });
+  IPProtectionService.updateState();
+  await waitForProxyState(IPPProxyStates.READY);
+
+  let content = await openPanel({
+    isReady: true,
+  });
+
+  content.statusCardEl.actionButtonEl.click();
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+
+  Services.io.offline = true;
+
+  await TestUtils.waitForCondition(
+    () => content.state.error === ERRORS.NETWORK,
+    "Panel should show network error after choosing Work Offline"
+  );
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ERROR,
+    "IPPProxyManager should move to ERROR when choosing Work Offline while active"
+  );
+  Assert.equal(
+    IPPProxyManager.errorType,
+    ERRORS.NETWORK,
+    "The proxy error should be a network error"
+  );
+  Assert.ok(
+    showErrorPromptsStub.calledOnce,
+    "The error alert should be requested"
+  );
+
+  await IPPProxyManager.stop();
+
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.READY,
+    "IPPProxyManager should be READY after stopping"
+  );
+  Assert.ok(!content.state.error, "Panel error should be cleared");
+
+  Services.io.offline = false;
+
+  await closePanel();
+  sandbox.restore();
+  cleanupService();
+});
+
+/**
+ * Brings the proxy up for an included site, then selects a tab showing url.
+ *
+ * @param {string} includedSite
+ * @param {string} url
+ * @returns {Promise<{principal: nsIPrincipal, tabs: Array}>}
+ */
+async function setupInclusionMode(includedSite, url) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", true]],
+  });
+
+  setupService({
+    isReady: true,
+  });
+
+  // The tab goes first: an inclusion brings the proxy up, and the included
+  // site would then load through it.
+  let tabs = [
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, includedSite),
+  ];
+
+  const principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      includedSite
+    );
+  IPPPermissionRules.setRule(principal, IPPPrincipalRules.INCLUDED);
+
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+  Assert.equal(
+    IPPProxyManager.mode,
+    IPPMode.MODE_INCLUSION,
+    "The proxy should be up for included sites only"
+  );
+
+  if (url !== includedSite) {
+    tabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, url));
+  }
+  return { principal, tabs };
+}
+
+async function cleanupInclusionMode(principal, tabs) {
+  await IPPProxyManager.stop();
+  Services.io.offline = false;
+
+  await closePanel();
+  for (let tab of tabs) {
+    BrowserTestUtils.removeTab(tab);
+  }
+  IPPPermissionRules.setRule(principal, IPPPrincipalRules.DEFAULT);
+  await waitForProxyState(IPPProxyStates.READY);
+  cleanupService();
+  await SpecialPowers.popPrefEnv();
+}
+
+/**
+ * Tests that switching to offline mode while on an included site, with the
+ * proxy only up for included sites, shows the network error.
+ */
+add_task(async function test_network_error_work_offline_inclusion_mode() {
+  // The blocking alert is covered by browser_ipprotection_alert_manager.js.
+  const sandbox = sinon.createSandbox();
+  let showErrorPromptsStub = sandbox.stub(
+    IPProtectionAlertManager,
+    "showErrorPrompts"
+  );
+
+  const includedSite = "https://example.com";
+  let { principal, tabs } = await setupInclusionMode(
+    includedSite,
+    includedSite
+  );
+  let content = await openPanel();
+
+  Services.io.offline = true;
+
+  await TestUtils.waitForCondition(
+    () => content.state.error === ERRORS.NETWORK,
+    "Panel should show network error after choosing Work Offline"
+  );
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ERROR,
+    "IPPProxyManager should move to ERROR when choosing Work Offline in inclusion mode"
+  );
+  Assert.equal(
+    IPPProxyManager.errorType,
+    ERRORS.NETWORK,
+    "The proxy error should be a network error"
+  );
+  Assert.ok(
+    showErrorPromptsStub.calledOnce,
+    "The error alert should be requested"
+  );
+
+  await cleanupInclusionMode(principal, tabs);
+  sandbox.restore();
+});
+
+/**
+ * Tests that switching to offline mode with the included site in a background
+ * tab shows the network error once that tab is selected.
+ */
+add_task(async function test_network_error_work_offline_background_tab() {
+  const sandbox = sinon.createSandbox();
+  let showErrorPromptsStub = sandbox.stub(
+    IPProtectionAlertManager,
+    "showErrorPrompts"
+  );
+
+  const includedSite = "https://example.com";
+  let { principal, tabs } = await setupInclusionMode(
+    includedSite,
+    "https://example.org"
+  );
+
+  Services.io.offline = true;
+
+  await waitForProxyState(IPPProxyStates.ERROR);
+  Assert.ok(
+    showErrorPromptsStub.notCalled,
+    "The error alert should not be requested while the included site is in the background"
+  );
+
+  let content = await openPanel();
+  Assert.ok(
+    !content.state.error,
+    "Panel should not show an error on a site that is not included"
+  );
+  await closePanel();
+
+  await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
+
+  content = await openPanel();
+  await TestUtils.waitForCondition(
+    () => content.state.error === ERRORS.NETWORK,
+    "Panel should show network error on the included site"
+  );
+
+  await cleanupInclusionMode(principal, tabs);
+  sandbox.restore();
+});
+
+/**
+ * Tests that the proxy for included sites comes back up after leaving
+ * offline mode.
+ */
+add_task(async function test_inclusion_mode_recovers_after_offline() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(IPProtectionAlertManager, "showErrorPrompts");
+
+  const includedSite = "https://example.com";
+  let { principal, tabs } = await setupInclusionMode(
+    includedSite,
+    includedSite
+  );
+  let content = await openPanel();
+
+  Services.io.offline = true;
+  await waitForProxyState(IPPProxyStates.ERROR);
+
+  Services.io.offline = false;
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+  Assert.equal(
+    IPPProxyManager.mode,
+    IPPMode.MODE_INCLUSION,
+    "The proxy should be back up for included sites"
+  );
+  Assert.ok(!content.state.error, "Panel error should be cleared");
+
+  await cleanupInclusionMode(principal, tabs);
+  sandbox.restore();
+});
+
+/**
+ * Tests that adding an inclusion while offline waits to bring the proxy up
+ * until going back online.
+ */
+add_task(async function test_add_inclusion_while_offline() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", true]],
+  });
+
+  setupService({
+    isReady: true,
+  });
+  IPProtectionService.updateState();
+  await waitForProxyState(IPPProxyStates.READY);
+
+  Services.io.offline = true;
+
+  const principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "https://example.com"
+    );
+  IPPPermissionRules.setRule(principal, IPPPrincipalRules.INCLUDED);
+
+  await TestUtils.waitForTick();
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.READY,
+    "The proxy should not start for included sites while offline"
+  );
+
+  Services.io.offline = false;
+
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+  Assert.equal(
+    IPPProxyManager.mode,
+    IPPMode.MODE_INCLUSION,
+    "The proxy should come up for included sites once back online"
+  );
+
+  IPPPermissionRules.setRule(principal, IPPPrincipalRules.DEFAULT);
+  await waitForProxyState(IPPProxyStates.READY);
+  cleanupService();
+  await SpecialPowers.popPrefEnv();
+});

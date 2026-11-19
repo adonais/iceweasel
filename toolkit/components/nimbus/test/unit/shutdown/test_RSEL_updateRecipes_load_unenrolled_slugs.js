@@ -4,12 +4,6 @@
 
 "use strict";
 
-add_setup(function () {
-  // We don't bother resetting these prefs after the test because there is a
-  // single test per-process.
-  NimbusTestUtils.enableNimbusEnrollments({ read: true, sync: true });
-});
-
 add_task(async function test() {
   const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest();
 

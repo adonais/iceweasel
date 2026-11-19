@@ -6,33 +6,35 @@ use super::{BreakpadProcessId, CrashGenerator};
 
 use anyhow::Result;
 use crash_helper_common::{
-    crash_annotations::CrashAnnotation, messages, ApplicationInfo, ExtraCrashData,
+    crash_annotations::CrashAnnotation, messages, ApplicationInfo, ExtraCrashData, RawProcessHandle,
 };
 use mozannotation_server::{AnnotationData, CAnnotation};
 use std::{
     convert::TryInto,
+    env,
     fs::{create_dir_all, File},
-    mem::{size_of, zeroed},
-    os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle},
+    mem::{size_of, zeroed, MaybeUninit},
+    os::windows::io::AsRawHandle,
     path::PathBuf,
     ptr::{null, null_mut},
 };
 use uuid::Uuid;
 use win32_process_mitigations::MitigationOptions;
 use windows_sys::Win32::{
-    Foundation::{FALSE, HANDLE},
+    Foundation::{GetLastError, FALSE, FILETIME, HANDLE},
     System::{
         Diagnostics::Debug::{
-            MiniDumpWithFullMemoryInfo, MiniDumpWithIndirectlyReferencedMemory,
-            MiniDumpWithProcessThreadData, MiniDumpWithUnloadedModules, MiniDumpWriteDump,
-            EXCEPTION_POINTERS, EXCEPTION_RECORD, MINIDUMP_EXCEPTION_INFORMATION, MINIDUMP_TYPE,
+            MiniDumpWithFullMemory, MiniDumpWithFullMemoryInfo, MiniDumpWithHandleData,
+            MiniDumpWithIndirectlyReferencedMemory, MiniDumpWithProcessThreadData,
+            MiniDumpWithUnloadedModules, MiniDumpWriteDump, EXCEPTION_POINTERS, EXCEPTION_RECORD,
+            MINIDUMP_EXCEPTION_INFORMATION, MINIDUMP_TYPE,
         },
         SystemInformation::{
-            VerSetConditionMask, VerifyVersionInfoW, OSVERSIONINFOEXW, VER_MAJORVERSION,
-            VER_MINORVERSION, VER_SERVICEPACKMAJOR, VER_SERVICEPACKMINOR,
+            GetSystemTimeAsFileTime, VerSetConditionMask, VerifyVersionInfoW, OSVERSIONINFOEXW,
+            VER_MAJORVERSION, VER_MINORVERSION, VER_SERVICEPACKMAJOR, VER_SERVICEPACKMINOR,
         },
         SystemServices::VER_GREATER_EQUAL,
-        Threading::{GetProcessId, GetThreadId},
+        Threading::{GetProcessTimes, OpenProcess, PROCESS_ALL_ACCESS},
     },
 };
 
@@ -48,18 +50,19 @@ impl CrashGenerator {
         let mut exception_records = message.exception_records;
         let exception_records_ptr = link_exception_records(&mut exception_records);
 
-        let handle = message.process.as_raw_handle() as HANDLE;
-        let pid = get_process_id(message.process.as_handle())?;
+        let pid = message.process_id;
         let mut exception_pointers = EXCEPTION_POINTERS {
             ExceptionRecord: exception_records_ptr,
             ContextRecord: &mut context as *mut _,
         };
 
         let exception = MINIDUMP_EXCEPTION_INFORMATION {
-            ThreadId: get_thread_id(message.thread.as_handle())?,
+            ThreadId: message.thread_id,
             ExceptionPointers: &mut exception_pointers,
             ClientPointers: FALSE,
         };
+
+        let handle = get_process_handle(pid)?;
 
         // SAFETY: `handle` is guaranteed to be a valid handle and so is
         // `minidump_file`. The remaining pointers going into this function are
@@ -86,19 +89,25 @@ impl CrashGenerator {
                 }],
             };
 
-            self.finalize_crash_report(
-                process_id.get_native(),
+            let error = self.finalize_crash_report(
+                handle,
                 Some(&extra_data),
                 &path,
                 super::ProcessType::Child,
             );
+            self.insert_crash_report(&process_id, &path, error);
         }
 
         Ok(())
     }
 
     fn get_minidump_type(&self) -> MINIDUMP_TYPE {
-        let mut minidump_type = MiniDumpWithFullMemoryInfo | MiniDumpWithUnloadedModules;
+        if env::var("MOZ_CRASHREPORTER_FULLDUMP").is_ok_and(|v| !v.is_empty()) {
+            return MiniDumpWithFullMemory;
+        }
+
+        let mut minidump_type =
+            MiniDumpWithFullMemoryInfo | MiniDumpWithUnloadedModules | MiniDumpWithHandleData;
         if mozbuild::config::NIGHTLY_BUILD {
             // This is Nightly only because this doubles the size of minidumps based
             // on the experimental data.
@@ -170,19 +179,16 @@ fn is_windows8_or_later() -> bool {
     }
 }
 
-fn get_process_id(handle: BorrowedHandle) -> Result<u32, ()> {
+fn get_process_handle(pid: u32) -> Result<HANDLE, ()> {
     // SAFETY: No pointers involved, worst case we get an error
-    match unsafe { GetProcessId(handle.as_raw_handle() as HANDLE) } {
-        0 => Err(()),
-        pid => Ok(pid),
-    }
-}
+    let handle = unsafe {
+        OpenProcess(PROCESS_ALL_ACCESS, /* bInheritHandle */ FALSE, pid)
+    };
 
-fn get_thread_id(handle: BorrowedHandle) -> Result<u32, ()> {
-    // SAFETY: No pointers involved, worst case we get an error
-    match unsafe { GetThreadId(handle.as_raw_handle() as HANDLE) } {
-        0 => Err(()),
-        tid => Ok(tid),
+    if handle.is_null() {
+        Err(())
+    } else {
+        Ok(handle)
     }
 }
 
@@ -211,4 +217,53 @@ pub(crate) fn create_platform_specific_annotations(
     } else {
         Ok(vec![])
     }
+}
+
+fn filetime_to_u64(ft: &FILETIME) -> u64 {
+    ((ft.dwHighDateTime as u64) << 32) + ft.dwLowDateTime as u64
+}
+
+pub(crate) fn process_uptime(handle: RawProcessHandle) -> f64 {
+    let mut creation_time = MaybeUninit::<FILETIME>::uninit();
+    let mut exit_time = MaybeUninit::<FILETIME>::uninit();
+    let mut kernel_time = MaybeUninit::<FILETIME>::uninit();
+    let mut user_time = MaybeUninit::<FILETIME>::uninit();
+
+    // SAFETY: All the pointers we pass to `GetProcessTimes()` point to
+    // stack-allocated structures and thus are valid. We assume the process
+    // creation time structure to be initialized only after having verified
+    // that the call was successful.
+    let creation_time = unsafe {
+        if GetProcessTimes(
+            handle,
+            creation_time.as_mut_ptr(),
+            exit_time.as_mut_ptr(),
+            kernel_time.as_mut_ptr(),
+            user_time.as_mut_ptr(),
+        ) != 0
+        {
+            creation_time.assume_init()
+        } else {
+            log::error!(
+                "Could not get process time stats, error: {:x}",
+                GetLastError()
+            );
+            return 0.0f64;
+        }
+    };
+
+    let mut current_time = MaybeUninit::<FILETIME>::uninit();
+
+    // SAFETY: The pointer we pass to `GetSystemTimeAsFileTime()` point to
+    // stack-allocated memory and thus are guaranteed to be valid. The call
+    // always populates the passed in structure so we can assume it has been
+    // properly initialized after the call.
+    let current_time = unsafe {
+        GetSystemTimeAsFileTime(current_time.as_mut_ptr());
+        current_time.assume_init()
+    };
+
+    let uptime =
+        filetime_to_u64(&current_time).saturating_sub(filetime_to_u64(&creation_time)) as f64;
+    uptime / 10_000_000.0 // 100-ns to seconds
 }

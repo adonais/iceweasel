@@ -4,7 +4,6 @@ run-if = [
 ]
 skip-if = [
   "os == 'win' && asan", # updater binary must be signed for these tests, but it isn't in this build config
-  "os == 'win' && ccov", # 1532801
   "os == 'win' && msix", # Updates are disabled for MSIX builds
   "os == 'win' && verify",
 ]
@@ -60,9 +59,15 @@ skip-if = [
 
 ["marAppApplyUpdateStageSuccess.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
+skip-if = [
+  "os == 'win' && ccov", # 1532801
+]
 
 ["marAppApplyUpdateSuccess.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
+skip-if = [
+  "os == 'win' && ccov", # 1532801
+]
 
 ["marAppInUseBackgroundTaskFailure_win.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.

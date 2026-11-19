@@ -67,7 +67,6 @@ object Constants {
             "uBlock Origin",
             "Privacy Badger",
             "Dark Reader",
-            "Bitwarden",
             "NoScript",
             "Search by Image",
             "ClearURLs",

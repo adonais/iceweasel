@@ -73,7 +73,7 @@ class IIRFilterNodeEngine final : public AudioNodeEngine {
       mIIRFilters.SetLength(aInput.ChannelCount());
       for (size_t i = 0; i < aInput.ChannelCount(); ++i) {
         mIIRFilters[i] =
-            MakeUnique<blink::IIRFilter>(&mFeedforward, &mFeedback);
+            std::make_unique<blink::IIRFilter>(&mFeedforward, &mFeedback);
       }
     }
 

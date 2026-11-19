@@ -463,10 +463,19 @@ bool NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj) {
   MOZ_ASSERT_IF(obj->is<ArrayObject>(),
                 obj->as<ArrayObject>().lengthIsWritable());
 
+  // We can't call Watchtower::watchFirstDenseElementAdd here because it can pop
+  // fuses, so fall back to the VM. This can only happen until the fuse is
+  // popped, which the VM does when it adds the element, so it's very rare in
+  // practice.
+  uint32_t oldCapacity = obj->getDenseCapacity();
+  if (MOZ_UNLIKELY(oldCapacity == 0 &&
+                   Watchtower::watchesFirstDenseElementAdd(obj))) {
+    return false;
+  }
+
   // growElements will report OOM also if the number of dense elements will
   // exceed MAX_DENSE_ELEMENTS_COUNT. See goodElementsAllocationAmount.
-  uint32_t oldCapacity = obj->getDenseCapacity();
-  if (MOZ_UNLIKELY(!obj->growElements(cx, oldCapacity + 1))) {
+  if (MOZ_UNLIKELY(!obj->growElementsNoWatchtowerCheck(cx, oldCapacity + 1))) {
     cx->recoverFromOutOfMemory();
     return false;
   }
@@ -490,7 +499,7 @@ void NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCapacity,
   uint32_t oldAllocated = ObjectSlots::allocCount(oldCapacity);
 
   if (newCapacity == 0 && uid == 0) {
-    if (gc::IsBufferAlloc(oldHeaderSlots)) {
+    if (gc::IsGCPointerBufferAlloc(oldHeaderSlots)) {
       gc::FreeBuffer(zone(), oldHeaderSlots);
     }
     // dictionarySlotSpan is initialized to the correct value by the callers.
@@ -883,6 +892,14 @@ bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
 }
 
 bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
+  if (getDenseCapacity() == 0) {
+    Watchtower::watchFirstDenseElementAdd(cx, this);
+  }
+  return growElementsNoWatchtowerCheck(cx, reqCapacity);
+}
+
+bool NativeObject::growElementsNoWatchtowerCheck(JSContext* cx,
+                                                 uint32_t reqCapacity) {
   MOZ_ASSERT(isExtensible());
   MOZ_ASSERT(canHaveNonEmptyElements());
 

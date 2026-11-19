@@ -36,7 +36,7 @@ namespace mozilla {
 #define AC_LOGV(message, ...) \
   AC_LOGV_BASE("AccessibleCaretEventHub (%p): " message, this, ##__VA_ARGS__);
 
-NS_IMPL_ISUPPORTS(AccessibleCaretEventHub, nsIReflowObserver, nsIScrollObserver,
+NS_IMPL_ISUPPORTS(AccessibleCaretEventHub, nsIScrollObserver,
                   nsISupportsWeakReference);
 
 // -----------------------------------------------------------------------------
@@ -350,7 +350,6 @@ void AccessibleCaretEventHub::Init() {
     return;
   }
 
-  docShell->AddWeakReflowObserver(this);
   docShell->AddWeakScrollObserver(this);
 
   mDocShell = static_cast<nsDocShell*>(docShell);
@@ -359,7 +358,7 @@ void AccessibleCaretEventHub::Init() {
     mLongTapInjectorTimer = NS_NewTimer();
   }
 
-  mManager = MakeUnique<AccessibleCaretManager>(mPresShell);
+  mManager = std::make_unique<AccessibleCaretManager>(mPresShell);
 
   mInitialized = true;
 }
@@ -370,7 +369,6 @@ void AccessibleCaretEventHub::Terminate() {
   }
 
   if (mDocShell) {
-    mDocShell->RemoveWeakReflowObserver(this);
     mDocShell->RemoveWeakScrollObserver(this);
   }
 
@@ -584,17 +582,15 @@ void AccessibleCaretEventHub::FireLongTap(nsITimer* aTimer,
   self->mState->OnLongTap(self, self->mPressPoint);
 }
 
-NS_IMETHODIMP
-AccessibleCaretEventHub::Reflow(DOMHighResTimeStamp aStart,
-                                DOMHighResTimeStamp aEnd) {
+void AccessibleCaretEventHub::DidReflow() {
   if (!mInitialized) {
-    return NS_OK;
+    return;
   }
 
   MOZ_ASSERT(mRefCnt.get() > 1, "Expect caller holds us as well!");
 
   if (mIsInReflowCallback) {
-    return NS_OK;
+    return;
   }
 
   AutoRestore<bool> autoRestoreIsInReflowCallback(mIsInReflowCallback);
@@ -602,14 +598,6 @@ AccessibleCaretEventHub::Reflow(DOMHighResTimeStamp aStart,
 
   AC_LOG("%s, state: %s", __FUNCTION__, mState->Name());
   mState->OnReflow(this);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-AccessibleCaretEventHub::ReflowInterruptible(DOMHighResTimeStamp aStart,
-                                             DOMHighResTimeStamp aEnd) {
-  // Defer the error checking to Reflow().
-  return Reflow(aStart, aEnd);
 }
 
 void AccessibleCaretEventHub::AsyncPanZoomStarted() {

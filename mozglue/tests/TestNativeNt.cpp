@@ -663,7 +663,7 @@ int wmain(int argc, wchar_t* argv[]) {
     return 1;
   }
 
-  auto verInfoBuf = MakeUnique<char[]>(verInfoSize);
+  auto verInfoBuf = std::make_unique<char[]>(verInfoSize);
 
   if (!::GetFileVersionInfoW(kKernel32, 0, verInfoSize, verInfoBuf.get())) {
     printf(

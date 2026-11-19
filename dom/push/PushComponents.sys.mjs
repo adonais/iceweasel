@@ -19,7 +19,7 @@ const lazy = {};
 ChromeUtils.defineLazyGetter(lazy, "PushService", function () {
   if (Services.prefs.getBoolPref("dom.push.enabled")) {
     const { PushService } = ChromeUtils.importESModule(
-      "resource://gre/modules/PushService.sys.mjs"
+      "moz-src:///dom/push/PushService.sys.mjs"
     );
     PushService.init();
     return PushService;

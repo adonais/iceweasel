@@ -53,12 +53,11 @@ nsWebPEncoder::SetColorSpaceInfo(imgIEncoder::CICPColourPrimaries,
 //    range 0-100. Higher values for X give better quality.
 
 NS_IMETHODIMP
-nsWebPEncoder::InitFromData(const uint8_t* aData,
-                            uint32_t aLength,  // (unused, req'd by JS)
+nsWebPEncoder::InitFromData(const uint8_t* aData, uint32_t /*aLength*/,
                             uint32_t aWidth, uint32_t aHeight, uint32_t aStride,
                             uint32_t aInputFormat,
                             const nsAString& aOutputOptions,
-                            const nsACString& aRandomizationKey) {
+                            const nsACString& /*aRandomizationKey*/) {
   NS_ENSURE_ARG(aData);
 
   // validate input format
@@ -186,9 +185,9 @@ nsWebPEncoder::InitFromData(const uint8_t* aData,
 //
 // See ::InitFromData for other info.
 NS_IMETHODIMP
-nsWebPEncoder::StartImageEncode(uint32_t aWidth, uint32_t aHeight,
-                                uint32_t aInputFormat,
-                                const nsAString& aOutputOptions) {
+nsWebPEncoder::StartImageEncode(uint32_t /*aWidth*/, uint32_t /*aHeight*/,
+                                uint32_t /*aInputFormat*/,
+                                const nsAString& /*aOutputOptions*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -209,11 +208,10 @@ nsWebPEncoder::GetImageBuffer(char** aOutputBuffer) {
 }
 
 NS_IMETHODIMP
-nsWebPEncoder::AddImageFrame(const uint8_t* aData,
-                             uint32_t aLength,  // (unused, req'd by JS)
-                             uint32_t aWidth, uint32_t aHeight,
-                             uint32_t aStride, uint32_t aInputFormat,
-                             const nsAString& aFrameOptions) {
+nsWebPEncoder::AddImageFrame(const uint8_t* /*aData*/, uint32_t /*aLength*/,
+                             uint32_t /*aWidth*/, uint32_t /*aHeight*/,
+                             uint32_t /*aStride*/, uint32_t /*aInputFormat*/,
+                             const nsAString& /*aFrameOptions*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -318,7 +316,7 @@ nsWebPEncoder::AsyncWait(nsIInputStreamCallback* aCallback, uint32_t aFlags,
 }
 
 NS_IMETHODIMP
-nsWebPEncoder::CloseWithStatus(nsresult aStatus) { return Close(); }
+nsWebPEncoder::CloseWithStatus(nsresult /*aStatus*/) { return Close(); }
 
 void nsWebPEncoder::NotifyListener() {
   // We might call this function on multiple threads (any threads that call

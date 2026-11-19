@@ -25,6 +25,7 @@
 #include "mozilla/dom/ContentChild.h"  // for launching RDD w/ ContentChild
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -75,6 +76,39 @@ static EnumeratedArray<RemoteMediaIn, StaticRefPtr<RemoteMediaManagerChild>,
     sRemoteMediaManagerChildForProcesses;
 
 static StaticAutoPtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
+
+// Only accessed from sRemoteMediaManagerChildThread. Settled when we are next
+// given an endpoint for the GPU process manager, or told that there is none.
+static StaticAutoPtr<MozPromiseHolder<GenericNonExclusivePromise>>
+    sGPUProcessRecreatedHolder;
+
+static RefPtr<GenericNonExclusivePromise> WaitForGPUProcessManager() {
+  auto* manager =
+      RemoteMediaManagerChild::GetSingleton(RemoteMediaIn::GpuProcess);
+  if (!manager) {
+    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE,
+                                                       __func__);
+  }
+  if (!manager->CanSend()) {
+    if (!sGPUProcessRecreatedHolder) {
+      sGPUProcessRecreatedHolder =
+          new MozPromiseHolder<GenericNonExclusivePromise>();
+    }
+    RefPtr<GenericNonExclusivePromise> p =
+        sGPUProcessRecreatedHolder->Ensure(__func__);
+    return p->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [](const GenericNonExclusivePromise::ResolveOrRejectValue& aValue)
+            -> RefPtr<GenericNonExclusivePromise> {
+          if (aValue.IsReject()) {
+            return GenericNonExclusivePromise::CreateAndReject(
+                aValue.RejectValue(), __func__);
+          }
+          return WaitForGPUProcessManager();
+        });
+  }
+  return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
+}
 
 // Per-location codec support state collected from the remote processes.
 // mSupported holds the snapshot delivered over IPC (Nothing until the remote
@@ -144,6 +178,18 @@ void RemoteMediaManagerChild::Init() {
 }
 
 /* static */
+bool RemoteMediaManagerChild::IsGpuProcessDecodingAvailable() {
+  return StaticPrefs::media_gpu_process_decoder() &&
+         gfx::gfxVars::GPUProcessEnabled();
+}
+
+/* static */
+bool RemoteMediaManagerChild::IsGpuProcessEncodingAvailable() {
+  return StaticPrefs::media_gpu_process_encoder() &&
+         gfx::gfxVars::GPUProcessEnabled();
+}
+
+/* static */
 void RemoteMediaManagerChild::InitForGPUProcess(
     Endpoint<PRemoteMediaManagerChild>&& aVideoManager) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -196,6 +242,11 @@ void RemoteMediaManagerChild::Shutdown() {
               p = nullptr;
             }
           }
+          if (sGPUProcessRecreatedHolder) {
+            sGPUProcessRecreatedHolder->RejectIfExists(NS_ERROR_ABORT,
+                                                       __func__);
+            sGPUProcessRecreatedHolder = nullptr;
+          }
           ipc::BackgroundChild::CloseForCurrentThread();
         })));
     childThread->Shutdown();
@@ -213,9 +264,11 @@ void RemoteMediaManagerChild::Shutdown() {
   }
   MOZ_ASSERT(managerThread->IsOnCurrentThread());
 
-  // If we've already been recreated, then run the task immediately.
+  // If we've already been recreated, then run the task immediately. If we were
+  // not given an endpoint, then the GPU process, or decoding in it, is disabled
+  // and we will not be recreated, so run the task immediately as well.
   auto* manager = GetSingleton(RemoteMediaIn::GpuProcess);
-  if (manager && manager != aDyingManager && manager->CanSend()) {
+  if (!manager || (manager != aDyingManager && manager->CanSend())) {
     RefPtr<Runnable> task = aTask;
     task->Run();
   } else {
@@ -256,6 +309,11 @@ nsCOMPtr<nsISerialEventTarget> RemoteMediaManagerChild::GetManagerThread() {
 media::DecodeSupportSet RemoteMediaManagerChild::Supports(
     RemoteMediaIn aLocation, const SupportDecoderParams& aParams,
     DecoderDoctorDiagnostics* aDiagnostics) {
+  if (aLocation == RemoteMediaIn::GpuProcess &&
+      !IsGpuProcessDecodingAvailable()) {
+    return {};
+  }
+
   Maybe<media::MediaCodecsSupported> supported;
   switch (aLocation) {
     case RemoteMediaIn::GpuProcess:
@@ -271,6 +329,17 @@ media::DecodeSupportSet RemoteMediaManagerChild::Supports(
     default:
       return {};
   }
+#ifdef MOZ_WIDGET_ANDROID
+  // The GPU process reports its support without a CDM. With a CDM, audio may
+  // be decoded there, and video may use the MediaCodec software decoders,
+  // since decoding always uses MediaCodec.
+  if (aLocation == RemoteMediaIn::GpuProcess && aParams.mCDM) {
+    // This matches what KeySystemConfig uses. If the GPU process is unable to
+    // create the decoder, creation fails since it cannot fallback to software
+    // decoding.
+    supported = Some(gfx::gfxVars::PlatformMediaCodecsSupported());
+  }
+#endif
   if (!supported) {
     // We haven't received the correct information yet from either the GPU or
     // the RDD process nor the Utility process.
@@ -363,6 +432,13 @@ RemoteMediaManagerChild::CreateAudioDecoder(const CreateDecoderParams& aParams,
         __func__);
   }
 
+  if (aLocation == RemoteMediaIn::GpuProcess && !aParams.mCDM) {
+    return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR,
+                    "GPU process requires a CDM to perform audio decoding"),
+        __func__);
+  }
+
   RefPtr<GenericNonExclusivePromise> launchPromise;
   if (StaticPrefs::media_utility_process_enabled() &&
       (aLocation == RemoteMediaIn::UtilityProcess_Generic ||
@@ -371,6 +447,8 @@ RemoteMediaManagerChild::CreateAudioDecoder(const CreateDecoderParams& aParams,
     launchPromise = LaunchUtilityProcessIfNeeded(aLocation);
   } else if (aLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM) {
     launchPromise = LaunchUtilityProcessIfNeeded(aLocation);
+  } else if (aLocation == RemoteMediaIn::GpuProcess) {
+    launchPromise = EnsureGPUProcessReady();
   } else if (StaticPrefs::media_allow_audio_non_utility() || aParams.mCDM) {
     launchPromise = LaunchRDDProcessIfNeeded();
   } else {
@@ -400,11 +478,9 @@ RemoteMediaManagerChild::CreateAudioDecoder(const CreateDecoderParams& aParams,
       [aLocation](nsresult aResult) {
         return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
             MediaResult(aResult,
-                        aLocation == RemoteMediaIn::GpuProcess
-                            ? "Couldn't start GPU process"
-                            : (aLocation == RemoteMediaIn::RddProcess
-                                   ? "Couldn't start RDD process"
-                                   : "Couldn't start Utility process")),
+                        nsPrintfCString("Couldn't create decoder in %s process",
+                                        RemoteMediaInToStr(aLocation))
+                            .get()),
             __func__);
       });
 }
@@ -450,7 +526,7 @@ RemoteMediaManagerChild::CreateVideoDecoder(const CreateDecoderParams& aParams,
 
   RefPtr<GenericNonExclusivePromise> p;
   if (aLocation == RemoteMediaIn::GpuProcess) {
-    p = GenericNonExclusivePromise::CreateAndResolve(true, __func__);
+    p = EnsureGPUProcessReady();
   } else if (aLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM) {
     p = LaunchUtilityProcessIfNeeded(aLocation);
   } else {
@@ -471,22 +547,21 @@ RemoteMediaManagerChild::CreateVideoDecoder(const CreateDecoderParams& aParams,
         }
         return Construct(std::move(child), std::move(params), aLocation);
       },
-      [](nsresult aResult) {
+      [aLocation](nsresult aResult) {
         return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-            MediaResult(aResult, "Couldn't start RDD process"), __func__);
+            MediaResult(aResult,
+                        nsPrintfCString("Couldn't create decoder in %s process",
+                                        RemoteMediaInToStr(aLocation))
+                            .get()),
+            __func__);
       });
 }
 
 /* static */
 RefPtr<RemoteCDMProxy> RemoteMediaManagerChild::CreateCDM(
-    RemoteMediaIn aLocation, dom::MediaKeys* aKeys, const nsAString& aKeySystem,
+    dom::MediaKeys* aKeys, const nsAString& aKeySystem,
     bool aDistinctiveIdentifierRequired, bool aPersistentStateRequired) {
   MOZ_ASSERT(NS_IsMainThread());
-
-  if (NS_WARN_IF(aLocation != RemoteMediaIn::RddProcess)) {
-    MOZ_ASSERT_UNREACHABLE("Cannot use CDM outside RDD process");
-    return nullptr;
-  }
 
   if (!StaticPrefs::media_ffvpx_hw_enabled()) {
     return nullptr;
@@ -498,15 +573,22 @@ RefPtr<RemoteCDMProxy> RemoteMediaManagerChild::CreateCDM(
     return nullptr;
   }
 
-  if (!GetTrackSupport(aLocation).contains(TrackSupport::DecodeVideo)) {
-    return nullptr;
+  // The CDM must be in the same process as the audio and video decoders which
+  // use it. We use the GPU process if enabled, and RemoteCDMProxy will fallback
+  // to the RDD process if it becomes disabled before it initializes.
+  RemoteMediaIn location;
+  RefPtr<GenericNonExclusivePromise> p;
+  if (IsGpuProcessDecodingAvailable()) {
+    location = RemoteMediaIn::GpuProcess;
+    p = EnsureGPUProcessReady();
+  } else {
+    location = RemoteMediaIn::RddProcess;
+    p = LaunchRDDProcessIfNeeded();
   }
-
-  RefPtr<GenericNonExclusivePromise> p = LaunchRDDProcessIfNeeded();
-  LOG("Create CDM in {}", RemoteMediaInToStr(aLocation));
+  LOG("Create CDM in {}", RemoteMediaInToStr(location));
 
   return MakeRefPtr<RemoteCDMProxy>(
-      std::move(managerThread), std::move(p), aLocation, aKeys, aKeySystem,
+      std::move(managerThread), std::move(p), location, aKeys, aKeySystem,
       aDistinctiveIdentifierRequired, aPersistentStateRequired);
 }
 
@@ -570,6 +652,11 @@ RemoteMediaManagerChild::Construct(RefPtr<RemoteDecoderChild>&& aChild,
 /* static */
 EncodeSupportSet RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
                                                    CodecType aCodec) {
+  if (aLocation == RemoteMediaIn::GpuProcess &&
+      !IsGpuProcessEncodingAvailable()) {
+    return EncodeSupportSet{};
+  }
+
   Maybe<media::MediaCodecsSupported> supported;
   switch (aLocation) {
     case RemoteMediaIn::GpuProcess:
@@ -676,7 +763,7 @@ RemoteMediaManagerChild::InitializeEncoder(
       location == RemoteMediaIn::UtilityProcess_WMF) {
     p = LaunchUtilityProcessIfNeeded(location);
   } else if (location == RemoteMediaIn::GpuProcess) {
-    p = GenericNonExclusivePromise::CreateAndResolve(true, __func__);
+    p = EnsureGPUProcessReady();
   } else if (location == RemoteMediaIn::RddProcess) {
     p = LaunchRDDProcessIfNeeded();
   } else {
@@ -715,7 +802,11 @@ RemoteMediaManagerChild::InitializeEncoder(
         LOG("Create encoder in {} failed, cannot start process",
             RemoteMediaInToStr(location));
         return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(
-            MediaResult(aResult, "Couldn't start encode process"), __func__);
+            MediaResult(aResult,
+                        nsPrintfCString("Couldn't create encoder in %s process",
+                                        RemoteMediaInToStr(location))
+                            .get()),
+            __func__);
       });
 }
 
@@ -801,6 +892,19 @@ RemoteMediaManagerChild::LaunchRDDProcessIfNeeded() {
 
   rddLaunchPromise = p;
   return rddLaunchPromise;
+}
+
+/* static */
+RefPtr<GenericNonExclusivePromise>
+RemoteMediaManagerChild::EnsureGPUProcessReady() {
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    // We got shutdown.
+    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                       __func__);
+  }
+
+  return InvokeAsync(managerThread, __func__, &WaitForGPUProcessManager);
 }
 
 /* static */
@@ -916,6 +1020,12 @@ TrackSupportSet RemoteMediaManagerChild::GetTrackSupport(
       if (StaticPrefs::media_use_remote_encoder_video_platform()) {
         s += TrackSupport::EncodeVideo;
       }
+#ifdef ANDROID
+      // Audio decoding is only permitted with a CDM, so that the CDM may be
+      // shared with the video decoder. RemoteDecoderModule::Supports enforces
+      // this.
+      s += TrackSupport::DecodeAudio;
+#endif
       break;
     case RemoteMediaIn::RddProcess:
       s = TrackSupport::DecodeVideo;
@@ -925,9 +1035,9 @@ TrackSupportSet RemoteMediaManagerChild::GetTrackSupport(
       }
 #ifndef ANDROID
       // Only use RDD for audio coding if we don't have the utility process. If
-      // we have a CDM (which we can't determine here) on Android, then we want
-      // to perform both the video and audio decoding in the RDD so that they
-      // can share the CDM instance.
+      // we have a CDM (which we can't determine here) on Android, and the GPU
+      // process is not available, then we want to perform both the video and
+      // audio decoding in the RDD so that they can share the CDM instance.
       if (!StaticPrefs::media_utility_process_enabled())
 #endif
       {
@@ -985,6 +1095,7 @@ void RemoteMediaManagerChild::OpenRemoteMediaManagerChildForProcess(
   MOZ_ASSERT(managerThread->IsOnCurrentThread());
 
   // For GPU process, make sure we always dispatch everything in sRecreateTasks,
+  // and resolve any pending promises waiting for the GPU process manager,
   // even if we fail since this is as close to being recreated as we will ever
   // be.
   auto runRecreateTasksIfNeeded = MakeScopeExit([aLocation]() {
@@ -993,6 +1104,10 @@ void RemoteMediaManagerChild::OpenRemoteMediaManagerChildForProcess(
         task->Run();
       }
       sRecreateTasks->Clear();
+
+      if (sGPUProcessRecreatedHolder) {
+        sGPUProcessRecreatedHolder->ResolveIfExists(true, __func__);
+      }
     }
   });
 
@@ -1286,6 +1401,9 @@ RemoteMediaManagerChild::EnsureCodecSupportFor(RemoteMediaIn aLocation,
       break;
     case RemoteMediaIn::RddProcess:
       launchPromise = LaunchRDDProcessIfNeeded();
+      break;
+    case RemoteMediaIn::GpuProcess:
+      launchPromise = EnsureGPUProcessReady();
       break;
     default:
       break;

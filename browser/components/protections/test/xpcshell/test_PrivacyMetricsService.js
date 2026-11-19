@@ -257,3 +257,38 @@ add_task(async function test_exactly_7_days_boundary() {
 
   await TrackingDBService.clearAll();
 });
+
+add_task(async function test_getTotalSince() {
+  info(
+    "Test that getTotalSince reports the total unless the callback was dropped"
+  );
+
+  const db = await Sqlite.openConnection({ path: DB_PATH });
+  const now = new Date().toISOString();
+  await db.execute(SQL.insertCustomTimeEvent, {
+    type: TrackingDBService.TRACKERS_ID,
+    count: 10,
+    timestamp: now,
+  });
+  await db.execute(SQL.insertCustomTimeEvent, {
+    type: TrackingDBService.FINGERPRINTERS_ID,
+    count: 3,
+    timestamp: now,
+  });
+  await db.close();
+
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  let droppedCalled = false;
+  const drop = PrivacyMetricsService.getTotalSince(weekAgo, () => {
+    droppedCalled = true;
+  });
+  drop();
+
+  const total = await new Promise(resolve =>
+    PrivacyMetricsService.getTotalSince(weekAgo, resolve)
+  );
+  Assert.equal(total, 13, "Should sum the events since the date");
+  Assert.ok(!droppedCalled, "A dropped callback should not be called");
+
+  await TrackingDBService.clearAll();
+});

@@ -94,7 +94,7 @@ tasks:
     android-x86_64-shippable/opt:
         description: "Android x86_64 Profile Generation"
         shipping-phase: build
-        shipping-product: fennec
+        shipping-product: firefox-android
         index:
             product: mobile
             job-name: android-x86_64-profile
@@ -138,7 +138,7 @@ tasks:
     android-aarch64-shippable/opt:
         description: "Android Aarch64 Profile Generation"
         shipping-phase: build
-        shipping-product: fennec
+        shipping-product: firefox-android
         index:
             product: mobile
             job-name: android-aarch64-profile
@@ -182,7 +182,7 @@ tasks:
     android-aarch64-nightlyasrelease/opt:
         description: "Android Aarch64 Nightly-As-Release Profile Generation"
         shipping-phase: build
-        shipping-product: fennec
+        shipping-product: firefox-android
         index:
             product: mobile
             job-name: android-aarch64-nightlyasrelease-profile
@@ -226,7 +226,7 @@ tasks:
     android-arm-shippable/opt:
         description: "Android ARM Profile Generation"
         shipping-phase: build
-        shipping-product: fennec
+        shipping-product: firefox-android
         index:
             product: mobile
             job-name: android-arm-profile

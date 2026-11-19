@@ -62,8 +62,7 @@ nsStructuredCloneContainer::InitFromJSVal(JS::Handle<JS::Value> aData,
 }
 
 NS_IMETHODIMP
-nsStructuredCloneContainer::InitFromBase64(const nsAString& aData,
-                                           uint32_t aFormatVersion) {
+nsStructuredCloneContainer::InitFromBase64(const nsAString& aData) {
   if (HasData()) {
     return NS_ERROR_FAILURE;
   }
@@ -74,8 +73,7 @@ nsStructuredCloneContainer::InitFromBase64(const nsAString& aData,
   nsresult rv = Base64Decode(data, binaryData);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!CopyExternalData(binaryData.get(), binaryData.Length(),
-                        aFormatVersion)) {
+  if (!CopyExternalData(binaryData.get(), binaryData.Length())) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -148,18 +146,6 @@ nsStructuredCloneContainer::GetSerializedNBytes(uint64_t* aSize) {
   }
 
   *aSize = BufferData().Size();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsStructuredCloneContainer::GetFormatVersion(uint32_t* aFormatVersion) {
-  NS_ENSURE_ARG_POINTER(aFormatVersion);
-
-  if (!HasData()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  *aFormatVersion = BufferVersion();
   return NS_OK;
 }
 

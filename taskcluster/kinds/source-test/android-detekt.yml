@@ -4,6 +4,7 @@
 ---
 task-defaults:
     description: 'Run detekt over all modules'
+    use-gradle-cache: true
     run:
         using: gradlew
         gradlew: ['detekt']

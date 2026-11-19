@@ -73,9 +73,6 @@ add_task(async function test_add_nat64_prefix_to_trr() {
   );
 
   let topic = "network:connectivity-service:dns-checks-complete";
-  if (mozinfo.socketprocess_networking) {
-    topic += "-from-socket-process";
-  }
   let notification = promiseObserverNotification(topic);
   Services.obs.notifyObservers(null, "network:captive-portal-connectivity");
   await notification;

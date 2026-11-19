@@ -80,6 +80,7 @@ typedef struct MediaCodecEncContext {
     AVBSFContext *bsf;
 
     int bitrate_mode;
+    int64_t configured_bit_rate;
     int level;
     int pts_as_dts;
     int extract_extradata;
@@ -519,6 +520,7 @@ static av_cold int mediacodec_init(AVCodecContext *avctx)
 
     if (avctx->bit_rate)
         ff_AMediaFormat_setInt32(format, "bitrate", avctx->bit_rate);
+    s->configured_bit_rate = avctx->bit_rate;
     if (s->bitrate_mode >= 0) {
         ff_AMediaFormat_setInt32(format, "bitrate-mode", s->bitrate_mode);
         if (s->bitrate_mode == BITRATE_MODE_CQ && avctx->global_quality > 0)
@@ -794,6 +796,7 @@ static int mediacodec_send(AVCodecContext *avctx,
     size_t input_size = 0;
     int64_t pts = 0;
     uint32_t flags = 0;
+    int request_sync, bitrate_changed;
     int ret;
 
     if (s->eof_sent)
@@ -828,13 +831,23 @@ static int mediacodec_send(AVCodecContext *avctx,
 
         pts = av_rescale_q(frame->pts, avctx->time_base, AV_TIME_BASE_Q);
 
-        if (frame->pict_type == AV_PICTURE_TYPE_I) {
+        request_sync = frame->pict_type == AV_PICTURE_TYPE_I;
+        bitrate_changed = avctx->bit_rate > 0 &&
+                          avctx->bit_rate != s->configured_bit_rate;
+
+        if (request_sync || bitrate_changed) {
             FFAMediaFormat *format = ff_AMediaFormat_new(s->use_ndk_codec);
             if (format) {
-                ff_AMediaFormat_setInt32(format, "request-sync", 0);
-                ff_AMediaCodec_setParameters(codec, format);
+                if (request_sync)
+                    ff_AMediaFormat_setInt32(format, "request-sync", 0);
+                if (bitrate_changed)
+                    ff_AMediaFormat_setInt32(format, "video-bitrate", avctx->bit_rate);
+                if (ff_AMediaCodec_setParameters(codec, format) < 0)
+                    av_log(avctx, AV_LOG_WARNING, "Failed to set codec parameters\n");
                 ff_AMediaFormat_delete(format);
             }
+            if (bitrate_changed)
+                s->configured_bit_rate = avctx->bit_rate;
         }
     } else {
         flags |= ff_AMediaCodec_getBufferFlagEndOfStream(codec);

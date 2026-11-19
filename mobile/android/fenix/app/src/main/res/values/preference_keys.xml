@@ -28,6 +28,7 @@
     <string name="pref_key_has_used_ip_protection" translatable="false">pref_key_has_used_vpn</string>
     <string name="pref_key_has_shown_ip_protection_prompt" translatable="false">pref_key_has_shown_ip_protection_prompt</string>
     <string name="pref_key_ip_protection_settings" translatable="false">pref_key_ip_protection_settings</string>
+    <string name="pref_key_ip_protection_last_data_limit_notice_cycle_reset_time" translatable="false">pref_key_ip_protection_last_data_limit_notice_cycle_reset_time</string>
     <string name="pref_key_enable_ip_protection_locations" translatable="false">pref_key_enable_ip_protection_locations</string>
     <string name="pref_key_data_choices" translatable="false">pref_key_data_choices</string>
     <string name="pref_key_delete_browsing_data" translatable="false">pref_key_delete_browsing_data</string>
@@ -150,6 +151,7 @@
     <string name="pref_key_account_category" translatable="false">pref_key_account_category</string>
     <string name="pref_key_sync_manage_account" translatable="false">pref_key_sync_manage_account</string>
     <string name="pref_key_sync_device_name" translatable="false">pref_key_sync_device_name</string>
+    <string name="pref_key_sync_enable_sync" translatable="false">pref_key_sync_enable_sync</string>
     <string name="pref_key_sync_now" translatable="false">pref_key_sync_now</string>
     <string name="pref_key_sync_history" translatable="false">pref_key_sync_history</string>
     <string name="pref_key_sync_bookmarks" translatable="false">pref_key_sync_bookmarks</string>
@@ -159,6 +161,8 @@
     <string name="pref_key_sync_sign_in" translatable="false">pref_key_sync_sign_in</string>
     <string name="pref_key_push_project_id" translatable="false">project_id</string>
     <string name="pref_key_search_widget_installed_2" translatable="false">pref_key_search_widget_installed_2</string>
+    <!-- Key for the IDs of the search widgets known to be on the home screen -->
+    <string name="pref_key_search_widget_ids" translatable="false">pref_key_search_widget_ids</string>
     <!-- Key for the app version code that last published the search bar widget previews -->
     <string name="pref_key_search_bar_widget_previews_version" translatable="false">pref_key_search_bar_widget_previews_version</string>
     <!-- Key for credit cards sync preference in the account settings fragment -->
@@ -211,6 +215,8 @@
     <string name="pref_key_toolbar_has_shown_tab_swipe_cfr">pref_key_has_shown_tab_swipe_cfr</string>
     <string name="pref_key_toolbar_expanded" translatable="false">pref_key_toolbar_expanded</string>
     <string name="pref_key_toolbar_focus_mode" translatable="false">pref_key_toolbar_focus_mode</string>
+    <string name="pref_key_homepage_search_location_header" translatable="false">pref_key_homepage_search_location_header</string>
+    <string name="pref_key_homepage_search_location_top" translatable="false">pref_key_homepage_search_location_top</string>
 
     <!-- Tab bar Settings -->
     <string name="pref_key_tab_bar_top" translatable="false">pref_key_tab_bar_top</string>
@@ -250,6 +256,8 @@
     <string name="pref_key_customization_category_toolbar_layout" translatable="false">pref_key_customization_category_toolbar_layout</string>
     <string name="pref_key_customization_category_app_icon" translatable="false">pref_key_customization_category_app_icon</string>
     <string name="pref_key_customization_category_toolbar_shortcut" translatable="false">pref_key_customization_category_toolbar_shortcut</string>
+    <string name="pref_key_customization_category_menu" translatable="false">pref_key_customization_category_menu</string>
+    <string name="pref_key_customize_menu" translatable="false">pref_key_customize_menu</string>
     <string name="pref_key_toolbar_simple_shortcut" translatable="false">pref_key_toolbar_simple_shortcut</string>
     <string name="pref_key_toolbar_simple_no_shortcut" translatable="false">pref_key_toolbar_simple_no_shortcut</string>
     <string name="pref_key_toolbar_expanded_shortcut" translatable="false">pref_key_toolbar_expanded_shortcut</string>
@@ -341,6 +349,12 @@
     <string name="pref_key_open_links_in_apps_always" translatable="false">pref_key_open_links_in_apps_always</string>
     <string name="pref_key_open_links_in_apps_ask" translatable="false">pref_key_open_links_in_apps_ask</string>
     <string name="pref_key_open_links_in_apps_never" translatable="false">pref_key_open_links_in_apps_never</string>
+    <string name="pref_key_media_category" translatable="false">pref_key_media_category</string>
+    <string name="pref_key_open_links_in_youtube_feature_enabled" translatable="false">pref_key_open_links_in_youtube_feature_enabled</string>
+    <string name="pref_key_open_links_in_youtube" translatable="false">pref_key_open_links_in_youtube</string>
+    <string name="pref_key_open_links_in_youtube_always" translatable="false">pref_key_open_links_in_youtube_always</string>
+    <string name="pref_key_open_links_in_youtube_ask" translatable="false">pref_key_open_links_in_youtube_ask</string>
+    <string name="pref_key_open_links_in_youtube_never" translatable="false">pref_key_open_links_in_youtube_never</string>
     <string name="pref_key_allow_screenshots_in_private_mode" translatable="false">pref_key_allow_screenshots_in_private_mode</string>
     <string name="pref_key_dev_debug_allow_capture_of_secure_screens" translatable="false">pref_key_dev_debug_allow_capture_of_secure_screens</string>
     <!-- This preference controls behaviour that corresponds to the private browsing mode lock feature being enabled. -->
@@ -395,6 +409,7 @@
 
     <!-- Top Sites -->
     <string name="default_top_sites_added" translatable="false">pref_key_pocket_top_site_added</string>
+    <string name="pref_key_removed_default_pinned_top_sites_migrated" translatable="false">pref_key_removed_default_pinned_top_sites_migrated</string>
     <string name="pref_key_top_sites_size" translatable="false">pref_key_top_sites_size</string>
     <!-- Maximum number of top sites to display -->
     <string name="pref_key_top_sites_max_limit" translatable="false">pref_key_top_sites_max_limit</string>
@@ -488,11 +503,12 @@
     <string name="pref_key_enable_homepage_searchbar2" translatable="false">pref_key_enable_homepage_searchbar2</string>
     <string name="pref_key_should_show_custom_tab_extensions" translatable="false">pref_key_should_show_custom_tab_extensions</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
-    <string name="pref_key_enable_universal_edge_to_edge_wallpapers" translatable="false">pref_key_enable_universal_edge_to_edge_wallpapers</string>
     <string name="pref_key_enable_ads_client_for_stories" translatable="false">pref_key_enable_ads_client_for_stories</string>
     <string name="pref_key_show_more_shortcuts" translatable="false">pref_key_show_more_shortcuts</string>
     <string name="pref_key_enable_homepage_weather_widget" translatable="false">pref_key_enable_homepage_weather_widget</string>
     <string name="pref_key_show_homepage_weather_widget" translatable="false">pref_key_show_homepage_weather_widget</string>
+    <string name="pref_key_enable_homepage_wrexham_widget" translatable="false">pref_key_enable_homepage_wrexham_widget</string>
+    <string name="pref_key_show_homepage_wrexham_widget" translatable="false">pref_key_show_homepage_wrexham_widget</string>
     <string name="pref_key_use_minimal_bottom_toolbar_while_entering_text" translatable="false">pref_key_use_minimal_bottom_toolbar_while_entering_text</string>"
     <string name="pref_key_enable_address_sync" translatable="false">pref_key_enable_address_sync</string>"
     <string name="pref_key_enable_lna_blocking_enabled" translatable="false">pref_key_enable_lna_blocking_enabled</string>
@@ -509,10 +525,10 @@
     <string name="pref_key_enable_homepage_trending_recent_search" translatable="false">pref_key_enable_homepage_trending_recent_search</string>
     <string name="pref_key_enable_oled_theme" translatable="false">pref_key_enable_oled_theme</string>
     <string name="pref_key_enable_pdf_tools" translatable="false">pref_key_enable_pdf_tools</string>
-    <string name="pref_key_enable_menu_customization" translatable="false">pref_key_enable_menu_customization</string>
     <string name="pref_key_enable_menu_customization_screen" translatable="false">pref_key_enable_menu_customization_screen</string>
     <string name="pref_key_enable_account_settings_new_ui" translatable="false">pref_key_enable_account_settings_new_ui</string>
     <string name="pref_key_enable_sync_decoupling" translatable="false">pref_key_enable_sync_decoupling</string>
+    <string name="pref_key_enable_qwac_ui" translatable="false">pref_key_enable_qwac_ui</string>
     <!-- Preference for the feature flag -->
     <string name="pref_key_enable_shake_to_summarize" translatable="false">pref_key_enable_shake_to_summarize</string>
     <string name="pref_key_enable_weekly_privacy_notification" translatable="false">pref_key_enable_weekly_privacy_notification</string>
@@ -624,11 +640,6 @@
     <!-- Tab reload cover -->
     <string name="pref_key_tab_reload_cover_enabled" translatable="false">pref_key_tab_reload_cover_enabled</string>
     <string name="pref_key_tab_reload_cover_scroll_aware_enabled" translatable="false">pref_key_tab_reload_cover_scroll_aware_enabled</string>
-
-    <!-- Private Mode and Stories Entry Point -->
-    <string name="pref_key_private_mode_and_stories_entry_point" translatable="false">pref_key_private_mode_and_stories_entry_point</string>
-    <string name="pref_key_news_button_foreground_count" translatable="false">pref_key_news_button_foreground_count</string>
-    <string name="pref_key_news_button_animation_last_shown" translatable="false">pref_key_news_button_animation_last_shown</string>
 
     <!-- Tab Groups -->
     <string name="pref_key_tab_groups" translatable="false">pref_key_tab_groups_feature</string>

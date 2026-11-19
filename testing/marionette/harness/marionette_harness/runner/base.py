@@ -1218,18 +1218,22 @@ class BaseMarionetteTestRunner:
             random.shuffle(tests)
 
         current_group = None
-        for test in tests:
-            group = test.get("group")
-            if group:
-                group = self._fix_test_path(group)
-            if group != current_group:
-                if current_group is not None:
-                    self.logger.group_end(name=current_group)
-                current_group = group
-                self.logger.group_start(name=current_group)
-            self.run_test(test["filepath"], test["expected"], group=group)
-            if self.record_crash():
-                break
+        try:
+            for test in tests:
+                group = test.get("group")
+                if group:
+                    group = self._fix_test_path(group)
+                if group != current_group:
+                    if current_group is not None:
+                        self.logger.group_end(name=current_group)
+                    current_group = group
+                    self.logger.group_start(name=current_group)
+                self.marionette.test_group = group
+                self.run_test(test["filepath"], test["expected"], group=group)
+                if self.record_crash():
+                    break
+        finally:
+            self.marionette.test_group = None
         if current_group is not None:
             self.logger.group_end(name=current_group)
 

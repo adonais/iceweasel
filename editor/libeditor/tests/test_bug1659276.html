@@ -53,14 +53,16 @@
 </body>
 
 <script>
-document.designMode="on";
-while (window.find("Lorem")) {
-  document.execCommand("BackColor", 0, 'pink');
-}
-document.designMode="off";
-scroll(0,0);
 SimpleTest.waitForExplicitFinish();
 SimpleTest.waitForFocus(async () => {
+  document.designMode="on";
+  while (window.find("Lorem")) {
+    // window.find() scrolls to the match in a later task.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    document.execCommand("BackColor", 0, 'pink');
+  }
+  document.designMode="off";
+  scroll(0,0);
   function waitForTickOfRefeshDriver() {
     function awaitOneRefresh() {
       return new Promise(function(aResolve) {

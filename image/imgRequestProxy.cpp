@@ -380,10 +380,12 @@ imgRequestProxy::GetName(nsACString& aName) {
 }
 
 NS_IMETHODIMP
-imgRequestProxy::IsPending(bool* _retval) { return NS_ERROR_NOT_IMPLEMENTED; }
+imgRequestProxy::IsPending(bool* /*_retval*/) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
 
 NS_IMETHODIMP
-imgRequestProxy::GetStatus(nsresult* aStatus) {
+imgRequestProxy::GetStatus(nsresult* /*aStatus*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -1223,7 +1225,7 @@ imgRequestProxyStatic::imgRequestProxyStatic(mozilla::image::Image* aImage,
     : mImagePrincipal(aImagePrincipal),
       mTriggeringPrincipal(aTriggeringPrincipal),
       mHadCrossOriginRedirects(aHadCrossOriginRedirects) {
-  mBehaviour = mozilla::MakeUnique<StaticBehaviour>(aImage);
+  mBehaviour = std::make_unique<StaticBehaviour>(aImage);
 }
 
 NS_IMETHODIMP

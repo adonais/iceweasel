@@ -37,7 +37,7 @@ internal data class LensUploadVisual(
     val backdrop: ImageBitmap,
 )
 
-/** State of a photo picker upload run by [LensUploadViewModel]. */
+/** State of an upload run by [LensUploadViewModel]. */
 internal sealed interface LensUploadState {
     /** No upload is running; the camera is shown. */
     data object Idle : LensUploadState
@@ -66,19 +66,21 @@ internal sealed interface LensUploadState {
      * The upload produced no Lens result.
      *
      * @property reason Which step failed, so the user can be told whether to pick another image or try again.
-     * @property imageUri The photo picker image that failed, so the upload can be retried.
+     * @property imageUri The image that failed, so the upload can be retried.
      * @property isPrivate The browsing mode the image was uploaded in.
+     * @property source Upload method the image came from, so a retry is attributed the same way.
      */
     data class Failed(
         val reason: LensUploadFailure,
         val imageUri: Uri,
         val isPrivate: Boolean,
+        val source: String,
     ) : LensUploadState
 }
 
-/** Why a photo picker upload produced no Lens result. */
+/** Why an upload produced no Lens result. */
 internal enum class LensUploadFailure {
-    /** The picked image couldn't be read or decoded, so nothing was sent to Lens. */
+    /** The image couldn't be read or decoded, so nothing was sent to Lens. */
     IMAGE_LOAD,
 
     /** The upload didn't reach Lens, or Lens answered without a result. */
@@ -90,8 +92,8 @@ internal val LensUploadState.coversCamera: Boolean
     get() = this is LensUploadState.Loading || this is LensUploadState.Succeeded
 
 /**
- * Uploads a photo picker image to Google Lens for [LensCameraActivity], keeping the upload and the decoded image across
- * configuration changes.
+ * Uploads a camera capture or photo picker image to Google Lens for [LensCameraActivity], keeping the upload and the
+ * decoded image across configuration changes.
  *
  * A [ViewModel] rather than a lib-state Store: the upload needs a scope that survives recreation and is cancelled once
  * the activity finishes. [viewModelScope] is that scope, while `StoreProvider.activityStore` retains a Store but gives
@@ -118,13 +120,14 @@ internal class LensUploadViewModel(
     /**
      * Uploads the image at [imageUri], replacing any upload already running.
      *
-     * @param imageUri The photo picker image to upload.
+     * @param imageUri The image to upload.
      * @param isPrivate Whether the upload runs in the private cookie context.
+     * @param source Upload method the image came from, recorded as telemetry.
      */
-    fun start(imageUri: Uri, isPrivate: Boolean) {
+    fun start(imageUri: Uri, isPrivate: Boolean, source: String) {
         uploadJob?.cancel()
         _state.value = LensUploadState.Loading(visual = null)
-        uploadJob = viewModelScope.launch(mainDispatcher) { _state.value = upload(imageUri, isPrivate) }
+        uploadJob = viewModelScope.launch(mainDispatcher) { _state.value = upload(imageUri, isPrivate, source) }
     }
 
     /**
@@ -147,10 +150,10 @@ internal class LensUploadViewModel(
         }
     }
 
-    private suspend fun upload(imageUri: Uri, isPrivate: Boolean): LensUploadState {
+    private suspend fun upload(imageUri: Uri, isPrivate: Boolean, source: String): LensUploadState {
         var visual: LensUploadVisual? = null
         val resultUrl =
-            runLensUpload(source = LensCameraActivity.IMAGE_SOURCE_PHOTO_PICKER) {
+            runLensUpload(source = source) {
                     uploader.decodeImage(imageUri)?.let { image ->
                         visual = withContext(backgroundDispatcher) { image.toUploadVisual() }
                         _state.value = LensUploadState.Loading(visual)
@@ -162,8 +165,8 @@ internal class LensUploadViewModel(
         // The visual is only set once the image has been decoded, so without one the image itself was the problem.
         val shownVisual = visual
         return when {
-            shownVisual == null -> LensUploadState.Failed(LensUploadFailure.IMAGE_LOAD, imageUri, isPrivate)
-            resultUrl == null -> LensUploadState.Failed(LensUploadFailure.UPLOAD, imageUri, isPrivate)
+            shownVisual == null -> LensUploadState.Failed(LensUploadFailure.IMAGE_LOAD, imageUri, isPrivate, source)
+            resultUrl == null -> LensUploadState.Failed(LensUploadFailure.UPLOAD, imageUri, isPrivate, source)
             else -> LensUploadState.Succeeded(resultUrl, isPrivate, shownVisual)
         }
     }

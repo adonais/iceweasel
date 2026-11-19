@@ -90,6 +90,7 @@ add_setup(async function () {
   ]);
   registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();
+    UrlbarUtils._backspaceBlocks.clear();
   });
 });
 

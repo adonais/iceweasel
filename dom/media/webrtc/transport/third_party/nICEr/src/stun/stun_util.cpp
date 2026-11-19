@@ -158,7 +158,6 @@ nr_stun_msg_type(int type)
          ret = "BINDING-ERROR-RESPONSE";
          break;
 
-#ifdef USE_TURN
     case NR_STUN_MSG_ALLOCATE_REQUEST:
          ret = "ALLOCATE-REQUEST";
          break;
@@ -192,7 +191,6 @@ nr_stun_msg_type(int type)
     case NR_STUN_MSG_PERMISSION_ERROR_RESPONSE:
          ret = "PERMISSION-ERROR-RESPONSE";
          break;
-#endif /* USE_TURN */
 
     default:
          /* ret remains 0 */

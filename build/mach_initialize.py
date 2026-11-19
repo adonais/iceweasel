@@ -144,7 +144,12 @@ def initialize(topsrcdir, args=()):
         )
     ]
 
-    from mach.util import get_state_dir, get_virtualenv_base_dir, setenv
+    from mach.util import (
+        get_state_dir,
+        get_virtualenv_base_dir,
+        resource_marker,
+        setenv,
+    )
 
     state_dir = _create_state_dir()
 
@@ -160,11 +165,12 @@ def initialize(topsrcdir, args=()):
         quiet = False
 
     # normpath state_dir to normalize msys-style slashes.
-    _activate_python_environment(
-        topsrcdir,
-        lambda: os.path.normpath(get_state_dir(True, topsrcdir=topsrcdir)),
-        quiet=quiet,
-    )
+    with resource_marker("Mach", "activate mach site"):
+        _activate_python_environment(
+            topsrcdir,
+            lambda: os.path.normpath(get_state_dir(True, topsrcdir=topsrcdir)),
+            quiet=quiet,
+        )
     _maybe_activate_mozillabuild_environment()
 
     from concurrent.futures import ThreadPoolExecutor
@@ -453,7 +459,8 @@ def initialize(topsrcdir, args=()):
             quiet=quiet,
         )
 
-        command_site_manager.activate()
+        with resource_marker("Mach", f"activate {site_name} site"):
+            command_site_manager.activate()
 
     for category, meta in CATEGORIES.items():
         driver.define_category(category, meta["short"], meta["long"], meta["priority"])
@@ -498,9 +505,10 @@ def initialize(topsrcdir, args=()):
         }
 
     driver.command_site_manager = command_site_manager
-    load_commands_from_spec(
-        command_modules_to_load, topsrcdir, missing_ok=missing_ok_future.result()
-    )
+    with resource_marker("Mach", "load commands"):
+        load_commands_from_spec(
+            command_modules_to_load, topsrcdir, missing_ok=missing_ok_future.result()
+        )
 
     return driver
 

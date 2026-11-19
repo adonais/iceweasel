@@ -69,7 +69,7 @@ bool GetMultiInstanceLockFileName(const char* nameToken,
   // We need to make a copy of the hash before we modify updateDir to get the
   // root update dir.
   size_t hashSize = wcslen(hashPtr) + 1;
-  mozilla::UniquePtr<wchar_t[]> hash = mozilla::MakeUnique<wchar_t[]>(hashSize);
+  auto hash = std::make_unique<wchar_t[]>(hashSize);
   errno_t error = wcscpy_s(hash.get(), hashSize, hashPtr);
   if (error != 0) {
     return false;
@@ -176,10 +176,9 @@ void ReleaseMultiInstanceLock(MultiInstLockHandle lock) {
       // hang around if any of this fails (which can happen if for example we're
       // on a system where /proc/self/fd does not exist); this is a zero-byte
       // file in the tmp directory after all.
-      UniquePtr<NS_tchar[]> linkPath = MakeUnique<NS_tchar[]>(MAXPATHLEN + 1);
+      auto linkPath = std::make_unique<NS_tchar[]>(MAXPATHLEN + 1);
       NS_tsnprintf(linkPath.get(), MAXPATHLEN + 1, "/proc/self/fd/%d", lock);
-      UniquePtr<NS_tchar[]> lockFilePath =
-          MakeUnique<NS_tchar[]>(MAXPATHLEN + 1);
+      auto lockFilePath = std::make_unique<NS_tchar[]>(MAXPATHLEN + 1);
       if (::readlink(linkPath.get(), lockFilePath.get(), MAXPATHLEN + 1) !=
           -1) {
         ::unlink(lockFilePath.get());

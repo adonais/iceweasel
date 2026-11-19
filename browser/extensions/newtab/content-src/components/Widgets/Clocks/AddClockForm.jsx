@@ -26,6 +26,32 @@ import { useCuratedCityNames } from "./useCuratedCityNames";
 const MAX_NICKNAME_LENGTH = 11;
 const MAX_CITY_LENGTH = 32;
 
+// moz-input-search doesn't support <datalist>, so the suggestions are a bespoke listbox and need their own keyboard navigation
+function handleListboxArrowKeys(event) {
+  const listbox = event.currentTarget.querySelector('[role="listbox"]');
+  if (!listbox || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) {
+    return;
+  }
+  const options = [...listbox.querySelectorAll('[role="option"]')];
+  const index = options.indexOf(event.target);
+  let next = null;
+  if (event.key === "ArrowDown") {
+    // Wrap from the last option back to the first.
+    next = options[index + 1] ?? options[0];
+  } else if (index === 0) {
+    const field = event.currentTarget.querySelector("moz-input-search");
+    next = field?.inputEl ?? field;
+  } else if (index > 0) {
+    next = options[index - 1];
+  }
+  // On an option, always prevent the default so the page never scrolls, even
+  // if focus has nowhere to move.
+  if (next || index >= 0) {
+    event.preventDefault();
+  }
+  next?.focus();
+}
+
 /**
  * Add/edit form for a single clock. Owns its own form state — the parent
  * only knows whether the form is open (mount/unmount toggle), the clock
@@ -68,6 +94,9 @@ export function AddClockForm({
   const [customCity, setCustomCity] = useState("");
   const [customZone, setCustomZone] = useState("");
   const [customZoneQuery, setCustomZoneQuery] = useState("");
+  // Hides the results when focus leaves the field and its list; typing shows
+  // them again.
+  const [resultsOpen, setResultsOpen] = useState(true);
 
   const searchInputRef = useRef(null);
   const customCityRef = useRef(null);
@@ -230,6 +259,13 @@ export function AddClockForm({
   const handleZoneInput = useCallback(value => {
     setCustomZoneQuery(value);
     setCustomZone("");
+    setResultsOpen(true);
+  }, []);
+
+  const closeResultsOnFocusOut = useCallback(e => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setResultsOpen(false);
+    }
   }, []);
 
   const handleZoneSelect = useCallback((timeZone, label) => {
@@ -264,6 +300,9 @@ export function AddClockForm({
     initialClock,
     onSave,
   ]);
+
+  const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+  const backIconSrc = `chrome://global/skin/icons/arrow-${isRTL ? "right" : "left"}.svg`;
 
   return (
     <form
@@ -311,7 +350,11 @@ export function AddClockForm({
               setCustomCity(e.target.value.slice(0, MAX_CITY_LENGTH))
             }
           />
-          <div className="clocks-location-wrapper">
+          <div
+            className="clocks-location-wrapper"
+            onKeyDown={handleListboxArrowKeys}
+            onBlur={closeResultsOnFocusOut}
+          >
             {/* Results are a reachable listbox, not a combobox popup:
                 moz-input-search can't forward combobox ARIA to its input. */}
             <moz-input-search
@@ -321,7 +364,7 @@ export function AddClockForm({
               value={customZoneQuery}
               onInput={e => handleZoneInput(e.target.value)}
             />
-            {showCustomZoneDropdown && (
+            {showCustomZoneDropdown && resultsOpen && (
               <div
                 id="clocks-custom-zone-results"
                 className="clocks-search-results"
@@ -344,7 +387,7 @@ export function AddClockForm({
                       }}
                       role="option"
                       aria-selected={result.timeZone === customZone}
-                      tabIndex={0}
+                      tabIndex={-1}
                     >
                       <span className="clocks-search-result-city" dir="auto">
                         {result.city}
@@ -391,89 +434,107 @@ export function AddClockForm({
         </>
       ) : (
         <>
-          <div className="clocks-location-wrapper">
-            {/* Reachable listbox, not a combobox popup (see custom-zone note). */}
-            <moz-input-search
-              className="clocks-search-location-input"
-              data-l10n-id="newtab-clock-widget-search-location-input"
-              id="clocks-location-input"
-              ref={searchInputRef}
-              value={searchQuery}
-              onInput={e => {
-                setSearchQuery(e.target.value);
-                setSelectedTimeZone("");
-                setSelectedCity("");
-                setSelectedCityId("");
-              }}
+          <div className="clocks-search-header">
+            <moz-button
+              className="clocks-search-back"
+              type="icon ghost"
+              size="small"
+              iconSrc={backIconSrc}
+              data-l10n-id="newtab-clock-widget-search-back-button"
+              onClick={onCancel}
             />
-            {showLocationDropdown && (
-              <div
-                id="clocks-search-results"
-                className="clocks-search-results"
-                role="listbox"
-                data-l10n-id="newtab-clock-widget-search-results"
-              >
-                {filteredResults.map((result, index) => (
-                  <div
-                    id={`clocks-result-${index}`}
-                    className="clocks-search-result"
-                    key={`${result.timeZone}-${result.city}`}
-                    onClick={() =>
-                      handleSelectLocation(
-                        result.timeZone,
-                        result.city,
-                        result.cityId
-                      )
-                    }
-                    onKeyDown={e => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
+            <div
+              className="clocks-location-wrapper"
+              onKeyDown={handleListboxArrowKeys}
+              onBlur={closeResultsOnFocusOut}
+            >
+              {/* Reachable listbox, not a combobox popup (see custom-zone note). */}
+              <moz-input-search
+                className="clocks-search-location-input"
+                data-l10n-id="newtab-clock-widget-search-location-input2"
+                id="clocks-location-input"
+                ref={searchInputRef}
+                value={searchQuery}
+                onInput={e => {
+                  setSearchQuery(e.target.value);
+                  setResultsOpen(true);
+                  setSelectedTimeZone("");
+                  setSelectedCity("");
+                  setSelectedCityId("");
+                }}
+              />
+              {showLocationDropdown && resultsOpen && (
+                <div
+                  id="clocks-search-results"
+                  className="clocks-search-results"
+                  role="listbox"
+                  data-l10n-id="newtab-clock-widget-search-results"
+                >
+                  {filteredResults.map((result, index) => (
+                    <div
+                      id={`clocks-result-${index}`}
+                      className="clocks-search-result"
+                      key={`${result.timeZone}-${result.city}`}
+                      onClick={() =>
                         handleSelectLocation(
                           result.timeZone,
                           result.city,
                           result.cityId
-                        );
+                        )
                       }
-                    }}
-                    role="option"
-                    aria-selected={
-                      result.timeZone === selectedTimeZone &&
-                      result.city === selectedCity
-                    }
-                    tabIndex={0}
-                  >
-                    <span className="clocks-search-result-city" dir="auto">
-                      {result.city}
-                    </span>
-                    <span className="clocks-search-result-timezone" dir="auto">
-                      {result.zoneName || result.timeZone}
-                    </span>
-                  </div>
-                ))}
-                {/* No exact match: the unmatched query becomes an actionable
+                      onKeyDown={e => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSelectLocation(
+                            result.timeZone,
+                            result.city,
+                            result.cityId
+                          );
+                        }
+                      }}
+                      role="option"
+                      aria-selected={
+                        result.timeZone === selectedTimeZone &&
+                        result.city === selectedCity
+                      }
+                      tabIndex={-1}
+                    >
+                      <span className="clocks-search-result-city" dir="auto">
+                        {result.city}
+                      </span>
+                      <span
+                        className="clocks-search-result-timezone"
+                        dir="auto"
+                      >
+                        {result.zoneName || result.timeZone}
+                      </span>
+                    </div>
+                  ))}
+                  {/* No exact match: the unmatched query becomes an actionable
                     add, shown below any partial matches, not a dead end. */}
-                {!hasExactMatch && (
-                  <div
-                    id="clocks-add-custom-option"
-                    className="clocks-search-result clocks-add-custom"
-                    role="option"
-                    aria-selected="false"
-                    tabIndex={0}
-                    onClick={enterCustomMode}
-                    onKeyDown={e => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        enterCustomMode();
-                      }
-                    }}
-                    data-l10n-id="newtab-clock-widget-add-custom"
-                    data-l10n-args={JSON.stringify({
-                      city: searchQuery.trim(),
-                    })}
-                  />
-                )}
-              </div>
-            )}
+                  {!hasExactMatch && (
+                    <div
+                      id="clocks-add-custom-option"
+                      className="clocks-search-result clocks-add-custom"
+                      role="option"
+                      aria-selected="false"
+                      tabIndex={-1}
+                      onClick={enterCustomMode}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          enterCustomMode();
+                        }
+                      }}
+                      data-l10n-id="newtab-clock-widget-add-custom"
+                      data-l10n-args={JSON.stringify({
+                        city: searchQuery.trim(),
+                      })}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <moz-input-text
             className="clocks-nickname-input"

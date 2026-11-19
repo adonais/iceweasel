@@ -93,6 +93,11 @@ window.Application = {
 
     const { resourceCommand } = this._commands;
     this._watchedResources = [resourceCommand.TYPES.DOCUMENT_EVENT];
+    if (
+      Services.prefs.getBoolPref("devtools.application.speculativeLoads", false)
+    ) {
+      this._watchedResources.push(resourceCommand.TYPES.NETWORK_EVENT);
+    }
     const isSessionHistoryPanelEnabled = Services.prefs.getBoolPref(
       "devtools.application.sessionHistory.enabled",
       false
@@ -145,6 +150,20 @@ window.Application = {
     for (const resource of resources) {
       if (
         resource.resourceType === resourceCommand.TYPES.DOCUMENT_EVENT &&
+        resource.targetFront.isTopLevel
+      ) {
+        if (resource.name === "will-navigate") {
+          this.actions.updatePrefetchStatus(null);
+          this.actions.resetSpeculations();
+        } else if (resource.name === "dom-loading") {
+          this.actions.updatePrefetchStatus(
+            resource.activatedFromNavigationalPrefetch
+          );
+        }
+      }
+
+      if (
+        resource.resourceType === resourceCommand.TYPES.DOCUMENT_EVENT &&
         resource.name === "dom-complete" &&
         // Only consider top level document, and ignore remote iframes top document
         resource.targetFront.isTopLevel
@@ -155,12 +174,32 @@ window.Application = {
       if (resource.resourceType === resourceCommand.TYPES.SESSION_HISTORY) {
         this.actions.setAvailableSessionHistory(resource);
       }
+
+      if (
+        resource.resourceType === resourceCommand.TYPES.NETWORK_EVENT &&
+        resource.cause?.type === "prefetch" &&
+        resource.targetFront?.isTopLevel &&
+        resource.innerWindowId ===
+          this._commands.targetCommand.targetFront.innerWindowId
+      ) {
+        this.actions.addSpeculation(resource);
+      }
     }
   },
 
   onResourcesUpdated(updates) {
     const { resourceCommand } = this._commands;
     for (const { resource, update } of updates) {
+      if (
+        resource.resourceType === resourceCommand.TYPES.NETWORK_EVENT &&
+        resource.cause?.type === "prefetch" &&
+        resource.targetFront?.isTopLevel &&
+        resource.innerWindowId ===
+          this._commands.targetCommand.targetFront.innerWindowId
+      ) {
+        this.actions.updateSpeculation(resource);
+      }
+
       if (resource.resourceType === resourceCommand.TYPES.SESSION_HISTORY) {
         // A single entry changed (e.g. title or URL update for an existing entry).
         if (update.resourceUpdates.sessionHistoryEntry) {

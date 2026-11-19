@@ -844,9 +844,6 @@ nsSocketTransportService::Init() {
   UpdatePrefs();
 
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
-  // Note that the observr notifications are forwarded from parent process to
-  // socket process. We have to make sure the topics registered below are also
-  // registered in nsIOService::Init().
   if (obsSvc) {
     MOZ_ALWAYS_SUCCEEDS(
         obsSvc->AddObserver(this, "last-pb-context-exited", false));

@@ -103,8 +103,7 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(MediaStage, uint8_t,
 class StageBase {
  public:
   virtual void AddMarker(MarkerOptions&& aOption) {
-    profiler_add_marker(Name(), Category(),
-                        std::forward<MarkerOptions&&>(aOption));
+    profiler_add_marker(Name(), Category(), std::move(aOption));
   }
 
  protected:

@@ -304,8 +304,8 @@ void DynamicsCompressor::setNumberOfChannels(unsigned numberOfChannels) {
     m_postFilterPacks.AppendElement(new ZeroPoleFilterPack4());
   }
 
-  m_sourceChannels = mozilla::MakeUnique<const float*[]>(numberOfChannels);
-  m_destinationChannels = mozilla::MakeUnique<float*[]>(numberOfChannels);
+  m_sourceChannels = std::make_unique<const float*[]>(numberOfChannels);
+  m_destinationChannels = std::make_unique<float*[]>(numberOfChannels);
 
   m_compressor.setNumberOfChannels(numberOfChannels);
   m_numberOfChannels = numberOfChannels;

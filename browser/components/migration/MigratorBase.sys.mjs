@@ -33,6 +33,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * @property {Function} migrate
  *   A function that will actually perform the migration of this resource's
  *   data into this browser.
+ * @property {number} [available]
+ *   The number of items the other browser has available to migrate for this
+ *   resource. Can be set before or during migrate, and is reported in
+ *   telemetry. Leave unset if the number of items cannot be counted.
  */
 
 /**
@@ -307,8 +311,9 @@ export class MigratorBase {
    *   An optional callback that will be fired once a resourceType has finished
    *   migrating. The callback will be passed the numeric representation of the
    *   resource type followed by a boolean indicating whether or not the resource
-   *   was migrated successfully and optionally an object containing additional
-   *   details.
+   *   was migrated successfully, optionally an object containing additional
+   *   details, and the number of items that were available to migrate for the
+   *   resource type, or undefined if that number is not known.
    */
   async migrate(aItems, aStartup, aProfile, aProgressCallback = () => {}) {
     let resources = await this.#getMaybeCachedResources(aProfile);
@@ -334,6 +339,9 @@ export class MigratorBase {
         lazy.MigrationUtils._importQuantities
       )) {
         let metricName = resourceType + "Quantity";
+        if (!Glean.browserMigration[metricName]) {
+          continue;
+        }
         try {
           Glean.browserMigration[metricName][browserKey].accumulateSingleSample(
             lazy.MigrationUtils._importQuantities[resourceType]
@@ -375,6 +383,22 @@ export class MigratorBase {
       }
     };
 
+    let getDurationMetricForResourceType = resourceType => {
+      switch (resourceType) {
+        case lazy.MigrationUtils.resourceTypes.BOOKMARKS:
+          return Glean.browserMigration.bookmarksImportDuration[browserKey];
+        case lazy.MigrationUtils.resourceTypes.HISTORY:
+          return Glean.browserMigration.historyImportDuration[browserKey];
+        case lazy.MigrationUtils.resourceTypes.PASSWORDS:
+          return Glean.browserMigration.loginsImportDuration[browserKey];
+        case lazy.MigrationUtils.resourceTypes.PAYMENT_METHODS:
+          return Glean.browserMigration.cardsImportDuration[browserKey];
+        case lazy.MigrationUtils.resourceTypes.EXTENSIONS:
+          return Glean.browserMigration.extensionsImportDuration[browserKey];
+      }
+      return null;
+    };
+
     // Called either directly or through the bookmarks import callback.
     let doMigrate = async function () {
       let resourcesGroupedByItems = new Map();
@@ -403,9 +427,13 @@ export class MigratorBase {
         notify("Migration:ItemBeforeMigrate", migrationType);
 
         let itemSuccess = false;
+        let allItemResources = [...itemResources];
+        let durationMetric = getDurationMetricForResourceType(migrationType);
         for (let res of itemResources) {
+          let timerId = durationMetric?.start();
           let completeDeferred = Promise.withResolvers();
           let resourceDone = function (aSuccess, details) {
+            durationMetric?.stopAndAccumulate(timerId);
             itemResources.delete(res);
             itemSuccess |= aSuccess;
             if (itemResources.size == 0) {
@@ -417,7 +445,17 @@ export class MigratorBase {
               );
               collectMigrationTelemetry(migrationType);
 
-              aProgressCallback(migrationType, itemSuccess, details);
+              let availableQuantity = allItemResources.every(r =>
+                Number.isInteger(r.available)
+              )
+                ? allItemResources.reduce((sum, r) => sum + r.available, 0)
+                : undefined;
+              aProgressCallback(
+                migrationType,
+                itemSuccess,
+                details,
+                availableQuantity
+              );
 
               resourcesGroupedByItems.delete(migrationType);
 

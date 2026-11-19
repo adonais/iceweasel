@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/base/macros.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "api/async_dns_resolver.h"
@@ -277,6 +278,11 @@ class TurnPort : public Port {
   bool SetAlternateServer(const SocketAddress& address);
   void ResolveTurnAddress(const SocketAddress& address);
   void OnResolveResult(const AsyncDnsResolverResult& result);
+  // Requests Local Network Access permission for connecting to the current
+  // server address, if needed. Runs `on_granted` if the permission is granted
+  // or not needed, and fails the allocation otherwise.
+  void MaybeRequestLocalNetworkAccessPermissionForServer(
+      absl::AnyInvocable<void() &&> on_granted);
   void OnLocalNetworkAccessPermissionGranted();
 
   void AddRequestAuthInfo(StunMessage* msg);

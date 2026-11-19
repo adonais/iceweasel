@@ -16,7 +16,7 @@
 class nsPIDOMWindowInner;
 
 namespace mozilla::dom {
-class RTCErrorParams;
+struct RTCErrorParams;
 
 enum class RTCDtlsTransportState : uint8_t;
 

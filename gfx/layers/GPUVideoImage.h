@@ -6,7 +6,9 @@
 #define GFX_GPU_VIDEO_IMAGE_H
 
 #include "ImageContainer.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/GPUVideoTextureClient.h"
 #include "mozilla/layers/ImageBridgeChild.h"
@@ -55,19 +57,18 @@ class GPUVideoImage final : public Image {
         mYUVColorSpace(aYUVColorSpace),
         mManager(aManager),
         mSD(aSD),
+        // Create the TextureClient immediately since the GPUVideoTextureData
+        // is responsible for deallocating the SurfaceDescriptor.
+        //
+        // Use the RECYCLE texture flag, since it's likely that our 'real'
+        // TextureData (in the decoder thread of the GPU process) is using
+        // it too, and we want to make sure we don't send the delete message
+        // until we've stopped being used on the compositor.
+        mTextureClient(TextureClient::CreateWithData(
+            new GPUVideoTextureData(aManager, aSD, aSize),
+            TextureFlags::RECYCLE, ImageBridgeChild::GetSingleton().get())),
         mTransferFunction(aTransferFunction),
-        mColorRange(aColorRange) {
-    // Create the TextureClient immediately since the GPUVideoTextureData
-    // is responsible for deallocating the SurfaceDescriptor.
-    //
-    // Use the RECYCLE texture flag, since it's likely that our 'real'
-    // TextureData (in the decoder thread of the GPU process) is using
-    // it too, and we want to make sure we don't send the delete message
-    // until we've stopped being used on the compositor.
-    mTextureClient = TextureClient::CreateWithData(
-        new GPUVideoTextureData(aManager, aSD, aSize), TextureFlags::RECYCLE,
-        ImageBridgeChild::GetSingleton().get());
-  }
+        mColorRange(aColorRange) {}
 
   virtual ~GPUVideoImage() = default;
 
@@ -100,7 +101,13 @@ class GPUVideoImage final : public Image {
     if (!mManager) {
       return nullptr;
     }
-    return mManager->Readback(mSD);
+    MutexAutoLock lock(mReadbackMutex);
+    RefPtr<gfx::SourceSurface> surface(mReadbackSurface);
+    if (!surface) {
+      surface = mManager->Readback(mSD);
+      mReadbackSurface = surface;
+    }
+    return surface.forget();
   }
 
   TextureClient* GetTextureClient(KnowsCompositor* aKnowsCompositor) override {
@@ -110,15 +117,18 @@ class GPUVideoImage final : public Image {
   }
 
  private:
-  gfx::IntSize mSize;
-  gfx::ColorDepth mColorDepth;
-  gfx::ColorSpace2 mColorSpace;
-  gfx::YUVColorSpace mYUVColorSpace;
-  RefPtr<IGPUVideoSurfaceManager> mManager;
-  SurfaceDescriptorGPUVideo mSD;
-  RefPtr<TextureClient> mTextureClient;
-  gfx::TransferFunction mTransferFunction;
-  gfx::ColorRange mColorRange;
+  const gfx::IntSize mSize;
+  const gfx::ColorDepth mColorDepth;
+  const gfx::ColorSpace2 mColorSpace;
+  const gfx::YUVColorSpace mYUVColorSpace;
+  const RefPtr<IGPUVideoSurfaceManager> mManager;
+  const SurfaceDescriptorGPUVideo mSD;
+  const RefPtr<TextureClient> mTextureClient;
+  const gfx::TransferFunction mTransferFunction;
+  const gfx::ColorRange mColorRange;
+  Mutex mReadbackMutex{"GPUVideoImage::mReadbackMutex"};
+  ThreadSafeWeakPtr<gfx::SourceSurface> mReadbackSurface
+      MOZ_GUARDED_BY(mReadbackMutex);
 };
 
 }  // namespace layers

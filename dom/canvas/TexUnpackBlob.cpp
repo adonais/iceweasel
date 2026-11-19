@@ -399,7 +399,7 @@ bool TexUnpackBlob::ConvertIfNeeded(
     const size_t rowCount, WebGLTexelFormat srcFormat,
     const uint8_t* const srcBegin, const ptrdiff_t srcStride,
     WebGLTexelFormat dstFormat, const ptrdiff_t dstStride,
-    const uint8_t** const out_begin,
+    const bool applyUnpackColorSpace, const uint8_t** const out_begin,
     UniqueBuffer* const out_anchoredBuffer) const {
   *out_begin = srcBegin;
 
@@ -453,8 +453,9 @@ bool TexUnpackBlob::ConvertIfNeeded(
   // TODO (Bug 754256): Figure out the source colorSpace.
   dom::PredefinedColorSpace srcColorSpace = dom::PredefinedColorSpace::Srgb;
   dom::PredefinedColorSpace dstColorSpace =
-      webgl->mUnpackColorSpace ? *webgl->mUnpackColorSpace
-                               : dom::PredefinedColorSpace::Srgb;
+      applyUnpackColorSpace && webgl->mUnpackColorSpace
+          ? *webgl->mUnpackColorSpace
+          : srcColorSpace;
 
   if (srcFormat != dstFormat) {
     webgl->GeneratePerfWarning(
@@ -589,11 +590,14 @@ bool TexUnpackBytes::TexOrSubImage(bool isSubImage, bool needsRespec,
     MOZ_RELEASE_ASSERT(unpackingRes.isOk());
     const auto& unpacking = unpackingRes.inspect();
     const auto stride = unpacking.metrics.bytesPerRowStride;
+    // unpackColorSpace only applies to TexImageSource uploads.
     // clang-format off
     if (!ConvertIfNeeded(webgl, unpacking.metrics.usedPixelsPerRow,
                          unpacking.metrics.totalRows,
                          format, uploadPtr, AutoAssertCast(stride),
-                         format, AutoAssertCast(stride), &uploadPtr, &tempBuffer)) {
+                         format, AutoAssertCast(stride),
+                         /* applyUnpackColorSpace */ false,
+                         &uploadPtr, &tempBuffer)) {
       return false;
     }
     // clang-format on
@@ -1304,8 +1308,8 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
   // clang-format off
   if (!ConvertIfNeeded(webgl, surfSize.width, surfSize.height,
                        srcFormat, srcBegin, AutoAssertCast(srcStride),
-                       dstFormat, AutoAssertCast(dstUnpacking.metrics.bytesPerRowStride), &dstBegin,
-                       &tempBuffer)) {
+                       dstFormat, AutoAssertCast(dstUnpacking.metrics.bytesPerRowStride),
+                       /* applyUnpackColorSpace */ true, &dstBegin, &tempBuffer)) {
     return false;
   }
   // clang-format on

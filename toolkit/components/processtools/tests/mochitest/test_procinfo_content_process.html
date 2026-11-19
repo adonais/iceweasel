@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ChromeUtils.requestProcInfo() reports the current content process</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+"use strict";
+
+add_task(async function test_content_process_info() {
+  const pid = SpecialPowers.Services.appinfo.processID;
+  const info = await SpecialPowers.spawnChrome([pid], async contentPid => {
+    const { children } = await ChromeUtils.requestProcInfo();
+    const child = children.find(c => c.pid == contentPid);
+    if (!child) {
+      return null;
+    }
+    return {
+      memory: child.memory,
+      cpuTime: child.cpuTime,
+      threadCount: child.threads.length,
+      documentURIs: child.windows.map(w => w.documentURI?.spec),
+    };
+  });
+
+  ok(info, `Got info for content process ${pid}`);
+  ok(info.memory > 0, `Got some memory: ${info.memory}`);
+  ok(info.cpuTime > 0, `Got some cpu time: ${info.cpuTime}`);
+  ok(info.threadCount > 0, `Got some threads: ${info.threadCount}`);
+  ok(
+    info.documentURIs.includes(location.href),
+    "Got this document's window"
+  );
+});
+</script>
+</body>
+</html>

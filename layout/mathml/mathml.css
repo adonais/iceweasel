@@ -25,7 +25,6 @@ math {
   font-style: normal;
   font-weight: normal;
   text-indent: 0;
-  font-family: serif;
   line-height: normal;
   word-spacing: normal;
   letter-spacing: normal;
@@ -34,9 +33,7 @@ math {
   math-shift: normal;
   math-style: compact;
   math-depth: 0;
-  @media -moz-pref("mathml.font_family_math.enabled") {
-    font-family: math;
-  }
+  font-family: math;
 }
 math[display="block" i] {
   display: block;

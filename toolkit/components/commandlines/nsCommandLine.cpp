@@ -493,8 +493,8 @@ nsCommandLine::Run() {
   return NS_OK;
 }
 
-static nsresult EnumHelp(nsICommandLineHandler* aHandler, nsICommandLine* aThis,
-                         void* aClosure) {
+static nsresult EnumHelp(nsICommandLineHandler* aHandler,
+                         nsICommandLine* /*aThis*/, void* aClosure) {
   nsresult rv;
 
   nsCString text;

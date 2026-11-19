@@ -1257,7 +1257,7 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
                   NS_ASSERTION(!parent, "Shouldn't have a parent here!");
                   (void)parent;  // silence clang -Wunused-lambda-capture in
                                  // opt builds
-                  auto wdi = MakeUnique<WorkerDomainInfo>();
+                  auto wdi = std::make_unique<WorkerDomainInfo>();
                   wdi->mDomain = domain;
                   return wdi;
                 })
@@ -2376,7 +2376,7 @@ WorkerThreadPrimaryRunnable::Run() {
     {
       nsCycleCollector_startup();
 
-      auto context = MakeUnique<WorkerJSContext>(mWorkerPrivate);
+      auto context = std::make_unique<WorkerJSContext>(mWorkerPrivate);
       nsresult rv = context->Initialize(mParentRuntime);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;

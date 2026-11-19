@@ -168,7 +168,7 @@ bool BackgroundChildImpl::DeallocPBackgroundIndexedDBUtilsChild(
 
 BackgroundChildImpl::PBackgroundLSObserverChild*
 BackgroundChildImpl::AllocPBackgroundLSObserverChild(
-    const uint64_t& aObserverId) {
+    const uint64_t& /*aObserverId*/) {
   MOZ_CRASH("PBackgroundLSObserverChild actor should be manually constructed!");
 }
 
@@ -182,7 +182,7 @@ bool BackgroundChildImpl::DeallocPBackgroundLSObserverChild(
 
 BackgroundChildImpl::PBackgroundLSRequestChild*
 BackgroundChildImpl::AllocPBackgroundLSRequestChild(
-    const LSRequestParams& aParams) {
+    const LSRequestParams& /*aParams*/) {
   MOZ_CRASH("PBackgroundLSRequestChild actor should be manually constructed!");
 }
 
@@ -196,8 +196,8 @@ bool BackgroundChildImpl::DeallocPBackgroundLSRequestChild(
 
 BackgroundChildImpl::PBackgroundLocalStorageCacheChild*
 BackgroundChildImpl::AllocPBackgroundLocalStorageCacheChild(
-    const PrincipalInfo& aPrincipalInfo, const nsACString& aOriginKey,
-    const uint32_t& aPrivateBrowsingId) {
+    const PrincipalInfo& /*aPrincipalInfo*/, const nsACString& /*aOriginKey*/,
+    const uint32_t& /*aPrivateBrowsingId*/) {
   MOZ_CRASH(
       "PBackgroundLocalStorageChild actors should be manually "
       "constructed!");
@@ -213,7 +213,7 @@ bool BackgroundChildImpl::DeallocPBackgroundLocalStorageCacheChild(
 
 BackgroundChildImpl::PBackgroundLSSimpleRequestChild*
 BackgroundChildImpl::AllocPBackgroundLSSimpleRequestChild(
-    const LSSimpleRequestParams& aParams) {
+    const LSSimpleRequestParams& /*aParams*/) {
   MOZ_CRASH(
       "PBackgroundLSSimpleRequestChild actor should be manually "
       "constructed!");
@@ -229,7 +229,7 @@ bool BackgroundChildImpl::DeallocPBackgroundLSSimpleRequestChild(
 
 BackgroundChildImpl::PBackgroundStorageChild*
 BackgroundChildImpl::AllocPBackgroundStorageChild(
-    const nsAString& aProfilePath, const uint32_t& aPrivateBrowsingId) {
+    const nsAString& /*aProfilePath*/, const uint32_t& /*aPrivateBrowsingId*/) {
   MOZ_CRASH("PBackgroundStorageChild actors should be manually constructed!");
 }
 
@@ -243,8 +243,8 @@ bool BackgroundChildImpl::DeallocPBackgroundStorageChild(
 }
 
 dom::PSharedWorkerChild* BackgroundChildImpl::AllocPSharedWorkerChild(
-    const dom::RemoteWorkerData& aData, const uint64_t& aWindowID,
-    const dom::MessagePortIdentifier& aPortIdentifier) {
+    const dom::RemoteWorkerData& /*aData*/, const uint64_t& /*aWindowID*/,
+    const dom::MessagePortIdentifier& /*aPortIdentifier*/) {
   RefPtr<dom::SharedWorkerChild> agent = new dom::SharedWorkerChild();
   return agent.forget().take();
 }
@@ -270,9 +270,9 @@ bool BackgroundChildImpl::DeallocPTemporaryIPCBlobChild(
 }
 
 dom::PFileCreatorChild* BackgroundChildImpl::AllocPFileCreatorChild(
-    const nsAString& aFullPath, const nsAString& aType, const nsAString& aName,
-    const Maybe<int64_t>& aLastModified, const bool& aExistenceCheck,
-    const bool& aIsFromNsIFile) {
+    const nsAString& /*aFullPath*/, const nsAString& /*aType*/,
+    const nsAString& /*aName*/, const Maybe<int64_t>& /*aLastModified*/,
+    const bool& /*aExistenceCheck*/, const bool& /*aIsFromNsIFile*/) {
   return new dom::FileCreatorChild();
 }
 
@@ -286,8 +286,8 @@ bool BackgroundChildImpl::DeallocPFileCreatorChild(PFileCreatorChild* aActor) {
 // -----------------------------------------------------------------------------
 
 dom::PBroadcastChannelChild* BackgroundChildImpl::AllocPBroadcastChannelChild(
-    const PrincipalInfo& aPrincipalInfo, const nsACString& aOrigin,
-    const nsAString& aChannel) {
+    const PrincipalInfo& /*aPrincipalInfo*/, const nsACString& /*aOrigin*/,
+    const nsAString& /*aChannel*/) {
   RefPtr<dom::BroadcastChannelChild> agent = new dom::BroadcastChannelChild();
   return agent.forget().take();
 }

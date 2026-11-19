@@ -52,10 +52,10 @@ class DevToolsNodeTestRunner(MozbuildObject):
 
         # Add artifact argument if specified
         if artifact:
-            cmd.append(f"--artifact={artifact}")
+            cmd.extend(["--artifact", artifact])
 
         # Add suite argument
-        cmd.append(f"--suite={suite}")
+        cmd.extend(["--suite", suite])
 
         print(f"Running: {' '.join(cmd)}")
         print(f"Working directory: {devtools_bin_dir}")
@@ -120,6 +120,7 @@ def run_devtools_compat_test(
     import mozlog.commandline
     from backward_compat_test_server.logs import LOGGER_NAME
     from backward_compat_test_server.runner import run
+    from backward_compat_test_server.servers import XpcshellHarness
 
     # Default to mach formatting rather than letting mozlog pick raw logs when
     # stdout is not a terminal. Pass --log-raw - to get them back.
@@ -131,6 +132,20 @@ def run_devtools_compat_test(
         command_context._mach_context.state_dir, "cache", "devtools-compat-test"
     )
 
+    topobjdir = command_context.topobjdir
+    xpcshell_harness = XpcshellHarness(
+        script=os.path.join(
+            command_context.topsrcdir, "testing", "xpcshell", "runxpcshelltests.py"
+        ),
+        binary=command_context.get_binary_path("xpcshell"),
+        extra_args=[
+            "--testing-modules-dir",
+            os.path.join(topobjdir, "_tests", "modules"),
+            "--build-info-json",
+            os.path.join(topobjdir, "mozinfo.json"),
+        ],
+    )
+
     return run(
         topsrcdir=command_context.topsrcdir,
         binary=command_context.get_binary_path("app"),
@@ -138,6 +153,7 @@ def run_devtools_compat_test(
         server=server,
         headless=headless,
         extra_args=extra_args,
+        xpcshell_harness=xpcshell_harness,
     )
 
 

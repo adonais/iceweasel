@@ -15,7 +15,6 @@ support-files = [
   "popup_blocker_10_popups.html",
 ]
 skip-if = [
-  "debug",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Frequent bug 1081925 and bug 1125520 failures
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Frequent bug 1081925 and bug 1125520 failures
 ]
@@ -42,9 +41,6 @@ support-files = [
   "popup_blocker_frame.html",
   "popup_blocker_a.html",
   "popup_blocker_b.html",
-]
-skip-if = [
-  "debug", # This test triggers Bug 1578794 due to opening many popups.
 ]
 
 ["browser_popup_blocker_parent_target.js"]

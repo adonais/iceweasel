@@ -5,13 +5,14 @@
 package org.mozilla.fenix.settings.autofill.ui
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import mozilla.components.lib.dataprotect.SecureAbove22Preferences
+import mozilla.components.concept.storage.Address
+import mozilla.components.concept.storage.CreditCard
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.sync.autofill.AutofillCreditCardsAddressesStorage
-import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,7 +23,6 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AutofillSettingsMiddlewareTest {
 
-    private lateinit var securePrefs: SecureAbove22Preferences
     private lateinit var autofillSettingsStorage: AutofillCreditCardsAddressesStorage
     private lateinit var accountManager: FxaAccountManager
     private lateinit var updateSaveFillStatus: (String, Boolean) -> Unit
@@ -31,11 +31,15 @@ class AutofillSettingsMiddlewareTest {
     private lateinit var exitAutofillSettings: () -> Unit
 
     private val testDispatcher = StandardTestDispatcher()
+    private val address: Address = mockk()
+    private val creditCard: CreditCard = mockk()
 
     @Before
     fun setup() {
-        securePrefs = SecureAbove22Preferences(testContext, "autofill", forceInsecure = true)
-        autofillSettingsStorage = AutofillCreditCardsAddressesStorage(testContext, lazy { securePrefs })
+        autofillSettingsStorage = mockk {
+            coEvery { getAllAddresses() } returns listOf(address)
+            coEvery { getAllCreditCards() } returns listOf(creditCard)
+        }
         accountManager = mockk(relaxUnitFun = true)
         updateSaveFillStatus = { _, _ -> }
         updateSyncStatusAcrossDevices = { _, _ -> }
@@ -44,23 +48,23 @@ class AutofillSettingsMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN no addresses in storage WHEN store is initialized THEN list of addresses will be empty`() =
+    fun `GIVEN an address in storage WHEN store is initialized THEN the address is loaded`() =
         runTest(testDispatcher) {
             val middleware = buildMiddleware()
             val store = middleware.makeStore()
             testDispatcher.scheduler.advanceUntilIdle()
 
-            assertEquals(0, store.state.addresses.size)
+            assertEquals(listOf(address), store.state.addresses)
         }
 
     @Test
-    fun `GIVEN no credit cards in storage WHEN store is initialized THEN list of credit cards will be empty`() =
+    fun `GIVEN a credit card in storage WHEN store is initialized THEN the credit card is loaded`() =
         runTest(testDispatcher) {
             val middleware = buildMiddleware()
             val store = middleware.makeStore()
             testDispatcher.scheduler.advanceUntilIdle()
 
-            assertEquals(0, store.state.creditCards.size)
+            assertEquals(listOf(creditCard), store.state.creditCards)
         }
 
     @Test

@@ -69,7 +69,7 @@ class OpenVRControllerManifestManager {
 StaticRefPtr<OpenVRControllerManifestManager> sOpenVRControllerManifestManager;
 
 VRChild::VRChild(VRProcessParent* aHost) : mHost(aHost), mVRReady(false) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 }
 
 VRChild::~VRChild() = default;
@@ -165,7 +165,7 @@ bool VRChild::SendRequestMemoryReport(const uint32_t& aGeneration,
                                       const bool& aAnonymize,
                                       const bool& aMinimizeMemoryUsage,
                                       const Maybe<FileDescriptor>& aDMDFile) {
-  mMemoryReportRequest = MakeUnique<MemoryReportRequestHost>(aGeneration);
+  mMemoryReportRequest = std::make_unique<MemoryReportRequestHost>(aGeneration);
 
   PVRChild::SendRequestMemoryReport(aGeneration, aAnonymize,
                                     aMinimizeMemoryUsage, aDMDFile)

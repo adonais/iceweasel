@@ -1129,7 +1129,7 @@ Result<Ok, LogError> CollectorLogAnalyzerBackground::InitImpl(
   int64_t maxChunkSize = 128 * 1024 * 1024;
   size_t bufferSize = size_t(
       std::min(maxChunkSize, std::max(totalCCFileSize, totalGCFileSize)));
-  auto buffer = MakeUnique<char[]>(bufferSize);
+  auto buffer = std::make_unique<char[]>(bufferSize);
 
   if (mHaveCC) {
     RefPtr<nsFileRandomAccessStream> ccStream = new nsFileRandomAccessStream();

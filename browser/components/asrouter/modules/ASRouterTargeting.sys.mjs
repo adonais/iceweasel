@@ -49,7 +49,7 @@ const { FirefoxRelay, RELAY_PROFILE_CACHE_INTERVAL } =
 
 const lazy = {};
 
-const PUSH_SERVICE_SYS_MJS = "resource://gre/modules/PushService.sys.mjs";
+const PUSH_SERVICE_SYS_MJS = "moz-src:///dom/push/PushService.sys.mjs";
 const WEB_PUSH_SUBSCRIPTION_COUNT_PREF =
   "messaging-system.activeWebPushSubscriptionCount";
 
@@ -860,6 +860,15 @@ const TargetingGetters = {
         .then(data => resolve(!!data))
         .catch(() => resolve(false));
     });
+  },
+  get isFxASignedInMozilla() {
+    if (!lazy.isFxAEnabled) {
+      return Promise.resolve(false);
+    }
+    return lazy.fxAccounts.getSignedInUser().then(
+      data => data?.email?.endsWith("@mozilla.com") ?? false,
+      () => false
+    );
   },
   get sync() {
     return {

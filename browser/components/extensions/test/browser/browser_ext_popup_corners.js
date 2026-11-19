@@ -1,13 +1,5 @@
 "use strict";
 
-// Nova being enabled changes some of the styling that is being tested here.
-const novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true // If the pref isn't set to false assume Nova styles are enabled by default.
-);
-
-info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
 // Some linux WMs can't draw alpha-transparent rounded corners, so the panel
 // falls back to square corners regardless of Nova (see the -moz-platform and
 // -moz-gtk-csd-transparency-available checks in popup.css and
@@ -50,7 +42,7 @@ add_task(async function testPopupBorderRadius() {
 
   let widget = getBrowserActionWidget(extension);
 
-  let defaultRadius = novaEnabled ? "24px" : "8px";
+  let defaultRadius = "24px";
 
   // If the panel is embedded in subview (in practive we always disallow
   // subviews since the extensions action button can't be overflowed in

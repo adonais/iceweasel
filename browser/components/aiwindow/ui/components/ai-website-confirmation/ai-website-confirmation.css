@@ -3,8 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  --select-background-color: light-dark(var(--color-violet-desaturated-0, #f2f0f8), color-mix(in srgb, var(--color-violet-30) 12%, transparent));
-  --select-hover-background-color: light-dark(var(--color-violet-desaturated-10, #e7e1f8), color-mix(in srgb, var(--color-violet-40) 25%, transparent));
   --confirm-border-color: light-dark(var(--color-violet-desaturated-20, #d2c8ec), color-mix(in srgb, var(--color-violet-40) 35%, transparent));
 
   display: block;
@@ -41,7 +39,7 @@ moz-button.close-button {
 
   position: absolute;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  top: -10px;
+  inset-block-start: -10px;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   inset-inline-end: -10px;
   z-index: 10;
@@ -98,14 +96,14 @@ moz-button.close-button::part(button) {
 .fade-top {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   height: 10px;
-  top: 0;
+  inset-block-start: 0;
   background: linear-gradient(to bottom, var(--background-color-box), light-dark(rgba(255, 255, 255, 0.8), rgba(35, 34, 43, 0.8)), transparent);
 }
 
 .fade-bottom {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   height: 16px;
-  bottom: 0;
+  inset-block-end: 0;
   background: linear-gradient(to top, var(--background-color-box), light-dark(rgba(255, 255, 255, 0.8), rgba(35, 34, 43, 0.8)), transparent);
 }
 

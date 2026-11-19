@@ -320,7 +320,7 @@ TEST_F(DispatchTest, TestMove) {
 TEST_F(DispatchTest, TestUniquePtr) {
   // Test that holding the class in UniquePtr works
   int ran = 0;
-  auto cl = MakeUnique<TargetClass>(&ran);
+  auto cl = std::make_unique<TargetClass>(&ran);
 
   NS_DispatchAndSpinEventLoopUntilComplete(
       "DispatchTest::TestUniquePtr"_ns, target_,
@@ -330,7 +330,7 @@ TEST_F(DispatchTest, TestUniquePtr) {
   // Test that UniquePtr works as a param to the runnable
   int destroyed = 0;
   {
-    auto state = MakeUnique<CtorDtorState>(&destroyed);
+    auto state = std::make_unique<CtorDtorState>(&destroyed);
 
     // Dispatch with:
     //   - moved arg

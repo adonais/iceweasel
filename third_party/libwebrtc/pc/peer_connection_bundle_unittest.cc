@@ -219,7 +219,6 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
     // tests is created with own PeerConnectionFactory.
     PeerConnectionFactoryDependencies pcf_deps;
     pcf_deps.network_thread = Thread::Current();
-    pcf_deps.worker_thread = Thread::Current();
     pcf_deps.signaling_thread = Thread::Current();
     pcf_deps.socket_factory = &vss_;
     auto network_manager =

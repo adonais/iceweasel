@@ -15,9 +15,9 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIPushNotifier
 );
 ChromeUtils.defineESModuleGetters(lazy, {
-  PushCrypto: "resource://gre/modules/PushCrypto.sys.mjs",
-  PushServiceWebSocket: "resource://gre/modules/PushServiceWebSocket.sys.mjs",
-  pushBroadcastService: "resource://gre/modules/PushBroadcastService.sys.mjs",
+  PushCrypto: "moz-src:///dom/push/PushCrypto.sys.mjs",
+  PushServiceWebSocket: "moz-src:///dom/push/PushServiceWebSocket.sys.mjs",
+  pushBroadcastService: "moz-src:///dom/push/PushBroadcastService.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", () => {

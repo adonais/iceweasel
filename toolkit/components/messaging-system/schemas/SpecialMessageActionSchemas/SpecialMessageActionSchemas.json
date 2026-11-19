@@ -186,6 +186,35 @@
         {
           "type": "object",
           "properties": {
+            "data": {
+              "type": "object",
+              "properties": {
+                "args": {
+                  "type": "string",
+                  "description": "The support page, relative to the app.support.baseURL pref. E.g. \"firefox-backup\" for https://support.mozilla.org/kb/firefox-backup"
+                },
+                "where": {
+                  "type": "string",
+                  "enum": ["current", "save", "tab", "tabshifted", "window"],
+                  "description": "Where the URL is opened",
+                  "default": "current"
+                }
+              },
+              "required": ["args"],
+              "additionalProperties": false
+            },
+            "type": {
+              "type": "string",
+              "enum": ["OPEN_SUPPORT_PAGE"]
+            }
+          },
+          "required": ["data", "type"],
+          "additionalProperties": false,
+          "description": "Opens a support.mozilla.org article"
+        },
+        {
+          "type": "object",
+          "properties": {
             "type": {
               "type": "string",
               "enum": ["OPEN_PRIVATE_BROWSER_WINDOW"]
@@ -218,6 +247,33 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Opens the Smart Window monitor panel straight to the create form"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["SUBMIT_SMARTWINDOW_PROMPT"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "prompt": {
+                  "type": "string",
+                  "description": "Request sent to the Smart Window sidebar chat."
+                },
+                "source": {
+                  "type": "string",
+                  "description": "Identifies the surface that sent the prompt, recorded as submit_type on chat telemetry and how_initiated on AI Tab telemetry. Defaults to \"fxms\"."
+                }
+              },
+              "required": ["prompt"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "data"],
+          "additionalProperties": false,
+          "description": "Sends a prompt to the Smart Window sidebar chat, opening the sidebar if needed"
         },
         {
           "type": "object",
@@ -290,6 +346,29 @@
           "required": ["data", "type"],
           "additionalProperties": false,
           "description": "Opens given URL"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["SHOW_QR_CODE"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "args": {
+                  "type": "string",
+                  "description": "URL to encode in the QR code"
+                }
+              },
+              "required": ["args"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["data", "type"],
+          "additionalProperties": false,
+          "description": "Shows a QR code for the given URL in a dialog over the current tab"
         },
         {
           "type": "object",
@@ -452,6 +531,10 @@
                 "fireAndForget": {
                   "type": "boolean",
                   "description": "Whether or not to wait for user confirmation before resolving the action"
+                },
+                "promptOnly": {
+                  "type": "boolean",
+                  "description": "Only pin through the OS prompt that asks for the user's consent, never through an API that may pin silently. Set automatically for action_only messages."
                 }
               },
               "additionalProperties": false
@@ -490,6 +573,10 @@
                 "fireAndForget": {
                   "type": "boolean",
                   "description": "Whether or not to wait for user confirmation before resolving the action"
+                },
+                "promptOnly": {
+                  "type": "boolean",
+                  "description": "Only pin through the OS prompt that asks for the user's consent, never through an API that may pin silently. Set automatically for action_only messages."
                 }
               },
               "additionalProperties": false
@@ -906,6 +993,18 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Notify Firefox that the notification policy was interacted with."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["ACCEPT_SMARTWINDOW_TOU"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Notify Smart Window that the user accepted its Terms of Use."
         },
         {
           "type": "object",

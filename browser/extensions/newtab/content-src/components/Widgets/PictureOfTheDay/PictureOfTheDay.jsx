@@ -4,11 +4,12 @@
 
 // eslint-disable-next-line no-unused-vars
 import React, { useCallback, useEffect, useState } from "react";
-import { useSelector, batch } from "react-redux";
+import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useSizeSubmenu } from "../../../lib/utils";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { MoveSubmenu } from "../MoveSubmenu";
+import { WidgetHideMenuItem } from "../WidgetPlacement";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
 import { WidgetMenuButton } from "../WidgetMenuButton";
 
@@ -167,35 +168,31 @@ const PictureOfTheDay = ({
   const imageAlt = pictureData.description || fallbackAlt;
 
   const handleHide = () => {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: { name: PICTURE_OF_THE_DAY_ENTRY.enabledPref, value: false },
-        })
-      );
-      // Disabling the widget is not an interaction, so it does not flip the
-      // interaction pref.
-      recordEnabled(false, { source: "context_menu" });
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: { name: PICTURE_OF_THE_DAY_ENTRY.enabledPref, value: false },
+      })
+    );
+    // Disabling the widget is not an interaction, so it does not flip the
+    // interaction pref.
+    recordEnabled(false, { source: "context_menu" });
   };
 
   const handleChangeSize = useCallback(
     size => {
-      batch(() => {
-        dispatch(
-          ac.OnlyToMain({
-            type: at.SET_PREF,
-            data: { name: PICTURE_OF_THE_DAY_ENTRY.sizePref, value: size },
-          })
-        );
-        recordUserAction("change_size", {
-          source: "context_menu",
-          value: size,
-          size,
-        });
-        handleInteraction();
+      dispatch(
+        ac.OnlyToMain({
+          type: at.SET_PREF,
+          data: { name: PICTURE_OF_THE_DAY_ENTRY.sizePref, value: size },
+        })
+      );
+      recordUserAction("change_size", {
+        source: "context_menu",
+        value: size,
+        size,
       });
+      handleInteraction();
     },
     [dispatch, recordUserAction, handleInteraction]
   );
@@ -203,27 +200,23 @@ const PictureOfTheDay = ({
   const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   const handleLearnMore = () => {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.OPEN_LINK,
-          data: {
-            url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
-            where: "tab",
-          },
-        })
-      );
-      recordUserAction("learn_more", { source: "context_menu" });
-      handleInteraction();
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.OPEN_LINK,
+        data: {
+          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+          where: "tab",
+        },
+      })
+    );
+    recordUserAction("learn_more", { source: "context_menu" });
+    handleInteraction();
   };
 
   const handleManageWallpaper = () => {
-    batch(() => {
-      dispatch({ type: at.SHOW_PERSONALIZE });
-      recordUserAction("manage_wallpaper", { source: "context_menu" });
-      handleInteraction();
-    });
+    dispatch({ type: at.SHOW_PERSONALIZE });
+    recordUserAction("manage_wallpaper", { source: "context_menu" });
+    handleInteraction();
   };
 
   const setDismissedDate = value =>
@@ -235,19 +228,15 @@ const PictureOfTheDay = ({
     );
 
   const handleHidePhoto = () => {
-    batch(() => {
-      setDismissedDate(pictureDate);
-      recordUserAction("hide_photo", { source: "context_menu" });
-      handleInteraction();
-    });
+    setDismissedDate(pictureDate);
+    recordUserAction("hide_photo", { source: "context_menu" });
+    handleInteraction();
   };
 
   const handleShow = (source = "widget") => {
-    batch(() => {
-      setDismissedDate("");
-      recordUserAction("show_picture", { source });
-      handleInteraction();
-    });
+    setDismissedDate("");
+    recordUserAction("show_picture", { source });
+    handleInteraction();
   };
 
   // The Merino image host doesn't send CORS headers, so the picture bytes can
@@ -260,16 +249,14 @@ const PictureOfTheDay = ({
     if (isSetAsWallpaper) {
       return;
     }
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_PICTURE_SET_WALLPAPER,
-          data: { publishedDate: pictureData.publishedDate },
-        })
-      );
-      recordUserAction("set_wallpaper", { source: "widget" });
-      handleInteraction();
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_PICTURE_SET_WALLPAPER,
+        data: { publishedDate: pictureData.publishedDate },
+      })
+    );
+    recordUserAction("set_wallpaper", { source: "widget" });
+    handleInteraction();
     setJustSet(true);
     setSuppressExpand(true);
   };
@@ -279,20 +266,16 @@ const PictureOfTheDay = ({
   // navigation; the handler only records telemetry (mirrors the Weather widget).
   const canOpenSource = Boolean(pictureData.sourceUrl);
   const handleOpenSource = () => {
-    batch(() => {
-      recordUserAction("open_source", { source: "widget" });
-      handleInteraction();
-    });
+    recordUserAction("open_source", { source: "widget" });
+    handleInteraction();
   };
 
   // The license name is an anchor whose href opens the license terms (Creative
   // Commons) in the current tab, separate from the source page link above.
   const canOpenLicense = Boolean(pictureData.licenseUrl);
   const handleOpenLicense = () => {
-    batch(() => {
-      recordUserAction("open_license", { source: "widget" });
-      handleInteraction();
-    });
+    recordUserAction("open_license", { source: "widget" });
+    handleInteraction();
   };
 
   // Attribution line under the title: "© {author} / {source} / {license}".
@@ -473,9 +456,9 @@ const PictureOfTheDay = ({
               widgetEnabledMap={widgetEnabledMap}
             />
 
-            <panel-item
-              data-l10n-id="newtab-widget-menu-hide"
-              onClick={handleHide}
+            <WidgetHideMenuItem
+              widgetId="pictureOfTheDay"
+              onHide={handleHide}
             />
             <panel-item
               data-l10n-id="newtab-picture-menu-learn-more"

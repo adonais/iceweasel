@@ -2246,7 +2246,7 @@ GLBlitHelper* GLContext::BlitHelper() {
 
 GLReadTexImageHelper* GLContext::ReadTexImageHelper() {
   if (!mReadTexImageHelper) {
-    mReadTexImageHelper = MakeUnique<GLReadTexImageHelper>(this);
+    mReadTexImageHelper = std::make_unique<GLReadTexImageHelper>(this);
   }
 
   return mReadTexImageHelper.get();
@@ -2488,7 +2488,7 @@ UniquePtr<Texture> CreateTexture(GLContext& gl, const gfx::IntSize& size) {
   const GLenum target = LOCAL_GL_TEXTURE_2D;
   const GLenum format = LOCAL_GL_RGBA;
 
-  auto tex = MakeUnique<Texture>(gl);
+  auto tex = std::make_unique<Texture>(gl);
   ScopedBindTexture autoTex(&gl, tex->name, target);
 
   gl.fTexParameteri(target, LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_LINEAR);

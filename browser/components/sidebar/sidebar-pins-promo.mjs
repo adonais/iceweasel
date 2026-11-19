@@ -33,7 +33,7 @@ const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
  */
 export default class SidebarPinsPromo extends MozLitElement {
   static queries = {
-    card: ".promo-card",
+    card: ".promo-card, .pinned-tabs-promo",
     closeButton: ".close-button",
   };
 
@@ -63,10 +63,23 @@ export default class SidebarPinsPromo extends MozLitElement {
     this.launcherObserver = new MutationObserver(() => this.requestUpdate());
   }
   #icons = [
-    { name: "firefox", src: "chrome://browser/skin/sidebar/firefox.svg" },
-    { name: "slack", src: "chrome://browser/skin/sidebar/slack.svg" },
-    { name: "foxy", src: "chrome://browser/skin/sidebar/foxy.svg" },
-    { name: "gmail", src: "chrome://browser/skin/sidebar/gmail.svg" },
+    {
+      name: "firefox",
+      src: "chrome://browser/skin/sidebar/firefox.svg",
+    },
+    {
+      name: "slack",
+      src: "chrome://browser/skin/sidebar/slack.svg",
+    },
+    {
+      name: "foxy",
+      src: "chrome://browser/skin/sidebar/foxy.svg",
+      novaSrc: "chrome://browser/skin/sidebar/kit-pinned-tabs-promo.svg",
+    },
+    {
+      name: "gmail",
+      src: "chrome://browser/skin/sidebar/gmail.svg",
+    },
   ];
 
   connectedCallback() {
@@ -125,6 +138,38 @@ export default class SidebarPinsPromo extends MozLitElement {
     );
   }
 
+  #promoTemplate() {
+    if (!this.novaEnabled) {
+      return html` <moz-card class="promo-card">
+          <div class="promo-text" data-l10n-id="sidebar-pins-promo-text"></div>
+          <div class="icon-row">
+            ${map(this.#icons, icon => this.#iconCellTemplate(icon))}
+          </div>
+        </moz-card>
+        <moz-button
+          class="close-button"
+          iconsrc="resource://content-accessible/close-12.svg"
+          data-l10n-id="sidebar-panel-header-close-button"
+          @click=${this.dismissDragToPinPromo}
+          size="small"
+          type="icon ghost"
+        >
+        </moz-button>`;
+    }
+    return html` <moz-promo
+      class="pinned-tabs-promo"
+      dismissable
+      imagealignment="center"
+      type="vibrant"
+      data-l10n-id="sidebar-pins-promo-text-2"
+      @promo:user-dismissed=${this.dismissDragToPinPromo}
+    >
+      <div class="icon-row" slot="image">
+        ${map(this.#icons, icon => this.#iconCellTemplate(icon))}
+      </div>
+    </moz-promo>`;
+  }
+
   /**
    * Wrap one of the icons to be shown in a dotted border box.
    *
@@ -138,7 +183,10 @@ export default class SidebarPinsPromo extends MozLitElement {
         [`icon-${icon.name}`]: true,
       })}
     >
-      <img src=${icon.src} role="presentation" />
+      <img
+        src=${this.novaEnabled && icon.novaSrc ? icon.novaSrc : icon.src}
+        role="presentation"
+      />
     </div>`;
   }
 
@@ -147,9 +195,7 @@ export default class SidebarPinsPromo extends MozLitElement {
       this.verticalTabsEnabled &&
       lazy.SidebarManager.checkForPinnedTabsComplete &&
       !this.dragToPinPromoDismissed &&
-      window.SidebarController.sidebarMain.hasAttribute("expanded") &&
-      // Bug 2052309: temporarily remove promo when Nova is enabled.
-      !this.novaEnabled
+      window.SidebarController.sidebarMain.hasAttribute("expanded")
     );
   }
 
@@ -165,21 +211,7 @@ export default class SidebarPinsPromo extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/sidebar/sidebar-pins-promo.css"
       />
-      <moz-card class="promo-card">
-        <div class="promo-text" data-l10n-id="sidebar-pins-promo-text"></div>
-        <div class="icon-row">
-          ${map(this.#icons, icon => this.#iconCellTemplate(icon))}
-        </div>
-      </moz-card>
-      <moz-button
-        class="close-button"
-        iconsrc="resource://content-accessible/close-12.svg"
-        data-l10n-id="sidebar-panel-header-close-button"
-        @click=${this.dismissDragToPinPromo}
-        size="small"
-        type="icon ghost"
-      >
-      </moz-button>`;
+      ${this.#promoTemplate()}`;
   }
 }
 

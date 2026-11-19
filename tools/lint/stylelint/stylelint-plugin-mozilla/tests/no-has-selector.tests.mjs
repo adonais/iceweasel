@@ -6,7 +6,7 @@
 
 // Bug 1948378: remove this exception when the eslint import plugin fully
 // supports exports in package.json files
-// eslint-disable-next-line import/no-unresolved
+// eslint-disable-next-line import-x/no-unresolved
 import { testRule } from "stylelint-test-rule-node";
 import stylelint from "stylelint";
 import noHasSelector from "../rules/no-has-selector.mjs";

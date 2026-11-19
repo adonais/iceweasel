@@ -91,14 +91,14 @@ class FileBlockCache : public MediaBlockCacheBase {
     // This block is waiting in memory to be written.
     // Stores a copy of the block, so we can write it asynchronously.
     explicit BlockChange(const uint8_t* aData) : mSourceBlockIndex(-1) {
-      mData = MakeUnique<uint8_t[]>(BLOCK_SIZE);
+      mData = std::make_unique<uint8_t[]>(BLOCK_SIZE);
       memcpy(mData.get(), aData, BLOCK_SIZE);
     }
 
     BlockChange(Span<const uint8_t> aData1, Span<const uint8_t> aData2)
         : mSourceBlockIndex(-1) {
       MOZ_ASSERT(aData1.Length() + aData2.Length() == BLOCK_SIZE);
-      mData = MakeUnique<uint8_t[]>(BLOCK_SIZE);
+      mData = std::make_unique<uint8_t[]>(BLOCK_SIZE);
       memcpy(mData.get(), aData1.Elements(), aData1.Length());
       memcpy(mData.get() + aData1.Length(), aData2.Elements(), aData2.Length());
     }

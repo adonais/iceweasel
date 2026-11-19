@@ -4,9 +4,11 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import mozilla.components.feature.summarize.R as summarizeR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfile
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
@@ -82,11 +84,80 @@ object SettingsCustomizeSelectors : SelectorContainer {
             scrollDirection = SwipeDirection.UP,
         )
 
+    val TOOLBAR_POSITION_TOP =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preference_top_toolbar),
+            description = "Top toolbar position option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SHORTCUT_OPEN_A_NEW_TAB =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.toolbar_customize_shortcut_new_tab),
+            description = "Open a new tab simple toolbar shortcut option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SHORTCUT_SHARE =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.toolbar_customize_shortcut_share),
+            description = "Share simple toolbar shortcut option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SHORTCUT_HOMEPAGE =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.toolbar_customize_shortcut_homepage),
+            description = "Homepage simple toolbar shortcut option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SHORTCUT_BACK =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.toolbar_customize_shortcut_back),
+            description = "Back simple toolbar shortcut option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SHORTCUT_NONE =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.toolbar_customize_shortcut_none),
+            description = "None simple toolbar shortcut option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SHORTCUT_ADD_BOOKMARK =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.toolbar_customize_shortcut_add_bookmark),
+            description = "Add bookmark simple toolbar shortcut option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    val SHORTCUT_SUMMARIZE_PAGES =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(summarizeR.string.mozac_summarize_settings_summarize_pages),
+            description = "Summarize pages simple toolbar shortcut option",
+            scrollDirection = SwipeDirection.UP,
+        )
+
+    // Content-readiness anchor for the page. The "Navigate up" button lives in the pinned settings toolbar, so
+    // it stays present no matter how far the preference list is scrolled - unlike the content rows, any of which
+    // can scroll off. This keeps the NAVIGATION_READY/INTERACTIVE departure check (re-verified before leaving
+    // the page) passing after a test has scrolled down, and it is exactly the control the outgoing back route uses.
     val NAVIGATE_BACK_TOOLBAR_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
             value = "Navigate up",
             description = "Navigate back toolbar button",
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     val SCROLL_TO_HIDE_TOOLBAR_OPTION =

@@ -1276,7 +1276,7 @@ class ContentSearchHandoffUI extends MozLitElement {
         const isNewTab =
           globalThis.document &&
           globalThis.document.documentURI === "about:newtab";
-        const healthReportKey = isNewTab ? "newtab" : "abouthome";
+        const healthReportKey = isNewTab ? "about_newtab" : "about_home";
         this.#controller = new window.ContentSearchUIController(
           this.nonHandoffSearchInput,
           this.nonHandoffSearchInput.parentElement,

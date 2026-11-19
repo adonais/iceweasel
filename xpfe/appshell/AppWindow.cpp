@@ -1697,56 +1697,36 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
 
   nsCOMPtr<dom::Element> windowElement = GetWindowDOMElement();
   Document* doc = windowElement->GetComposedDoc();
-  Element* urlbarEl = doc->GetElementById(u"urlbar"_ns);
+  // The bar fills its container at rest and can be wider than it while in the
+  // top layer with its results popover open, so take the span from the
+  // container. The vertical position of the urlbar will be fixed.
+  Element* urlbarContainerEl = doc->GetElementById(u"urlbar-container"_ns);
 
   nsCOMPtr<nsPIDOMWindowOuter> window = mDocShell->GetWindow();
   nsCOMPtr<nsIDOMWindowUtils> utils =
       nsGlobalWindowOuter::Cast(window)->WindowUtils();
   RefPtr<dom::DOMRect> urlbarRect;
-  rv = utils->GetBoundsWithoutFlushing(urlbarEl, getter_AddRefs(urlbarRect));
+  rv = utils->GetBoundsWithoutFlushing(urlbarContainerEl,
+                                       getter_AddRefs(urlbarRect));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  double urlbarX = urlbarRect->X();
-  double urlbarWidth = urlbarRect->Width();
-
-  // Hard-coding the following values and this behavior in general is rather
-  // fragile, and can easily get out of sync with the actual front-end values.
-  // This is not intended as a long-term solution, but only as the relatively
-  // straightforward implementation of an experimental feature. If we want to
-  // ship the skeleton UI to all users, we should strongly consider a more
-  // robust solution than this. The vertical position of the urlbar will be
-  // fixed.
-  //
-  // FIXME: Looks like this never happened :(
-  nsAutoString attributeValue;
-  urlbarEl->GetAttribute(u"breakout-extend"_ns, attributeValue);
-  // Scale down the urlbar if it is focused
-  if (attributeValue.EqualsLiteral("true")) {
-    // defined in browser.inc.css as 2px
-    int urlbarBreakoutExtend = 2;
-    // defined in urlbar-searchbar.inc.css as 5px
-    int urlbarMarginInline = 5;
-
-    // breakout-extend measurements are defined in urlbar-searchbar.inc.css
-    urlbarX += (double)(urlbarBreakoutExtend + urlbarMarginInline);
-    urlbarWidth -= (double)(2 * (urlbarBreakoutExtend + urlbarMarginInline));
-  }
   CSSPixelSpan urlbar;
-  urlbar.start = urlbarX;
-  urlbar.end = urlbar.start + urlbarWidth;
+  urlbar.start = urlbarRect->X();
+  urlbar.end = urlbar.start + urlbarRect->Width();
 #  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   settings.urlbarSpan = urlbar;
 #  endif
 
   Element* navbar = doc->GetElementById(u"nav-bar"_ns);
 
-  Element* searchbarEl = doc->GetElementById(u"searchbar"_ns);
+  // The container holds whichever search bar is shown.
+  Element* searchContainerEl = doc->GetElementById(u"search-container"_ns);
   CSSPixelSpan searchbar;
-  if (navbar->Contains(searchbarEl)) {
+  if (navbar->Contains(searchContainerEl)) {
     RefPtr<dom::DOMRect> searchbarRect;
-    rv = utils->GetBoundsWithoutFlushing(searchbarEl,
+    rv = utils->GetBoundsWithoutFlushing(searchContainerEl,
                                          getter_AddRefs(searchbarRect));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -1772,11 +1752,9 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
 #  endif
 
   Element* menubar = doc->GetElementById(u"toolbar-menubar"_ns);
-  menubar->GetAttribute(u"autohide"_ns, attributeValue);
 #  if defined(MOZ_DEFAULT_BROWSER_AGENT)
-  settings.menubarShown = attributeValue.EqualsLiteral("false");
+  settings.menubarShown = !menubar->HasAttribute(u"autohide"_ns);
 #  endif
-
   ErrorResult err;
   RefPtr<dom::HTMLCollection> toolbarSprings = navbar->GetElementsByTagNameNS(
       u"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"_ns,

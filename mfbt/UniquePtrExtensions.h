@@ -31,8 +31,8 @@
 namespace mozilla {
 
 /**
- * MakeUniqueFallible works exactly like MakeUnique, except that the memory
- * allocation performed is done fallibly, i.e. it can return nullptr.
+ * MakeUniqueFallible works exactly like std::make_unique, except that the
+ * memory allocation performed is done fallibly, i.e. it can return nullptr.
  */
 template <typename T, typename... Args>
 typename detail::UniqueSelector<T>::SingleObject MakeUniqueFallible(
@@ -52,10 +52,11 @@ typename detail::UniqueSelector<T>::KnownBound MakeUniqueFallible(
     Args&&... aArgs) = delete;
 
 /**
- * MakeUniqueForOverwrite and MakeUniqueFallibleForOverwrite are like MakeUnique
- * and MakeUniqueFallible except they use default-initialization. This is
- * useful, for example, when you have a POD type array that will be overwritten
- * directly after construction and so zero-initialization is a waste.
+ * MakeUniqueForOverwrite and MakeUniqueFallibleForOverwrite are like
+ * std::make_unique and MakeUniqueFallible except they use
+ * default-initialization. This is useful, for example, when you have a POD type
+ * array that will be overwritten directly after construction and so
+ * zero-initialization is a waste.
  */
 template <typename T, typename... Args>
 typename detail::UniqueSelector<T>::SingleObject MakeUniqueForOverwrite() {

@@ -1586,7 +1586,7 @@ int main(int argc, char** argv) {
   if (NSS_Init(nssconfigdir.c_str()) != SECSuccess) {
     int32_t errorlen = PR_GetErrorTextLength();
     if (errorlen) {
-      auto err = mozilla::MakeUnique<char[]>(errorlen + 1);
+      auto err = std::make_unique<char[]>(errorlen + 1);
       PR_GetErrorText(err.get());
       LOG_ERROR(("Failed to init NSS: %s", err.get()));
     } else {

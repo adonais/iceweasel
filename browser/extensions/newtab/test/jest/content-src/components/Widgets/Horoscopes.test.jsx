@@ -21,6 +21,11 @@ const mockState = {
       "widgets.horoscopes.interaction": false,
     },
   },
+  FramedWidgets: {
+    horoscopes: {
+      url: "https://stage-widgets-yahoo-horoscope.merino.nonprod.webservices.mozgcp.net/1.2.20261022081515/index.html",
+    },
+  },
 };
 
 const renderWidget = (dispatch = jest.fn(), props = {}, state = mockState) => {
@@ -40,6 +45,32 @@ const renderWidget = (dispatch = jest.fn(), props = {}, state = mockState) => {
 };
 
 describe("Horoscopes widget", () => {
+  it("loads the manifest url in a sandboxed iframe labelled by the title", () => {
+    const { container } = renderWidget();
+    const frame = container.querySelector("iframe.horoscopes-frame");
+    expect(frame).toHaveAttribute(
+      "src",
+      mockState.FramedWidgets.horoscopes.url
+    );
+    expect(frame).toHaveAttribute("aria-labelledby", "horoscopes-widget-label");
+    expect(frame).toHaveAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+    );
+  });
+
+  it("renders nothing without a manifest entry", () => {
+    const { container } = renderWidget(
+      jest.fn(),
+      {},
+      {
+        ...mockState,
+        FramedWidgets: {},
+      }
+    );
+    expect(container.querySelector("article.horoscopes")).toBeNull();
+  });
+
   it("renders the widget at the resolved size", () => {
     const { container } = renderWidget();
     const root = container.querySelector("article.horoscopes");
@@ -63,13 +94,6 @@ describe("Horoscopes widget", () => {
         ".horoscopes-context-menu-button[data-l10n-id='newtab-horoscopes-widget-open-menu-button']"
       )
     ).toBeTruthy();
-  });
-
-  it("renders an empty body with no rows", () => {
-    const { container } = renderWidget();
-    const body = container.querySelector(".horoscopes-body");
-    expect(body).toBeTruthy();
-    expect(body.children.length).toBe(0);
   });
 
   it("shows the New badge until the widget has been interacted with", () => {
@@ -109,13 +133,17 @@ describe("Horoscopes widget", () => {
     ).toBeNull();
   });
 
-  it("renders the shared menu footer without a leading divider", () => {
+  it("puts Powered by Yahoo first, above the shared footer divider", () => {
     const { container } = renderWidget();
     const menu = container.querySelector(
       "panel-list[id='horoscopes-context-menu']"
     );
     expect(menu).toBeTruthy();
-    expect(menu.querySelector("hr")).toBeNull();
+    const [first, second] = menu.children;
+    expect(first.getAttribute("data-l10n-id")).toBe(
+      "newtab-horoscopes-menu-powered-by-yahoo"
+    );
+    expect(second.tagName).toBe("HR");
     expect(
       menu.querySelector("panel-item[data-l10n-id='newtab-widget-menu-hide']")
     ).toBeTruthy();
@@ -153,6 +181,34 @@ describe("Horoscopes widget", () => {
         widget_source: "context_menu",
         action_value: "large",
         widget_size: "large",
+      });
+      expect(handleUserInteraction).toHaveBeenCalledWith("horoscopes");
+    });
+
+    it("Powered by Yahoo opens yahoo.com in a new tab and records the click", () => {
+      const { container, dispatch, handleUserInteraction } = renderWidget();
+      fireEvent.click(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-horoscopes-menu-powered-by-yahoo']"
+        )
+      );
+
+      const openLink = dispatch.mock.calls.find(
+        ([action]) => action?.type === at.OPEN_LINK
+      );
+      expect(openLink[0].data).toEqual({
+        url: "https://www.yahoo.com/",
+        where: "tab",
+      });
+
+      const userEvent = dispatch.mock.calls.find(
+        ([action]) =>
+          action?.type === at.WIDGETS_USER_EVENT &&
+          action.data?.user_action === "powered_by_yahoo"
+      );
+      expect(userEvent[0].data).toMatchObject({
+        widget_name: "horoscopes",
+        widget_source: "context_menu",
       });
       expect(handleUserInteraction).toHaveBeenCalledWith("horoscopes");
     });

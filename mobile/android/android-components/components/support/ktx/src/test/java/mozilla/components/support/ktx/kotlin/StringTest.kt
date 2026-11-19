@@ -788,6 +788,15 @@ class StringTest {
         assertFalse("http://example.com?a=b&c=d&e=f#g=h".urlContainsQueryParameters("g=h"))
     }
 
+    @Test
+    fun `GIVEN a camel case string WHEN converting it to snake case THEN its words are lowercased and joined by underscores`() {
+        assertEquals("enrolled_and_entitled", "EnrolledAndEntitled".toSnakeCase())
+        assertEquals("user_action", "userAction".toSnakeCase())
+        assertEquals("ready", "Ready".toSnakeCase())
+        assertEquals("a_b_test", "ABTest".toSnakeCase())
+        assertEquals("", "".toSnakeCase())
+    }
+
     private infix fun String.shortenedShouldBecome(expect: String) {
         assertEquals(expect, this.shortened())
     }

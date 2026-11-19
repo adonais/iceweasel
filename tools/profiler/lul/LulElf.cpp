@@ -360,9 +360,9 @@ typename ElfClass::Addr GetLoadingAddress(
 template <typename ElfClass>
 bool LoadSymbols(const string& obj_file, const bool big_endian,
                  const typename ElfClass::Ehdr* elf_header,
-                 const bool read_gnu_debug_link,
+                 const bool /*read_gnu_debug_link*/,
                  LoadSymbolsInfo<ElfClass>* info, SecMap* smap, void* rx_avma,
-                 size_t rx_size, UniqueStringUniverse* usu,
+                 size_t /*rx_size*/, UniqueStringUniverse* usu,
                  void (*log)(const char*)) {
   typedef typename ElfClass::Phdr Phdr;
   typedef typename ElfClass::Shdr Shdr;

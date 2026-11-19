@@ -65,16 +65,16 @@ NS_IMETHODIMP HarmfulAddonPingSender::Observe(nsISupports*, const char* aTopic,
 }  // namespace
 
 /* static */
-bool ContentClassifierFeatureUtils::IsThirdPartyUnlessAnnotating(
+bool ContentClassifierFeatureUtils::ShouldClassifyForETP(
     const ContentClassifierRequest& aRequest, ClassifyMode aMode) {
-  return aMode == ClassifyMode::Annotate || aRequest.ThirdParty();
+  return aMode == ClassifyMode::Annotate ||
+         (aRequest.ThirdParty() && !aRequest.AddonMayLoad());
 }
 
 /* static */
-bool ContentClassifierFeatureUtils::IsNonPassiveThirdPartyUnlessAnnotating(
+bool ContentClassifierFeatureUtils::ShouldClassifyNonPassiveForETP(
     const ContentClassifierRequest& aRequest, ClassifyMode aMode) {
-  return !aRequest.IsPassiveContent() &&
-         IsThirdPartyUnlessAnnotating(aRequest, aMode);
+  return !aRequest.IsPassiveContent() && ShouldClassifyForETP(aRequest, aMode);
 }
 
 /* static */

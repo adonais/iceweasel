@@ -65,7 +65,7 @@ UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
 
   // -
 
-  auto tex = MakeUnique<Texture>(*desc.gl);
+  auto tex = std::make_unique<Texture>(*desc.gl);
   Maybe<GLenum> target = BackTextureWithIOSurf(desc.gl, tex->name, ioSurf);
   if (!target) {
     return nullptr;

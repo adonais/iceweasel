@@ -33,6 +33,7 @@ const platformSpecificInterfaces = new Map([
   ["nsIASWebAuthSessionRequest", "darwin"],
   ["nsIAccessibleMacEvent", "darwin"],
   ["nsIAccessibleMacInterface", "darwin"],
+  ["nsICocoaAppShellTestUtils", "darwin"],
   ["nsILocalFileMac", "darwin"],
   ["nsIAccessibleMacEvent", "darwin"],
   ["nsIKeychainMigrationUtils", "darwin"],

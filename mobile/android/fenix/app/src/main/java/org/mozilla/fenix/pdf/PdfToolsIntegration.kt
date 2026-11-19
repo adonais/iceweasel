@@ -22,12 +22,14 @@ import androidx.core.view.isVisible
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.EngineAction
-import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
@@ -42,30 +44,44 @@ import org.mozilla.fenix.pdf.ui.PdfToolsContent
 import org.mozilla.fenix.pdf.ui.SignatureDialogContent
 import org.mozilla.fenix.theme.FirefoxTheme
 
+private const val ADDING_SIGNATURE_TIMEOUT_MS = 5000L
+
 /**
  * This integration is responsible for adding or removing PDF tools and properly anchoring it to the browser. [PdfTools]
  * only show when a PDF is displayed on the browser.
  *
  * @param container The containing browser [CoordinatorLayout] to add the PDF tools onto.
- * @param browserStore The [BrowserStore] to observe the PDF status of the selected tab.
+ * @param browserStore The [BrowserStore] to observe the PDF status of the current session.
  * @param isAddressBarAtBottom Whether the address bar is at the bottom of the browser.
+ * @param customTabSessionId Optional custom tab session ID, or null to use the selected session.
  * @param mainDispatcher The [CoroutineDispatcher] the PDF status of the selected tab is observed on.
  */
 class PdfToolsIntegration(
     private val container: CoordinatorLayout,
     private val browserStore: BrowserStore,
     private val isAddressBarAtBottom: Boolean,
+    private val customTabSessionId: String? = null,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
 
     private var overlays = emptyList<View>()
     private var scope: CoroutineScope? = null
-    private var pdfTabId by mutableStateOf(browserStore.state.selectedPdfTabId)
+    private var pdfTabId by mutableStateOf(browserStore.state.findPdfTabId(customTabSessionId))
     private var isSigning by mutableStateOf(false)
+    private var isAddingSignature by mutableStateOf(false)
+    private var isAddingSignatureTimeout: Job? = null
     private val signature = TextFieldState()
 
+    private val currentSession
+        get() = browserStore.state.findCustomTabOrSelectedTab(customTabSessionId)
+
     internal val signatureState: SignatureState
-        get() = SignatureState(isSigning = isSigning, signature = signature)
+        get() =
+            SignatureState(
+                isSigning = isSigning,
+                isAddingSignature = isAddingSignature,
+                signature = signature,
+            )
 
     internal val toolActions =
         PdfToolActions(
@@ -88,11 +104,11 @@ class PdfToolsIntegration(
         }
 
         // Keep track of the PDF's tab ID.
-        handlePdfTabChanged(browserStore.state.selectedPdfTabId)
+        handlePdfTabChanged(browserStore.state.findPdfTabId(customTabSessionId))
         scope = CoroutineScope(mainDispatcher)
         scope?.launch {
             browserStore.stateFlow
-                .map { it.selectedPdfTabId }
+                .map { it.findPdfTabId(customTabSessionId) }
                 .distinctUntilChanged()
                 .collect {
                     handlePdfTabChanged(it)
@@ -136,6 +152,7 @@ class PdfToolsIntegration(
         scope = null
 
         container.pageContent?.accessibilityTraversalAfter = View.NO_ID
+        container.addressBar?.accessibilityTraversalAfter = View.NO_ID
         overlays.forEach(container::removeView)
         overlays = emptyList()
     }
@@ -192,7 +209,7 @@ class PdfToolsIntegration(
     }
 
     /**
-     * Ensures the screenreader focus order shows the PDF tools before the content.
+     * Ensures the screenreader focus order shows the PDF tools between the address bar and the content.
      *
      * @param tools The PDF tools overlay.
      * @param dialog The signature dialog overlay.
@@ -201,9 +218,15 @@ class PdfToolsIntegration(
         val addressBar = container.addressBar ?: return
         val pageContent = container.pageContent ?: return
 
-        tools.accessibilityTraversalAfter = addressBar.id
-        dialog.accessibilityTraversalAfter = tools.id
-        pageContent.accessibilityTraversalAfter = dialog.id
+        if (isAddressBarAtBottom) {
+            tools.accessibilityTraversalAfter = pageContent.id
+            dialog.accessibilityTraversalAfter = tools.id
+            addressBar.accessibilityTraversalAfter = dialog.id
+        } else {
+            tools.accessibilityTraversalAfter = addressBar.id
+            dialog.accessibilityTraversalAfter = tools.id
+            pageContent.accessibilityTraversalAfter = dialog.id
+        }
     }
 
     /** Opens the dialog for adding a signature to the PDF. */
@@ -222,11 +245,15 @@ class PdfToolsIntegration(
 
     /** Adds the typed signature to the PDF and closes the dialog. */
     internal fun handleSignAddClick() {
+        if (!isSigning || isAddingSignature) {
+            return
+        }
+
         PdfViewer.signDialogAddTapped.record(
             PdfViewer.SignDialogAddTappedExtra(signatureType = SignatureType.Typed.telemetryName)
         )
 
-        val engineSession = browserStore.state.selectedTab?.engineState?.engineSession
+        val engineSession = currentSession?.engineState?.engineSession
         if (engineSession == null) {
             PdfViewer.signDialogAddFailure.record(
                 PdfViewer.SignDialogAddFailureExtra(
@@ -238,13 +265,31 @@ class PdfToolsIntegration(
             return
         }
 
+        isAddingSignature = true
+
+        // Timeout to ensure [engineSession.addSignatureToPdf] completes in a timely way.
+        // If it doesn't complete within [ADDING_SIGNATURE_TIMEOUT_MS], it is likely something on the backend failed
+        // without reporting.
+        isAddingSignatureTimeout = scope?.launch {
+            delay(ADDING_SIGNATURE_TIMEOUT_MS)
+
+            PdfViewer.signDialogAddFailure.record(
+                PdfViewer.SignDialogAddFailureExtra(
+                    reason = SignatureFailure.Timeout.telemetryName,
+                    signatureType = SignatureType.Typed.telemetryName,
+                )
+            )
+            dismissSignatureDialog()
+        }
         engineSession.addSignatureToPdf(
             text = signature.text.toString(),
             onResult = {
                 PdfViewer.signDialogAddCompleted.record(
                     PdfViewer.SignDialogAddCompletedExtra(signatureType = SignatureType.Typed.telemetryName)
                 )
-                dismissSignatureDialog()
+                if (isAddingSignature) {
+                    dismissSignatureDialog()
+                }
             },
             onException = {
                 PdfViewer.signDialogAddFailure.record(
@@ -253,14 +298,20 @@ class PdfToolsIntegration(
                         signatureType = SignatureType.Typed.telemetryName,
                     )
                 )
-                dismissSignatureDialog()
+                if (isAddingSignature) {
+                    dismissSignatureDialog()
+                }
             },
         )
     }
 
-    /** Closes the dialog and discards the signature. */
+    /** Closes the dialog. If the signature is processing, it will keep the signature state. */
     internal fun handleSignCloseClick() {
-        dismissSignatureDialog()
+        if (isAddingSignature) {
+            isSigning = false
+        } else {
+            dismissSignatureDialog()
+        }
         PdfViewer.signDialogCloseTapped.record(
             PdfViewer.SignDialogCloseTappedExtra(signatureType = SignatureType.Typed.telemetryName)
         )
@@ -275,14 +326,17 @@ class PdfToolsIntegration(
     }
 
     private fun dismissSignatureDialog() {
+        isAddingSignatureTimeout?.cancel()
+        isAddingSignatureTimeout = null
         isSigning = false
+        isAddingSignature = false
         signature.clearText()
     }
 
     /** Saves the PDF the selected tab is displaying to the device. */
     internal fun handleDownloadClick() {
         PdfViewer.downloadTapped.record(NoExtras())
-        browserStore.state.selectedTabId?.let {
+        currentSession?.id?.let {
             browserStore.dispatch(EngineAction.SaveToPdfAction(it))
         }
     }
@@ -290,7 +344,7 @@ class PdfToolsIntegration(
     /** Prints the PDF the selected tab is displaying. */
     internal fun handlePrintClick() {
         PdfViewer.printTapped.record(NoExtras())
-        browserStore.state.selectedTabId?.let {
+        currentSession?.id?.let {
             browserStore.dispatch(EngineAction.PrintContentAction(it))
         }
     }
@@ -298,7 +352,7 @@ class PdfToolsIntegration(
     /** Shares the PDF the selected tab is displaying. */
     internal fun handleShareClick() {
         PdfViewer.shareTapped.record(NoExtras())
-        val tab = browserStore.state.selectedTab ?: return
+        val tab = currentSession ?: return
         browserStore.tryDispatchPdfShareAction(tabId = tab.id, url = tab.content.url)
     }
 }
@@ -309,5 +363,5 @@ private val CoordinatorLayout.addressBar: View?
 private val CoordinatorLayout.pageContent: View?
     get() = findViewById(R.id.engineView)
 
-private val BrowserState.selectedPdfTabId: String?
-    get() = selectedTab?.takeIf { it.content.isPdf }?.id
+private fun BrowserState.findPdfTabId(customTabSessionId: String?): String? =
+    findCustomTabOrSelectedTab(customTabSessionId)?.takeIf { it.content.isPdf }?.id

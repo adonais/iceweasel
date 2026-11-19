@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import mozilla.components.feature.tabgroups.storage.data.TabGroup
 import mozilla.components.feature.tabgroups.storage.data.TabGroupData
 import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
+import mozilla.components.support.utils.DateTimeProvider
+import mozilla.components.support.utils.FakeDateTimeProvider
 
 /** A fake implementation of [TabGroupRepository] designed exclusively for unit tests. */
 class FakeTabGroupRepository(
@@ -16,6 +18,7 @@ class FakeTabGroupRepository(
     private val closeAllTabGroups: () -> Unit = {},
     private val deleteTabGroupAssignmentById: (String) -> Unit = {},
     private val deleteTabGroupAssignmentsById: (List<String>) -> Unit = {},
+    private val dateTimeProvider: DateTimeProvider = FakeDateTimeProvider(),
 ) : TabGroupRepository {
 
     override val tabGroupDataFlow: Flow<TabGroupData>
@@ -42,7 +45,8 @@ class FakeTabGroupRepository(
         val updatedList =
             tabGroupDataFlow.value.tabGroups.map {
                 if (it.id == tabGroup.id) {
-                    tabGroup
+                    // Tab membership is owned by the assignments, not by the group entry, so it is left untouched.
+                    tabGroup.copy(tabIds = it.tabIds)
                 } else {
                     it
                 }
@@ -56,7 +60,7 @@ class FakeTabGroupRepository(
                 tabGroups =
                     tabGroupDataFlow.value.tabGroups.map { group ->
                         if (group.id == tabGroupId) {
-                            group.copy(closed = true)
+                            group.copy(closed = true, lastModified = dateTimeProvider.currentTimeMillis())
                         } else {
                             group
                         }
@@ -71,7 +75,7 @@ class FakeTabGroupRepository(
                 tabGroups =
                     tabGroupDataFlow.value.tabGroups.map { group ->
                         if (group.id == tabGroupId) {
-                            group.copy(closed = false)
+                            group.copy(closed = false, lastModified = dateTimeProvider.currentTimeMillis())
                         } else {
                             group
                         }

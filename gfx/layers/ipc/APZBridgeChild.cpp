@@ -29,7 +29,7 @@ RefPtr<APZBridgeChild> APZBridgeChild::Create(
     const uint64_t& aProcessToken, Endpoint<PAPZBridgeChild>&& aEndpoint) {
   RefPtr<APZBridgeChild> child = new APZBridgeChild(aProcessToken);
 
-  MOZ_ASSERT(APZThreadUtils::IsControllerThreadAlive());
+  MOZ_RELEASE_ASSERT(APZThreadUtils::IsControllerThreadAlive());
 
   APZThreadUtils::RunOnControllerThread(
       NewRunnableMethod<Endpoint<PAPZBridgeChild>&&>(
@@ -43,8 +43,8 @@ APZBridgeChild::APZBridgeChild(const uint64_t& aProcessToken)
     : mIsOpen(false),
       mProcessToken(aProcessToken),
       mCompositorSession(nullptr) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 }
 
 APZBridgeChild::~APZBridgeChild() = default;
@@ -69,8 +69,8 @@ void APZBridgeChild::Open(Endpoint<PAPZBridgeChild>&& aEndpoint) {
 }
 
 void APZBridgeChild::Destroy() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   // Destroy will get called from the main thread, so we must synchronously
   // dispatch to the controller thread to close the bridge.
@@ -283,7 +283,7 @@ mozilla::ipc::IPCResult APZBridgeChild::RecvCallInputBlockCallback(
 void APZBridgeChild::NotifyPinchGestureOnMainThread(
     const PinchGestureType& aType, const LayoutDevicePoint& aFocusPoint,
     const LayoutDeviceCoord& aSpanChange, const Modifiers& aModifiers) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (mCompositorSession && mCompositorSession->GetWidget()) {
     APZCCallbackHelper::NotifyPinchGesture(aType, aFocusPoint, aSpanChange,
@@ -328,7 +328,7 @@ mozilla::ipc::IPCResult APZBridgeChild::RecvCancelAutoscroll(
 // Note APZCCallbackHelper::NotifyScaleGestureComplete() must be called on the
 // main thread.
 void APZBridgeChild::NotifyScaleGestureCompleteOnMainThread(float aScale) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (mCompositorSession && mCompositorSession->GetWidget()) {
     APZCCallbackHelper::NotifyScaleGestureComplete(
@@ -484,7 +484,7 @@ void APZBridgeChild::SetLongTapEnabled(bool aTapGestureEnabled) {
 
 // Note mCompositorSession is currently used by the main thread.
 GeckoContentController* APZBridgeChild::GetContentController() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (!mCompositorSession) {
     return nullptr;
@@ -494,7 +494,7 @@ GeckoContentController* APZBridgeChild::GetContentController() {
 
 void APZBridgeChild::NotifyLayerTransformsOnMainThread(
     nsTArray<MatrixMessage>&& aTransforms) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (RefPtr<GeckoContentController> controller = GetContentController()) {
     controller->NotifyLayerTransforms(std::move(aTransforms));
@@ -517,7 +517,7 @@ mozilla::ipc::IPCResult APZBridgeChild::RecvLayerTransforms(
 
 void APZBridgeChild::UpdateOverscrollVelocityOnMainThread(
     const ScrollableLayerGuid& aGuid, float aX, float aY, bool aIsRootContent) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (RefPtr<GeckoContentController> controller = GetContentController()) {
     controller->UpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
@@ -541,7 +541,7 @@ mozilla::ipc::IPCResult APZBridgeChild::RecvUpdateOverscrollVelocity(
 
 void APZBridgeChild::UpdateOverscrollOffsetOnMainThread(
     const ScrollableLayerGuid& aGuid, float aX, float aY, bool aIsRootContent) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (RefPtr<GeckoContentController> controller = GetContentController()) {
     controller->UpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
@@ -564,7 +564,7 @@ mozilla::ipc::IPCResult APZBridgeChild::RecvUpdateOverscrollOffset(
 }
 
 void APZBridgeChild::HideDynamicToolbarOnMainThread() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (RefPtr<GeckoContentController> controller = GetContentController()) {
     // Only the RemoteContentController implementation uses the

@@ -11,7 +11,6 @@ import android.os.Build
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.annotation.VisibleForTesting
-import androidx.core.net.toUri
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -157,7 +156,7 @@ fun Uri.toFileUri(context: Context, dirToCopy: String = "/temps"): Uri {
     } catch (e: RuntimeException) {
         Logger("Uri.kt").warn("Could not access file from uri", e)
     }
-    return "file:///${Uri.encode(temporalFile.absolutePath)}".toUri()
+    return Uri.fromFile(temporalFile)
 }
 
 @VisibleForTesting

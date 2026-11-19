@@ -83,7 +83,7 @@ NS_INTERFACE_MAP_END
 
 ArrayBufferInputStream::ArrayBufferInputStream(
     mozilla::Span<const uint8_t> aData)
-    : mArrayBuffer(MakeUnique<char[]>(aData.Length())),
+    : mArrayBuffer(std::make_unique<char[]>(aData.Length())),
       mBufferLength(aData.Length()),
       mPos(0),
       mClosed(false),

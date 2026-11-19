@@ -10,7 +10,6 @@ This should be a mostly generic multilocale build script.
 import os
 import sys
 
-from mozharness.base.errors import MakefileErrorList
 from mozharness.base.vcs.vcsbase import MercurialScript
 from mozharness.mozilla.l10n.locales import LocalesMixin
 
@@ -74,16 +73,10 @@ class MultiLocaleBuild(LocalesMixin, MercurialScript):
             )
 
     def package_multi(self):
-        dirs = self.query_abs_dirs()
-        objdir = dirs["abs_obj_dir"]
-
         # This will error on non-0 exit code.
         locales = list(sorted(self.query_locales()))
-        self._run_mach_command(["package-multi-locale", "--locales"] + locales)
-
-        command = "make package-tests AB_CD=multi"
-        self.run_command(
-            command, cwd=objdir, error_list=MakefileErrorList, halt_on_failure=True
+        self._run_mach_command(
+            ["package-multi-locale", "--package-tests", "--locales"] + locales
         )
         # TODO deal with buildsymbols
 

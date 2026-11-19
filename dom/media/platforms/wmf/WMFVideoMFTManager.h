@@ -100,8 +100,9 @@ class WMFVideoMFTManager : public MFTManager {
 
   // The picture size we update from the IMFMediaType when the stream format
   // changes. We assume it's equal to the image size by default (no cropping).
-  // This is only used for software decoding.
-  gfx::IntSize mSoftwarePictureSize;
+  // It can change without a new decoder, e.g. when switching between spatial
+  // layers of an AV1 SVC stream.
+  gfx::IntSize mPictureSize;
 
   uint32_t mVideoStride;
   Maybe<gfx::YUVColorSpace> mColorSpace;

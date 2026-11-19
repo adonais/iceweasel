@@ -823,6 +823,15 @@ split-view-footer {
     -moz-window-shadow: none;
   }
 
+  &[copy-fading] {
+    opacity: 0;
+    transition: opacity 240ms ease-out;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
   moz-button {
     --button-min-height: 34px;
     --button-size-icon: 34px;
@@ -832,6 +841,14 @@ split-view-footer {
     @media -moz-pref("browser.nova.enabled") {
       --button-border-radius: var(--border-radius-xlarge);
     }
+  }
+
+  .more-actions-separator {
+    align-self: center;
+    width: 1px;
+    height: 18px;
+    margin-inline: var(--space-xsmall);
+    background-color: var(--border-color);
   }
 
   #ai-action-button::part(button) {
@@ -854,11 +871,330 @@ split-view-footer {
     -moz-context-properties: fill;
     fill: var(--button-icon-fill);
   }
+
+  .copy-action-confirmation {
+    display: flex;
+    align-items: center;
+    flex: none;
+    block-size: var(--icon-size-xlarge);
+    margin-block: 2px;
+    white-space: nowrap;
+
+    &[copied] {
+      margin-inline-end: 2px;
+      padding-inline-end: var(--space-medium);
+      border-radius: var(--border-radius-circle);
+      background-color: var(--color-accent-primary);
+      color: var(--button-text-color-primary);
+      font-size: var(--font-size-root);
+      font-weight: var(--font-weight-semibold);
+    }
+  }
+
+  .copy-action-confirmation-icon {
+    display: none;
+    flex: none;
+    inline-size: var(--icon-size-xlarge);
+    block-size: var(--icon-size-xlarge);
+    background-image: url("chrome://global/skin/icons/check.svg");
+    background-size: var(--icon-size-default);
+    background-position: center;
+    background-repeat: no-repeat;
+    -moz-context-properties: fill;
+    fill: currentColor;
+  }
+
+  .copy-action-confirmation[copied] .copy-action-confirmation-icon {
+    display: block;
+  }
+
+  &[copied] #more-actions-button {
+    display: none;
+  }
+}
+
+@media -moz-pref("browser.highlightToSearch.featureGate") {
+  #selection-shortcut-action-panel {
+    --selection-button-size: 36px;
+    --panel-subview-body-padding: 1px;
+
+    moz-button {
+      --button-min-height: var(--selection-button-size);
+      --button-size-icon: var(--selection-button-size);
+    }
+
+    #ai-action-button::part(button)::after {
+      margin-inline-start: var(--space-xsmall);
+    }
+
+    .copy-action-confirmation {
+      block-size: var(--selection-button-size);
+      margin-block: 1px;
+    }
+
+    .copy-action-confirmation-icon {
+      inline-size: var(--selection-button-size);
+      block-size: var(--selection-button-size);
+    }
+  }
+
+  #selection-more-actions-panel > .panel-subview-body {
+    font: menu;
+  }
+}
+
+#selection-more-actions-panel {
+  --selection-row-icon-inset: calc((var(--size-item-large) - var(--icon-size)) / 2);
+  --selection-row-switch-inset: calc((var(--size-item-large) - var(--size-item-small)) / 2);
+
+  &::part(content) {
+    padding: var(--space-small);
+  }
+
+  > .panel-subview-body {
+    gap: 0;
+    padding-block: 0;
+  }
+
+  moz-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: var(--size-item-large);
+    padding-inline: var(--selection-row-icon-inset) var(--selection-row-switch-inset);
+    border-radius: var(--button-border-radius);
+    --space-small: var(--selection-row-icon-inset);
+
+    &:hover {
+      background-color: var(--button-background-color-ghost-hover);
+      color: var(--button-text-color-ghost-hover);
+    }
+  }
+}
+
+#more-actions-manage-settings {
+  --manage-settings-start: calc(var(--selection-row-icon-inset) - var(--border-width));
+  --manage-settings-end: calc(var(--selection-row-switch-inset) + var(--size-item-large) + var(--space-medium));
+  --button-padding: var(--space-xsmall) var(--manage-settings-end) var(--space-xsmall) var(--manage-settings-start);
+  --button-font-weight: normal;
+  --space-small: var(--selection-row-icon-inset);
+
+  &:dir(rtl) {
+    --button-padding: var(--space-xsmall) var(--manage-settings-start) var(--space-xsmall) var(--manage-settings-end);
+  }
+}
+
+.more-actions-notice {
+  /* Take the width of the rows instead of stretching the panel. */
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 var(--space-xsmall);
+  padding: var(--space-small) var(--space-medium);
+  border-radius: var(--border-radius-large);
+  background-color: var(--background-color-warning);
+}
+
+.more-actions-notice-chevron {
+  display: inline-block;
+  inline-size: var(--icon-size-xsmall);
+  block-size: var(--icon-size-xsmall);
+  vertical-align: middle;
+  background-color: currentColor;
+  mask-image: url("chrome://global/skin/icons/arrow-right-12.svg");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+
+  &:dir(rtl) {
+    scale: -1 1;
+  }
+}
+
+#selection-callout-panel {
+  --panel-background-color: inherit;
+  --panel-text-color: inherit;
+  --panel-border-radius: 20px;
+  --panel-box-shadow: none;
+  --panel-box-shadow-margin: 0px;
+  --selection-callout-caret-room: 16px;
+  --panel-padding: var(--selection-callout-caret-room) 0;
+  --selection-callout-edge-fill: var(--panel-background-color);
+  --selection-callout-edge-start: var(--color-violet-30);
+  --selection-callout-edge-end: var(--color-orange-30);
+  --selection-callout-link-hit-size: 26px;
+
+  @media (forced-colors) {
+    --selection-callout-edge-fill: Canvas;
+  }
+
+  @media (-moz-platform: macos) {
+    appearance: none;
+    background-color: transparent;
+    -moz-window-shadow: none;
+  }
+
+  &::part(content) {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--panel-text-color);
+    overflow: visible;
+  }
+
+  & > .panel-subview-body {
+    position: relative;
+    box-sizing: border-box;
+    width: 288px;
+    overflow: visible;
+    padding: 12px 15px;
+    border-radius: var(--panel-border-radius);
+
+    > :not(.selection-callout-shape) {
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .selection-callout-shape {
+    position: absolute;
+    inset-inline-start: 0;
+    top: calc(var(--selection-callout-caret-room) * -1);
+    z-index: 0;
+    overflow: visible;
+    pointer-events: none;
+    filter: drop-shadow(0 3px 12px var(--box-shadow-color-lighter-layer-2)) drop-shadow(0 0.375px 1.5px var(--box-shadow-color-lighter-layer-1));
+  }
+
+  .selection-callout-gradient-start {
+    stop-color: var(--selection-callout-edge-start);
+  }
+
+  .selection-callout-gradient-end {
+    stop-color: var(--selection-callout-edge-end);
+  }
+
+  .selection-callout-edge {
+    fill: var(--selection-callout-edge-fill);
+    stroke: url("#selection-callout-edge");
+    stroke-width: 1;
+
+    @media (prefers-contrast) {
+      stroke: var(--border-color);
+    }
+
+    @media (forced-colors) {
+      stroke: CanvasText;
+    }
+  }
+
+  .selection-callout-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .selection-callout-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.25;
+  }
+
+  .selection-callout-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .selection-callout-mark-column {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .selection-callout-mark {
+    width: 39px;
+    height: 39px;
+  }
+
+  .selection-callout-new-badge {
+    margin-block-start: calc(var(--space-xsmall) * -1);
+  }
+
+  .selection-callout-message {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .selection-callout-more-link {
+    position: relative;
+    z-index: 0;
+    display: inline-block;
+    inline-size: var(--icon-size);
+    block-size: var(--icon-size);
+    margin-inline: 1px;
+    vertical-align: middle;
+    font-size: 0;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: currentColor;
+      mask-image: url("chrome://global/skin/icons/more.svg");
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset-block-start: calc(50% - var(--selection-callout-link-hit-size) / 2);
+      inset-inline-start: calc(50% - var(--selection-callout-link-hit-size) / 2);
+      width: var(--selection-callout-link-hit-size);
+      height: var(--selection-callout-link-hit-size);
+      border-radius: 50%;
+    }
+
+    &:hover::before {
+      background-color: var(--button-background-color-ghost-hover);
+    }
+
+    &:hover:active::before {
+      background-color: var(--button-background-color-ghost-active);
+    }
+
+    &:focus-visible::before {
+      outline: var(--focus-outline);
+    }
+  }
+}
+
+#more-actions-button[highlighted]::part(button) {
+  background-color: var(--button-background-color-ghost-hover);
+  color: var(--button-text-color-ghost-hover);
 }
 
 #ask-chat-shortcuts {
   font: menu;
   max-width: 345px;
+}
+
+@media -moz-pref("browser.highlightToSearch.featureGate") {
+  #ask-chat-shortcuts {
+    min-width: 240px;
+    max-width: 320px;
+
+    toolbarbutton.subviewbutton {
+      min-height: var(--size-item-large);
+      padding-block: 0;
+    }
+  }
 }
 
 .ask-chat-shortcut-warning {

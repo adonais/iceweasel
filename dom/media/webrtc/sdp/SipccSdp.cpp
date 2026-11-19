@@ -21,7 +21,9 @@ SipccSdp::SipccSdp(const SipccSdp& aOrig)
   }
 }
 
-UniquePtr<Sdp> SipccSdp::Clone() const { return MakeUnique<SipccSdp>(*this); }
+UniquePtr<Sdp> SipccSdp::Clone() const {
+  return std::make_unique<SipccSdp>(*this);
+}
 
 UniquePtr<SdpMediaSectionImpl> SipccSdp::CreateMediaSection(
     const size_t level) {

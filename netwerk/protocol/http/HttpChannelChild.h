@@ -243,10 +243,7 @@ class HttpChannelChild final : public PHttpChannelChild,
                             const ResourceTimingStructArgs& aTiming,
                             const nsHttpHeaderArray& aResponseTrailers,
                             nsTArray<ConsoleReportCollected>&& aConsoleReports,
-                            bool aFromSocketProcess,
                             const TimeStamp& aOnStopRequestStartTime);
-  void ProcessOnConsoleReport(
-      nsTArray<ConsoleReportCollected>&& aConsoleReports);
 
   void ProcessNotifyClassificationFlags(uint32_t aClassificationFlags,
                                         bool aIsThirdParty);
@@ -475,7 +472,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   void DoNotifyListener(bool aUseEventQueue = true);
   void ContinueDoNotifyListener();
   void OnAfterLastPart(const nsresult& aStatus);
-  void MaybeConnectToSocketProcess();
   void OnDetachStreamFilters();
   void SendOnDataFinished(const nsresult& aChannelStatus);
 

@@ -122,6 +122,14 @@ const processes = {
       condition: WIN,
       stat: 1,
     },
+    {
+      // bug 2071154, artifact builds only.
+      path: "GreD:jogfile.json",
+      condition:
+        WIN && Services.prefs.getBoolPref("telemetry.fog.artifact_build"),
+      stat: 1,
+      read: 300,
+    },
   ],
   WebExtensions: [
     {

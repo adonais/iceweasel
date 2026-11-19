@@ -21,6 +21,7 @@
 #include "mozilla/Maybe.h"      // mozilla::Maybe
 
 #include <stdint.h>  // int32_t, int64_t, uint32_t
+#include <utility>   // std::pair
 
 #include "gc/Barrier.h"         // HeapPtr
 #include "gc/ZoneAllocator.h"   // ZoneAllocPolicy
@@ -84,6 +85,16 @@ struct ImportValues;
 // The resulting structure can be passed to WasmModule::instantiate.
 [[nodiscard]] bool GetImports(JSContext* cx, const Module& module,
                               HandleObject importObj, ImportValues* imports);
+
+[[nodiscard]] bool GetModuleExportNames(
+    JSContext* cx, HandleObject wasmModuleObject,
+    MutableHandle<JS::StackGCVector<JSString*>> exportNames);
+
+// Each import is a (module specifier, export name) pair. Imports satisfied by a
+// builtin module are omitted, as they are not resolved against other modules.
+[[nodiscard]] bool GetModuleImports(
+    JSContext* cx, HandleObject wasmModuleObject,
+    MutableHandle<JS::StackGCVector<std::pair<JSString*, JSString*>>> imports);
 
 // For testing cross-process (de)serialization, this pair of functions are
 // responsible for, in the child process, compiling the given wasm bytecode
@@ -587,6 +598,10 @@ class WasmComponentInstanceObject : public NativeObject {
   wasm::ComponentInstance& instance() const;
 };
 #endif  // ENABLE_WASM_COMPONENTS
+
+#ifdef NIGHTLY_BUILD
+bool WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record);
+#endif
 
 }  // namespace js
 

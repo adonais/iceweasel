@@ -303,11 +303,12 @@ add_task(async function test_toggle_keyboard_accessible() {
     resultIndex
   );
 
-  let getItem = async () => {
+  let getItem = async ({ openByMouse = false } = {}) => {
     let item = await UrlbarTestUtils.openResultMenuAndGetItem({
       window,
       command: "toggle-keyboard-accessible",
       resultIndex,
+      openByMouse,
     });
     Assert.equal(
       item,
@@ -342,7 +343,7 @@ add_task(async function test_toggle_keyboard_accessible() {
   );
   Assert.ok(gURLBar.view.isOpen, "The view stays open");
 
-  item = await getItem();
+  item = await getItem({ openByMouse: true });
   Assert.ok(
     item.hasAttribute("checked"),
     "The checkbox is checked once the menu button is keyboard-inaccessible"
@@ -365,3 +366,144 @@ add_task(async function test_toggle_keyboard_accessible() {
   Services.prefs.clearUserPref("browser.urlbar.resultMenu.keyboardAccessible");
   await PlacesUtils.history.clear();
 });
+
+add_task(async function test_keyboard_accessible_checkbox_visibility() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.contextMenu.featureGate", true]],
+  });
+  await PlacesTestUtils.addVisits("https://example.com/checkbox_visibility/");
+
+  const TEST_CASES = [
+    {
+      keyboardAccessiblePref: true,
+      simulateTabKeyToSelect: true,
+      openBy: "enter",
+      expected: true,
+    },
+    {
+      keyboardAccessiblePref: true,
+      simulateTabKeyToSelect: true,
+      openBy: "mouse",
+      expected: true,
+    },
+    {
+      keyboardAccessiblePref: true,
+      simulateTabKeyToSelect: false,
+      openBy: "mouse",
+      expected: false,
+    },
+    {
+      keyboardAccessiblePref: true,
+      simulateTabKeyToSelect: true,
+      openBy: "contextmenu",
+      expected: false,
+    },
+    {
+      keyboardAccessiblePref: true,
+      simulateTabKeyToSelect: false,
+      openBy: "contextmenu",
+      expected: false,
+    },
+    {
+      keyboardAccessiblePref: false,
+      simulateTabKeyToSelect: true,
+      openBy: "mouse",
+      expected: true,
+    },
+    {
+      keyboardAccessiblePref: false,
+      simulateTabKeyToSelect: false,
+      openBy: "contextmenu",
+      expected: false,
+    },
+  ];
+
+  for (let {
+    keyboardAccessiblePref,
+    simulateTabKeyToSelect,
+    openBy,
+    expected,
+  } of TEST_CASES) {
+    info(
+      `Test for ${JSON.stringify({ keyboardAccessiblePref, simulateTabKeyToSelect, openBy })}`
+    );
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [
+          "browser.urlbar.resultMenu.keyboardAccessible",
+          keyboardAccessiblePref,
+        ],
+      ],
+    });
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "checkbox_visibility",
+    });
+
+    let resultIndex = 1;
+    if (simulateTabKeyToSelect) {
+      info("Select the menu button with the Tab key");
+      while (UrlbarTestUtils.getSelectedRowIndex(window) != resultIndex) {
+        EventUtils.synthesizeKey("KEY_ArrowDown");
+      }
+      EventUtils.synthesizeKey("KEY_Tab");
+      Assert.equal(
+        UrlbarTestUtils.getSelectedElement(window) ==
+          UrlbarTestUtils.getButtonForResultIndex(
+            window,
+            "result-menu",
+            resultIndex
+          ),
+        keyboardAccessiblePref,
+        "Whether the Tab key selected the menu button"
+      );
+    }
+
+    info("Open the context menu");
+    if (openBy == "contextmenu") {
+      await openContextMenu(resultIndex);
+    } else {
+      await UrlbarTestUtils.openResultMenu(window, {
+        resultIndex,
+        byMouse: openBy == "mouse",
+      });
+    }
+
+    let menu = gURLBar.view.resultMenu;
+    Assert.equal(
+      !!menu.querySelector('[data-command="toggle-keyboard-accessible"]'),
+      expected,
+      "Whether the menu shows the checkbox"
+    );
+
+    menu.hide(undefined, { force: true });
+    await UrlbarTestUtils.promisePopupClose(window);
+    await SpecialPowers.popPrefEnv();
+  }
+
+  await SpecialPowers.popPrefEnv();
+  await PlacesUtils.history.clear();
+});
+
+async function openContextMenu(resultIndex) {
+  let { element } = await UrlbarTestUtils.getDetailsOfResultAt(
+    window,
+    resultIndex
+  );
+
+  let menu = gURLBar.view.resultMenu;
+  let onShown = BrowserTestUtils.waitForEvent(menu, "shown");
+  EventUtils.synthesizeMouseAtCenter(element.row, {
+    button: 2,
+    type: "mousedown",
+  });
+  EventUtils.synthesizeMouseAtCenter(element.row, {
+    button: 2,
+    type: "contextmenu",
+  });
+  EventUtils.synthesizeMouseAtCenter(element.row, {
+    button: 2,
+    type: "mouseup",
+  });
+  await onShown;
+}

@@ -10,7 +10,9 @@
 
 #include "nsHTMLContentSerializer.h"
 
+#include "mozilla/DeclarationBlock.h"
 #include "mozilla/IntegerRange.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsAttrName.h"
@@ -29,6 +31,7 @@
 #include "nsString.h"
 #include "nsUnicharUtils.h"
 
+using namespace mozilla;
 using namespace mozilla::dom;
 
 nsresult NS_NewHTMLContentSerializer(nsIContentSerializer** aSerializer) {
@@ -44,6 +47,30 @@ nsHTMLContentSerializer::~nsHTMLContentSerializer() = default;
 NS_IMETHODIMP
 nsHTMLContentSerializer::AppendDocumentStart(Document* aDocument) {
   return NS_OK;
+}
+
+bool nsHTMLContentSerializer::SerializeInlineStyleAttribute(
+    const Element* aElement, nsAString& aOutStr) {
+  StyleLockedDeclarationBlock* raw = aElement->GetInlineStyleDeclaration();
+  if (!raw) {
+    return true;
+  }
+
+  RefPtr<DeclarationBlock> decl =
+      new DeclarationBlock(Servo_DeclarationBlock_Clone(raw).Consume());
+  // Browsers differ in how they serialize styles when copying, but all other
+  // browsers drop the opacity property, so we do the same for interop. See
+  // https://github.com/w3c/clipboard-apis/issues/246.
+  decl->RemovePropertyById(eCSSProperty_opacity);
+
+  nsAutoCString attrValueStr;
+  decl->ToString(attrValueStr);
+  if (attrValueStr.IsEmpty()) {
+    return true;
+  }
+
+  return SerializeAttr(u""_ns, u"style"_ns, NS_ConvertUTF8toUTF16(attrValueStr),
+                       aOutStr, false /* aIsJS */);
 }
 
 bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
@@ -75,6 +102,16 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
         aNamespace == kNameSpaceID_XHTML && attrName == nsGkAtoms::value &&
         attrNamespaceID == kNameSpaceID_None) {
       // This is handled separately in SerializeLIValueAttribute()
+      continue;
+    }
+
+    if (mIsCopying && attrName == nsGkAtoms::style &&
+        attrNamespaceID == kNameSpaceID_None &&
+        mozilla::StaticPrefs::
+            dom_serializer_normalize_inline_style_when_copying_enabled()) {
+      if (!SerializeInlineStyleAttribute(aElement, aStr)) {
+        return false;
+      }
       continue;
     }
 

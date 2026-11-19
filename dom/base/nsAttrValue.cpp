@@ -852,7 +852,7 @@ UniquePtr<AttrAtomArray> AttrAtomArray::CreateDeduplicatedCopyIfDifferentImpl()
     // We've found a duplicate!
     if (!deduplicatedArray) {
       // Allocate the deduplicated copy and copy the preceding elements into it.
-      deduplicatedArray = MakeUnique<AttrAtomArray>();
+      deduplicatedArray = std::make_unique<AttrAtomArray>();
       deduplicatedArray->mMayContainDuplicates = false;
       deduplicatedArray->mBloomFilter = mBloomFilter;
       deduplicatedArray->mArray.SetCapacity(len - 1);
@@ -1404,7 +1404,7 @@ void nsAttrValue::ParseAtomArray(nsAtom* aValue) {
   }
 
   // We have at least one class atom. Create a new AttrAtomArray.
-  auto array = MakeUnique<AttrAtomArray>();
+  auto array = std::make_unique<AttrAtomArray>();
   array->Append(std::move(classAtom));
 
   // parse the rest of the classnames

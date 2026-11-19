@@ -749,3 +749,50 @@ TEST(TestTokensCache, WithinRecordCertDedup)
          "rawCertSize="
       << rawCertSize << " cacheSize=" << cacheSize;
 }
+
+static void corruptPayload(mozilla::net::SSLTokensCacheRecordInfo& aRec) {
+  aRec.compressedPayload = {0xFF, 0xFF, 0xFF, 0xFF, 0x00};
+}
+
+TEST(TestTokensCache, GetSkipsUndecodableRecord)
+{
+  ClearAll();
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
+  putToken("anon:a.example.com:443"_ns, 100);
+  putToken("anon:a.example.com:443"_ns, 200);
+
+  nsTArray<mozilla::net::SSLTokensCacheRecordInfo> records;
+  mozilla::net::SSLTokensCache::GetAllRecords(records);
+  ASSERT_EQ(records.Length(), 2u);
+  auto& first = records[0].expirationTime < records[1].expirationTime
+                    ? records[0]
+                    : records[1];
+  corruptPayload(first);
+  mozilla::net::SSLTokensCache::ReplaceAllRecordsForTest(std::move(records));
+
+  getAndCheckResult("anon:a.example.com:443"_ns, 200);
+  ASSERT_EQ(mozilla::net::SSLTokensCache::CountForTest(), 0u);
+}
+
+TEST(TestTokensCache, GetWithOnlyUndecodableRecordsIsMiss)
+{
+  ClearAll();
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
+  putToken("anon:a.example.com:443"_ns, 100);
+  putToken("anon:a.example.com:443"_ns, 200);
+
+  nsTArray<mozilla::net::SSLTokensCacheRecordInfo> records;
+  mozilla::net::SSLTokensCache::GetAllRecords(records);
+  for (auto& rec : records) {
+    corruptPayload(rec);
+  }
+  mozilla::net::SSLTokensCache::ReplaceAllRecordsForTest(std::move(records));
+
+  nsTArray<uint8_t> token;
+  mozilla::net::SessionCacheInfo info;
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:a.example.com:443"_ns,
+                                              token, info),
+            NS_ERROR_NOT_AVAILABLE);
+  ASSERT_EQ(mozilla::net::SSLTokensCache::CountForTest(), 0u);
+  ASSERT_EQ(mozilla::net::SSLTokensCache::CacheSizeForTest(), 0u);
+}

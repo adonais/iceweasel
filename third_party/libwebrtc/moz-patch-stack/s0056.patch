@@ -214,7 +214,7 @@ index 5ac8a77130..0b6b1ec6d7 100644
                                     int current_delay_ms,
                                     int target_delay_ms,
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index c44d58f726..9f65717dd8 100644
+index 6549206d24..f25486e902 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -298,6 +298,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
@@ -233,7 +233,7 @@ index c44d58f726..9f65717dd8 100644
        packet_buffer_(kPacketBufferStartSize,
                       PacketBufferMaxSize(env_.field_trials())),
        reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
-@@ -1622,7 +1624,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1633,7 +1635,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
      last_timestamp_for_pic_id_.erase(last_timestamp_for_pic_id_.begin(),
                                       ++ts_it);
    }
@@ -244,7 +244,7 @@ index c44d58f726..9f65717dd8 100644
  }
  
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index f18cdaa55d..68889ae661 100644
+index 6f45a592c2..80f3753488 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
 @@ -70,6 +70,7 @@
@@ -263,7 +263,7 @@ index f18cdaa55d..68889ae661 100644
        // The KeyFrameRequestSender is optional; if not provided, key frame
        // requests are sent via the internal RtpRtcp module.
        OnCompleteFrameCallback* complete_frame_callback,
-@@ -428,6 +430,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+@@ -435,6 +437,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
    std::unique_ptr<LossNotificationController> loss_notification_controller_
        RTC_GUARDED_BY(worker_queue_);
  

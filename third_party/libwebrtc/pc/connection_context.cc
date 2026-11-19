@@ -29,11 +29,34 @@
 #include "rtc_base/network.h"
 #include "rtc_base/socket_factory.h"
 #include "rtc_base/socket_server.h"
+#include "rtc_base/system/ignore_warnings.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
 
 namespace {
+
+// Returns the network thread that the application supplied, if any. Support for
+// a worker thread that is distinct from the network thread is being removed.
+// For compatibility with applications that supply a worker thread but no
+// network thread, the worker thread is used as the network thread if its socket
+// server can create sockets. That joins the worker and network threads.
+RTC_PUSH_IGNORING_WDEPRECATED_DECLARATIONS()
+Thread* absl_nullable ResolveNetworkThread(
+    const PeerConnectionFactoryDependencies& dependencies) {
+  Thread* worker_thread = dependencies.worker_thread;
+  if (dependencies.network_thread != nullptr || worker_thread == nullptr ||
+      !worker_thread->socketserver()->CanCreateSockets()) {
+    return dependencies.network_thread;
+  }
+  RTC_LOG(LS_WARNING)
+      << "PeerConnectionFactoryDependencies::worker_thread is set while "
+         "network_thread is not. The worker thread will be used as the "
+         "network thread. Applications should set network_thread instead. "
+         "See PSA: https://groups.google.com/g/discuss-webrtc/c/Fs_Hd5XNJh0";
+  return worker_thread;
+}
+RTC_POP_IGNORING_WDEPRECATED_DECLARATIONS()
 
 Thread* MaybeStartNetworkThread(
     Thread* old_thread,
@@ -79,6 +102,19 @@ std::unique_ptr<SctpTransportFactoryInterface> MaybeCreateSctpFactory(
 #endif
 }
 
+// Returns the thread to use as the worker thread. Support for a worker thread
+// that is distinct from the network thread is being removed, so applications
+// should stop supplying one. Reading the deprecated member is confined to this
+// function in order to keep the warning suppression as narrow as possible.
+RTC_PUSH_IGNORING_WDEPRECATED_DECLARATIONS()
+Thread* absl_nonnull ResolveWorkerThread(
+    const PeerConnectionFactoryDependencies& dependencies,
+    Thread* absl_nonnull network_thread) {
+  return dependencies.worker_thread != nullptr ? dependencies.worker_thread
+                                               : network_thread;
+}
+RTC_POP_IGNORING_WDEPRECATED_DECLARATIONS()
+
 }  // namespace
 
 // Static
@@ -103,12 +139,11 @@ ConnectionContext::ConnectionContext(
     const Environment& env,
     PeerConnectionFactoryDependencies* absl_nonnull dependencies)
     : is_configured_for_media_(dependencies->media_factory != nullptr),
-      network_thread_(MaybeStartNetworkThread(dependencies->network_thread,
-                                              owned_socket_factory_,
-                                              owned_network_thread_)),
-      worker_thread_(dependencies->worker_thread != nullptr
-                         ? dependencies->worker_thread
-                         : network_thread_),
+      network_thread_(
+          MaybeStartNetworkThread(ResolveNetworkThread(*dependencies),
+                                  owned_socket_factory_,
+                                  owned_network_thread_)),
+      worker_thread_(ResolveWorkerThread(*dependencies, network_thread_)),
       signaling_thread_(MaybeWrapThread(dependencies->signaling_thread,
                                         wraps_current_thread_)),
       media_engine_(
@@ -130,8 +165,7 @@ ConnectionContext::ConnectionContext(
   RTC_DCHECK(!(default_network_manager_ && network_monitor_factory_))
       << "You can't set both network_manager and network_monitor_factory.";
 
-  if (dependencies->worker_thread != nullptr &&
-      dependencies->worker_thread != network_thread_) {
+  if (worker_thread_ != network_thread_) {
     RTC_LOG(LS_ERROR)
         << "\n"
         << "***************************************************************\n"

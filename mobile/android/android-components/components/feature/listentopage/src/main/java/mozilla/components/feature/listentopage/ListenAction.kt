@@ -5,6 +5,7 @@
 package mozilla.components.feature.listentopage
 
 import kotlin.time.Duration
+import mozilla.components.feature.listentopage.content.LanguageSource
 import mozilla.components.feature.listentopage.synthesis.SpeechRate
 import mozilla.components.lib.state.Action
 
@@ -37,6 +38,18 @@ sealed interface ListenAction : Action {
 
             /** The listened tab was closed or user navigated elsewhere. */
             TabClosed,
+
+            /** The user left reader mode on the listened tab. */
+            ReaderModeClosed,
+
+            /**
+             * The media session ended outside the app, such as when the app was removed from the recent apps or the
+             * notification was dismissed.
+             */
+            MediaSessionEndedOutsideApp,
+
+            /** The user turned the feature off. */
+            FeatureDisabled,
         }
     }
 
@@ -46,11 +59,13 @@ sealed interface ListenAction : Action {
          * The article was extracted from the page.
          *
          * @property languageTag language of the article.
+         * @property languageSource Where [languageTag] came from.
          * @property title The article title, or `null` when the page has none.
          * @property site The site the article is from, or `null` when its URL names none.
          */
         data class ContentReady(
             val languageTag: String,
+            val languageSource: LanguageSource = LanguageSource.Page,
             val title: String? = null,
             val site: String? = null,
         ) : Content
@@ -200,6 +215,13 @@ sealed interface ListenAction : Action {
  * @property report What the player reported, naming the chunk it is reading.
  */
 internal data class PlayerReportReceived(val report: PlaybackState) : ListenAction.Playback
+
+/**
+ * The article was split again for a new voice, so its progress moves to the same share of the length it now has.
+ *
+ * @property positionInArticle How far through the article playback had got in the voice before, between 0 and 1.
+ */
+internal data class VoiceChangeStarted(val positionInArticle: Float) : ListenAction.Playback
 
 /** Actions recording what has been handed to the player, which its reports are read against. */
 internal sealed interface PlaylistAction : ListenAction {

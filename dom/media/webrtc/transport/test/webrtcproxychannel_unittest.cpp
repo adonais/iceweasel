@@ -3,8 +3,11 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <algorithm>
+#include <functional>
 #include <mutex>
 
+#include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/net/WebrtcTCPSocket.h"
 #include "mozilla/net/WebrtcTCPSocketCallback.h"
 #include "nsISocketTransport.h"
@@ -526,7 +529,8 @@ class WebrtcTCPSocketTest : public MtransportTest {
         mChannel(nullptr),
         mCallback(nullptr),
         mOnCloseCalled(false),
-        mOnConnectedCalled(false) {}
+        mOnConnectedCalled(false),
+        mCloseReason(NS_OK) {}
 
   // WebrtcTCPSocketCallback forwards from mCallback
   void OnClose(nsresult aReason);
@@ -558,6 +562,7 @@ class WebrtcTCPSocketTest : public MtransportTest {
 
   std::atomic<bool> mOnCloseCalled;
   std::atomic<bool> mOnConnectedCalled;
+  std::atomic<nsresult> mCloseReason;
 
   size_t ReadDataLength();
   template <typename T>
@@ -615,7 +620,10 @@ void WebrtcTCPSocketTest::OnConnected(const nsACString& aProxyType) {
   mOnConnectedCalled = true;
 }
 
-void WebrtcTCPSocketTest::OnClose(nsresult aReason) { mOnCloseCalled = true; }
+void WebrtcTCPSocketTest::OnClose(nsresult aReason) {
+  mCloseReason = aReason;
+  mOnCloseCalled = true;
+}
 
 void WebrtcTCPSocketTest::DoTransportAvailable() {
   if (!mSocketThread->IsOnCurrentThread()) {
@@ -678,6 +686,29 @@ TEST_F(WebrtcTCPSocketTest, SetUp) {}
 TEST_F(WebrtcTCPSocketTest, TransportAvailable) {
   DoTransportAvailable();
   ASSERT_TRUE_WAIT(mOnConnectedCalled, kDefaultTestTimeout);
+}
+
+// Port 80 is the http default port, which the URI normalizes away. The socket
+// must still be created with the requested port rather than failing outright.
+TEST_F(WebrtcTCPSocketTest, OpenWithDefaultPort) {
+  // The real socket transport needs the main thread (e.g. to create the DNS
+  // service), so spin the event loop rather than sleeping like WAIT does.
+  auto spinUntil = [](const std::function<bool()>& aCondition) {
+    auto deadline =
+        mozilla::TimeStamp::Now() +
+        mozilla::TimeDuration::FromMilliseconds(kDefaultTestTimeout);
+    mozilla::SpinEventLoopUntil("WebrtcTCPSocketTest"_ns, [&] {
+      return aCondition() || mozilla::TimeStamp::Now() > deadline;
+    });
+    return aCondition();
+  };
+
+  ASSERT_EQ(NS_OK, mChannel->Open("127.0.0.1"_ns, 80, "127.0.0.1"_ns, 0, false,
+                                  mozilla::Nothing()));
+  ASSERT_TRUE(spinUntil([&] { return mOnCloseCalled || mOnConnectedCalled; }));
+  ASSERT_NE(NS_ERROR_ILLEGAL_VALUE, nsresult(mCloseReason));
+  mChannel->Close();
+  ASSERT_TRUE(spinUntil([&] { return bool(mOnCloseCalled); }));
 }
 
 TEST_F(WebrtcTCPSocketTest, Read) {

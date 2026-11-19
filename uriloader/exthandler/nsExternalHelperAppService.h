@@ -248,6 +248,13 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
    */
   void ExpungePrivateFiles();
 
+  /*
+   * Deletes temporary private files, and private downloads if the
+   * deletePrivate pref is set to true. Note this could be called more
+   * than once during the lifetime of the (parent) process.
+   */
+  void OnPrivateBrowsingSessionEnd();
+
   bool GetFileNameFromChannel(nsIChannel* aChannel, nsAString& aFileName,
                               nsIURI** aURI);
 

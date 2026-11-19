@@ -82,8 +82,8 @@ UniquePtr<EncodedVideoChunkData> EncodedVideoChunkData::Clone() const {
     return nullptr;
   }
 
-  return MakeUnique<EncodedVideoChunkData>(buffer.forget(), mType, mTimestamp,
-                                           Maybe<uint64_t>(mDuration));
+  return std::make_unique<EncodedVideoChunkData>(
+      buffer.forget(), mType, mTimestamp, Maybe<uint64_t>(mDuration));
 }
 
 already_AddRefed<MediaRawData> EncodedVideoChunkData::TakeData() {

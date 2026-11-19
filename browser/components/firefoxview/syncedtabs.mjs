@@ -23,9 +23,9 @@ import {
   MAX_TABS_FOR_RECENT_BROWSING,
   navigateToLink,
 } from "./helpers.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/firefoxview/syncedtabs-tab-list.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 
 const UI_OPEN_STATE = "browser.tabs.firefox-view.ui-state.tab-pickup.open";

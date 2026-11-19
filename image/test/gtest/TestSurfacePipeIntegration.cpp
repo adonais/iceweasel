@@ -93,7 +93,7 @@ TEST_F(ImageSurfacePipeIntegration, SurfacePipe) {
   RefPtr<image::Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 
-  auto sink = MakeUnique<SurfaceSink>();
+  auto sink = std::make_unique<SurfaceSink>();
   nsresult rv = sink->Configure(
       SurfaceConfig{decoder, IntSize(100, 100), SurfaceFormat::OS_RGBA, false});
   ASSERT_NS_SUCCEEDED(rv);

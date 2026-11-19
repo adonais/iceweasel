@@ -165,7 +165,7 @@ BoundStorageKeyCacheStorage::BoundStorageKeyCacheStorage(
     Namespace aNamespace, nsIGlobalObject* aGlobal,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo)
     : mGlobal(aGlobal),
-      mPrincipalInfo(MakeUnique<PrincipalInfo>(aPrincipalInfo)),
+      mPrincipalInfo(std::make_unique<PrincipalInfo>(aPrincipalInfo)),
       mNamespace(aNamespace) {}
 
 void BoundStorageKeyCacheStorage::OnActorDestroy(CacheStorageChild* aActor) {

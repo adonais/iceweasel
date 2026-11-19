@@ -361,7 +361,7 @@ void PeerConnectionCtx::DeliverStats(
     if (i != mLastReports.end()) {
       lastReport = std::move(i->second);
     } else {
-      lastReport = MakeUnique<dom::RTCStatsReportInternal>();
+      lastReport = std::make_unique<dom::RTCStatsReportInternal>();
     }
   }
   // Record Telemetery
@@ -469,8 +469,8 @@ void PeerConnectionCtx::RemovePeerConnection(const std::string& aKey) {
     } else {
       using Update = WebrtcGlobalInformation::PcTrackingUpdate;
       auto update = Update::Remove(pcId);
-      auto finalStats =
-          MakeUnique<RTCStatsReportInternal>(*(it->second->GetFinalStats()));
+      auto finalStats = std::make_unique<RTCStatsReportInternal>(
+          *(it->second->GetFinalStats()));
       WebrtcGlobalStatsHistory::Record(std::move(finalStats));
       WebrtcGlobalInformation::PeerConnectionTracking(update);
     }
@@ -505,7 +505,7 @@ void PeerConnectionCtx::AddPeerConnection(const std::string& aKey,
         GetMediaThreadPool(MediaThreadType::WEBRTC_CALL_THREAD),
         "CallWorker"_ns, TailDispatchPolicy::ConsistentOrdering);
 
-    auto trials = MakeUnique<MozTrialsConfig>();
+    auto trials = std::make_unique<MozTrialsConfig>();
 
     mSharedWebrtcState = MakeAndAddRef<SharedWebrtcState>(
         std::move(callWorkerThread), std::move(audioStateConfig),

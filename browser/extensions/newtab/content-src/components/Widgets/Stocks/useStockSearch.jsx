@@ -4,28 +4,11 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { focusOnceRendered } from "../../../lib/utils";
 
 // Monotonic across every Stocks instance so a widget that unmounts and remounts
 // never reuses a request id that an earlier, still-running request could answer.
 let searchRequestSeq = 0;
-
-/**
- * Focus a moz-button that may have just been created. Its inner button only
- * exists after its first render, and focus() on the host does nothing before
- * that, so wait for the render when there is one to wait for.
- *
- * @param {HTMLElement|null} el
- */
-export function focusOnceRendered(el) {
-  if (!el) {
-    return;
-  }
-  if (el.updateComplete) {
-    el.updateComplete.then(() => el.focus());
-  } else {
-    el.focus();
-  }
-}
 
 /**
  * Owns the ticker-search panel lifecycle: whether it is open, sending a search,

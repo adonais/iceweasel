@@ -160,6 +160,13 @@ without needing to have separate NSIS and C++ copies of that code and (b) so
 that we can run code from the updated version of Firefox, allowing the update
 process to perform actions that the old version of the updater wasn't aware of.
 
+To prevent environment variables from affecting how the post update process
+behaves, it runs with a minimal environment. The run without elevation gets
+the user's default environment rather than the environment inherited from the
+updater, so that any processes it starts, such as the push notification helper,
+have the environment they need to run normally. In every other case, it gets an
+empty environment.
+
 In addition to the argument in `ExeArg`, the following command-line arguments
 might be added:
 

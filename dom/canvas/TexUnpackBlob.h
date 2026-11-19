@@ -67,7 +67,7 @@ class TexUnpackBlob {
                        const size_t rowCount, WebGLTexelFormat srcFormat,
                        const uint8_t* const srcBegin, const ptrdiff_t srcStride,
                        WebGLTexelFormat dstFormat, const ptrdiff_t dstStride,
-
+                       bool applyUnpackColorSpace,
                        const uint8_t** const out_begin,
                        UniqueBuffer* const out_anchoredBuffer) const;
 

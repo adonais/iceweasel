@@ -4,9 +4,12 @@
 
 #include "nsAlertsUtils.h"
 
+#include "mozIDOMWindow.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIURI.h"
+#include "nsIWindowMediator.h"
+#include "nsServiceManagerUtils.h"
 #include "nsString.h"
 
 /* static */
@@ -38,4 +41,17 @@ nsresult nsAlertsUtils::GetOrigin(nsIPrincipal* aPrincipal,
     return NS_OK;
   }
   return aPrincipal->GetOrigin(aOrigin);
+}
+
+/* static */
+bool nsAlertsUtils::HasOpenBrowserWindows() {
+  nsCOMPtr<nsIWindowMediator> winMediator =
+      do_GetService(NS_WINDOWMEDIATOR_CONTRACTID);
+  if (!winMediator) {
+    return false;
+  }
+  nsCOMPtr<mozIDOMWindowProxy> browserWindow;
+  return NS_SUCCEEDED(winMediator->GetMostRecentBrowserWindow(
+             getter_AddRefs(browserWindow))) &&
+         browserWindow;
 }

@@ -34,7 +34,7 @@ struct UniqueSelector<T[N]> {
 
 }  // namespace detail
 
-// Replacement for mozilla::MakeUnique that correctly calls js_new and produces
+// Replacement for std::make_unique that correctly calls js_new and produces
 // a js::UniquePtr.
 template <typename T, typename... Args>
 typename detail::UniqueSelector<T>::SingleObject MakeUnique(Args&&... aArgs) {

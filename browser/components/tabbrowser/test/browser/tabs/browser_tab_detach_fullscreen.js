@@ -14,6 +14,7 @@
  * @returns {object}
  */
 async function detachTabWithoutOpeningWindow(aTab) {
+  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
   let props;
   let originalFn = gBrowser.replaceTabsWithWindow;
   gBrowser.replaceTabsWithWindow = (contextTab, options) => {

@@ -711,7 +711,7 @@ describe("<Clocks> (Widgets/Clocks)", () => {
       expect(container.querySelector(".clocks-add-form")).toBeInTheDocument();
       expect(
         container.querySelector(
-          "moz-input-search[data-l10n-id='newtab-clock-widget-search-location-input']"
+          "moz-input-search[data-l10n-id='newtab-clock-widget-search-location-input2']"
         )
       ).toBeInTheDocument();
     });

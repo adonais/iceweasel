@@ -14,6 +14,7 @@ include("../js-cxxflags.mozbuild")
 include("../js-standalone.mozbuild")
 
 UNIFIED_SOURCES += [
+    "DebugSession.cpp",
     "js.cpp",
     "jsoptparse.cpp",
     "jsshell.cpp",
@@ -34,6 +35,19 @@ if CONFIG["FUZZING_JS_FUZZILLI"] and CONFIG["OS_ARCH"] == "Linux":
     OS_LIBS += ["rt"]
 
 DEFINES["EXPORT_JS_API"] = True
+
+GeneratedFile(
+    "DebugSessionSource.h",
+    script="embed_source.py",
+    inputs=["../debugger/DebugSession.sys.mjs"],
+    flags=["DebugSessionSource"],
+)
+GeneratedFile(
+    "DebugSessionHostSource.h",
+    script="embed_source.py",
+    inputs=["DebugSessionHost.js"],
+    flags=["DebugSessionHostSource"],
+)
 
 LOCAL_INCLUDES += [
     "!..",
@@ -65,6 +79,7 @@ if CONFIG["OS_TARGET"] == "Android":
     ]
 
 SOURCE_HEADERS += [
+    "DebugSession.h",
     "jsoptparse.h",
     "jsshell.h",
     "ModuleLoader.h",

@@ -4,7 +4,6 @@
 
 #include "SharedSurfacesParent.h"
 
-#include "mozilla/DebugOnly.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/Logging.h"
@@ -24,6 +23,10 @@ using namespace mozilla::gfx;
 
 StaticMutex SharedSurfacesParent::sMutex;
 StaticAutoPtr<SharedSurfacesParent> SharedSurfacesParent::sInstance;
+
+StaticMutex SharedSurfacesParent::sIdNamespaceMutex;
+MOZ_RUNINIT std::unordered_map<uint32_t, uint32_t>
+    SharedSurfacesParent::sIdNamespaces;
 
 void SharedSurfacesParent::MappingTracker::NotifyExpiredLocked(
     SourceSurfaceSharedDataWrapper* aSurface,
@@ -58,7 +61,7 @@ SharedSurfacesParent::SharedSurfacesParent()
 
 /* static */
 void SharedSurfacesParent::Initialize() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sMutex);
   if (!sInstance) {
     sInstance = new SharedSurfacesParent();
@@ -70,9 +73,9 @@ void SharedSurfacesParent::Initialize() {
 void SharedSurfacesParent::ShutdownRenderThread() {
   // The main thread should blocked on waiting for the render thread to
   // complete so this should be safe to release off the main thread.
-  MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
+  MOZ_RELEASE_ASSERT(wr::RenderThread::IsInRenderThread());
   StaticMutexAutoLock lock(sMutex);
-  MOZ_ASSERT(sInstance);
+  MOZ_RELEASE_ASSERT(sInstance);
 
   for (const auto& key : sInstance->mSurfaces.Keys()) {
     // There may be lingering consumers of the surfaces that didn't get shutdown
@@ -88,7 +91,7 @@ void SharedSurfacesParent::Shutdown() {
   // The compositor thread and render threads are shutdown, so this is the last
   // thread that could use it. The expiration tracker needs to be freed on the
   // main thread.
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sMutex);
   if (sInstance) {
     sInstance->mTracker.DestroyLocked(lock);
@@ -145,8 +148,8 @@ already_AddRefed<DataSourceSurface> SharedSurfacesParent::Acquire(
   sInstance->mSurfaces.Get(wr::AsUint64(aId), getter_AddRefs(surface));
 
   if (surface) {
-    DebugOnly<bool> rv = surface->AddConsumer();
-    MOZ_ASSERT(!rv);
+    bool rv = surface->AddConsumer();
+    MOZ_RELEASE_ASSERT(!rv);
   }
   return surface.forget();
 }
@@ -178,8 +181,8 @@ bool SharedSurfacesParent::Release(const wr::ExternalImageId& aId,
 /* static */
 void SharedSurfacesParent::AddSameProcess(const wr::ExternalImageId& aId,
                                           SourceSurfaceSharedData* aSurface) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sMutex);
   if (!sInstance) {
     gfxCriticalNote << "SSP:Ads " << wr::AsUint64(aId) << " shtd";
@@ -237,11 +240,47 @@ void SharedSurfacesParent::RemoveAll(uint32_t aNamespace) {
 }
 
 /* static */
+void SharedSurfacesParent::AddIdNamespace(const wr::IdNamespace& aIdNamespace,
+                                          uint32_t aNamespace) {
+  StaticMutexAutoLock lock(sIdNamespaceMutex);
+  sIdNamespaces[aIdNamespace.mHandle] = aNamespace;
+}
+
+/* static */
+void SharedSurfacesParent::RemoveIdNamespace(
+    const wr::IdNamespace& aIdNamespace) {
+  StaticMutexAutoLock lock(sIdNamespaceMutex);
+  sIdNamespaces.erase(aIdNamespace.mHandle);
+}
+
+/* static */
+already_AddRefed<DataSourceSurface> SharedSurfacesParent::GetForIdNamespace(
+    const wr::IdNamespace& aIdNamespace, const wr::ExternalImageId& aId) {
+  uint32_t surfaceNamespace;
+  {
+    StaticMutexAutoLock lock(sIdNamespaceMutex);
+    auto i = sIdNamespaces.find(aIdNamespace.mHandle);
+    if (NS_WARN_IF(i == sIdNamespaces.end())) {
+      return nullptr;
+    }
+    surfaceNamespace = i->second;
+  }
+
+  if (NS_WARN_IF(surfaceNamespace !=
+                 static_cast<uint32_t>(wr::AsUint64(aId) >> 32))) {
+    MOZ_ASSERT_UNREACHABLE("Wrong namespace?");
+    return nullptr;
+  }
+
+  return Get(aId);
+}
+
+/* static */
 void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
                                SurfaceDescriptorShared&& aDesc,
                                base::ProcessId aPid) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  MOZ_ASSERT(aPid != base::GetCurrentProcId());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(aPid != base::GetCurrentProcId());
 
   if (aDesc.format() != SurfaceFormat::B8G8R8X8 &&
       aDesc.format() != SurfaceFormat::B8G8R8A8) {
@@ -282,16 +321,16 @@ void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
 
 /* static */
 void SharedSurfacesParent::Remove(const wr::ExternalImageId& aId) {
-  DebugOnly<bool> rv = Release(aId, /* aForCreator */ true);
-  MOZ_ASSERT(rv);
+  bool rv = Release(aId, /* aForCreator */ true);
+  MOZ_RELEASE_ASSERT(rv);
 }
 
 /* static */
 void SharedSurfacesParent::AddTrackingLocked(
     SourceSurfaceSharedDataWrapper* aSurface,
     const StaticMutexAutoLock& aAutoLock) {
-  MOZ_ASSERT(!aSurface->GetExpirationState()->IsTracked());
-  MOZ_ASSERT(aSurface->GetConsumers() > 0);
+  MOZ_RELEASE_ASSERT(!aSurface->GetExpirationState()->IsTracked());
+  MOZ_RELEASE_ASSERT(aSurface->GetConsumers() > 0);
   sInstance->mTracker.AddObjectLocked(aSurface, aAutoLock);
 }
 
@@ -363,8 +402,9 @@ bool SharedSurfacesParent::AgeAndExpireOneGeneration() {
 /* static */
 void SharedSurfacesParent::ExpireMap(
     nsTArray<RefPtr<SourceSurfaceSharedDataWrapper>>& aExpired) {
+  // The surfaces may have lost their last consumer after being taken out of
+  // the tracker, since sMutex is not held here. Unmapping them is still safe.
   for (auto& surface : aExpired) {
-    MOZ_ASSERT(surface->GetConsumers() > 0);
     surface->ExpireMap();
   }
 }

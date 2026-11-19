@@ -84,7 +84,6 @@ support-files = [
   "file_bug1700871.html",
 ]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1775696
   "os == 'win'", # Bug 1692963
 ]
 
@@ -122,7 +121,7 @@ skip-if = [
 
 ["browser_multiple_popups.js"]
 skip-if = [
-  "socketprocess_networking",
+  "macos_vm", # Bug 2084943 - fails only on the macOS tart VMs
 ]
 support-files = ["browser_multiple_popups.html"]
 
@@ -178,6 +177,14 @@ support-files = [
 ["browser_pagehide_on_tab_close.js"]
 skip-if = [
   "true", # this tests non-e10s behavior.
+]
+
+["browser_prefetch_data_usage.js"]
+# All channels: the test enables the prefs it needs.
+support-files = [
+  "file_pageload_prefetch_plain.html",
+  "file_pageload_prefetch_source.html",
+  "file_pageload_prefetch_target.sjs",
 ]
 
 ["browser_promiseDocumentFlushed.js"]

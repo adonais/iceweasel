@@ -218,6 +218,8 @@ class RequestedModule {
   const JS::ColumnNumberOneOrigin columnNumber_;
 
  public:
+  static constexpr uint32_t WasmDefaultLineNumber = 1;
+
   RequestedModule(Handle<ModuleRequestObject*> moduleRequest,
                   uint32_t lineNumber, JS::ColumnNumberOneOrigin columnNumber);
   ModuleRequestObject* moduleRequest() const { return moduleRequest_; }
@@ -481,6 +483,9 @@ class ModuleObject : public NativeObject {
     PreloadSlotIndex,
 #endif
     ModuleSourceSlotIndex,
+#ifdef NIGHTLY_BUILD
+    WasmInstanceSlotIndex,
+#endif
     SlotCount
   };
 
@@ -500,9 +505,14 @@ class ModuleObject : public NativeObject {
 #ifdef DEBUG
   JS_DEFINE_TYPED_SLOT(PreloadSlotIndex, PRELOAD_SLOT, Boolean, Undefined);
 #endif
-  // Module Source object for source phase imports. Otherwise `undefined`.
+  // Module Source object if present. Otherwise `undefined`.
   JS_DEFINE_TYPED_SLOT(ModuleSourceSlotIndex, MODULE_SOURCE_SLOT, Object,
                        Undefined);
+#ifdef NIGHTLY_BUILD
+  // WebAssembly.Instance of an evaluated wasm module. Otherwise `undefined`.
+  JS_DEFINE_TYPED_SLOT(WasmInstanceSlotIndex, WASM_INSTANCE_SLOT, Object,
+                       Undefined);
+#endif
   static constexpr uint32_t SLOT_COUNT = SlotCount;
 
   static const JSClass class_;
@@ -542,7 +552,11 @@ class ModuleObject : public NativeObject {
   ModuleNamespaceObject* maybeDeferredNamespace() const;
   void setDeferredNamespace(Handle<ModuleNamespaceObject*> ns);
   JSObject* moduleSource() const;
-  bool isSourcePhaseModule() const { return moduleSource() != nullptr; }
+  bool isWasmModule() const;
+#ifdef NIGHTLY_BUILD
+  JSObject* wasmInstance() const;
+  void setWasmInstance(JSObject* instance);
+#endif
   ModuleStatus status() const;
   mozilla::Maybe<uint32_t> maybeDfsAncestorIndex() const;
   uint32_t dfsAncestorIndex() const;
@@ -613,7 +627,11 @@ class ModuleObject : public NativeObject {
   static bool createSyntheticEnvironment(JSContext* cx,
                                          Handle<ModuleObject*> self,
                                          JS::HandleVector<Value> values);
-  static bool createWasmEnvironment(JSContext* cx, Handle<ModuleObject*> self);
+  static bool createWasmEnvironment(JSContext* cx, Handle<ModuleObject*> self,
+                                    Handle<ExportNameVector> exportNames);
+
+  static void initWasmExportBindings(JSContext* cx, Handle<ModuleObject*> self,
+                                     JS::HandleVector<Value> values);
 
   void initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                       Handle<ListObject*> asyncParentModules);
@@ -705,6 +723,8 @@ JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                    HandleValue specifier, HandleValue options,
                                    ImportPhase phase);
+
+void ReportUninitializedModuleBinding(JSContext* cx, HandleId id);
 }  // namespace js
 
 template <>

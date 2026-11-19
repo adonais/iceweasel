@@ -119,7 +119,7 @@ internal class BrowserToolbarMiddleware(initialDependencies: Dependencies) :
                 onClick = TabCounterClicked,
             ),
             ActionButtonRes(
-                drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                drawableResId = iconsR.drawable.mozac_ic_more_vertical_round_24,
                 contentDescription = R.string.menu_button_description,
                 onClick =
                     BrowserToolbarMenu {

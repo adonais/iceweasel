@@ -36,6 +36,8 @@ skip-if = [
 
 ["browser_creditCard_doorhanger_action.js"]
 
+["browser_creditCard_doorhanger_confirmation_popup.js"]
+
 ["browser_creditCard_doorhanger_cvv.js"]
 
 ["browser_creditCard_doorhanger_display.js"]
@@ -78,6 +80,11 @@ skip-if = [
 
 ["browser_creditCard_telemetry_autofill.js"]
 support-files = ["../creditCard/browser_telemetry_utils.js"]
+
+["browser_creditCard_telemetry_cvv.js"]
+support-files = ["../creditCard/browser_telemetry_utils.js"]
+
+["browser_creditCard_telemetry_cvv_prompt.js"]
 
 ["browser_creditCard_telemetry_manage.js"]
 support-files = ["../creditCard/browser_telemetry_utils.js"]

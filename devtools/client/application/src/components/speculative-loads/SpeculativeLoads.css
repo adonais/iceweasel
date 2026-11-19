@@ -5,6 +5,9 @@
 .speculative-loads-pane {
   min-height: 15%;
   padding: 5px;
+}
+
+.speculative-loads-pane:first-child {
   border-bottom: 1px solid var(--theme-splitter-color);
 }
 
@@ -32,4 +35,38 @@
 .status-text {
   padding-inline-start: 5px;
   font-weight: bold;
+}
+
+.speculative-loads-status[data-prefetch-status="prefetched"] .status-icon {
+  color: var(--theme-icon-checked-color);
+  background-image: url("chrome://devtools/skin/images/check.svg");
+}
+
+.speculations-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 4px 8px;
+    text-align: start;
+    border-bottom: 1px solid var(--theme-splitter-color);
+  }
+
+  th:first-child {
+    width: 70%;
+  }
+
+  thead {
+    background-color: var(--theme-toolbar-background);
+  }
+
+  .speculation-url {
+    overflow-wrap: anywhere;
+  }
+
+  tr[data-status="failure"] .speculation-status {
+    color: var(--theme-text-color-error);
+  }
 }

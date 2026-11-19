@@ -10,8 +10,6 @@ prefs = [
   "extensions.getAddons.langpacks.url=https://mochi.test:8000/langpacks",
 ]
 
-["browser_translations_about_preferences_manage_downloaded_languages.js"]
-
 ["browser_translations_about_settings_main_page_offer_checkbox.js"]
 
 ["browser_translations_about_settings_subpage_always_translate_langs_a11y.js"]
@@ -59,9 +57,6 @@ prefs = [
 ["browser_translations_recent_language_memory_full_page_and_select.js"]
 
 ["browser_translations_recent_language_memory_full_page_and_select_multi_window.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1972458
-]
 
 ["browser_translations_recent_language_memory_full_page_multi_window.js"]
 

@@ -35,7 +35,6 @@ void StructuredCloneData::WriteIPCParams(IPC::MessageWriter* aWriter) {
       "Cannot serialize same-process StructuredCloneData over IPC");
   AssertAttachmentsMatchFlags();
 
-  WriteParam(aWriter, BufferVersion());
   WriteParam(aWriter, BufferData());
 
   // Write all cloneable attachments directly to IPC.
@@ -54,20 +53,19 @@ void StructuredCloneData::WriteIPCParams(IPC::MessageWriter* aWriter) {
 }
 
 bool StructuredCloneData::ReadIPCParams(IPC::MessageReader* aReader) {
-  MOZ_ASSERT(!mBuffer, "StructuredCloneData was previously initialized");
+  MOZ_ASSERT(!mData, "StructuredCloneData was previously initialized");
 
   GeckoChildID originChildID =
       aReader->GetActor()
           ? aReader->GetActor()->ToplevelProtocol()->OtherChildIDMaybeInvalid()
           : kInvalidGeckoChildID;
 
-  uint32_t version;
   JSStructuredCloneData data(JS::StructuredCloneScope::DifferentProcess);
-  if (!ReadParam(aReader, &version) || !ReadParam(aReader, &data)) {
+  if (!ReadParam(aReader, &data)) {
     return false;
   }
 
-  Adopt(std::move(data), version, originChildID);
+  Adopt(std::move(data), originChildID);
 
   if (!std::apply(
           [&](auto&... member) { return ReadParams(aReader, member...); },
@@ -88,16 +86,15 @@ bool StructuredCloneData::ReadIPCParams(IPC::MessageReader* aReader) {
 }
 
 bool StructuredCloneData::CopyExternalData(const char* aData,
-                                           size_t aDataLength,
-                                           uint32_t aVersion) {
-  MOZ_ASSERT(!mBuffer, "StructuredCloneData was previously initialized");
+                                           size_t aDataLength) {
+  MOZ_ASSERT(!mData, "StructuredCloneData was previously initialized");
 
   JSStructuredCloneData data(JS::StructuredCloneScope::DifferentProcess);
   if (!data.AppendBytes(aData, aDataLength)) {
     return false;
   }
 
-  Adopt(std::move(data), aVersion);
+  Adopt(std::move(data));
   return true;
 }
 

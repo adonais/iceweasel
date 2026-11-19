@@ -127,6 +127,24 @@ class PlaylistTest {
     }
 
     @Test
+    fun `test that a seek restarted earlier in its chunk than it asked for is read from the restart`() {
+        playlist = playlist.seeking(150_000, chunkIndex = 12)
+
+        playlist = playlist.restarted(chunkIndex = 12, chunkDurationsBeforePlaylistMs = emptyList(), startMs = 120_000)
+
+        assertEquals(120_000L, send(playing(chunk = 12, positionMs = 120_000))?.positionMs)
+    }
+
+    @Test
+    fun `test that a report far from where a seek restarted is still not read`() {
+        playlist = playlist.seeking(150_000, chunkIndex = 12)
+
+        playlist = playlist.restarted(chunkIndex = 12, chunkDurationsBeforePlaylistMs = emptyList(), startMs = 120_000)
+
+        assertNull("from the playlist before a seek back", send(playing(chunk = 30, positionMs = 400_000)))
+    }
+
+    @Test
     fun `test that a seek is still waited on once the playlist is cleared to make its chunk`() {
         playlist = playlist.seeking(150_000, chunkIndex = 12)
 

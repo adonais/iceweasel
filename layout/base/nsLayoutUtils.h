@@ -16,7 +16,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RelativeTo.h"
-#include "mozilla/SVGImageContext.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/SurfaceFromElementResult.h"
@@ -67,6 +66,7 @@ class nsDisplayList;
 class nsDisplayListBuilder;
 enum class nsDisplayListBuilderMode : uint8_t;
 class RetainedDisplayListBuilder;
+class SVGImageContext;
 struct AspectRatio;
 class ComputedStyle;
 class DisplayPortUtils;
@@ -391,6 +391,12 @@ class nsLayoutUtils {
   static nsIFrame* GetPrimaryFrameFromStyleFrame(nsIFrame* aStyleFrame);
   static const nsIFrame* GetPrimaryFrameFromStyleFrame(
       const nsIFrame* aStyleFrame);
+
+  /**
+   * Returns the primary frame of aContent, or the frame of the image using the
+   * image map if aContent is an <area>.  Areas have no frame of their own.
+   */
+  static nsIFrame* GetPrimaryOrAreaImageFrame(const nsIContent* aContent);
 
   /**
    * Similar to nsIFrame::IsPrimaryFrame except that this will return true

@@ -78,16 +78,6 @@ bool LoadOSClientCertsModule();
  */
 bool LoadRemoteCertsModule();
 
-/**
- * Loads the IPC client certs module.
- *
- * @param dir
- *        The path to the directory containing the module. This should be the
- *        same as where all of the other gecko libraries live.
- * @return true if the module was successfully loaded, false otherwise.
- */
-bool LoadIPCClientCertsModule();
-
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                       /*out*/ nsCString& nickname);
 

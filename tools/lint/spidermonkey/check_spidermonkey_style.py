@@ -100,6 +100,8 @@ included_inclnames_to_ignore = set([
     "prthread.h",  # NSPR
     "prtypes.h",  # NSPR
     "selfhosted.out.h",  # generated in $OBJDIR
+    "shell/DebugSessionHostSource.h",  # generated in $OBJDIR
+    "shell/DebugSessionSource.h",  # generated in $OBJDIR
     "shellmoduleloader.out.h",  # generated in $OBJDIR
     "unicode/locid.h",  # ICU
     "unicode/uchar.h",  # ICU

@@ -37,6 +37,7 @@ private const val FAKE_ENGINE_ERROR = -1
  * @property voices The voices to offer for every language tag. Set it empty to exercise a caller's no-voice handling.
  * @property audioDirectory Where to write the audio, or `null` to name a file without creating one.
  * @property audioDuration How long the audio it writes lasts. Ignored without an [audioDirectory].
+ * @property audioDurationOf How long the audio it writes for a text lasts, which is [audioDuration] unless set.
  * @property timePerRequest How long a request takes. Set it to make synthesis slow enough for a caller to be seen
  *   falling behind what is playing, which is otherwise instantaneous and so never behind.
  * @property failAtRequest The request to fail, counting from one, or `null` to fail none. A caller's handling of a
@@ -56,6 +57,7 @@ class FakeSpeechSynthesizer(
     override val enginePackageName: String = "com.example.tts",
     private val audioDirectory: File? = null,
     private val audioDuration: Duration = 5.seconds,
+    private val audioDurationOf: (text: String) -> Duration = { audioDuration },
     private val timePerRequest: Duration = Duration.ZERO,
     private val failAtRequest: Int? = null,
     private val failWith: Exception = SpeechSynthesisException(FAKE_ENGINE_ERROR),
@@ -82,7 +84,7 @@ class FakeSpeechSynthesizer(
         return named.also {
             if (audioDirectory != null) {
                 audioDirectory.mkdirs()
-                it.writeBytes(silentWav(audioDuration))
+                it.writeBytes(silentWav(audioDurationOf(text)))
             }
         }
     }
@@ -178,16 +180,16 @@ class FakeAudioFileCache : AudioFileCache {
  * @property displayData What each file in the playlist says it is, in the order the files were handed over.
  * @property paused How many times [pause] has been called.
  * @property resumed How many times [resume] has been called.
+ * @property articlesStarted How many times [startArticle] has been called.
  * @property released Whether [release] has been called.
  * @property status What to report about the playback. Set it to drive a caller's monitoring, including changes no
  *   command of theirs asked for.
- * @property positionMs The position to report as reached.
  * @property shouldReportSeek Whether a seek into an item reports where it went before it returns and then suspends.
  * @property hasSeekedChunk Whether a seek finds the chunk it asks for, as it does unless the player has lost it.
- * @property startPositionsMs Every position into the article it was asked to start an article at, in order.
  * @property chunksResumedAfterPlaybackEnded Every chunk it moved on to by itself, as the real controller does when
  *   audio is queued after the playback ran out, in order.
  * @property seekRequests Emit into it to stand in for a seek from outside the app.
+ * @property sessionEnded Emit into it to stand in for the playback ending outside the app.
  * @property seekedChunkPositions Every chunk it was asked to seek into, with the position into the article it was asked
  *   to seek to, in order.
  * @property restartedFiles Every file it was restarted on, in order.
@@ -200,14 +202,13 @@ class FakeAudioFileCache : AudioFileCache {
  * @property fileDurationsMs How long each file it was given lasts, in the order the files were given.
  * @property playbackSpeedSet Every speed it was asked to read at, in order.
  */
-class FakePlaybackController(var positionMs: Long = 0L, private val shouldReportSeek: Boolean = false) :
-    PlaybackController {
+class FakePlaybackController(private val shouldReportSeek: Boolean = false) : PlaybackController {
     val played = mutableListOf<File>()
     val queued = mutableListOf<File>()
     val displayDataList = mutableListOf<ArticleDisplayData>()
     var paused = 0
     var resumed = 0
-    val startPositionsMs = mutableListOf<Long>()
+    var articlesStarted = 0
     val seekedChunkPositions = mutableListOf<Pair<Int, Long>>()
     var hasSeekedChunk = true
     val chunksResumedAfterPlaybackEnded = mutableListOf<Int>()
@@ -226,6 +227,8 @@ class FakePlaybackController(var positionMs: Long = 0L, private val shouldReport
 
     override val seekRequests = MutableSharedFlow<Long>(extraBufferCapacity = 1)
 
+    override val sessionEnded = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     override suspend fun setArticleDuration(durationMs: Long) {
         articleDurationsMs.add(durationMs)
     }
@@ -233,16 +236,11 @@ class FakePlaybackController(var positionMs: Long = 0L, private val shouldReport
     // What the article now playing says it is, as the real controller keeps it.
     private var displayData: ArticleDisplayData? = null
 
-    override suspend fun startArticle(
-        chunk: ChunkFile,
-        articleDisplayData: ArticleDisplayData,
-        tabId: String,
-        positionMs: Long,
-    ) {
+    override suspend fun startArticle(chunk: ChunkFile, articleDisplayData: ArticleDisplayData, tabId: String) {
+        articlesStarted += 1
         fileDurationsMs.add(chunk.durationMs)
         displayData = articleDisplayData
         played.add(chunk.file)
-        startPositionsMs.add(positionMs)
         displayDataList.add(articleDisplayData)
 
         status.value = PlaybackState(phase = PlaybackPhase.Buffering, speed = status.value.speed)
@@ -318,8 +316,6 @@ class FakePlaybackController(var positionMs: Long = 0L, private val shouldReport
         displayData = null
         status.value = PlaybackState()
     }
-
-    override suspend fun currentPositionMs(): Long = positionMs
 }
 
 /** A WAV file of [duration]'s worth of silence, in the format the platform engine was measured producing. */

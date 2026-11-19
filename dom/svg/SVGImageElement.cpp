@@ -221,6 +221,9 @@ bool SVGImageElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       ParseFetchPriority(aValue, aResult);
       return true;
     }
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
+    }
   }
 
   return SVGImageElementBase::ParseAttribute(aNamespaceID, aAttribute, aValue,

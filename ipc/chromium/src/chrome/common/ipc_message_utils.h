@@ -1537,7 +1537,7 @@ struct ParamTraits<mozilla::Nothing> {
   // a monostate Variant alternative type).
 
   typedef mozilla::Nothing paramType;
-  static void Write(MessageWriter* writer, const paramType& aParam) {
+  static void Write(MessageWriter* writer, const paramType& /*aParam*/) {
     bool isSome = false;
     WriteParam(writer, isSome);
   }

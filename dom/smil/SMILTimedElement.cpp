@@ -424,6 +424,16 @@ void SMILTimedElement::SetTimeClient(SMILAnimationFunction* aClient) {
   mClient = aClient;
 }
 
+bool SMILTimedElement::IsTimingSettled() const {
+  if (mIsDisabled) {
+    return true;
+  }
+  if (mSeekState != SMILSeekState::NotSeeking) {
+    return false;
+  }
+  return GetNextMilestone().isNothing();
+}
+
 void SMILTimedElement::SampleAt(SMILTime aContainerTime) {
   if (mIsDisabled) return;
 
@@ -1952,20 +1962,20 @@ void SMILTimedElement::RegisterMilestone(SMILTimeContainer* aContainer) {
   MOZ_ASSERT(mAnimationElement,
              "Got a time container without an owning animation element");
 
-  SMILMilestone nextMilestone;
-  if (!GetNextMilestone(nextMilestone)) return;
+  const auto nextMilestone = GetNextMilestone();
+  if (!nextMilestone) return;
 
   // This method is called every time we might possibly have updated our
   // current interval, but since SMILTimeContainer makes no attempt to filter
   // out redundant milestones we do some rudimentary filtering here. It's not
   // perfect, but unnecessary samples are fairly cheap.
-  if (nextMilestone >= mPrevRegisteredMilestone) return;
+  if (*nextMilestone >= mPrevRegisteredMilestone) return;
 
-  container->AddMilestone(nextMilestone, *mAnimationElement);
-  mPrevRegisteredMilestone = nextMilestone;
+  container->AddMilestone(*nextMilestone, *mAnimationElement);
+  mPrevRegisteredMilestone = *nextMilestone;
 }
 
-bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
+Maybe<SMILMilestone> SMILTimedElement::GetNextMilestone() const {
   // Return the next key moment in our lifetime.
   //
   // XXX It may be possible in future to optimise this so that we only register
@@ -1985,16 +1995,13 @@ bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
     case SMILElementState::Startup:
       // All elements register for an initial end sample at t=0 where we resolve
       // our initial interval.
-      aNextMilestone.mIsEnd = true;  // Initial sample should be an end sample
-      aNextMilestone.mTime = 0;
-      return true;
+      return Some(SMILMilestone(0, true));  // Initial sample is an end sample
 
     case SMILElementState::Waiting:
       MOZ_ASSERT(mCurrentInterval,
                  "In waiting state but the current interval has not been set");
-      aNextMilestone.mIsEnd = false;
-      aNextMilestone.mTime = mCurrentInterval->Begin()->Time().GetMillis();
-      return true;
+      return Some(
+          SMILMilestone(mCurrentInterval->Begin()->Time().GetMillis(), false));
 
     case SMILElementState::Active: {
       // Work out what comes next: the interval end or the next repeat iteration
@@ -2014,23 +2021,20 @@ bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
       // Check for an early end before that time
       SMILInstanceTime* earlyEnd = CheckForEarlyEnd(nextMilestone);
       if (earlyEnd && earlyEnd->Time().IsDefinite()) {
-        aNextMilestone.mIsEnd = true;
-        aNextMilestone.mTime = earlyEnd->Time().GetMillis();
-        return true;
+        return Some(SMILMilestone(earlyEnd->Time().GetMillis(), true));
       }
 
       // Apply the previously calculated milestone
       if (nextMilestone.IsDefinite()) {
-        aNextMilestone.mIsEnd = nextMilestone != nextRepeat;
-        aNextMilestone.mTime = nextMilestone.GetMillis();
-        return true;
+        return Some(SMILMilestone(nextMilestone.GetMillis(),
+                                  nextMilestone != nextRepeat));
       }
 
-      return false;
+      return Nothing();
     }
 
     case SMILElementState::PostActive:
-      return false;
+      return Nothing();
   }
   MOZ_CRASH("Invalid element state");
 }

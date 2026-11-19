@@ -23,7 +23,7 @@
     // DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered
     // relies on the scrollbox being a direct child here, so that it can give
     // the chrome tab bar's scroller a displayport without walking the tabs.
-    get markup() {
+    static get markup() {
       return `
       <html:link rel="stylesheet" href="chrome://global/skin/toolbarbutton.css"/>
       <html:link rel="stylesheet" href="chrome://global/skin/arrowscrollbox.css"/>
@@ -40,7 +40,7 @@
     constructor() {
       super();
       this.attachShadow({ mode: "open" });
-      this.shadowRoot.appendChild(this.fragment);
+      this.shadowRoot.appendChild(this.constructor.fragment);
 
       this.scrollbox = this.shadowRoot.querySelector("scrollbox");
       this._scrollButtonUp = this.shadowRoot.getElementById("scrollbutton-up");
@@ -171,15 +171,6 @@
 
     get overflowing() {
       return this.hasAttribute("overflowing");
-    }
-
-    get fragment() {
-      if (!this.constructor.hasOwnProperty("_fragment")) {
-        this.constructor._fragment = MozXULElement.parseXULToFragment(
-          this.markup
-        );
-      }
-      return document.importNode(this.constructor._fragment, true);
     }
 
     get #verticalMode() {

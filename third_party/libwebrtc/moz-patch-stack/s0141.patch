@@ -48,12 +48,12 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/98da8060c3ad5cf8d
  .../src/java/org/webrtc/NV12Buffer.java       |  48 +----
  .../src/java/org/webrtc/NV21Buffer.java       |  43 +----
  .../webrtc/NativeAndroidVideoTrackSource.java |  85 +++------
- .../java/org/webrtc/VideoDecoderWrapper.java  |  13 +-
- .../java/org/webrtc/VideoEncoderWrapper.java  |  12 +-
+ .../java/org/webrtc/VideoDecoderWrapper.java  |  12 +-
+ .../java/org/webrtc/VideoEncoderWrapper.java  |  11 +-
  .../org/webrtc/audio/WebRtcAudioRecord.java   |  21 +--
  .../org/webrtc/audio/WebRtcAudioTrack.java    |  15 +-
  webrtc.gni                                    |  20 +-
- 42 files changed, 241 insertions(+), 720 deletions(-)
+ 42 files changed, 239 insertions(+), 720 deletions(-)
 
 diff --git a/examples/androidnativeapi/BUILD.gn b/examples/androidnativeapi/BUILD.gn
 index fd6a836223..28589325c3 100644
@@ -1853,7 +1853,7 @@ index 67a4c2d3e2..d4fba481e8 100644
  }
 -
 diff --git a/sdk/android/src/java/org/webrtc/VideoDecoderWrapper.java b/sdk/android/src/java/org/webrtc/VideoDecoderWrapper.java
-index d7b4044522..2aae041640 100644
+index edaa2ffaa7..1adb61ef3c 100644
 --- a/sdk/android/src/java/org/webrtc/VideoDecoderWrapper.java
 +++ b/sdk/android/src/java/org/webrtc/VideoDecoderWrapper.java
 @@ -10,7 +10,7 @@
@@ -1865,14 +1865,18 @@ index d7b4044522..2aae041640 100644
  
  /**
   * This class contains the Java glue code for JNI generation of VideoDecoder.
-@@ -18,13 +18,10 @@ import org.jni_zero.NativeMethods;
- class VideoDecoderWrapper {
-   @CalledByNative
-   static VideoDecoder.Callback createDecoderCallback(final long nativeDecoder) {
--    return (VideoFrame frame, Integer decodeTimeMs, Integer qp) ->
--        VideoDecoderWrapperJni.get().onDecodedFrame(nativeDecoder, frame, decodeTimeMs, qp);
-+    return (VideoFrame frame, Integer decodeTimeMs,
-+               Integer qp) -> nativeOnDecodedFrame(nativeDecoder, frame, decodeTimeMs, qp);
+@@ -31,8 +31,7 @@ class VideoDecoderWrapper {
+     public void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp) {
+       lifecycleLock.runIfAlive(
+           (long nativeDecoder)
+-              -> VideoDecoderWrapperJni.get().onDecodedFrame(
+-                  nativeDecoder, frame, decodeTimeMs, qp));
++              -> nativeOnDecodedFrame(nativeDecoder, frame, decodeTimeMs, qp));
+     }
+ 
+     // Called by the native VideoDecoderWrapper. Blocks until an ongoing onDecodedFrame() call, if
+@@ -48,9 +47,6 @@ class VideoDecoderWrapper {
+     return new NativeDecoderCallback(nativeDecoder);
    }
  
 -  @NativeMethods
@@ -1884,7 +1888,7 @@ index d7b4044522..2aae041640 100644
 +      long nativeVideoDecoderWrapper, VideoFrame frame, Integer decodeTimeMs, Integer qp);
  }
 diff --git a/sdk/android/src/java/org/webrtc/VideoEncoderWrapper.java b/sdk/android/src/java/org/webrtc/VideoEncoderWrapper.java
-index beadd8cc63..b5485d4edb 100644
+index 5e7c66c18b..7888f16686 100644
 --- a/sdk/android/src/java/org/webrtc/VideoEncoderWrapper.java
 +++ b/sdk/android/src/java/org/webrtc/VideoEncoderWrapper.java
 @@ -12,7 +12,7 @@ package org.webrtc;
@@ -1896,14 +1900,18 @@ index beadd8cc63..b5485d4edb 100644
  
  /**
   * This class contains the Java glue code for JNI generation of VideoEncoder.
-@@ -37,12 +37,10 @@ class VideoEncoderWrapper {
+@@ -49,8 +49,7 @@ class VideoEncoderWrapper {
+     @Override
+     public void onEncodedFrame(EncodedImage frame, VideoEncoder.CodecSpecificInfo info) {
+       lifecycleLock.runIfAlive(
+-          (long nativeEncoder) ->
+-              VideoEncoderWrapperJni.get().onEncodedFrame(nativeEncoder, frame));
++          (long nativeEncoder) -> nativeOnEncodedFrame(nativeEncoder, frame));
+     }
  
-   @CalledByNative
-   static VideoEncoder.Callback createEncoderCallback(final long nativeEncoder) {
--    return (EncodedImage frame, VideoEncoder.CodecSpecificInfo info) ->
--               VideoEncoderWrapperJni.get().onEncodedFrame(nativeEncoder, frame);
-+    return (EncodedImage frame,
-+               VideoEncoder.CodecSpecificInfo info) -> nativeOnEncodedFrame(nativeEncoder, frame);
+     // Called by the native VideoEncoderWrapper. Blocks until an ongoing onEncodedFrame() call, if
+@@ -66,8 +65,6 @@ class VideoEncoderWrapper {
+     return new NativeEncoderCallback(nativeEncoder);
    }
  
 -  @NativeMethods
@@ -2034,7 +2042,7 @@ index 58f2743d16..40d4dacec9 100644
    // Sets all samples to be played out to zero if `mute` is true, i.e.,
    // ensures that the speaker is muted.
 diff --git a/webrtc.gni b/webrtc.gni
-index ce8b4a6bac..46b9901027 100644
+index 6684d26b93..91ffe8c982 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -31,10 +31,6 @@ if (is_ios) {
@@ -2048,7 +2056,7 @@ index ce8b4a6bac..46b9901027 100644
  if (is_mac) {
    import("//chromium/build/config/mac/rules.gni")
  }
-@@ -1097,13 +1093,7 @@ template("rtc_executable") {
+@@ -1103,13 +1099,7 @@ template("rtc_executable") {
  }
  
  template("rtc_shared_library") {
@@ -2063,7 +2071,7 @@ index ce8b4a6bac..46b9901027 100644
      forward_variables_from(invoker,
                             "*",
                             [
-@@ -1387,14 +1377,6 @@ if (is_android && !build_with_mozilla) {
+@@ -1393,14 +1383,6 @@ if (is_android && !build_with_mozilla) {
                                 "suppressed_configs",
                                 "visibility",
                               ])

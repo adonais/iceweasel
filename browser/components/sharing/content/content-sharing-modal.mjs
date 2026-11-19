@@ -39,11 +39,11 @@ const COPIED_COPY_L10N_ID = "content-sharing-modal-link-copied";
 const ACCEPTABLE_USE_POLICY_URL =
   "https://www.mozilla.org/about/legal/acceptable-use/";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-card.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-message-bar.mjs";
 
 /**

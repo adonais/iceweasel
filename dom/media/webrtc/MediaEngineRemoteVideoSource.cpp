@@ -179,7 +179,7 @@ MediaEngineRemoteVideoSource::MediaEngineRemoteVideoSource(
           MakeAndAddRef<media::Refcountable<MediaTrackCapabilities>>()),
       mFirstFramePromise(mFirstFramePromiseHolder.Ensure(__func__)),
       mCalculation(kFitness),
-      mPrefs(MakeUnique<MediaEnginePrefs>()),
+      mPrefs(std::make_unique<MediaEnginePrefs>()),
       mMediaDevice(aMediaDevice),
       mDeviceUUID(NS_ConvertUTF16toUTF8(aMediaDevice->mRawID)) {
   LOG("{}", __PRETTY_FUNCTION__);
@@ -602,7 +602,7 @@ size_t MediaEngineRemoteVideoSource::NumCapabilities() const {
     // The default for devices that don't return discrete capabilities: treat
     // them as supporting all capabilities orthogonally. E.g. screensharing.
     // CaptureCapability defaults key values to 0, which means accept any value.
-    mCapabilities.AppendElement(MakeUnique<webrtc::CaptureCapability>());
+    mCapabilities.AppendElement(std::make_unique<webrtc::CaptureCapability>());
     mCapabilitiesAreHardcoded = true;
   }
 
@@ -614,7 +614,7 @@ webrtc::CaptureCapability& MediaEngineRemoteVideoSource::GetCapability(
   AssertIsOnOwningThread();
   MOZ_RELEASE_ASSERT(aIndex < mCapabilities.Length());
   if (!mCapabilities[aIndex]) {
-    mCapabilities[aIndex] = MakeUnique<webrtc::CaptureCapability>();
+    mCapabilities[aIndex] = std::make_unique<webrtc::CaptureCapability>();
     camera::GetChildAndCall(&camera::CamerasChild::GetCaptureCapability,
                             mCapEngine, mDeviceUUID.get(), aIndex,
                             mCapabilities[aIndex].get());

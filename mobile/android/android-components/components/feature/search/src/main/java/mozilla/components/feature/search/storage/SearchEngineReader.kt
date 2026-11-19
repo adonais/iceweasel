@@ -16,11 +16,16 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import mozilla.appservices.search.SearchEngineClassification
+import mozilla.appservices.search.SearchEngineClassificationV3
 import mozilla.appservices.search.SearchEngineDefinition
+import mozilla.appservices.search.SearchEngineDefinitionV3
+import mozilla.appservices.search.SearchEngineUrls
 import mozilla.appservices.search.SearchUrlParam
 import mozilla.components.browser.icons.decoder.ICOIconDecoder
 import mozilla.components.browser.icons.decoder.SvgIconDecoder
+import mozilla.components.browser.state.search.SearchAccessPoint
 import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.browser.state.search.SearchEngineAccessPoint
 import mozilla.components.feature.search.middleware.SearchExtraParams
 import mozilla.components.support.images.DesiredSize
 import mozilla.components.support.locale.LocaleManager
@@ -81,6 +86,7 @@ internal class SearchEngineReader(
         var inputEncoding: String? = null
         var isGeneral: Boolean = false
         var isOptional: Boolean = false
+        var accessPoints: Map<String, SearchEngineAccessPoint> = emptyMap()
 
         fun toSearchEngine() =
             SearchEngine(
@@ -95,6 +101,7 @@ internal class SearchEngineReader(
                 isGeneral = isGeneralSearchEngine(identifier, type), // Will be replaced with builder.isGeneral
                 isOptional = isOptional,
                 telemetrySuffix = telemetrySuffix,
+                accessPoints = accessPoints,
             )
 
         /**
@@ -291,44 +298,113 @@ internal class SearchEngineReader(
         builder.inputEncoding = engineDefinition.charset
         builder.isGeneral = engineDefinition.classification == SearchEngineClassification.GENERAL
         builder.isOptional = engineDefinition.optional
-        readUrlAPI(engineDefinition, builder)
+        applyUrls(readAccessPoint(engineDefinition.urls, engineDefinition.partnerCode, builder.name), builder)
         readImageAPI(attachmentModel, mimetype, builder, defaultIcon)
 
         return builder.toSearchEngine()
     }
 
+    /**
+     * Loads a <code>SearchEngine</code> from a search-config-v3 <code>engineDefinition</code>.
+     *
+     * The partner details of the [SearchAccessPoint.DEFAULT] access point supply the partner code and telemetry suffix,
+     * which search-config-v2 defines once per engine.
+     */
     @Throws(IllegalArgumentException::class)
-    private fun readUrlAPI(engineDefinition: SearchEngineDefinition, builder: SearchEngineBuilder) {
-        requireNotNull(engineDefinition.urls.search) { "Search engine URL cannot be empty" }
-        builder.resultsUrls.add(
-            buildUrlWithParams(
-                searchTermParamName = engineDefinition.urls.search.searchTermParamName,
-                params = engineDefinition.urls.search.params,
-                template = engineDefinition.urls.search.base,
-                partnerCode = engineDefinition.partnerCode,
-                builderName = builder.name,
+    fun loadStreamAPIV3(
+        engineDefinition: SearchEngineDefinitionV3,
+        attachmentModel: ByteArray?,
+        mimetype: String,
+        defaultIcon: Bitmap,
+    ): SearchEngine {
+        require(engineDefinition.name.isNotBlank()) { "Search engine name cannot be empty" }
+        require(engineDefinition.charset.isNotBlank()) { "Search engine charset cannot be empty" }
+        require(engineDefinition.identifier.isNotBlank()) { "Search engine identifier cannot be empty" }
+
+        val partner = engineDefinition.partner?.get(SearchAccessPoint.DEFAULT)
+        val builder =
+            SearchEngineBuilder(
+                type,
+                engineDefinition.identifier,
+                partner?.telemetrySuffix,
             )
+        builder.name = engineDefinition.name
+        builder.inputEncoding = engineDefinition.charset
+        builder.isGeneral = engineDefinition.classification == SearchEngineClassificationV3.GENERAL
+        builder.isOptional = engineDefinition.optional
+        val accessPoints =
+            engineDefinition.partner.orEmpty().mapValues { (_, details) ->
+                readAccessPoint(
+                        urls = engineDefinition.urls,
+                        partnerCode = details.code?.takeIf { it.isNotEmpty() },
+                        engineName = engineDefinition.name,
+                    )
+                    .copy(telemetrySuffix = details.telemetrySuffix)
+            }
+        builder.accessPoints = accessPoints
+        // SearchEngine's own resultUrls, suggestUrl and trendingUrl are the default access point's, so reuse that
+        // entry rather than building the same URLs a second time. An engine with no default entry builds them with no
+        // partner code.
+        applyUrls(
+            accessPoints[SearchAccessPoint.DEFAULT]
+                ?: readAccessPoint(engineDefinition.urls, partnerCode = null, engineName = engineDefinition.name),
+            builder,
         )
-        engineDefinition.urls.suggestions?.let { suggestions ->
-            builder.suggestUrl =
-                buildUrlWithParams(
-                    searchTermParamName = suggestions.searchTermParamName,
-                    params = suggestions.params,
-                    template = suggestions.base,
-                    partnerCode = engineDefinition.partnerCode,
-                    builderName = builder.name,
-                )
-        }
-        engineDefinition.urls.trending?.let { trending ->
-            builder.trendingUrl =
-                buildUrlWithParams(
-                    searchTermParamName = trending.searchTermParamName,
-                    params = trending.params,
-                    template = trending.base,
-                    partnerCode = engineDefinition.partnerCode,
-                    builderName = builder.name,
-                )
-        }
+        readImageAPI(attachmentModel, mimetype, builder, defaultIcon)
+
+        return builder.toSearchEngine()
+    }
+
+    private fun applyUrls(accessPoint: SearchEngineAccessPoint, builder: SearchEngineBuilder) {
+        builder.resultsUrls.addAll(accessPoint.resultUrls)
+        builder.suggestUrl = accessPoint.suggestUrl
+        builder.trendingUrl = accessPoint.trendingUrl
+    }
+
+    /**
+     * Builds the URLs an engine uses with the given [partnerCode]. A null [partnerCode] omits the partner code
+     * parameter from the URLs entirely rather than appending it empty.
+     */
+    @Throws(IllegalArgumentException::class)
+    private fun readAccessPoint(
+        urls: SearchEngineUrls,
+        partnerCode: String?,
+        engineName: String?,
+    ): SearchEngineAccessPoint {
+        requireNotNull(urls.search) { "Search engine URL cannot be empty" }
+        return SearchEngineAccessPoint(
+            resultUrls =
+                listOf(
+                    buildUrlWithParams(
+                        searchTermParamName = urls.search.searchTermParamName,
+                        params = urls.search.params,
+                        template = urls.search.base,
+                        partnerCode = partnerCode,
+                        builderName = engineName,
+                    )
+                ),
+            suggestUrl =
+                urls.suggestions?.let { suggestions ->
+                    buildUrlWithParams(
+                        searchTermParamName = suggestions.searchTermParamName,
+                        params = suggestions.params,
+                        template = suggestions.base,
+                        partnerCode = partnerCode,
+                        builderName = engineName,
+                    )
+                },
+            trendingUrl =
+                urls.trending?.let { trending ->
+                    buildUrlWithParams(
+                        searchTermParamName = trending.searchTermParamName,
+                        params = trending.params,
+                        template = trending.base,
+                        partnerCode = partnerCode,
+                        builderName = engineName,
+                    )
+                },
+            partnerCode = partnerCode,
+        )
     }
 
     private fun buildUrlWithParams(
@@ -368,7 +444,7 @@ internal class SearchEngineReader(
         val uriBuilder = template.toUri().buildUpon()
         for (param in params) {
             if (param.value == "{partnerCode}") {
-                uriBuilder.appendQueryParameter(param.name, partnerCode)
+                partnerCode?.let { uriBuilder.appendQueryParameter(param.name, it) }
             } else if (param.value == "{acceptLanguages}") {
                 uriBuilder.appendQueryParameter(param.name, applicationContext.getAcceptLanguage())
             } else if (param.value != null) {

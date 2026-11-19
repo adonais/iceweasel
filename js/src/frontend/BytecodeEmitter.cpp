@@ -11097,10 +11097,9 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
     }
   }
 
-  if (memberInitializers.hasInlinedZeroFields) {
+  if (memberInitializers.hasInlinedFields) {
     MOZ_ASSERT(!isDerivedClassConstructor);
-    for (const InlinedZeroField& field :
-         sc->asFunctionBox()->inlinedZeroFields()) {
+    for (const InlinedField& field : sc->asFunctionBox()->inlinedFields()) {
       if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
         //              [stack] THIS
         return false;
@@ -11121,8 +11120,8 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
           //            [stack] THIS KEY
           return false;
         }
-        if (!emit1(JSOp::Zero)) {
-          //            [stack] THIS KEY ZERO
+        if (!emitNumberOp(field.initialValue)) {
+          //            [stack] THIS KEY VALUE
           return false;
         }
         if (!emit1(JSOp::InitHiddenElem)) {
@@ -11130,8 +11129,8 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
           return false;
         }
       } else {
-        if (!emit1(JSOp::Zero)) {
-          //            [stack] THIS ZERO
+        if (!emitNumberOp(field.initialValue)) {
+          //            [stack] THIS VALUE
           return false;
         }
         if (!emitAtomOp(JSOp::InitProp, field.name)) {
@@ -12502,7 +12501,7 @@ bool BytecodeEmitter::emitClass(
       }
 #endif
       // Any class with field initializers will have a constructor
-      if (!ctor->funbox()->memberInitializers().hasInlinedZeroFields &&
+      if (!ctor->funbox()->memberInitializers().hasInlinedFields &&
           !emitCreateMemberInitializers(ce, classMembers,
                                         FieldPlacement::Instance
 #ifdef ENABLE_DECORATORS

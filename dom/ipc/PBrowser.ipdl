@@ -215,13 +215,15 @@ parent:
     async PVsync();
 
     /**
-     * When the child process unsuppresses painting, we send the message for the
-     * parent process to start painting the new document, if it's still painting
-     * the old one.
+     * Tells the parent that it can paint this document instead of the retained
+     * paint of the previous document. Sent when painting is unsuppressed, or
+     * after the first frame of an inbound cross-document view transition, or
+     * after a BFCache restore. An initial about:blank document sends the
+     * NormalPriority version.
      */
-    [Priority=control] async DidUnsuppressPainting();
+    [Priority=control] async ReadyToReplaceRetainedPaint();
 
-    async DidUnsuppressPaintingNormalPriority();
+    async ReadyToReplaceRetainedPaintNormalPriority();
 
     /**
      * When child sends this message, parent should move focus to

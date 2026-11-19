@@ -1,0 +1,118 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+COMPILE_FLAGS["OS_INCLUDES"] = []
+AllowCompilerWarnings()
+
+DEFINES["ANDROID"] = True
+DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"
+DEFINES["ANGLE_DISABLE_POOL_ALLOC"] = True
+DEFINES["ANGLE_ENABLE_CONTEXT_MUTEX"] = "1"
+DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
+DEFINES["ANGLE_ENABLE_GLOBAL_MUTEX_LOAD_TIME_ALLOCATE"] = "1"
+DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
+DEFINES["ANGLE_ENABLE_OPENGL"] = True
+DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
+DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
+DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+DEFINES["ANGLE_USE_ANDROID_TLS_SLOT"] = "1"
+DEFINES["EGL_NO_X11"] = True
+DEFINES["HAVE_SYS_UIO_H"] = True
+DEFINES["LIBANGLE_IMPLEMENTATION"] = True
+DEFINES["_GNU_SOURCE"] = True
+DEFINES["__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"] = True
+DEFINES["__STDC_CONSTANT_MACROS"] = True
+DEFINES["__STDC_FORMAT_MACROS"] = True
+
+LOCAL_INCLUDES += [
+    "!/ipc/ipdl/_ipdlheaders",
+    "/ipc/chromium/src",
+    "/third_party/angle/include/",
+    "/third_party/angle/src/",
+    "/third_party/angle/src/common/base/",
+    "/third_party/angle/src/common/third_party/xxhash/src/",
+    "/third_party/angle/src/third_party/khronos/",
+    "/tools/profiler/public"
+]
+
+OS_LIBS += [
+    "log",
+    "nativewindow"
+]
+
+UNIFIED_SOURCES += [
+    "/third_party/angle/src/libANGLE/renderer/gl/BlitGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/BufferGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/ClearMultiviewGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/CompilerGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/ContextGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/DispatchTableGL_autogen.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/DisplayGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/android/DisplayAndroid.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/android/NativeBufferImageSiblingAndroid.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/ContextEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/DeviceEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/DisplayEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/DmaBufImageSiblingEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/egl_utils.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/FunctionsEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/FunctionsEGLDL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/ImageEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/PbufferSurfaceEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/RendererEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/SurfaceEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/SyncEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/egl/WindowSurfaceEGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/FenceNVGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/formatutilsgl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/FramebufferGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/FunctionsGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/ImageGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/MemoryObjectGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/ProgramExecutableGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/ProgramGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/ProgramPipelineGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/QueryGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/RenderbufferGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/RendererGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/renderergl_utils.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/SamplerGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/SemaphoreGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/ShaderGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/StateManagerGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/SurfaceGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/SyncGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/TextureGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/TransformFeedbackGL.cpp",
+    "/third_party/angle/src/libANGLE/renderer/gl/VertexArrayGL.cpp"
+]
+
+USE_LIBS += [
+    "angle_dma_buf_gn",
+    "angle_gpu_info_util_gn",
+    "ANGLE_headers_gn",
+    "angle_image_util_gn"
+]
+
+if not CONFIG["MOZ_DEBUG"]:
+
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "0"
+    DEFINES["NDEBUG"] = True
+    DEFINES["NVALGRIND"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1":
+
+    DEFINES["ANGLE_DEBUG_LAYERS_ENABLED"] = True
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "1"
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+
+    DEFINES["__ARM_NEON__"] = "1"
+
+Library("angle_gl_backend_gn")

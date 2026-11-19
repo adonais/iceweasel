@@ -61,9 +61,9 @@ nsresult txResultStringComparator::init(const nsACString& aLanguage,
 std::pair<UniquePtr<txObject>, nsresult>
 txResultStringComparator::createSortableValue(Expr* aExpr,
                                               txIEvalContext* aContext) {
-  UniquePtr<nsString> string = MakeUnique<nsString>();
+  auto string = std::make_unique<nsString>();
   nsresult rv = aExpr->evaluateToString(aContext, *string);
-  return std::make_pair(MakeUnique<StringValue>(std::move(string)), rv);
+  return std::make_pair(std::make_unique<StringValue>(std::move(string)), rv);
 }
 
 int txResultStringComparator::compareValues(txObject* aVal1, txObject* aVal2) {
@@ -84,9 +84,9 @@ txResultNumberComparator::createSortableValue(Expr* aExpr,
                                               txIEvalContext* aContext) {
   RefPtr<txAExprResult> exprRes;
   nsresult rv = aExpr->evaluate(aContext, getter_AddRefs(exprRes));
-  return std::make_pair(
-      MakeUnique<NumberValue>(NS_SUCCEEDED(rv) ? exprRes->numberValue() : 0),
-      rv);
+  return std::make_pair(std::make_unique<NumberValue>(
+                            NS_SUCCEEDED(rv) ? exprRes->numberValue() : 0),
+                        rv);
 }
 
 int txResultNumberComparator::compareValues(txObject* aVal1, txObject* aVal2) {

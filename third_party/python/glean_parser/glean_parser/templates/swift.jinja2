@@ -217,11 +217,69 @@ extension {{ namespace }} {
         {{ obj_declaration(obj, 'Label', 'private ') | indent }}
         /// {{ obj.description|wordwrap() | replace('\n', '\n        /// ') }}
         static let {{ obj.name|camelize|variable_name }} = try! LabeledMetricType<{{ obj|type_name }}>( // generated from {{ obj.identifier() }}
-            category: {{ obj.category|swift }},
-            name: {{ obj.name|swift }},
-            sendInPings: {{ obj.send_in_pings|swift }},
-            lifetime: {{ obj.lifetime|swift }},
-            disabled: {{ obj.is_disabled()|swift }},
+            {% if obj.type == "labeled_custom_distribution" %}
+            .customDistribution(
+                cmd: CommonMetricData(
+                    category: {{ obj.category|swift }},
+                    name: {{ obj.name|swift }},
+                    sendInPings: {{ obj.send_in_pings|swift }},
+                    lifetime: {{ obj.lifetime|swift }},
+                    disabled: {{ obj.is_disabled()|swift }},
+                )
+                {% for arg_name in extra_metric_args if obj[arg_name] is defined %}
+                , {{arg_name|camelize}}: {{ obj[arg_name]|swift }}
+                {% endfor %}
+            ),
+            {% elif obj.type == "labeled_memory_distribution" %}
+            .memoryDistribution(
+                cmd: CommonMetricData(
+                    category: {{ obj.category|swift }},
+                    name: {{ obj.name|swift }},
+                    sendInPings: {{ obj.send_in_pings|swift }},
+                    lifetime: {{ obj.lifetime|swift }},
+                    disabled: {{ obj.is_disabled()|swift }},
+                )
+                {% for arg_name in extra_metric_args if obj[arg_name] is defined %}
+                {% if arg_name == "memory_unit" %}
+                , unit: {{ obj[arg_name]|swift }}
+                {% else %}
+                , {{arg_name|camelize}}: {{ obj[arg_name]|swift }}
+                {% endif %}
+                {% endfor %}
+            ),
+            {% elif obj.type == "labeled_timing_distribution" %}
+            .timingDistribution(
+                cmd: CommonMetricData(
+                    category: {{ obj.category|swift }},
+                    name: {{ obj.name|swift }},
+                    sendInPings: {{ obj.send_in_pings|swift }},
+                    lifetime: {{ obj.lifetime|swift }},
+                    disabled: {{ obj.is_disabled()|swift }},
+                )
+                {% for arg_name in extra_metric_args if obj[arg_name] is defined %}
+                {% if arg_name == "time_unit" %}
+                , unit: {{ obj[arg_name]|swift }}
+                {% else %}
+                , {{arg_name|camelize}}: {{ obj[arg_name]|swift }}
+                {% endif %}
+                {% endfor %}
+            ),
+            {% elif obj.labeled %}
+            .common(
+                cmd: CommonMetricData(
+                    category: {{ obj.category|swift }},
+                    name: {{ obj.name|swift }},
+                    sendInPings: {{ obj.send_in_pings|swift }},
+                    lifetime: {{ obj.lifetime|swift }},
+                    disabled: {{ obj.is_disabled()|swift }},
+                )
+                {% for arg_name in extra_metric_args if obj[arg_name] is defined %}
+                , {{arg_name|camelize}}: {{ obj[arg_name]|swift }}
+                {% endfor %}
+            ),
+            {% else %}
+            UNKNOWN
+            {% endif %}
             subMetric: {{ obj.name|camelize }}Label,
             labels: {{ obj.labels|swift }}
         )

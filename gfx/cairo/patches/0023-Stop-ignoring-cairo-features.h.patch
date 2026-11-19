@@ -1,0 +1,26 @@
+From 48d9d472e9153b3a2bdc8bf8bfc7da947cc3aa7e Mon Sep 17 00:00:00 2001
+From: Jim Blandy <jimb@red-bean.com>
+Date: Thu, 23 Apr 2026 08:41:53 -0700
+Subject: [PATCH 29/29] Stop ignoring cairo-features.h.
+
+Upstream generates `cairo-features.h` with Meson, but Mozilla Central
+keeps its own version in the tree (see the `keep` list in
+`gfx/cairo/moz.yaml`), so don't ignore it.
+---
+ src/.gitignore | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/.gitignore b/src/.gitignore
+index 32fb7333e..a28f1c1f4 100644
+--- a/src/.gitignore
++++ b/src/.gitignore
+@@ -10,7 +10,6 @@ Makefile.am.features
+ *.lo
+ *.loT
+ *.pc
+-cairo-features.h
+ cairo-supported-features.h
+ cairo.def
+ *.i
+-- 
+2.53.0

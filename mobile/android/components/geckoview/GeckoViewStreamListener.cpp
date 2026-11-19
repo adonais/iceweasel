@@ -273,7 +273,7 @@ void GeckoViewStreamListener::InitializeStreamSupport(nsIRequest* aRequest) {
 
   mSupport = java::GeckoInputStream::Support::New();
   StreamSupport::AttachNative(
-      mSupport, mozilla::MakeUnique<StreamSupport>(mSupport, aRequest));
+      mSupport, std::make_unique<StreamSupport>(mSupport, aRequest));
 }
 
 std::tuple<jni::ByteArray::LocalRef, bool>

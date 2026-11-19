@@ -211,7 +211,6 @@ class ConfigHelper {
         CreateEnvironment(&field_trials_, time_controller_.GetClock(),
                           time_controller_.GetTaskQueueFactory()),
         stream_config_, audio_state_, &rtp_transport_, &bitrate_allocator_,
-        std::nullopt,
         std::unique_ptr<voe::ChannelSendInterface>(channel_send_));
   }
 

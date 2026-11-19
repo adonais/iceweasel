@@ -62,7 +62,7 @@ add_task(async function test_pinned_horizontal_tabs() {
 
   // Discard one of the test tabs to verify that pinning/unpinning
   // discarded tabs does not regress (regression test for Bug 1852391).
-  tabbrowser.discardBrowser(tabs[1], true);
+  tabbrowser.discardBrowser(tabs[1], { forceDiscard: true });
 
   var eh = new PinUnpinHandler(tabs[3], "TabPinned");
   tabbrowser.pinTab(tabs[3]);

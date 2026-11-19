@@ -15,6 +15,10 @@
 #  include <windows.h>
 #endif  // defined(XP_WIN)
 
+#if defined(XP_MACOSX)
+#  include <Carbon/Carbon.h>
+#endif  // defined(XP_MACOSX)
+
 // Undo X11/X.h's definition of None
 #undef None
 

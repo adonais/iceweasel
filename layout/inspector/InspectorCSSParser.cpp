@@ -17,7 +17,7 @@ InspectorCSSParser::InspectorCSSParser(const nsACString& aText)
 
 UniquePtr<InspectorCSSParser> InspectorCSSParser::Constructor(
     const GlobalObject& aGlobal, const nsACString& aText) {
-  return MakeUnique<InspectorCSSParser>(aText);
+  return std::make_unique<InspectorCSSParser>(aText);
 }
 
 InspectorCSSParser::~InspectorCSSParser() {

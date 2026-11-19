@@ -598,17 +598,16 @@ static bool ToTemporalTime(JSContext* cx, Handle<JSObject*> item,
   }
 
   // Step 2.c.
-  if (auto* zonedDateTime = item->maybeUnwrapIf<ZonedDateTimeObject>()) {
-    auto epochNs = zonedDateTime->epochNanoseconds();
-    Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
+  if (auto* zdtObj = item->maybeUnwrapIf<ZonedDateTimeObject>()) {
+    Rooted<ZonedDateTime> zonedDateTime(cx, ZonedDateTime{zdtObj});
 
-    if (!timeZone.wrap(cx)) {
+    if (!zonedDateTime.wrap(cx)) {
       return false;
     }
 
-    // Steps 2.c.i.
+    // Step 2.c.i.
     ISODateTime dateTime;
-    if (!GetISODateTimeFor(cx, timeZone, epochNs, &dateTime)) {
+    if (!GetISODateTimeFor(cx, zonedDateTime, &dateTime)) {
       return false;
     }
 

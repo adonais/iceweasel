@@ -43,6 +43,10 @@ void WebTransportParent::Create(
     const uint32_t& aCongestionControl, nsTArray<nsString>&& aProtocols,
     nsTArray<WebTransportHeader>&& aHeaders,
     nsTArray<WebTransportHash>&& aServerCertHashes,
+    const mozilla::Maybe<uint16_t>&
+        aAnticipatedConcurrentIncomingUnidirectionalStreams,
+    const mozilla::Maybe<uint16_t>&
+        aAnticipatedConcurrentIncomingBidirectionalStreams,
     Endpoint<PWebTransportParent>&& aParentEndpoint,
     std::function<void(std::tuple<const nsresult&, const uint8_t&,
                                   const uint64_t&>)>&& aResolver) {
@@ -126,12 +130,19 @@ void WebTransportParent::Create(
        flags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
        clientInfo = ClientInfo{aClientInfo}, protocols = std::move(aProtocols),
        headerNames = std::move(headerNames),
-       headerValues = std::move(headerValues)] {
+       headerValues = std::move(headerValues),
+       anticipatedUni = aAnticipatedConcurrentIncomingUnidirectionalStreams,
+       anticipatedBidi = aAnticipatedConcurrentIncomingBidirectionalStreams] {
         LOG(("WebTransport %p AsyncConnect", self.get()));
-        if (NS_FAILED(self->mWebTransport->AsyncConnectWithClient(
-                uri, dedicated, std::move(nsServerCertHashes), principal,
-                browsingContextID, flags, self, Some(clientInfo), protocols,
-                headerNames, headerValues, nsIWebTransport::HTTPVersion::h3))) {
+        // 0 and "unset" are equivalent downstream: the limit is raise-only.
+        uint16_t uniStreams = anticipatedUni.valueOr(0);
+        uint16_t bidiStreams = anticipatedBidi.valueOr(0);
+        nsresult rv = self->mWebTransport->AsyncConnectWithClient(
+            uri, dedicated, std::move(nsServerCertHashes), principal,
+            browsingContextID, flags, self, Some(clientInfo), protocols,
+            headerNames, headerValues, nsIWebTransport::HTTPVersion::h3,
+            uniStreams, bidiStreams);
+        if (NS_FAILED(rv)) {
           LOG(("AsyncConnect failure; we should get OnSessionClosed"));
         }
       });
@@ -523,6 +534,30 @@ IPCResult WebTransportParent::RecvSetSendGroup(uint64_t aStreamId,
     entry->mStream->SetSendGroup(aGroupId);
   } else if (auto entry = mBidiStreamCallbackMap.Lookup(aStreamId)) {
     entry->mStream->SetSendGroup(aGroupId);
+  }
+  return IPC_OK();
+}
+
+IPCResult
+WebTransportParent::RecvSetAnticipatedConcurrentIncomingUnidirectionalStreams(
+    const Maybe<uint16_t>& aValue) {
+  LOG(("Set anticipatedConcurrentIncomingUnidirectionalStreams=%s",
+       aValue.isSome() ? nsPrintfCString("%u", aValue.value()).get() : "null"));
+  if (mWebTransport) {
+    mWebTransport->SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+        aValue.valueOr(0));
+  }
+  return IPC_OK();
+}
+
+IPCResult
+WebTransportParent::RecvSetAnticipatedConcurrentIncomingBidirectionalStreams(
+    const Maybe<uint16_t>& aValue) {
+  LOG(("Set anticipatedConcurrentIncomingBidirectionalStreams=%s",
+       aValue.isSome() ? nsPrintfCString("%u", aValue.value()).get() : "null"));
+  if (mWebTransport) {
+    mWebTransport->SetAnticipatedConcurrentIncomingBidirectionalStreams(
+        aValue.valueOr(0));
   }
   return IPC_OK();
 }

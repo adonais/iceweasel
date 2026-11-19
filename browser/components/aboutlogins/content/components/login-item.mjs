@@ -23,6 +23,7 @@ export default class LoginItem extends HTMLElement {
     this._error = null;
     this._copyUsernameTimeoutId = 0;
     this._copyPasswordTimeoutId = 0;
+    this._perDeviceSyncEnabled = false;
   }
 
   connectedCallback() {
@@ -329,6 +330,15 @@ export default class LoginItem extends HTMLElement {
       "_changePasswordURLsMap",
       changePasswordURLsByLoginGUID
     );
+  }
+
+  updateSyncState(syncState) {
+    this._perDeviceSyncEnabled = !!(
+      syncState.loggedIn &&
+      syncState.passwordSyncEnabled &&
+      syncState.perDeviceSyncEnabled
+    );
+    this._deleteButton.perDeviceSyncEnabled = this._perDeviceSyncEnabled;
   }
 
   _internalSetMonitorData(internalMemberName, mapByLoginGUID) {
@@ -719,12 +729,19 @@ export default class LoginItem extends HTMLElement {
     let options;
     switch (type) {
       case "delete": {
-        options = {
-          title: "about-logins-confirm-delete-dialog-title",
-          message: "about-logins-confirm-delete-dialog-message",
-          confirmButtonLabel:
-            "about-logins-confirm-remove-dialog-confirm-button",
-        };
+        options = this._perDeviceSyncEnabled
+          ? {
+              title: "about-logins-confirm-delete-dialog-title2",
+              message: "about-logins-confirm-delete-dialog-message2",
+              confirmButtonLabel:
+                "about-logins-confirm-delete-dialog-confirm-button",
+            }
+          : {
+              title: "about-logins-confirm-delete-dialog-title",
+              message: "about-logins-confirm-delete-dialog-message",
+              confirmButtonLabel:
+                "about-logins-confirm-remove-dialog-confirm-button",
+            };
         break;
       }
       case "discard-changes": {

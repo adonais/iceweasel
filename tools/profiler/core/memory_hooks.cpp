@@ -165,7 +165,7 @@ class InfallibleAllocWithoutHooksPolicy {
   }
 
   template <typename T>
-  static T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
+  static T* maybe_pod_realloc(T* aPtr, size_t /*aOldSize*/, size_t aNewSize) {
     size_t size;
     if (MOZ_UNLIKELY(!mozilla::SafeMul(aNewSize, sizeof(T), &size))) {
       return nullptr;
@@ -195,7 +195,7 @@ class InfallibleAllocWithoutHooksPolicy {
   }
 
   template <typename T>
-  static void free_(T* aPtr, size_t aSize = 0) {
+  static void free_(T* aPtr, size_t /*aSize*/ = 0) {
     gMallocTable.free(aPtr);
   }
 
@@ -382,7 +382,7 @@ mozilla::Atomic<bool, mozilla::Relaxed>
 // malloc/free callbacks
 //---------------------------------------------------------------------------
 
-static void AllocCallback(void* aPtr, size_t aReqSize) {
+static void AllocCallback(void* aPtr, size_t /*aReqSize*/) {
   if (!aPtr) {
     return;
   }
@@ -551,7 +551,8 @@ static void replace_moz_dispose_arena(arena_id_t aArenaId) {
 }
 
 // Must come after all the replace_* funcs
-void replace_init(malloc_table_t* aMallocTable, ReplaceMallocBridge** aBridge) {
+void replace_init(malloc_table_t* aMallocTable,
+                  ReplaceMallocBridge** /*aBridge*/) {
   gMallocTable = *aMallocTable;
 #define MALLOC_FUNCS (MALLOC_FUNCS_MALLOC_BASE | MALLOC_FUNCS_ARENA)
 #define MALLOC_DECL(name, ...) aMallocTable->name = replace_##name;

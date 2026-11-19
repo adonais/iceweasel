@@ -6,6 +6,12 @@
 
 "use strict";
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.unifiedSearchButton.historyInSearchMode", false]],
+  });
+});
+
 add_task(async function escape() {
   await doTest(win =>
     EventUtils.synthesizeKey("KEY_Escape", { repeat: 2 }, win)

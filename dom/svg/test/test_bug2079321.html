@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2079321
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Test for Bug 2079321</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script type="application/javascript" src="../../html/test/reflect.js"></script>
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2079321">Mozilla Bug 2079321</a>
+<p id="display"></p>
+<div id="content" style="display: none">
+</div>
+<pre id="test">
+<script type="application/javascript">
+
+/** Test for Bug 2079321 */
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(runTests);
+
+function runTests() {
+  var elements = [ "image", "a", "feImage", "script"];
+
+  for (var i = 0; i < elements.length; ++i) {
+    reflectLimitedEnumerated({
+      element: document.createElementNS("http://www.w3.org/2000/svg", elements[i]),
+      attribute: { content: "referrerpolicy", idl: "referrerPolicy" },
+      validValues: [ "no-referrer",
+                     "origin",
+                     "unsafe-url" ],
+      invalidValues: [
+        "", "  orIgin   ", "  unsafe-uRl  ", "  No-RefeRRer  ", " fOoBaR  "
+      ],
+      defaultValue: "",
+    });
+  }
+
+  SimpleTest.finish();
+}
+
+</script>
+</pre>
+</body>
+</html>
+

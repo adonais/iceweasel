@@ -7,9 +7,11 @@ package org.mozilla.fenix.pdf.ui
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -20,10 +22,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.compose.base.theme.Theme
+import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.R
 import org.mozilla.fenix.pdf.PdfToolsTestTag
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -37,11 +41,12 @@ class SignatureDialogTest {
 
     private val state = TextFieldState()
 
-    private fun setTestContent() {
+    private fun setTestContent(isAddingSignature: Boolean = false) {
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
                 SignatureDialog(
                     state = state,
+                    isAddingSignature = isAddingSignature,
                     onCloseClick = { clicked.add("close") },
                     onClearClick = {
                         state.clearText()
@@ -128,6 +133,21 @@ class SignatureDialogTest {
         composeTestRule.onNodeWithTag(PdfToolsTestTag.SIGNATURE_ADD_BUTTON).performClick()
 
         assertEquals(listOf("add"), clicked)
+    }
+
+    @Test
+    fun `GIVEN the signature is being added THEN the buttons are inactive and add announces it is adding`() {
+        setTestContent(isAddingSignature = true)
+        typeSignature()
+
+        composeTestRule.onNodeWithTag(PdfToolsTestTag.SIGNATURE_CLEAR_BUTTON).assertIsNotEnabled()
+
+        composeTestRule
+            .onNodeWithTag(PdfToolsTestTag.SIGNATURE_ADD_BUTTON)
+            .assertContentDescriptionEquals(
+                testContext.getString(R.string.pdf_tools_signature_adding_content_description)
+            )
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
     }
 
     @Test

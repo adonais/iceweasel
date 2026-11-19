@@ -33,7 +33,7 @@ class SharedTextureDMABuf final : public SharedTexture {
 
   Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() override;
 
-  void GetSnapshot(const ipc::Shmem& aDestShmem, size_t aDestStride) override;
+  FrontBufferSnapshot GetSnapshot() override;
 
   SharedTextureDMABuf* AsSharedTextureDMABuf() override { return this; }
 

@@ -40,16 +40,32 @@ LazyLogModule gViewTransitionsLog("ViewTransitions");
 
 NS_DECLARE_FRAME_PROPERTY_RELEASABLE(ViewTransitionCaptureName, nsAtom)
 
+// Inline boxes fragmented across lines can participate in a transition, see
+// https://drafts.csswg.org/css-view-transitions-1/#capture-old-state-algorithm
+static bool HasNonInlineBoxFragments(const nsIFrame* aFrame) {
+  if (aFrame->IsInlineFrame()) {
+    return false;
+  }
+  return aFrame->GetPrevContinuation() || aFrame->GetNextContinuation();
+}
+
+// Sets the captured state on all the fragments of aFrame (including inline
+// continuations and IB-split siblings), so that their display items get merged
+// into a single capture.
 static void SetCaptured(nsIFrame* aFrame, bool aCaptured,
                         nsAtom* aNameIfCaptured) {
-  aFrame->AddOrRemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION, aCaptured);
-  if (aCaptured) {
-    aFrame->AddProperty(ViewTransitionCaptureName(),
-                        do_AddRef(aNameIfCaptured).take());
-  } else {
-    aFrame->RemoveProperty(ViewTransitionCaptureName());
+  MOZ_ASSERT(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame));
+  for (nsIFrame* f = aFrame; f;
+       f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
+    f->AddOrRemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION, aCaptured);
+    if (aCaptured) {
+      f->AddProperty(ViewTransitionCaptureName(),
+                     do_AddRef(aNameIfCaptured).take());
+    } else {
+      f->RemoveProperty(ViewTransitionCaptureName());
+    }
+    f->InvalidateFrameSubtree();
   }
-  aFrame->InvalidateFrameSubtree();
   if (aFrame->Style()->IsRootElementStyle()) {
     aFrame->PresShell()->GetRootFrame()->InvalidateFrameSubtree();
   }
@@ -63,8 +79,9 @@ static void SetCaptured(nsIFrame* aFrame, bool aCaptured,
 // GetBoundingClientRect() effectively...
 //
 // TODO(emilio): This might need revision.
-static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
-  if (aFrame->GetSize().IsEmpty() || aFrame->Style()->IsRootElementStyle()) {
+static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame,
+                                                   const nsRect& aBorderBox) {
+  if (aBorderBox.IsEmpty() || aFrame->Style()->IsRootElementStyle()) {
     return {};
   }
 
@@ -74,9 +91,12 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
           RelativeTo{nsLayoutUtils::GetContainingBlockForClientRect(aFrame)},
           TransformMatrixFlag::InCSSUnits, nullptr));
 
+  // The border box of a fragmented inline might not start at the origin of
+  // its first fragment.
+  auto borderBoxRect = CSSRect::FromAppUnits(aBorderBox);
+  matrix.PreTranslate(borderBoxRect.X(), borderBoxRect.Y(), 0.0f);
   // Compensate for the default transform-origin of 50% 50% using border box
   // dimensions.
-  auto borderBoxRect = CSSRect::FromAppUnits(aFrame->GetRect());
   matrix.ChangeBasis(-borderBoxRect.Width() / 2, -borderBoxRect.Height() / 2,
                      0.0f);
   return matrix;
@@ -91,19 +111,38 @@ static inline nsRect SnapRect(const nsRect& aRect, nscoord aAppUnitsPerPixel) {
       aAppUnitsPerPixel);
 }
 
-static inline nsRect CapturedRect(const nsIFrame* aFrame,
+// Returns the requested rect of the captured element, relative to its first
+// fragment.
+static inline nsRect CapturedRect(nsIFrame* aFrame,
                                   const nsSize& aSnapshotContainingBlockSize,
                                   CapturedRectType aType) {
   if (aFrame->Style()->IsRootElementStyle()) {
     return nsRect(nsPoint(), aSnapshotContainingBlockSize);
   }
 
+  MOZ_ASSERT(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame));
   if (aType == CapturedRectType::BorderBox) {
-    return aFrame->GetRectRelativeToSelf();
+    return nsLayoutUtils::GetAllInFlowRectsUnion(aFrame, aFrame);
   }
 
-  return SnapRect(aFrame->InkOverflowRectRelativeToSelf(),
-                  aFrame->PresContext()->AppUnitsPerDevPixel());
+  nsRect inkOverflow;
+  for (nsIFrame* f = aFrame; f;
+       f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
+    inkOverflow.UnionRect(inkOverflow, f->InkOverflowRectRelativeToSelf() +
+                                           f->GetOffsetTo(aFrame));
+  }
+  return SnapRect(inkOverflow, aFrame->PresContext()->AppUnitsPerDevPixel());
+}
+
+// Returns the ink overflow rect of the captured element, relative to its
+// border box.
+static inline nsRect CapturedInkOverflowRect(
+    nsIFrame* aFrame, const nsSize& aSnapshotContainingBlockSize) {
+  return CapturedRect(aFrame, aSnapshotContainingBlockSize,
+                      CapturedRectType::InkOverflowBox) -
+         CapturedRect(aFrame, aSnapshotContainingBlockSize,
+                      CapturedRectType::BorderBox)
+             .TopLeft();
 }
 
 static StyleViewTransitionClass DocumentScopedClassListFor(
@@ -133,8 +172,8 @@ struct OldSnapshotData {
 
   explicit OldSnapshotData(nsIFrame* aFrame,
                            const nsSize& aSnapshotContainingBlockSize)
-      : mSnapshotRect(CapturedRect(aFrame, aSnapshotContainingBlockSize,
-                                   CapturedRectType::InkOverflowBox)) {}
+      : mSnapshotRect(
+            CapturedInkOverflowRect(aFrame, aSnapshotContainingBlockSize)) {}
 
   void EnsureKey(layers::RenderRootStateManager* aManager,
                  wr::IpcResourceUpdateQueue& aResources) {
@@ -194,7 +233,9 @@ struct CapturedElementOldState {
         mBorderBoxSize(CapturedRect(aFrame, aSnapshotContainingBlockSize,
                                     CapturedRectType::BorderBox)
                            .Size()),
-        mTransform(EffectiveTransform(aFrame)),
+        mTransform(EffectiveTransform(
+            aFrame, CapturedRect(aFrame, aSnapshotContainingBlockSize,
+                                 CapturedRectType::BorderBox))),
         mWritingMode(aFrame->StyleVisibility()->mWritingMode),
         mDirection(aFrame->StyleVisibility()->mDirection),
         mTextOrientation(aFrame->StyleVisibility()->mTextOrientation),
@@ -395,7 +436,7 @@ ViewTransition::CaptureOldStateForCrossDocument() {
   // Move the captured named elements (including their old-state snapshots) into
   // the params handed to the new document. The outbound transition itself is
   // skipped once the old document is hidden.
-  auto params = MakeUnique<ViewTransitionParams>();
+  auto params = std::make_unique<ViewTransitionParams>();
   params->namedElements = std::move(mNamedElements);
   params->names = std::move(mNames);
   params->initialSnapshotContainingBlockSize =
@@ -436,18 +477,24 @@ Element* ViewTransition::GetViewTransitionTreeRoot() const {
 
 void ViewTransition::GetCapturedFrames(
     nsTArray<nsIFrame*>& aCapturedFrames) const {
+  auto appendFragments = [&](nsIFrame* aFrame) {
+    for (nsIFrame* f = aFrame; f;
+         f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
+      aCapturedFrames.AppendElement(f);
+    }
+  };
   if (mOldCaptureElements) {
     for (const auto& [f, _] : *mOldCaptureElements) {
-      aCapturedFrames.AppendElement(f);
+      appendFragments(f);
     }
   }
 
   for (const auto& entry : mNamedElements) {
     CapturedElement& capturedElement = *entry.GetData();
-    if (capturedElement.mNewElement &&
-        capturedElement.mNewElement->GetPrimaryFrame()) {
-      aCapturedFrames.AppendElement(
-          capturedElement.mNewElement->GetPrimaryFrame());
+    if (capturedElement.mNewElement) {
+      if (nsIFrame* f = capturedElement.mNewElement->GetPrimaryFrame()) {
+        appendFragments(f);
+      }
     }
   }
 }
@@ -1148,17 +1195,17 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
     //  * capturedElement has more than one box fragment.
     nsIFrame* frame = capturedElement.mNewElement->GetPrimaryFrame();
     if (!frame || frame->IsHiddenByContentVisibilityOnAnyAncestor() ||
-        frame->GetPrevContinuation() || frame->GetNextContinuation()) {
+        HasNonInlineBoxFragments(frame)) {
       return false;
     }
     auto* rule = EnsureRule(capturedElement.mGroupRule);
     // Note: mInitialSnapshotContainingBlockSize should be the same as the
     // current snapshot containing block size because the caller checks it
     // before calling us.
-    const auto newBorderBoxSize =
+    const auto newBorderBox =
         CapturedRect(frame, mInitialSnapshotContainingBlockSize,
-                     CapturedRectType::BorderBox)
-            .Size();
+                     CapturedRectType::BorderBox);
+    const auto newBorderBoxSize = newBorderBox.Size();
     auto size = CSSPixel::FromAppUnits(newBorderBoxSize);
     // NOTE(emilio): Intentionally not short-circuiting. Int cast is needed to
     // silence warning.
@@ -1168,7 +1215,7 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
         SetProp(rule, mDocument, eCSSProperty_height, size.height,
                 eCSSUnit_Pixel) |
         SetProp(rule, mDocument, eCSSProperty_transform,
-                EffectiveTransform(frame)) |
+                EffectiveTransform(frame, newBorderBox)) |
         SetProp(rule, mDocument, eCSSProperty_writing_mode,
                 frame->StyleVisibility()->mWritingMode) |
         SetProp(rule, mDocument, eCSSProperty_direction,
@@ -1194,8 +1241,7 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
     // 5. Live capturing (nothing to do here regarding the capture itself, but
     // if the size has changed, then we need to invalidate the new frame).
     const auto newSnapshotRect =
-        CapturedRect(frame, mInitialSnapshotContainingBlockSize,
-                     CapturedRectType::InkOverflowBox);
+        CapturedInkOverflowRect(frame, mInitialSnapshotContainingBlockSize);
     auto oldRect = capturedElement.mNewSnapshotRect;
     capturedElement.mNewSnapshotRect = newSnapshotRect;
     capturedElement.mNewBorderBoxSize = newBorderBoxSize;
@@ -1534,6 +1580,10 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   // document equal to document, in paint order:
   Maybe<SkipTransitionReason> result;
   ForEachFrameWithViewTransitionName(mDocument, [&](nsIFrame* aFrame) {
+    if (!nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {
+      // The element is handled with its first fragment.
+      return true;
+    }
     RefPtr<nsAtom> name = DocumentScopedTransitionNameFor(aFrame);
     if (!name) {
       // As a fast path we check for v-t-n first.
@@ -1544,7 +1594,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
       // See https://github.com/w3c/csswg-drafts/issues/13831
       return true;
     }
-    if (aFrame->GetPrevContinuation() || aFrame->GetNextContinuation()) {
+    if (HasNonInlineBoxFragments(aFrame)) {
       // If element has more than one box fragment, then continue.
       return true;
     }
@@ -1579,7 +1629,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     MOZ_ASSERT(f->GetContent()->IsElement());
     // Capture the view-transition-class.
     // https://drafts.csswg.org/css-view-transitions-2/#vt-class-algorithms
-    auto capture = MakeUnique<CapturedElement>(
+    auto capture = std::make_unique<CapturedElement>(
         f, mInitialSnapshotContainingBlockSize, DocumentScopedClassListFor(f));
     mNamedElements.InsertOrUpdate(name, std::move(capture));
     mNames.AppendElement(name);
@@ -1621,6 +1671,10 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
   nsTHashSet<nsAtom*> usedTransitionNames;
   Maybe<SkipTransitionReason> result;
   ForEachFrameWithViewTransitionName(mDocument, [&](nsIFrame* aFrame) {
+    if (!nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {
+      // The element is handled with its first fragment.
+      return true;
+    }
     // As a fast path we check for v-t-n first.
     RefPtr<nsAtom> name = DocumentScopedTransitionNameFor(aFrame);
     if (!name) {
@@ -1630,7 +1684,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
       // See https://github.com/w3c/csswg-drafts/issues/13831
       return true;
     }
-    if (aFrame->GetPrevContinuation() || aFrame->GetNextContinuation()) {
+    if (HasNonInlineBoxFragments(aFrame)) {
       // If element has more than one box fragment, then continue.
       return true;
     }
@@ -1646,15 +1700,14 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     bool wasPresent = true;
     auto& capturedElement = mNamedElements.LookupOrInsertWith(name, [&] {
       wasPresent = false;
-      return MakeUnique<CapturedElement>();
+      return std::make_unique<CapturedElement>();
     });
     if (!wasPresent) {
       mNames.AppendElement(name);
     }
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
     auto capturedRect =
-        CapturedRect(aFrame, mInitialSnapshotContainingBlockSize,
-                     CapturedRectType::InkOverflowBox);
+        CapturedInkOverflowRect(aFrame, mInitialSnapshotContainingBlockSize);
     // Note: mInitialSnapshotContainingBlockSize should be the same as the
     // current snapshot containing block size at this moment because the caller
     // checks it before calling us.
@@ -1919,6 +1972,10 @@ void ViewTransition::ClearActiveTransition(bool aIsDocumentHidden) {
     if (!aIsDocumentHidden) {
       ClearViewTransitionsAnimationData(mDocument->GetRootElement());
     }
+  }
+  // An inbound transition can end before its first frame is composited.
+  if (nsPresContext* pc = mDocument->GetPresContext()) {
+    pc->FlushDeferredReadyToReplaceRetainedPaint();
   }
   mDocument->ClearActiveViewTransition();
 }

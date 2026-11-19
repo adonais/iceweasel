@@ -220,7 +220,59 @@ describe("<AddClockForm>", () => {
       const result = container.querySelector(".clocks-search-result");
       expect(result.tagName).toBe("DIV");
       expect(result.getAttribute("role")).toBe("option");
-      expect(result.getAttribute("tabIndex")).toBe("0");
+      expect(result.getAttribute("tabIndex")).toBe("-1");
+    });
+
+    it("moves through results with the arrow keys", async () => {
+      const { container } = await renderForm();
+      const input = setSearchValue(container, "San");
+      const results = container.querySelectorAll(
+        "#clocks-search-results [role='option']"
+      );
+      expect(results.length).toBeGreaterThan(1);
+
+      fireEvent.keyDown(input, { key: "ArrowDown" });
+      expect(document.activeElement).toBe(results[0]);
+      fireEvent.keyDown(results[0], { key: "ArrowDown" });
+      expect(document.activeElement).toBe(results[1]);
+      fireEvent.keyDown(results[1], { key: "ArrowUp" });
+      expect(document.activeElement).toBe(results[0]);
+    });
+
+    it("closes the results when focus leaves the field and its list", async () => {
+      const { container } = await renderForm();
+      const input = setSearchValue(container, "San");
+      const firstResult = container.querySelector(".clocks-search-result");
+
+      fireEvent.focusOut(input, { relatedTarget: firstResult });
+      expect(
+        container.querySelector("#clocks-search-results")
+      ).toBeInTheDocument();
+
+      fireEvent.focusOut(firstResult, {
+        relatedTarget: container.querySelector(".clocks-nickname-input"),
+      });
+      expect(
+        container.querySelector("#clocks-search-results")
+      ).not.toBeInTheDocument();
+
+      setSearchValue(container, "Sant");
+      expect(
+        container.querySelector("#clocks-search-results")
+      ).toBeInTheDocument();
+    });
+
+    it("wraps from the last result to the first without scrolling the page", async () => {
+      const { container } = await renderForm();
+      setSearchValue(container, "San");
+      const results = container.querySelectorAll(
+        "#clocks-search-results [role='option']"
+      );
+      const lastResult = results[results.length - 1];
+      lastResult.focus();
+      // fireEvent returns false when the handler prevented the default.
+      expect(fireEvent.keyDown(lastResult, { key: "ArrowDown" })).toBe(false);
+      expect(document.activeElement).toBe(results[0]);
     });
 
     it("keeps the results list open on a full city name and closes it only after a row is clicked", async () => {
@@ -471,6 +523,17 @@ describe("<AddClockForm>", () => {
       expect(props.onCancel).toHaveBeenCalled();
     });
 
+    it("calls onCancel when the back button is clicked", async () => {
+      const { container, props } = await renderForm();
+      const backButton = container.querySelector(".clocks-search-back");
+      expect(backButton).toHaveAttribute(
+        "data-l10n-id",
+        "newtab-clock-widget-search-back-button"
+      );
+      fireEvent.click(backButton);
+      expect(props.onCancel).toHaveBeenCalled();
+    });
+
     it("calls onCancel on Escape inside the form", async () => {
       const { container, props } = await renderForm();
       const input = container.querySelector(".clocks-search-location-input");
@@ -618,7 +681,7 @@ describe("<AddClockForm>", () => {
       const { container } = await renderForm();
       const input = container.querySelector(".clocks-search-location-input");
       expect(input.getAttribute("data-l10n-id")).toBe(
-        "newtab-clock-widget-search-location-input"
+        "newtab-clock-widget-search-location-input2"
       );
       expect(
         container.querySelector("#clocks-search-results")
@@ -698,6 +761,27 @@ describe("<AddClockForm>", () => {
       expect(
         listbox.querySelectorAll('[role="option"]').length
       ).toBeGreaterThan(0);
+    });
+  });
+
+  describe("back button direction", () => {
+    afterEach(() => {
+      document.dir = "";
+    });
+
+    it("points the back arrow left in left-to-right layouts", async () => {
+      const { container } = await renderForm();
+      expect(
+        container.querySelector(".clocks-search-back").getAttribute("iconSrc")
+      ).toBe("chrome://global/skin/icons/arrow-left.svg");
+    });
+
+    it("points the back arrow right in right-to-left layouts", async () => {
+      document.dir = "rtl";
+      const { container } = await renderForm();
+      expect(
+        container.querySelector(".clocks-search-back").getAttribute("iconSrc")
+      ).toBe("chrome://global/skin/icons/arrow-right.svg");
     });
   });
 });

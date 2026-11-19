@@ -18,17 +18,17 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d92a578327f524ec3
  4 files changed, 24 insertions(+), 7 deletions(-)
 
 diff --git a/call/rtp_video_sender.cc b/call/rtp_video_sender.cc
-index 8529361eaf..1324bde0d7 100644
+index a9cb5f10cb..946edfa9e1 100644
 --- a/call/rtp_video_sender.cc
 +++ b/call/rtp_video_sender.cc
-@@ -521,6 +521,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
+@@ -607,6 +607,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
      return;
    }
  
 +  // Sends a kRtcpByeCode when going from true to false.
    rtp_module.SetSendingStatus(sending);
-   rtp_module.SetSendingMediaStatus(sending);
    if (sending) {
+     transport_->RegisterSendingRtpStream(rtp_module);
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
 index 825399a025..7c5c53698d 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
@@ -84,10 +84,10 @@ index 1a6e4766e8..b10159a3e0 100644
  
  TEST_F(RtcpSenderTest, SendFir) {
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index 9b8693225c..f12d039c1a 100644
+index c0586d3b2c..5d8c64f580 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -274,7 +274,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -276,7 +276,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
    // Returns the FlexFEC SSRC, if there is one.
    virtual std::optional<uint32_t> FlexfecSsrc() const = 0;
  

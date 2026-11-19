@@ -14,5 +14,11 @@ skip-if = [
 ]
 
 ["browser_speech_recognition_process_lifetime.js"]
+skip-if = [
+  "macos_vm", # Bug 2084943 - fails only on the macOS tart VMs
+]
 
 ["browser_speech_recognition_telemetry.js"]
+skip-if = [
+  "macos_vm", # Bug 2084943 - fails only on the macOS tart VMs
+]

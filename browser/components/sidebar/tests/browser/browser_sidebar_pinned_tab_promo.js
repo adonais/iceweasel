@@ -13,13 +13,42 @@ add_setup(async function () {
   });
 });
 
-/* Bug 2052309: tests that the promo is hidden when Nova is enabled */
-add_task(async function test_promo_card_hidden_when_nova_enabled() {
+add_task(async function test_promo_card_only_shows_for_expanded_sidebar() {
   const promoCard = document.getElementById("drag-to-pin-promo-card");
+
+  await SidebarController.updateUIState({ expanded: false });
+  ok(
+    BrowserTestUtils.isHidden(promoCard),
+    "Drag-to-pin promo card is hidden when sidebar is collapsed."
+  );
 
   await SidebarController.updateUIState({ expanded: true });
   ok(
-    BrowserTestUtils.isHidden(promoCard),
-    "Drag-to-pin promo card is hidden when Nova is enabled."
+    BrowserTestUtils.isVisible(promoCard),
+    "Drag-to-pin promo card is shown when sidebar is expanded."
   );
+});
+
+add_task(async function test_dismiss_promo_card() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs.dragToPinPromo.dismissed", false]],
+  });
+  const promoCard = document.getElementById("drag-to-pin-promo-card");
+  await promoCard.updateComplete;
+  const mozPromo = promoCard.card;
+  await mozPromo.updateComplete;
+
+  info("Dismiss drag-to-pin promo card using the moz-promo close button.");
+  EventUtils.synthesizeMouseAtCenter(mozPromo.closeButton, {});
+  await BrowserTestUtils.waitForMutationCondition(
+    promoCard,
+    { attributeFilter: ["hidden"] },
+    () => BrowserTestUtils.isHidden(promoCard)
+  );
+  ok(
+    Services.prefs.getBoolPref("sidebar.verticalTabs.dragToPinPromo.dismissed"),
+    "Dismissing the promo sets the dismissed pref."
+  );
+
+  await SpecialPowers.popPrefEnv();
 });

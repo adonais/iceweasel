@@ -1042,7 +1042,7 @@ class SVGFilterObserverListForCanvasContext final
   SVGFilterObserverListForCanvasContext(
       const SVGFilterObserverListForCanvasContext&) = default;
 
-  CanvasRenderingContext2D* mContext;
+  CanvasRenderingContext2D* const mContext;
   bool mActive = true;
 };
 

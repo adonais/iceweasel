@@ -179,7 +179,7 @@ void nsWifiMonitor::EnsureWifiScanner() {
   }
 
   LOG(("Constructing WifiScanner"));
-  mWifiScanner = MakeUnique<mozilla::WifiScannerImpl>();
+  mWifiScanner = std::make_unique<mozilla::WifiScannerImpl>();
 }
 
 NS_IMETHODIMP nsWifiMonitor::StartWatching(nsIWifiListener* aListener,

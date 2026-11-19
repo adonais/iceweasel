@@ -506,7 +506,7 @@ vpn-error-page-new-session = Start a new session
 vpn-paused-alert-close-tabs-button = Close all tabs
 vpn-paused-alert-continue-wo-vpn-button = Continue without VPN
 
-vpn-error-alert-title = VPN isn’t working right now.
-vpn-error-alert-body = Try again later.
+vpn-error-alert-title-1 = VPN and rules aren’t working right now.
+vpn-error-alert-body-1 = Turning VPN on and off may fix the issue.
 
 ##

@@ -1517,6 +1517,10 @@ class gfxFont {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(gfxFont, MaybeDestroy())
   int32_t GetRefCount() { return int32_t(mRefCnt); }
 
+  // Call immediately after creating an instance of a gfxFont subclass.
+  // Caller must then check IsValid() to confirm if the instance is usable.
+  void InitMetrics();
+
   // options to specify the kind of AA to be used when creating a font
   typedef enum : uint8_t {
     kAntialiasDefault,
@@ -2060,6 +2064,7 @@ class gfxFont {
       int32_t aAppUnitsPerDevPixel) const;
 
   bool HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh);
+  bool HasMetricsOverride() const { return mHasMetricsOverride; }
 
  protected:
   const Metrics& GetHorizontalMetrics() const { return mMetrics; }
@@ -2395,14 +2400,22 @@ class gfxFont {
   bool mKerningSet;      // kerning explicitly set?
   bool mKerningEnabled;  // if set, on or off?
 
+  bool mHasMetricsOverride = false;  // ascent/descent/line-gap override used
+
   mozilla::Atomic<bool> mMathInitialized;  // TryGetMathTable() called?
+
+  // Must be implemented by platform subclasses: initialize mMetrics if not
+  // being done via Skrifa.
+  virtual bool InitMetricsFromPlatform() = 0;
+
+  // Optional: allow subclass to do any necessary finalization after metrics
+  // have been set up.
+  virtual void FinishInitFontMetrics() {}
 
   // Helper for subclasses that want to initialize standard metrics from the
   // tables of sfnt (TrueType/OpenType) fonts.
   // This will use mFUnitsConvFactor if it is already set, else compute it
   // from mAdjustedSize and the unitsPerEm in the font's 'head' table.
-  // Returns TRUE and sets mIsValid=TRUE if successful;
-  // Returns TRUE but leaves mIsValid=FALSE if the font seems to be broken.
   // Returns FALSE if the font does not appear to be an sfnt at all,
   // and should be handled (if possible) using other APIs.
   bool InitMetricsFromSfntTables();

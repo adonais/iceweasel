@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from marionette_driver.addons import Addons
 from marionette_driver.by import By
 
-from .servers import DesktopServer, find_free_port
+from .servers import DesktopServer, XpcshellServer, find_free_port
 
 # The test extension is installed through the AddonManager rather than fetched
 # over HTTP, so unlike the fixture pages it stays next to the harness.
@@ -37,10 +37,15 @@ class ControlServer:
     """HTTP control channel for acting on the server Firefox.
 
     :param server: the provisioned server instance, used to run the commands.
+    :param xpcshell: the xpcshell test to debug, or None when the server does
+        not support xpcshell debugging.
     """
 
-    def __init__(self, server: DesktopServer) -> None:
+    def __init__(
+        self, server: DesktopServer, xpcshell: XpcshellServer | None = None
+    ) -> None:
         self.server = server
+        self.xpcshell = xpcshell
         self.port = None
         self._httpd = None
         self._thread = None
@@ -57,6 +62,8 @@ class ControlServer:
         self._thread.start()
 
     def stop(self) -> None:
+        if self.xpcshell:
+            self.xpcshell.stop()
         if self._httpd:
             self._httpd.shutdown()
             self._httpd.server_close()
@@ -122,6 +129,15 @@ class ControlServer:
     def _cmd_uninstall_extension(self, addonId: str) -> dict:
         Addons(self.server.marionette).uninstall(addonId)
         return {}
+
+    def _cmd_start_xpcshell(self) -> dict:
+        if self.xpcshell is None:
+            raise ValueError("xpcshell debugging is not available for this server")
+        self.xpcshell.start()
+        return {"host": self.xpcshell.host}
+
+    def _cmd_wait_xpcshell(self) -> dict:
+        return {"exitCode": self.xpcshell.wait()}
 
 
 def _make_handler(control: ControlServer) -> type[BaseHTTPRequestHandler]:

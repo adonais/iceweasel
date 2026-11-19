@@ -82,8 +82,8 @@ UniquePtr<EncodedAudioChunkData> EncodedAudioChunkData::Clone() const {
     return nullptr;
   }
 
-  return MakeUnique<EncodedAudioChunkData>(buffer.forget(), mType, mTimestamp,
-                                           Maybe<uint64_t>(mDuration));
+  return std::make_unique<EncodedAudioChunkData>(
+      buffer.forget(), mType, mTimestamp, Maybe<uint64_t>(mDuration));
 }
 
 already_AddRefed<MediaRawData> EncodedAudioChunkData::TakeData() {

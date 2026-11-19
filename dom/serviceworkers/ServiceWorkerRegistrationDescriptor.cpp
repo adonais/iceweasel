@@ -30,7 +30,7 @@ ServiceWorkerRegistrationDescriptor::ServiceWorkerRegistrationDescriptor(
     uint64_t aId, uint64_t aVersion, nsIPrincipal* aPrincipal,
     const nsACString& aScope, WorkerType aType,
     ServiceWorkerUpdateViaCache aUpdateViaCache)
-    : mData(MakeUnique<IPCServiceWorkerRegistrationDescriptor>()) {
+    : mData(std::make_unique<IPCServiceWorkerRegistrationDescriptor>()) {
   MOZ_ALWAYS_SUCCEEDS(
       PrincipalToPrincipalInfo(aPrincipal, &mData->principalInfo()));
 
@@ -48,13 +48,14 @@ ServiceWorkerRegistrationDescriptor::ServiceWorkerRegistrationDescriptor(
     uint64_t aId, uint64_t aVersion,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo, const nsACString& aScope,
     WorkerType aType, ServiceWorkerUpdateViaCache aUpdateViaCache)
-    : mData(MakeUnique<IPCServiceWorkerRegistrationDescriptor>(
+    : mData(std::make_unique<IPCServiceWorkerRegistrationDescriptor>(
           aId, aVersion, aPrincipalInfo, nsCString(aScope), aType,
           aUpdateViaCache, Nothing(), Nothing(), Nothing())) {}
 
 ServiceWorkerRegistrationDescriptor::ServiceWorkerRegistrationDescriptor(
     const IPCServiceWorkerRegistrationDescriptor& aDescriptor)
-    : mData(MakeUnique<IPCServiceWorkerRegistrationDescriptor>(aDescriptor)) {
+    : mData(std::make_unique<IPCServiceWorkerRegistrationDescriptor>(
+          aDescriptor)) {
 #ifndef FUZZING_SNAPSHOT
   MOZ_DIAGNOSTIC_ASSERT(IsValid());
 #endif
@@ -75,7 +76,8 @@ ServiceWorkerRegistrationDescriptor::operator=(
     return *this;
   }
   mData.reset();
-  mData = MakeUnique<IPCServiceWorkerRegistrationDescriptor>(*aRight.mData);
+  mData =
+      std::make_unique<IPCServiceWorkerRegistrationDescriptor>(*aRight.mData);
   MOZ_DIAGNOSTIC_ASSERT(IsValid());
   return *this;
 }

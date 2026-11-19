@@ -255,6 +255,8 @@ add_task(async function test_update() {
       ],
     ],
   });
+  await UrlClassifierTestUtils.addBuiltInTestTrackers();
+  await UrlClassifierTestUtils.addTestHostsFromPrefs();
 
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -314,6 +316,204 @@ add_task(async function test_update() {
   );
 
   BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+  await UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function test_blocked_list_is_cumulative_across_same_site_nav() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "urlclassifier.features.cryptomining.blacklistHosts",
+        "cryptomining.example.com",
+      ],
+      [
+        "urlclassifier.features.cryptomining.annotate.blacklistHosts",
+        "cryptomining.example.com",
+      ],
+    ],
+  });
+  await UrlClassifierTestUtils.addTestHostsFromPrefs();
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: TRACKING_PAGE,
+    waitForLoad: true,
+  });
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.postMessage("cryptomining", "*");
+  });
+
+  await TestUtils.waitForCondition(
+    () =>
+      document
+        .getElementById("trust-icon-container")
+        .classList.contains("has-blocked-trackers"),
+    "Waiting for the cryptominer to be blocked on the first page"
+  );
+
+  // Navigate within the same site and block another cryptominer.
+  const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    TRACKING_PAGE + "?same-site"
+  );
+  await loaded;
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.postMessage("cryptomining", "*");
+  });
+
+  await TestUtils.waitForCondition(
+    () =>
+      document.getElementById("trust-icon-tracker-count-shortform")
+        .textContent == "2",
+    "Waiting for the cumulative count to reach 2"
+  );
+
+  await UrlbarTestUtils.openTrustPanel(window);
+
+  const blockerShown = BrowserTestUtils.waitForEvent(
+    document.getElementById("trustpanel-blockerView"),
+    "ViewShown"
+  );
+  document.getElementById("trustpanel-blocker-see-all").click();
+  await blockerShown;
+
+  const cryptominerButton = await TestUtils.waitForCondition(
+    () =>
+      document.querySelector(
+        '#trustpanel-blocked [data-l10n-id="trustpanel-list-label-cryptominer"]'
+      ),
+    "Waiting for the cryptominer entry in the blocked list"
+  );
+
+  await TestUtils.waitForCondition(
+    () => parseInt(cryptominerButton.textContent, 10) == 2,
+    "The blocked list entry is cumulative across same-site navigations"
+  );
+
+  Assert.equal(
+    parseInt(
+      document.getElementById("trustpanel-blocker-section-header").textContent,
+      10
+    ),
+    2,
+    "The blocker section header matches the cumulative list count"
+  );
+
+  // The same cryptominer was blocked on both pages, so the details list must
+  // show it once, with a count of the pages it appeared on.
+  const detailsShown = BrowserTestUtils.waitForEvent(
+    document.getElementById("trustpanel-blockerDetailsView"),
+    "ViewShown"
+  );
+  cryptominerButton.click();
+  await detailsShown;
+
+  const items = document.querySelectorAll(
+    "#trustpanel-blocker-items .protections-popup-list-item"
+  );
+  Assert.equal(
+    items.length,
+    1,
+    "A tracker blocked on both pages is listed once"
+  );
+  const countLabel = items[0].querySelector(
+    ".protections-popup-list-count-label"
+  );
+  Assert.ok(countLabel, "The deduplicated entry shows a count");
+  Assert.deepEqual(
+    JSON.parse(countLabel.getAttribute("data-l10n-args")),
+    { count: 2 },
+    "The count label reports the number of pages the tracker was blocked on"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+  await UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function test_blocked_list_not_cumulative_when_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.trackerCount.enabled", false],
+      [
+        "urlclassifier.features.cryptomining.blacklistHosts",
+        "cryptomining.example.com",
+      ],
+      [
+        "urlclassifier.features.cryptomining.annotate.blacklistHosts",
+        "cryptomining.example.com",
+      ],
+    ],
+  });
+  await UrlClassifierTestUtils.addTestHostsFromPrefs();
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: TRACKING_PAGE,
+    waitForLoad: true,
+  });
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.postMessage("cryptomining", "*");
+  });
+  await TestUtils.waitForCondition(
+    () =>
+      tab.linkedBrowser
+        .getContentBlockingLog()
+        .includes("cryptomining.example.com"),
+    "Waiting for the cryptominer to be blocked on the first page"
+  );
+
+  // Navigate within the same site and block the same cryptominer again.
+  const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    TRACKING_PAGE + "?same-site"
+  );
+  await loaded;
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.postMessage("cryptomining", "*");
+  });
+
+  await TestUtils.waitForCondition(
+    () =>
+      tab.linkedBrowser
+        .getContentBlockingLog()
+        .includes("cryptomining.example.com"),
+    "Waiting for the cryptominer to be blocked on the second page"
+  );
+
+  await UrlbarTestUtils.openTrustPanel(window);
+
+  const blockerShown = BrowserTestUtils.waitForEvent(
+    document.getElementById("trustpanel-blockerView"),
+    "ViewShown"
+  );
+  document.getElementById("trustpanel-blocker-see-all").click();
+  await blockerShown;
+
+  const cryptominerButton = await TestUtils.waitForCondition(
+    () =>
+      document.querySelector(
+        '#trustpanel-blocked [data-l10n-id="trustpanel-list-label-cryptominer"]'
+      ),
+    "Waiting for the cryptominer entry in the blocked list"
+  );
+
+  Assert.equal(
+    parseInt(cryptominerButton.textContent, 10),
+    1,
+    "The blocked list is not cumulative across same-site navigations when the tracker count feature is disabled"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+  await UrlClassifierTestUtils.cleanupTestTrackers();
 });
 
 add_task(async function test_etld() {
@@ -826,6 +1026,20 @@ add_task(async function test_opened_glean_event_no_trackers_blocked() {
 });
 
 add_task(async function test_opened_glean_event_trackers_blocked() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "urlclassifier.features.cryptomining.blacklistHosts",
+        "cryptomining.example.com",
+      ],
+      [
+        "urlclassifier.features.cryptomining.annotate.blacklistHosts",
+        "cryptomining.example.com",
+      ],
+    ],
+  });
+  await UrlClassifierTestUtils.addTestHostsFromPrefs();
+
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening: TRACKING_PAGE,
@@ -879,6 +1093,8 @@ add_task(async function test_opened_glean_event_trackers_blocked() {
     await UrlbarTestUtils.closeTrustPanel(window);
   } finally {
     await BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+    await UrlClassifierTestUtils.cleanupTestTrackers();
   }
 });
 
@@ -1237,50 +1453,6 @@ add_task(async function clear_cookie_test() {
   await BrowserTestUtils.removeTab(tab);
 });
 
-add_task(async function test_legacy_graphic_when_nova_disabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.nova.enabled", false]],
-  });
-
-  const tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    opening: "https://example.com",
-    waitForLoad: true,
-  });
-
-  await UrlbarTestUtils.openTrustPanel(window);
-
-  const legacyImage = window.document.getElementById(
-    "trustpanel-graphic-image-legacy"
-  );
-  const novaImage = window.document.getElementById("trustpanel-graphic-image");
-
-  Assert.ok(
-    BrowserTestUtils.isVisible(legacyImage),
-    "Legacy graphic is shown when browser.nova.enabled is off"
-  );
-  Assert.greater(
-    legacyImage.getBoundingClientRect().width,
-    0,
-    "Legacy graphic is actually rendered (has non-zero width)"
-  );
-  Assert.ok(
-    !BrowserTestUtils.isVisible(novaImage),
-    "Nova graphic is hidden when browser.nova.enabled is off"
-  );
-  Assert.ok(
-    window
-      .getComputedStyle(legacyImage)
-      .getPropertyValue("background-image")
-      .includes("trustpanel-graphic-enabled.svg"),
-    "Legacy graphic uses the pre-Nova enabled asset"
-  );
-
-  await UrlbarTestUtils.closeTrustPanel(window);
-  await BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
-});
-
 add_task(async function clear_cookie_hidden_in_private_browsing() {
   const privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
@@ -1429,7 +1601,7 @@ add_task(async function test_cookie_details_title() {
     "Cross-site tracking cookies are not titled as third-party cookies"
   );
 
-  UrlClassifierTestUtils.cleanupTestTrackers();
+  await UrlClassifierTestUtils.cleanupTestTrackers();
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });

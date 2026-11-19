@@ -271,12 +271,6 @@ export class PrefFlipsFeature {
       const enrollment = this.manager.store.get(slug);
       this.#addEnrollment(enrollment);
     }
-
-    if (inactiveSlugs.size || newSlugs.size) {
-      // If we've modified any enrollments in the store we must ensure that
-      // there is a save queued.
-      this.manager.store._jsonFile.saveSoon();
-    }
   }
 
   _annotateEnrollment(enrollment) {

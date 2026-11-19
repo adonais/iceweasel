@@ -107,6 +107,7 @@ class TestCargoInvocation(unittest.TestCase):
             "CARGO_RUSTCFLAGS": "-C 'link-arg=-L/opt/my libs'",
             "CARGO_EXTRA_FLAGS": "--offline",
             "RUSTC_BOOTSTRAP": "1",
+            "MOZ_RUST_TEST_SELECTION": "crashreporter l10nregistry",
         })
         self.assertEqual(
             invocation,
@@ -117,6 +118,7 @@ class TestCargoInvocation(unittest.TestCase):
                 cargo_rustcflags=("-C", "link-arg=-L/opt/my libs"),
                 cargo_extra_flags=("--offline",),
                 rustc_bootstrap="1",
+                test_crates=("crashreporter", "l10nregistry"),
             ),
         )
 
@@ -455,6 +457,42 @@ class TestComposeArgv(unittest.TestCase):
             ],
         )
 
+    def test_test_edge_without_workspace_hack(self):
+        cmd = _cmd(kind="test", features=("f",), names=("style",))
+        argv = _argv(cmd, _substs(), workspace_hack=False)
+        self.assertEqual(
+            argv,
+            [
+                "cargo",
+                "test",
+                *TARGET_ARGS,
+                "--no-fail-fast",
+                "-p",
+                "style",
+                "--features",
+                "f",
+                "--manifest-path",
+                cmd.manifest_path,
+            ],
+        )
+
+    def test_test_edge_without_features_or_workspace_hack(self):
+        cmd = _cmd(kind="test", names=("style",))
+        argv = _argv(cmd, _substs(), workspace_hack=False)
+        self.assertEqual(
+            argv,
+            [
+                "cargo",
+                "test",
+                *TARGET_ARGS,
+                "--no-fail-fast",
+                "-p",
+                "style",
+                "--manifest-path",
+                cmd.manifest_path,
+            ],
+        )
+
     def test_unquoted_metacharacter_rejected(self):
         from mozshellutil import MetaCharacterException
 
@@ -547,6 +585,57 @@ class TestComposeRustflags(unittest.TestCase):
 
 
 class TestComposeEnv(unittest.TestCase):
+    def test_linux_tests_find_shared_libraries_in_dist_bin(self):
+        for environ, expected in (
+            ({}, "/obj/dist/bin"),
+            ({"LD_LIBRARY_PATH": ""}, "/obj/dist/bin"),
+            (
+                {"LD_LIBRARY_PATH": "/inherited:/other"},
+                "/obj/dist/bin:/inherited:/other",
+            ),
+        ):
+            with self.subTest(environ=environ):
+                env = _env(_cmd(kind="test"), {"OS_ARCH": "Linux"}, environ)
+                self.assertEqual(env["LD_LIBRARY_PATH"], expected)
+
+    def test_windows_tests_find_shared_libraries_in_dist_bin(self):
+        for environ, expected in (
+            ({}, "/obj/dist/bin"),
+            ({"PATH": ""}, "/obj/dist/bin"),
+            ({"PATH": "C:/tools;C:/Windows"}, "/obj/dist/bin;C:/tools;C:/Windows"),
+        ):
+            with self.subTest(environ=environ):
+                env = _env(_cmd(kind="test"), {"OS_ARCH": "WINNT"}, environ)
+                self.assertEqual(env["PATH"], expected)
+
+    def test_windows_path_only_changes_for_tests(self):
+        for kind, os_arch in (
+            ("library", "WINNT"),
+            ("program", "WINNT"),
+            ("test", "Darwin"),
+            ("test", "Linux"),
+        ):
+            with self.subTest(kind=kind, os_arch=os_arch):
+                env = _env(_cmd(kind=kind), {"OS_ARCH": os_arch}, {"PATH": "/tools"})
+                self.assertEqual(env["PATH"], "/tools")
+
+    def test_library_search_path_only_changes_for_linux_tests(self):
+        for kind, os_arch in (
+            ("library", "Linux"),
+            ("program", "Linux"),
+            ("test", "Darwin"),
+            ("test", "WINNT"),
+        ):
+            with self.subTest(kind=kind, os_arch=os_arch):
+                env = _env(_cmd(kind=kind), {"OS_ARCH": os_arch})
+                self.assertNotIn("LD_LIBRARY_PATH", env)
+                env = _env(
+                    _cmd(kind=kind),
+                    {"OS_ARCH": os_arch},
+                    {"LD_LIBRARY_PATH": "/inherited"},
+                )
+                self.assertEqual(env["LD_LIBRARY_PATH"], "/inherited")
+
     def test_cross_build_keeps_host_and_target_toolchains_distinct(self):
         substs = {
             "MOZ_CARGO_CC_ENV_SUFFIX": "aarch64_linux_android",

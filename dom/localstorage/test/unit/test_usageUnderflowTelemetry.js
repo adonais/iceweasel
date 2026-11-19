@@ -23,6 +23,8 @@ add_task(async function testSteps() {
   info("Setting prefs");
   Services.prefs.setBoolPref("dom.quotaManager.loadQuotaFromCache", false);
 
+  Services.fog.initializeFOG();
+
   info("Stage 1 - Storing an item and flushing it to disk");
 
   let request = clear();
@@ -38,6 +40,12 @@ add_task(async function testSteps() {
     await readUsageFromUsageFile(usageFile),
     realUsage,
     "Usage file holds the real usage"
+  );
+
+  is(
+    Glean.quotamanager.hadTemporaryStorageUsageUnderflow.testGetValue(),
+    false,
+    "'Had underflow' boolean shall be false initially"
   );
 
   info("Stage 2 - Replacing the usage file content with a lower counter");
@@ -80,9 +88,6 @@ add_task(async function testSteps() {
 
   info("Stage 4 - Clearing the storage");
 
-  Services.fog.initializeFOG();
-  Services.fog.testResetFOG();
-
   storage = getLocalStorage(principal);
   storage.clear();
 
@@ -119,5 +124,11 @@ add_task(async function testSteps() {
     Number(globalEvents[0].extra.magnitude),
     Math.floor(Math.log2(realUsage - seededUsage)),
     "Total usage magnitude is the order of the negative value"
+  );
+
+  is(
+    Glean.quotamanager.hadTemporaryStorageUsageUnderflow.testGetValue(),
+    true,
+    "'Had underflow' boolean shall be true"
   );
 });

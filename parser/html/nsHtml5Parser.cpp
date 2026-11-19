@@ -4,11 +4,12 @@
 
 #include "nsHtml5Parser.h"
 
+#include <memory>
+
 #include "ErrorList.h"
 #include "encoding_rs_statics.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/UniquePtr.h"
 #include "nsCRT.h"
 #include "nsContentUtils.h"  // for kLoadAsData
 #include "nsHtml5AtomTable.h"
@@ -432,14 +433,13 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
       mDocWriteSpeculatorActive = true;
       if (!mDocWriteSpeculativeTreeBuilder) {
         // Lazily initialize if uninitialized
-        mDocWriteSpeculativeTreeBuilder =
-            mozilla::MakeUnique<nsHtml5TreeBuilder>(nullptr,
-                                                    executor->GetStage(), true);
+        mDocWriteSpeculativeTreeBuilder = std::make_unique<nsHtml5TreeBuilder>(
+            nullptr, executor->GetStage(), true);
         mDocWriteSpeculativeTreeBuilder->setScriptingEnabled(
             mTreeBuilder->isScriptingEnabled());
         mDocWriteSpeculativeTreeBuilder->setAllowDeclarativeShadowRoots(
             mTreeBuilder->isAllowDeclarativeShadowRoots());
-        mDocWriteSpeculativeTokenizer = mozilla::MakeUnique<nsHtml5Tokenizer>(
+        mDocWriteSpeculativeTokenizer = std::make_unique<nsHtml5Tokenizer>(
             mDocWriteSpeculativeTreeBuilder.get(), false);
         mDocWriteSpeculativeTokenizer->setInterner(&mAtomTable);
         mDocWriteSpeculativeTokenizer->start();

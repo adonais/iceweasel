@@ -287,6 +287,9 @@ class Http2StreamBase : public nsISupports,
   uint32_t mTxInlineFrameSize{0};
   uint32_t mTxInlineFrameUsed{0};
 
+  // A failure to queue a frame for writing, see TransmitFrame().
+  nsresult mTransmitError{NS_OK};
+
   uint32_t mRFC7540Priority = 0;  // geckoish weight
 
   // Buffer for request header compression.
@@ -303,7 +306,7 @@ class Http2StreamBase : public nsISupports,
   bool mClosed{false};
 
  private:
-  friend mozilla::DefaultDelete<Http2StreamBase>;
+  friend std::default_delete<Http2StreamBase>;
 
   [[nodiscard]] nsresult ParseHttpRequestHeaders(const char*, uint32_t,
                                                  uint32_t*);

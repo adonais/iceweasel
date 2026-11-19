@@ -3651,19 +3651,26 @@ add_task(
     gSync.updateAllUI(state);
     await openFxaPanel();
 
+    const fxaView = PanelMultiView.getViewNode(document, "PanelUI-fxa");
+    const mainViewHeight = fxaView.getBoundingClientRect().height;
+
     const syncStatusBtn = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-sync-status-button"
     );
-    let subviewShown = BrowserTestUtils.waitForEvent(
-      PanelMultiView.getViewNode(
-        document,
-        "PanelUI-fxa-menu-secure-sync-subpanel"
-      ),
-      "ViewShown"
+    const subpanel = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-secure-sync-subpanel"
     );
+    let subviewShown = BrowserTestUtils.waitForEvent(subpanel, "ViewShown");
     syncStatusBtn.click();
     await subviewShown;
+
+    Assert.less(
+      Math.abs(subpanel.getBoundingClientRect().height - mainViewHeight),
+      1,
+      "The secure sync subpanel is as tall as the account menu main view"
+    );
 
     for (const id of [
       "PanelUI-fxa-menu-secure-sync-now",

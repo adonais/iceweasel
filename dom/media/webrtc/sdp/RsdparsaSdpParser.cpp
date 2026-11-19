@@ -25,8 +25,7 @@ const std::string& RsdparsaSdpParser::ParserName() {
 
 UniquePtr<SdpParser::Results> RsdparsaSdpParser::Parse(
     const std::string& aText) {
-  UniquePtr<SdpParser::InternalResults> results =
-      std::make_unique<SdpParser::InternalResults>(Name());
+  auto results = std::make_unique<SdpParser::InternalResults>(Name());
   const ffi::SdpSession* result = nullptr;
   const ffi::SdpParserError* err = nullptr;
   ffi::StringView sdpTextView{reinterpret_cast<const uint8_t*>(aText.data()),
@@ -57,29 +56,8 @@ UniquePtr<SdpParser::Results> RsdparsaSdpParser::Parse(
                    rustOrigin.session_id, rustOrigin.session_version,
                    address.first, address.second);
 
-  auto sdp = MakeUnique<RsdparsaSdp>(std::move(uniqueResult), origin);
-
-  // Bug 2072767 - synthesize an error for unknown media types. The Sdp is left
-  // unset on purpose: media.peerconnection.sdp.strict_success defaults to
-  // false, so HybridSdpParser counts any result carrying an Sdp as a success
-  // and would hand this one to JSEP regardless of the error.
-  const auto levels = sdp->GetMediaSectionCount();
-  bool found = false;
-  for (size_t level = 0; level < levels; level++) {
-    const auto& info = sdp->GetMediaSection(level).GetMediaTypeInfo();
-    if (info.type == SdpMediaSection::kUnknown) {
-      ffi::StringView view{reinterpret_cast<const uint8_t*>(aText.data()),
-                           aText.length()};
-      const auto line = sdp_get_media_section_line_number(view, level);
-      results->AddParseError(line,
-                             "unsupported media value: " + info.unknown->name);
-      found = true;
-    }
-  }
-  if (!found) {
-    results->SetSdp(std::move(sdp));
-  }
-
+  results->SetSdp(
+      std::make_unique<RsdparsaSdp>(std::move(uniqueResult), origin));
   return results;
 }
 

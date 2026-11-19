@@ -166,11 +166,17 @@ struct SizeComputationInput {
                       LayoutFrameType aFrameType);
 
  protected:
+  /**
+   * @param aTrimmedMarginSides The sides, in aCBWM, whose margin is truncated
+   *        to zero because of `margin-trim` on an ancestor. Only block-axis
+   *        sides are supported.
+   */
   void InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
                    LayoutFrameType aFrameType, ComputeSizeFlags aFlags,
                    const Maybe<LogicalMargin>& aBorder,
                    const Maybe<LogicalMargin>& aPadding,
-                   const nsStyleDisplay* aDisplay = nullptr);
+                   const nsStyleDisplay* aDisplay = nullptr,
+                   EnumSet<LogicalSide> aTrimmedMarginSides = {});
 
   /**
    * Convert StyleSize or StyleMaxSize to nscoord when percentages depend on the
@@ -232,11 +238,6 @@ struct ReflowInput : public SizeComputationInput {
   // of the potential impact of a float
   // This takes on an arbitrary value the first time a block is reflowed
   nscoord mBlockDelta = 0;
-
-  // Distance from top of the line clamp root block to the top of this block.
-  // Necessary due to BStart() and GetRect() not being initialised before
-  // reflow.
-  nscoord mBOffsetToLineClampRoot = 0;
 
   // Physical accessors for the private fields. They are needed for
   // compatibility with not-yet-updated code. New code should use the accessors
@@ -569,8 +570,19 @@ struct ReflowInput : public SizeComputationInput {
     bool mShouldApplyTextBoxTrimAtBlockEnd : 1;
     bool mShouldApplyTextBoxTrimAtFragmentEnd : 1;
 
-    // True if the block is a line-clamp container or a descendant thereof
-    bool mIsInLineClampContainer : 1;
+    // Used to propagate to descendants of a line-clamp root frame whether
+    // line-clamp auto should be applied. True after the first reflow, when
+    // dimensions used for correctly tracking BSize are available.
+    bool mDimensionsReadyForLineClampAuto : 1;
+
+    // Whether this frame's block-start or block-end margin is trimmed in its
+    // cb's writing mode. They are set explicitly for each ReflowInput and not
+    // inherited, because trimming reaches a descendant's margin only when that
+    // margin adjoins the trimmed edge through a collapsed margin. Border,
+    // padding or margin root can stop the propagation.
+    // https://drafts.csswg.org/css-box-4/#margin-trim
+    bool mTrimBStartMargin : 1;
+    bool mTrimBEndMargin : 1;
   };
   Flags mFlags;
 
@@ -619,6 +631,12 @@ struct ReflowInput : public SizeComputationInput {
     // @note In a Grid container's masonry axis we'll always use
     // the placeholder's position in that axis regardless of this flag.
     StaticPosIsCBOrigin,
+
+    // The frame's block-start / block-end margin (in its containing block's
+    // writing mode) is trimmed to zero because of `margin-trim` on a block
+    // container ancestor. See Flags::mTrimBStartMargin.
+    TrimBStartMargin,
+    TrimBEndMargin,
   };
   using InitFlags = EnumSet<InitFlag>;
 
@@ -726,8 +744,6 @@ struct ReflowInput : public SizeComputationInput {
                                          bool aExplicitLanguage,
                                          nsPresContext* aPresContext,
                                          WritingMode aWM);
-
-  static constexpr float kNormalLineHeightFactor = 1.2f;
 
   /**
    * Apply the mComputed(Min/Max)ISize constraints to the content

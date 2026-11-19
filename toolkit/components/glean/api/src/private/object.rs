@@ -45,8 +45,8 @@ impl gecko_profiler::ProfilerMarker for ObjectMetricMarker {
 
 /// A dynamic object at runtime.
 ///
-/// Does not do any schema validation
-/// and just passes through the JSON string unmodified.
+/// Does not do any schema validation, but omits object members that are null or
+/// empty arrays like the statically generated object types.
 #[derive(Clone)]
 pub struct RuntimeObject(serde_json::Value);
 
@@ -58,7 +58,27 @@ impl ObjectSerialize for RuntimeObject {
         Ok(RuntimeObject(serde_json::Value::from_str(obj)?))
     }
 
-    fn into_serialized_object(self) -> Result<serde_json::Value, glean::traits::ObjectError> {
+    fn into_serialized_object(mut self) -> Result<serde_json::Value, glean::traits::ObjectError> {
+        use serde_json::Value;
+
+        fn omit_empty_members(value: &mut Value) {
+            match value {
+                Value::Object(members) => members.retain(|_, member| {
+                    // Omit empty array fields here; the array arm only visits elements.
+                    if member.is_null()
+                        || matches!(member, Value::Array(elements) if elements.is_empty())
+                    {
+                        return false;
+                    }
+                    omit_empty_members(member);
+                    true
+                }),
+                Value::Array(elements) => elements.iter_mut().for_each(omit_empty_members),
+                _ => {}
+            }
+        }
+
+        omit_empty_members(&mut self.0);
         Ok(self.0)
     }
 }

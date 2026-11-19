@@ -119,7 +119,7 @@ struct FFmpegVulkanVideoDecoder {
                         AVCodecID aCodecID = AV_CODEC_ID_NONE);
   bool SelectVulkanDecoderPhysicalDevice(
       const StaticMutexAutoLock& aProofOfLock, const nsCString& aRendererNode);
-  void CheckDecodeCapabilities(AVCodecID aCodecID,
+  bool CheckDecodeCapabilities(AVCodecID aCodecID,
                                AVBufferRef* aVulkanDeviceContext,
                                const MediaByteBuffer* aExtraData,
                                gfx::ColorDepth aColorDepth);

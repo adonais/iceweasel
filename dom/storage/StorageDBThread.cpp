@@ -151,7 +151,7 @@ StorageDBThread* StorageDBThread::GetOrCreate(
     return storageThread;
   }
 
-  auto newStorageThread = MakeUnique<StorageDBThread>(aPrivateBrowsingId);
+  auto newStorageThread = std::make_unique<StorageDBThread>(aPrivateBrowsingId);
 
   nsresult rv = newStorageThread->Init(aProfilePath);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -296,8 +296,8 @@ void StorageDBThread::SyncPreload(LocalStorageCacheBridge* aCache,
   // Need to go asynchronously since WAL is not allowed or scheduled updates
   // need to be flushed first.
   // Schedule preload for this cache as the first operation.
-  nsresult rv =
-      InsertDBOp(MakeUnique<DBOperation>(DBOperation::opPreloadUrgent, aCache));
+  nsresult rv = InsertDBOp(
+      std::make_unique<DBOperation>(DBOperation::opPreloadUrgent, aCache));
 
   // LoadWait exits after LoadDone of the cache has been called.
   if (NS_SUCCEEDED(rv)) {
@@ -400,7 +400,7 @@ void StorageDBThread::SetDefaultPriority() {
 
 void StorageDBThread::ThreadFunc(void* aArg) {
   {
-    auto queue = MakeRefPtr<ThreadEventQueue>(MakeUnique<EventQueue>());
+    auto queue = MakeRefPtr<ThreadEventQueue>(std::make_unique<EventQueue>());
     (void)nsThreadManager::get().CreateCurrentThread(queue);
   }
 

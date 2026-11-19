@@ -749,8 +749,8 @@ export class DiscoveryStreamFeed {
    * @param {object} options
    * @param {object} options.cachedData data returned from cache.get()
    * @param {string} options.key a cache key
-   * @param {string?} options.url for "feed" only, the URL of the feed.
-   * @param {boolean} options.isStartup is this check done at initial browser load
+   * @param {string} [options.url] for "feed" only, the URL of the feed.
+   * @param {boolean} [options.isStartup] is this check done at initial browser load
    */
   isExpired({ cachedData, key, url, isStartup }) {
     const { spocs, feeds } = cachedData;
@@ -1170,6 +1170,10 @@ export class DiscoveryStreamFeed {
   // We want to maintain both implementations until we're done rollout out,
   // so for now we are going to normlaize the new data to match the old data props,
   // so we can change as little as possible. Once we commit to one, we can remove all this.
+  /**
+   * @param {object} spocs
+   * @returns {{items: Array, title?: string, context?: string, sponsor?: string, sponsored_by_override?: string, flight_id?: string}}
+   */
   normalizeSpocsItems(spocs) {
     const unifiedAdsEnabled =
       this.store.getState().Prefs.values[PREF_UNIFIED_ADS_SPOCS_ENABLED];
@@ -1389,6 +1393,7 @@ export class DiscoveryStreamFeed {
         headers.append("content-type", "application/json");
         const state = this.store.getState();
         let endpoint = state.DiscoveryStream.spocs.spocs_endpoint;
+        /** @type {object} */
         let body = {
           version: 2,
           ...(placements.length ? { placements } : {}),
@@ -2029,6 +2034,7 @@ export class DiscoveryStreamFeed {
         let { surfaceId = "" } = feedResponse;
         if (surfaceId && !isPlausibleSurfaceId(surfaceId, locale, region)) {
           console.warn(`Ignoring implausible surfaceId: ${surfaceId}`);
+          // @ts-expect-error tools/@types/generated/lib.gecko.glean.d.ts predates this metric.
           Glean.newtabContent.surfaceIdRejected.record();
           surfaceId = "";
         }
@@ -2139,6 +2145,7 @@ export class DiscoveryStreamFeed {
       inferredInterests,
     };
     headers.append("content-type", "application/json");
+    /** @type {{[key: string]: any}} */
     let body = {
       ...(prefMerinoFeedExperiment ? this.getExperimentInfo() : {}),
       ...requestMetadata,
@@ -2217,12 +2224,17 @@ export class DiscoveryStreamFeed {
 
   /**
    * @typedef {object} RefreshAll
-   * @property {boolean} updateOpenTabs - Sends updates to open tabs immediately if true,
+   * @property {boolean} [updateOpenTabs] - Sends updates to open tabs immediately if true,
    *                                      updates in background if false
-   * @property {boolean} isStartup - When the function is called at browser startup
-   *
+   * @property {boolean} [isStartup] - When the function is called at browser startup
+   * @property {boolean} [isSystemTick] - When the function is called by the system tick,
+   *                                      so that it can check whether spocs are on demand
+   */
+
+  /**
    * Refreshes component feeds, and spocs in order if caches have expired.
-   * @param {RefreshAll} options
+   *
+   * @param {RefreshAll} [options]
    */
   async refreshAll(options = {}) {
     const { updateOpenTabs, isStartup, isSystemTick } = options;
@@ -2695,7 +2707,7 @@ export class DiscoveryStreamFeed {
       this.setupPrefs(false /* isStartup */);
     }
     if (action.data.name === "trainhopConfig") {
-      await this.onTrainhopConfigChanged(action);
+      await this.onTrainhopConfigChanged();
     }
   }
 

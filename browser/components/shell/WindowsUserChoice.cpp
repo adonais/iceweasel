@@ -49,7 +49,7 @@ UniquePtr<wchar_t[]> GetCurrentUserStringSid() {
     return nullptr;
   }
 
-  auto userBytes = MakeUnique<unsigned char[]>(userSize);
+  auto userBytes = std::make_unique<unsigned char[]>(userSize);
   if (!::GetTokenInformation(processToken.get(), TokenUser, userBytes.get(),
                              userSize, &userSize)) {
     return nullptr;
@@ -65,7 +65,7 @@ UniquePtr<wchar_t[]> GetCurrentUserStringSid() {
   // Copy instead of passing UniquePtr<wchar_t, LocalFreeDeleter> back to
   // the caller.
   int sidLen = ::lstrlenW(sid.get()) + 1;
-  auto outSid = MakeUnique<wchar_t[]>(sidLen);
+  auto outSid = std::make_unique<wchar_t[]>(sidLen);
   memcpy(outSid.get(), sid.get(), sidLen * sizeof(wchar_t));
 
   return outSid;
@@ -118,7 +118,7 @@ static UniquePtr<wchar_t[]> FormatUserChoiceString(const wchar_t* aExt,
                                  fileTime.dwLowDateTime, userExperience);
   userChoiceLen += 1;  // _scwprintf does not include the terminator
 
-  auto userChoice = MakeUnique<wchar_t[]>(userChoiceLen);
+  auto userChoice = std::make_unique<wchar_t[]>(userChoiceLen);
   _snwprintf_s(userChoice.get(), userChoiceLen, _TRUNCATE, userChoiceFmt, aExt,
                aUserSid, aProgId, fileTime.dwHighDateTime,
                fileTime.dwLowDateTime, userExperience);
@@ -145,7 +145,7 @@ static UniquePtr<DWORD[]> CNG_MD5(const unsigned char* bytes, ULONG bytesLen) {
       // BCryptHashData promises not to modify pbInput.
       if (NT_SUCCESS(::BCryptHashData(hHash, const_cast<unsigned char*>(bytes),
                                       bytesLen, 0))) {
-        hash = MakeUnique<DWORD[]>(MD5_DWORDS);
+        hash = std::make_unique<DWORD[]>(MD5_DWORDS);
         if (!NT_SUCCESS(::BCryptFinishHash(
                 hHash, reinterpret_cast<unsigned char*>(hash.get()),
                 MD5_DWORDS * sizeof(DWORD), 0))) {
@@ -169,7 +169,7 @@ static UniquePtr<wchar_t[]> CryptoAPI_Base64Encode(const unsigned char* bytes,
                               nullptr, &base64Len)) {
     return nullptr;
   }
-  auto base64 = MakeUnique<wchar_t[]>(base64Len);
+  auto base64 = std::make_unique<wchar_t[]>(base64Len);
   if (!::CryptBinaryToStringW(bytes, bytesLen,
                               CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF,
                               base64.get(), &base64Len)) {
@@ -277,7 +277,7 @@ UniquePtr<wchar_t[]> GetAssociationKeyPath(const wchar_t* aExt) {
   int keyPathLen = _scwprintf(keyPathFmt, aExt);
   keyPathLen += 1;  // _scwprintf does not include the terminator
 
-  auto keyPath = MakeUnique<wchar_t[]>(keyPathLen);
+  auto keyPath = std::make_unique<wchar_t[]>(keyPathLen);
   _snwprintf_s(keyPath.get(), keyPathLen, _TRUNCATE, keyPathFmt, aExt);
 
   return keyPath;
@@ -465,7 +465,7 @@ UniquePtr<wchar_t[]> FormatProgID(const wchar_t* aProgIDBase,
   int progIDLen = _scwprintf(progIDFmt, aProgIDBase, aAumi);
   progIDLen += 1;  // _scwprintf does not include the terminator
 
-  auto progID = MakeUnique<wchar_t[]>(progIDLen);
+  auto progID = std::make_unique<wchar_t[]>(progIDLen);
   _snwprintf_s(progID.get(), progIDLen, _TRUNCATE, progIDFmt, aProgIDBase,
                aAumi);
 
@@ -492,7 +492,7 @@ nsresult GetMsixProgId(const wchar_t* assoc, UniquePtr<wchar_t[]>& aProgId) {
   LONG rv = GetCurrentPackageFullName(&pfnLen, nullptr);
   NS_ENSURE_TRUE(rv != APPMODEL_ERROR_NO_PACKAGE, NS_ERROR_FAILURE);
 
-  auto pfn = mozilla::MakeUnique<wchar_t[]>(pfnLen);
+  auto pfn = std::make_unique<wchar_t[]>(pfnLen);
   rv = GetCurrentPackageFullName(&pfnLen, pfn.get());
   NS_ENSURE_TRUE(rv == ERROR_SUCCESS, NS_ERROR_FAILURE);
 
@@ -510,7 +510,7 @@ nsresult GetMsixProgId(const wchar_t* assoc, UniquePtr<wchar_t[]>& aProgId) {
   int assocPathLen = _scwprintf(assocPathFmt, pfn.get(), assocSuffix);
   assocPathLen += 1;  // _scwprintf does not include the terminator
 
-  auto assocPath = MakeUnique<wchar_t[]>(assocPathLen);
+  auto assocPath = std::make_unique<wchar_t[]>(assocPathLen);
   _snwprintf_s(assocPath.get(), assocPathLen, _TRUNCATE, assocPathFmt,
                pfn.get(), assocSuffix);
 
@@ -519,7 +519,7 @@ nsresult GetMsixProgId(const wchar_t* assoc, UniquePtr<wchar_t[]>& aProgId) {
   // Retrieve the package association's ProgID, always in the form `AppX[32 hash
   // characters]`.
   const size_t appxProgIdLen = 37;
-  auto progId = MakeUnique<wchar_t[]>(appxProgIdLen);
+  auto progId = std::make_unique<wchar_t[]>(appxProgIdLen);
   DWORD progIdLen = appxProgIdLen * sizeof(wchar_t);
   ls = ::RegGetValueW(HKEY_CLASSES_ROOT, assocPath.get(), assoc, RRF_RT_REG_SZ,
                       nullptr, (LPBYTE)progId.get(), &progIdLen);

@@ -9,7 +9,7 @@ EXTRA_COMPONENTS += [
     "Push.manifest",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "ChromePushSubscription.sys.mjs",
     "Push.sys.mjs",
     "PushBroadcastService.sys.mjs",
@@ -22,7 +22,7 @@ EXTRA_JS_MODULES += [
 
 if CONFIG["MOZ_BUILD_APP"] != "mobile/android":
     # Everything but GeckoView.
-    EXTRA_JS_MODULES += [
+    MOZ_SRC_FILES += [
         "PushServiceWebSocket.sys.mjs",
     ]
 

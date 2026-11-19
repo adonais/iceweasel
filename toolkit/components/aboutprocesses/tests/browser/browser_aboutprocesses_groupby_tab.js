@@ -3,48 +3,11 @@
 
 "use strict";
 
+requestLongerTimeout(3);
+
 // Exercises the about:processes?groupby=tab dev/debug entry point: a flat
 // per-tab list rendered by a separate View/Controller pair from the default
 // process view (see ProcessesTabView/ProcessesTabController).
-
-async function forceTabViewUpdate(tabAboutProcesses) {
-  await SpecialPowers.spawn(tabAboutProcesses.linkedBrowser, [], async () => {
-    await content.TabControl.update();
-  });
-}
-
-function promiseTabViewUpdated(doc) {
-  return new Promise(resolve =>
-    doc.addEventListener("AboutProcessesUpdated", resolve, { once: true })
-  );
-}
-
-function tabRowTitles(doc) {
-  return [...doc.querySelectorAll("tr.tab-row")].map(
-    row => row.querySelector(".name").textContent
-  );
-}
-
-function findTabRow(doc, title) {
-  return [...doc.querySelectorAll("tr.tab-row")].find(row =>
-    row.querySelector(".name").textContent.includes(title)
-  );
-}
-
-async function openTabView() {
-  let tabAboutProcesses = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    opening: "about:processes?groupby=tab",
-    waitForLoad: true,
-  });
-  await forceTabViewUpdate(tabAboutProcesses);
-  let doc = tabAboutProcesses.linkedBrowser.contentDocument;
-  await TestUtils.waitForCondition(
-    () => doc.querySelector("tr.tab-row"),
-    "Waiting for at least one row to exist"
-  );
-  return { tabAboutProcesses, doc };
-}
 
 add_task(async function testGroupByTabRendersOneRowPerTab() {
   let tabOne = await setupTabWithOriginAndTitle(
@@ -82,10 +45,11 @@ add_task(async function testGroupByTabRendersOneRowPerTab() {
       () => cpuCell.textContent,
       "Waiting for Fluent to resolve the CPU cell's text"
     );
-    // A freshly opened test tab may legitimately show as idle rather than a
-    // real percent, depending on incidental CPU noise during the test run.
+    // A freshly opened test tab may legitimately show as idle, depending on
+    // incidental CPU noise, or as measuring if its process started after the
+    // first sample.
     Assert.ok(
-      /^([0-9.]+%|idle|< 0.1%)$/.test(cpuCell.textContent),
+      /^([0-9.]+%|idle|…|< 0\.01%)$/.test(cpuCell.textContent),
       `CPU cell "${cpuCell.textContent}" is formatted as a percent or idle`
     );
   }
@@ -93,6 +57,83 @@ add_task(async function testGroupByTabRendersOneRowPerTab() {
   BrowserTestUtils.removeTab(tabAboutProcesses);
   BrowserTestUtils.removeTab(tabOne);
   BrowserTestUtils.removeTab(tabTwo);
+});
+
+add_task(async function testTabCpuPrecisionAndIdleThreshold() {
+  let tab = await setupTabWithOriginAndTitle(
+    "https://example.org",
+    "CPU formatting"
+  );
+  let { tabAboutProcesses, doc } = await openTabView();
+  // So no poll repaints the row between the fake render and the read.
+  pauseTabViewPolling(doc);
+
+  async function formatCell(selector, overrides) {
+    return SpecialPowers.spawn(
+      tabAboutProcesses.linkedBrowser,
+      [selector, overrides],
+      async (cellSelector, data) => {
+        let row = content.document.querySelector("tr.tab-row");
+        let cell = row.querySelector(cellSelector);
+        content.TabView._updateRow(row, { ...row.tabData, ...data });
+        await content.document.l10n.translateElements([cell]);
+        return {
+          l10nId: cell.getAttribute("data-l10n-id"),
+          text: cell.textContent,
+        };
+      }
+    );
+  }
+  let formatCpu = slopeCpuOfTotal => formatCell(".cpu", { slopeCpuOfTotal });
+  let formatMemory = async totalRamSize =>
+    (await formatCell(".memory", { totalRamSize })).text;
+
+  let idle = await formatCpu(0);
+  Assert.equal(
+    idle.l10nId,
+    "about-processes-tab-cpu-fully-idle",
+    "Exactly zero CPU usage remains idle"
+  );
+
+  let roundsToZero = await formatCpu(0.000025);
+  Assert.equal(
+    roundsToZero.text,
+    "< 0.01%",
+    "A positive value below the 0.01% display precision has its own label"
+  );
+
+  let visibleValue = await formatCpu(0.00029);
+  Assert.equal(
+    visibleValue.text,
+    "0.03%",
+    "A value above the display threshold is rounded to two decimal places"
+  );
+
+  let wholeValue = await formatCpu(0.02);
+  Assert.equal(
+    wholeValue.text,
+    "2.00%",
+    "Whole percentages keep both decimal places"
+  );
+
+  Assert.equal(
+    await formatMemory(518 * 1024 * 1024),
+    "518MB",
+    "Megabytes stay whole"
+  );
+  Assert.equal(
+    await formatMemory(1.42 * 1024 * 1024 * 1024),
+    "1.4GB",
+    "Gigabytes show one decimal place"
+  );
+  Assert.equal(
+    await formatMemory(2 * 1024 * 1024 * 1024),
+    "2.0GB",
+    "Whole gigabytes keep their decimal place"
+  );
+
+  BrowserTestUtils.removeTab(tabAboutProcesses);
+  BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function testAboutBlankTabIsIncluded() {
@@ -134,6 +175,60 @@ add_task(async function testInitialSortIsVisible() {
   BrowserTestUtils.removeTab(tabAboutProcesses);
 });
 
+add_task(async function testCpuIsMeasuringBeforeSecondSample() {
+  let { tabAboutProcesses, doc } = await openTabView();
+  let win = doc.defaultView;
+
+  // Every process's state right after its first sample.
+  let counters = win.State.getCounters().map(process => ({
+    ...process,
+    slopeCpu: null,
+  }));
+  let tabCounters = win.TabControl._tabAttribution
+    .getTabCounters(counters)
+    .filter(tabData => tabData.hasUsageData);
+  Assert.ok(tabCounters.length, "Some tab has usage data");
+  Assert.ok(
+    tabCounters.every(tabData => tabData.slopeCpuOfTotal === null),
+    "A tab's CPU is unknown until its processes have two samples"
+  );
+  Assert.strictEqual(
+    win.sumTabCounters(tabCounters).slopeCpuOfTotal,
+    null,
+    "...and so is any total including it"
+  );
+  let cell = doc.createElement("td");
+  win.fillTabCpuCell(cell, null);
+  Assert.equal(cell.textContent, "…", "Unknown CPU shows as measuring");
+
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+  let lastTabCounters = win.TabControl._lastTabCounters;
+  try {
+    win.TabControl._lastTabCounters = tabCounters;
+    win.TabControl._recordTabAction(tabCounters, "unload", "bulk_bar");
+  } finally {
+    win.TabControl._lastTabCounters = lastTabCounters;
+  }
+  await Services.fog.testFlushAllChildren();
+  let event = assertOneEvent(
+    Glean.resourceMonitor.tabActionTaken,
+    { action_type: "unload", action_source: "bulk_bar" },
+    "An action with unknown CPU still records the user's choice"
+  );
+  Assert.ok(
+    !("tab_cpu_hundredths" in event.extra),
+    "Unknown tab CPU is omitted"
+  );
+  Assert.ok(
+    !("total_cpu_hundredths" in event.extra),
+    "Unknown total CPU is omitted"
+  );
+  Services.fog.testResetFOG();
+
+  BrowserTestUtils.removeTab(tabAboutProcesses);
+});
+
 add_task(async function testMouseoverFreezesExistingRowOrderOnly() {
   let tabOne = await setupTabWithOriginAndTitle(
     "https://example.org",
@@ -145,14 +240,7 @@ add_task(async function testMouseoverFreezesExistingRowOrderOnly() {
   let rowOne = findTabRow(doc, "Freeze test 1");
   let rowOneIndex = [...tbody.children].indexOf(rowOne);
 
-  info("Moving the mouse over the tab list to start the freeze window");
-  EventUtils.synthesizeMouse(
-    tbody,
-    5,
-    5,
-    { type: "mousemove" },
-    doc.defaultView
-  );
+  startMouseFreeze(doc);
 
   let tabTwo = await setupTabWithOriginAndTitle(
     "https://example.net",
@@ -190,12 +278,14 @@ add_task(async function testMouseoverFreezesExistingRowOrderOnly() {
 });
 
 add_task(async function testFaviconAndColumnSort() {
+  // Site order (example.net < example.org) is the reverse of title order, so
+  // solo rows must sort by their displayed title, not their site.
   let tabZebra = await setupTabWithOriginAndTitle(
-    "https://example.org",
+    "https://example.net",
     "Zebra tab"
   );
   let tabApple = await setupTabWithOriginAndTitle(
-    "https://example.net",
+    "https://example.org",
     "Apple tab"
   );
   // Set directly on the <tab> element rather than relying on a real favicon
@@ -245,54 +335,33 @@ add_task(async function testFaviconAndColumnSort() {
   BrowserTestUtils.removeTab(tabApple);
 });
 
-add_task(async function testDoubleClickNavigatesToTab() {
+add_task(async function testNameLinkClickNavigatesToTab() {
+  // Only the name link navigates; the rest of the row does nothing.
   let tabOne = await setupTabWithOriginAndTitle(
     "https://example.org",
-    "Double-click me"
+    "Click me"
   );
 
   let { tabAboutProcesses, doc } = await openTabView();
 
-  let row = findTabRow(doc, "Double-click me");
+  let row = findTabRow(doc, "Click me");
   Assert.ok(!!row, "Found the row for the tab we're about to switch to");
   Assert.ok(
     !tabOne.selected,
     "about:processes tab is the one selected right now"
   );
 
-  info("Double-clicking the row");
-  row.dispatchEvent(
-    new doc.defaultView.MouseEvent("dblclick", { bubbles: true })
-  );
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+  info("Clicking the name link");
+  clickRow(row.querySelector(".name-link"));
 
-  Assert.ok(tabOne.selected, "Double-click switched to the tab");
-
-  BrowserTestUtils.removeTab(tabAboutProcesses);
-  BrowserTestUtils.removeTab(tabOne);
-});
-
-add_task(async function testDoubleClickOnActionButtonDoesNotAlsoNavigate() {
-  // Regression test: the dblclick listener used to navigate regardless of
-  // what was clicked, so double-clicking the unload button both unloaded
-  // the tab and navigated to it -- the navigate reloads the tab right back,
-  // undoing the unload.
-  let tabOne = await setupTabWithOriginAndTitle(
-    "https://example.org",
-    "Double-click action button"
-  );
-
-  let { tabAboutProcesses, doc } = await openTabView();
-  let row = findTabRow(doc, "Double-click action button");
-
-  row
-    .querySelector(".unload-icon")
-    .dispatchEvent(
-      new doc.defaultView.MouseEvent("dblclick", { bubbles: true })
-    );
-
-  Assert.ok(
-    !tabOne.selected,
-    "Double-clicking the action button does not also navigate to the tab"
+  Assert.ok(tabOne.selected, "Clicking the name link switched to the tab");
+  await Services.fog.testFlushAllChildren();
+  assertOneEvent(
+    Glean.resourceMonitor.tabActionTaken,
+    { action_type: "navigate", action_source: "tab_row" },
+    "Navigating records one action event"
   );
 
   BrowserTestUtils.removeTab(tabAboutProcesses);
@@ -310,6 +379,8 @@ add_task(async function testUnloadButtonAndKeyboardActivation() {
   );
 
   let { tabAboutProcesses, doc } = await openTabView();
+  // Only the actions' own refreshes and poll() can update the rows.
+  let poll = pauseTabViewPolling(doc);
 
   let rowOne = findTabRow(doc, "Unload via button");
   Assert.ok(!!rowOne, "Found the row for the tab we're about to unload");
@@ -340,13 +411,14 @@ add_task(async function testUnloadButtonAndKeyboardActivation() {
     "Waiting for the Enter-activated tab to be discarded"
   );
   Assert.ok(rowTwo.isConnected, "Enter-unloaded row also stays in the list");
-  await forceTabViewUpdate(tabAboutProcesses);
+  await poll();
+  await promiseRowActionDone(rowTwo);
 
   info(
     "Regression test: a discarded row's button used to be hidden, leaving " +
       "keyboard users with no way to reach it at all -- unlike a mouse " +
       "user, who could still double-click the row to get there. Confirming " +
-      "the still-focused button now relabels to go-to-tab and Enter reaches it."
+      "the still-focused button now relabels to reload and Enter restores it."
   );
   Assert.ok(
     !unloadButtonTwo.hidden,
@@ -354,38 +426,68 @@ add_task(async function testUnloadButtonAndKeyboardActivation() {
   );
   Assert.ok(
     !unloadButtonTwo.classList.contains("unload-icon") &&
-      unloadButtonTwo.classList.contains("go-to-tab-icon"),
+      unloadButtonTwo.classList.contains("reload-icon"),
     "The button's icon swaps once the tab is discarded"
   );
   Assert.equal(
     unloadButtonTwo.getAttribute("data-l10n-id"),
-    "about-processes-go-to-tab",
-    "The same button relabels itself to go-to-tab once the tab is discarded"
+    "about-processes-reload-tab",
+    "The same button relabels itself to reload once the tab is discarded"
   );
   Assert.ok(!tabTwo.selected, "The discarded tab isn't selected yet");
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
   EventUtils.synthesizeKey("KEY_Enter", {}, doc.defaultView);
-  Assert.ok(
-    tabTwo.selected,
-    "Enter on the relabeled button navigates to (and so reloads) the discarded tab -- keyboard parity with double-click"
+  await BrowserTestUtils.waitForMutationCondition(
+    tabTwo,
+    { attributeFilter: ["discarded"] },
+    () => !tabTwo.hasAttribute("discarded"),
+    { msg: "Enter on the relabeled button reloads the discarded tab" }
   );
+  Assert.ok(
+    tabAboutProcesses.selected && !tabTwo.selected,
+    "Reloading a background tab doesn't navigate away from the monitor"
+  );
+  await Services.fog.testFlushAllChildren();
+  assertOneEvent(
+    Glean.resourceMonitor.tabActionTaken,
+    { action_type: "reload", action_source: "tab_row" },
+    "Inline Reload records one action event"
+  );
+  Services.fog.testResetFOG();
 
-  // The reload above backgrounded tabAboutProcesses, and its poll loop
-  // deliberately stops updating while hidden (matching the default view) --
-  // switch back so the rest of this test can keep polling it.
-  await BrowserTestUtils.switchTab(gBrowser, tabAboutProcesses);
-
-  info("Clicking the row's unload button");
+  info("Double-clicking unload acts once");
   unloadButtonOne.click();
+  unloadButtonOne.click();
+
   await TestUtils.waitForCondition(
     () => tabOne.hasAttribute("discarded"),
     "Waiting for the clicked tab to be discarded"
   );
   Assert.ok(rowOne.isConnected, "Unloading a tab keeps its row in the list");
+  await Services.fog.testFlushAllChildren();
+  let unloadEvent = assertOneEvent(
+    Glean.resourceMonitor.tabActionTaken,
+    { action_type: "unload", action_source: "tab_row", tab_count: "1" },
+    "Inline Unload records one action event"
+  );
+  Assert.greaterOrEqual(
+    Number(unloadEvent?.extra.total_tab_count),
+    2,
+    "The view's total tab count includes both tabs we opened"
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    rowOne,
+    { attributeFilter: ["class"] },
+    () => rowOne.classList.contains("killed"),
+    { msg: "Unloading refreshes the row without waiting for a poll" }
+  );
 
   info(
     "Confirming a poll after the discard settles the row into the static killed look, not removal"
   );
-  await forceTabViewUpdate(tabAboutProcesses);
+  await poll();
   Assert.ok(rowOne.isConnected, "Row is still in the list after a poll tick");
   Assert.ok(
     rowOne.classList.contains("killed"),
@@ -396,11 +498,22 @@ add_task(async function testUnloadButtonAndKeyboardActivation() {
     "Transient fade-out class is cleared once the discard is confirmed"
   );
 
-  info("Clicking the button on a discarded row navigates to the tab instead");
+  info("Clicking the button on a discarded row reloads that tab");
+  await promiseRowActionDone(rowOne);
   unloadButtonOne.click();
   Assert.ok(
-    tabOne.selected,
-    "Clicking the relabeled button selects (and so reloads) the discarded tab"
+    unloadButtonOne.classList.contains("unload-icon"),
+    "Reloading shows the unload button again right away"
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    tabOne,
+    { attributeFilter: ["discarded"] },
+    () => !tabOne.hasAttribute("discarded"),
+    { msg: "Clicking the relabeled button reloads the discarded tab" }
+  );
+  Assert.ok(
+    tabAboutProcesses.selected && !tabOne.selected,
+    "Reloading a discarded background tab leaves the monitor selected"
   );
 
   BrowserTestUtils.removeTab(tabAboutProcesses);
@@ -488,6 +601,19 @@ add_task(async function testDefaultViewUnaffectedByGroupByParam() {
     !!doc.querySelector("tr.process"),
     "The default view should still render process rows"
   );
+  for (let id of ["column-memory-resident", "column-cpu-total"]) {
+    let header = doc.getElementById(id);
+    Assert.equal(
+      doc.defaultView.getComputedStyle(header).textAlign,
+      "start",
+      `${id} retains the default view's start-aligned heading`
+    );
+    Assert.equal(
+      doc.defaultView.getComputedStyle(header).fontWeight,
+      doc.defaultView.getComputedStyle(header.parentElement).fontWeight,
+      `${id} retains inherited header weight in the default view`
+    );
+  }
   Assert.ok(
     !doc.querySelector("tr.tab-row"),
     "The default view should never render tab-view rows"
@@ -497,6 +623,26 @@ add_task(async function testDefaultViewUnaffectedByGroupByParam() {
       .display,
     "none",
     "The default view should not show the tab view's totals footer"
+  );
+  Assert.equal(
+    doc.defaultView.getComputedStyle(
+      doc.getElementById("select-all-checkbox").parentElement
+    ).display,
+    "none",
+    "The default view should not show the select-all column"
+  );
+  Assert.equal(
+    doc.defaultView.getComputedStyle(
+      doc.getElementById("column-name").parentElement
+    ).borderInlineStartWidth,
+    "0px",
+    "The hidden select-all column doesn't give the Name header a divider"
+  );
+  Assert.equal(
+    doc.defaultView.getComputedStyle(doc.querySelector("tr.process > td"))
+      .textOverflow,
+    "ellipsis",
+    "Long process names still truncate with an ellipsis"
   );
 
   BrowserTestUtils.removeTab(tabAboutProcesses);
@@ -541,7 +687,7 @@ add_task(async function testTotalsBarShowsTabCountAndSums() {
   );
   let cpuCell = totalsRow.querySelector(".cpu");
   Assert.ok(
-    /^([0-9.]+%|idle|< 0\.1%)$/.test(cpuCell.textContent),
+    /^([0-9.]+%|idle|…|< 0\.01%)$/.test(cpuCell.textContent),
     `Totals CPU "${cpuCell.textContent}" is formatted as a percent or idle, same as row cells`
   );
   Assert.equal(
@@ -554,4 +700,119 @@ add_task(async function testTotalsBarShowsTabCountAndSums() {
   BrowserTestUtils.removeTab(tabOne);
   BrowserTestUtils.removeTab(tabTwo);
   BrowserTestUtils.removeTab(anchorTab);
+});
+
+add_task(async function testPanelOpenedTelemetry() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+  let tab = await setupTabWithOriginAndTitle(
+    "https://example.org",
+    "Panel opened telemetry"
+  );
+
+  // openTabView() already drives two polls, so CPU is known.
+  let { tabAboutProcesses } = await openTabView();
+  await Services.fog.testFlushAllChildren();
+
+  // openTabView() opens a tab directly, bypassing SidebarController.
+  let event = assertOneEvent(
+    Glean.resourceMonitor.panelOpened,
+    { open_type: "direct_nav" },
+    "panel_opened fired exactly once"
+  );
+  Assert.greaterOrEqual(
+    Number(event?.extra.total_tab_count),
+    1,
+    "Counted at least the one tab we opened."
+  );
+
+  info("A further poll tick must not re-fire the event.");
+  await forceTabViewUpdate(tabAboutProcesses);
+  await Services.fog.testFlushAllChildren();
+  Assert.equal(
+    Glean.resourceMonitor.panelOpened.testGetValue()?.length,
+    1,
+    "Still only one panel_opened event after a third poll."
+  );
+
+  BrowserTestUtils.removeTab(tabAboutProcesses);
+  BrowserTestUtils.removeTab(tab);
+  Services.fog.testResetFOG();
+});
+
+add_task(async function testPanelOpenedIgnoresUnknownOpenType() {
+  let tabAboutProcesses = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:processes?groupby=tab&openType=foo",
+    waitForLoad: true,
+  });
+  await forceTabViewUpdate(tabAboutProcesses);
+  await Services.fog.testFlushAllChildren();
+
+  assertOneEvent(
+    Glean.resourceMonitor.panelOpened,
+    { open_type: "direct_nav" },
+    "An unrecognized openType is recorded as direct navigation"
+  );
+
+  BrowserTestUtils.removeTab(tabAboutProcesses);
+  Services.fog.testResetFOG();
+});
+
+add_task(async function testPanelOpenedSkipsHiddenPolls() {
+  // Not openTabView(): it forces the second poll immediately, with no room to insert a hidden gap.
+  let tab = await setupTabWithOriginAndTitle(
+    "https://example.org",
+    "Panel opened skips hidden polls"
+  );
+
+  let tabAboutProcesses = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:processes?groupby=tab",
+    waitForLoad: true,
+  });
+  // The first (real) poll fires during window.onload, before we get here.
+  let doc = tabAboutProcesses.linkedBrowser.contentDocument;
+  await BrowserTestUtils.waitForMutationCondition(
+    doc.getElementById("process-tbody"),
+    { childList: true },
+    () => doc.querySelector("tr.tab-row"),
+    { msg: "Waiting for the first poll to render a row" }
+  );
+
+  let poll = pauseTabViewPolling(doc);
+  await Services.fog.testFlushAllChildren();
+  Assert.equal(
+    Glean.resourceMonitor.panelOpened.testGetValue()?.length ?? 0,
+    0,
+    "Only the first poll has run"
+  );
+
+  let hidden = BrowserTestUtils.waitForEvent(doc, "visibilitychange");
+  gBrowser.selectedTab = tab;
+  await hidden;
+
+  await poll();
+  await Services.fog.testFlushAllChildren();
+  Assert.equal(
+    Glean.resourceMonitor.panelOpened.testGetValue()?.length ?? 0,
+    0,
+    "panel_opened must not fire from a poll that lands while hidden"
+  );
+
+  let visible = BrowserTestUtils.waitForEvent(doc, "visibilitychange");
+  gBrowser.selectedTab = tabAboutProcesses;
+  await visible;
+
+  await poll();
+  await Services.fog.testFlushAllChildren();
+  Assert.equal(
+    Glean.resourceMonitor.panelOpened.testGetValue()?.length,
+    1,
+    "panel_opened fires exactly once, on the first real poll after visibility returns"
+  );
+
+  BrowserTestUtils.removeTab(tabAboutProcesses);
+  BrowserTestUtils.removeTab(tab);
+  Services.fog.testResetFOG();
 });

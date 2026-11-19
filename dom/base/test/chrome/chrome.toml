@@ -124,6 +124,12 @@ support-files = [
 
 ["test_input_value_set_preserve_undo.xhtml"]
 
+["test_intersectionobserver_popup.xhtml"]
+support-files = [
+  "file_intersectionobserver_popup.xhtml",
+  "file_intersectionobserver_popup_container.xhtml",
+]
+
 ["test_nsITextInputProcessor.xhtml"]
 
 ["test_nsITextInputProcessorCallback_at_changing_default_value_of_textarea.html"]

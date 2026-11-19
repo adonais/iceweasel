@@ -668,9 +668,13 @@ export class AddonCard extends AboutAddonsHTMLElement {
       type = "",
     } = await resolveMessageInfo(this.addon, {
       isCardExpanded: this.expanded,
+      // The themes list view sections are moz-card elements, other list
+      // views use section elements.
       isInDisabledSection:
         !this.expanded &&
-        !!this.closest(`section.${this.addon.type}-disabled-section`),
+        !!this.closest(
+          `:is(section, moz-card).${this.addon.type}-disabled-section`
+        ),
     });
 
     if (messageId) {

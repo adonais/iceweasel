@@ -171,6 +171,7 @@ class ConcurrentConnection final : public nsIObserver,
   States mState = NOT_STARTED;
 
   bool mIsOpening = false;
+  bool mIsClosing = false;
   bool mPlacesIsInitialized = false;
   bool mRetryOpening = true;
   bool mIsShuttingDown = false;

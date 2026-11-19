@@ -19,6 +19,7 @@
 #include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsIWeakReferenceUtils.h"
+#include "nsLayoutUtils.h"
 #include "nsRFPService.h"
 #include "nsUserCharacteristics.h"
 
@@ -74,8 +75,8 @@ const UniquePtr<PointerInfo>& PointerEventHandler::InsertOrUpdateActivePointer(
   }();
 
   const UniquePtr<PointerInfo>& pointerInfo =
-      sActivePointersIds->InsertOrUpdate(
-          aPointerId, std::forward<UniquePtr<PointerInfo>>(aNewPointerInfo));
+      sActivePointersIds->InsertOrUpdate(aPointerId,
+                                         std::move(aNewPointerInfo));
   if (MOZ_UNLIKELY(logIt)) {
     MOZ_LOG(
         gLogActivePointers, LogLevel::Info,
@@ -197,7 +198,7 @@ void PointerEventHandler::RecordPointerState(
     // store the state.
     pointerInfo = InsertOrUpdateActivePointer(
                       aMouseEvent.pointerId,
-                      MakeUnique<PointerInfo>(
+                      std::make_unique<PointerInfo>(
                           PointerInfo::Active::No, aMouseEvent.mInputSource,
                           PointerInfo::Primary::Yes,
                           PointerInfo::FromTouchEvent::No, nullptr, nullptr,
@@ -382,12 +383,12 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
       // In this case we have to know information about available mouse pointers
       InsertOrUpdateActivePointer(
           aEvent->pointerId,
-          MakeUnique<PointerInfo>(PointerInfo::Active::No, aEvent->mInputSource,
-                                  PointerInfo::Primary::Yes,
-                                  PointerInfo::FromTouchEvent::No, nullptr,
-                                  pointerInfo,
-                                  static_cast<PointerInfo::SynthesizeForTests>(
-                                      aEvent->mFlags.mIsSynthesizedForTests)),
+          std::make_unique<PointerInfo>(
+              PointerInfo::Active::No, aEvent->mInputSource,
+              PointerInfo::Primary::Yes, PointerInfo::FromTouchEvent::No,
+              nullptr, pointerInfo,
+              static_cast<PointerInfo::SynthesizeForTests>(
+                  aEvent->mFlags.mIsSynthesizedForTests)),
           aEvent->mMessage, __func__);
       MaybeCacheSpoofedPointerID(aEvent->mInputSource, aEvent->pointerId);
       break;
@@ -408,7 +409,7 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
       }
       InsertOrUpdateActivePointer(
           aEvent->pointerId,
-          MakeUnique<PointerInfo>(
+          std::make_unique<PointerInfo>(
               PointerInfo::Active::No, MouseEvent_Binding::MOZ_SOURCE_MOUSE,
               PointerInfo::Primary::Yes, PointerInfo::FromTouchEvent::No,
               nullptr, pointerInfo, PointerInfo::SynthesizeForTests::Yes),
@@ -425,7 +426,7 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
         // nullptr, not sure if this also happens on real usage.
         InsertOrUpdateActivePointer(
             pointerEvent->pointerId,
-            MakeUnique<PointerInfo>(
+            std::make_unique<PointerInfo>(
                 PointerInfo::Active::Yes, *pointerEvent,
                 aTargetContent ? aTargetContent->OwnerDoc() : nullptr,
                 GetPointerInfo(aEvent->pointerId)),
@@ -447,9 +448,9 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
           UpdateLastPointerId(aEvent->pointerId, aEvent->mMessage);
           InsertOrUpdateActivePointer(
               pointerEvent->pointerId,
-              MakeUnique<PointerInfo>(PointerInfo::Active::No, *pointerEvent,
-                                      nullptr,
-                                      GetPointerInfo(aEvent->pointerId)),
+              std::make_unique<PointerInfo>(PointerInfo::Active::No,
+                                            *pointerEvent, nullptr,
+                                            GetPointerInfo(aEvent->pointerId)),
               pointerEvent->mMessage, __func__);
         } else {
           MaybeForgetLastPointerId(aEvent->pointerId, aEvent->mMessage);
@@ -509,7 +510,7 @@ void PointerEventHandler::SetPointerCaptureById(uint32_t aPointerId,
     if (entry) {
       entry.Data()->mPendingElement = aElement;
     } else {
-      entry.Insert(MakeUnique<PointerCaptureInfo>(aElement));
+      entry.Insert(std::make_unique<PointerCaptureInfo>(aElement));
     }
   });
 }
@@ -1445,7 +1446,7 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
           continue;
         }
 
-        nsIFrame* frame = content->GetPrimaryFrame();
+        nsIFrame* frame = nsLayoutUtils::GetPrimaryOrAreaImageFrame(content);
         shell = PresShell::GetShellForEventTarget(frame, content);
         if (!shell) {
           continue;
@@ -1614,7 +1615,8 @@ void PointerEventHandler::DispatchGotOrLostPointerCaptureEvent(
   localEvent.AssignPointerEventData(*aPointerEvent, /* aCopyTargets */ true,
                                     /* aCopyCoalescedEvents */ false);
   DebugOnly<nsresult> rv = presShell->HandleEventWithTarget(
-      &localEvent, aCaptureTarget->GetPrimaryFrame(), aCaptureTarget, &status);
+      &localEvent, nsLayoutUtils::GetPrimaryOrAreaImageFrame(aCaptureTarget),
+      aCaptureTarget, &status);
 
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "DispatchGotOrLostPointerCaptureEvent failed");

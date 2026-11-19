@@ -17,7 +17,6 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
-#include "mozilla/dom/PMediaTransport.h"
 #include "mozilla/dom/RTCErrorEvent.h"
 #include "mozilla/dom/RTCErrorEventBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
@@ -33,6 +32,7 @@
 #include "nsIScriptObjectPrincipal.h"
 #include "nsProxyRelease.h"
 #include "nsThreadManager.h"
+#include "transport/MediaTransportTypes.h"
 
 // Since we've moved the windows.h include down here, we have to explicitly
 // undef GetBinaryType, otherwise we'll get really odd conflicts
@@ -220,7 +220,7 @@ UniquePtr<RTCDataChannel::DataHolder> RTCDataChannel::Transfer() {
   }
 
   // Set dataHolder.**** yadda yadda ****
-  UniquePtr<DataHolder> dataHolder = MakeUnique<DataHolder>(*this);
+  auto dataHolder = std::make_unique<DataHolder>(*this);
 
   // Set value.[[IsTransferable]] to false.
   mIsTransferable = false;
@@ -575,8 +575,8 @@ void RTCDataChannel::AnnounceClosed(Maybe<RTCErrorParams> aError) {
   // "sctp-failure" when the RTCErrorParams is first created.
   if (aError) {
     RTCErrorEventInit init;
-    init.mError = MakeRefPtr<RTCError>(std::move(aError->errorInit()),
-                                       nsCString(std::move(aError->message())));
+    init.mError = MakeRefPtr<RTCError>(std::move(aError->errorInit),
+                                       nsCString(std::move(aError->message)));
     RefPtr<RTCErrorEvent> event =
         RTCErrorEvent::Constructor(this, u"error"_ns, std::move(init));
     event->SetTrusted(true);

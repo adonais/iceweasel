@@ -13,9 +13,6 @@ support-files = [
 ["browser_ext_eventpage_disableResetIdleForTest.js"]
 
 ["browser_ext_extension_page_tab_navigated.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1775530
-]
 
 ["browser_ext_management_themes.js"]
 
@@ -25,6 +22,9 @@ skip-if = [
 run-if = [
   "crashreporter",
 ]
+
+["browser_ext_subframes_process_isolation.js"]
+support-files = ["head_subframes_process_isolation.js"]
 
 ["browser_ext_test_mock.js"]
 

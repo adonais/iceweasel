@@ -50,7 +50,7 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
       RefPtr<TextureHost> tex =
           TextureHost::AsTextureHost(op.texture().AsParent());
 
-      MOZ_ASSERT(tex.get());
+      MOZ_RELEASE_ASSERT(tex.get());
       aCompositable->RemoveTextureHost(tex);
       break;
     }
@@ -71,7 +71,7 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
         CompositableHost::TimedTexture* t = textures.AppendElement();
         t->mTexture =
             TextureHost::AsTextureHost(timedTexture.texture().AsParent());
-        MOZ_ASSERT(t->mTexture);
+        MOZ_RELEASE_ASSERT(t->mTexture);
         t->mTimeStamp = timedTexture.timeStamp();
         t->mPictureRect = timedTexture.picture();
         t->mFrameID = timedTexture.frameID();
@@ -90,7 +90,7 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
             texture->SetLastFwdTransactionId(mFwdTransactionId);
             // Make sure that each texture was handled by the compositable
             // because the recycling logic depends on it.
-            MOZ_ASSERT(texture->NumCompositableRefs() > 0);
+            MOZ_RELEASE_ASSERT(texture->NumCompositableRefs() > 0);
           }
         }
       }
@@ -99,7 +99,7 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
     case CompositableOperationDetail::TOpUseRemoteTexture: {
       const OpUseRemoteTexture& op = aDetail.get_OpUseRemoteTexture();
       auto* host = aCompositable->AsWebRenderImageHost();
-      MOZ_ASSERT(host);
+      MOZ_RELEASE_ASSERT(host);
 
       host->PushPendingRemoteTexture(op.textureId(), op.ownerId(),
                                      GetChildProcessId(), op.size(),
@@ -108,7 +108,7 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
       break;
     }
     default: {
-      MOZ_ASSERT(false, "bad type");
+      MOZ_RELEASE_ASSERT(false, "bad type");
     }
   }
 
@@ -127,7 +127,7 @@ void CompositableParentManager::DestroyActor(const OpDestroy& aOp) {
       break;
     }
     default: {
-      MOZ_ASSERT(false, "unsupported type");
+      MOZ_RELEASE_ASSERT(false, "unsupported type");
     }
   }
 }

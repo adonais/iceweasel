@@ -501,7 +501,7 @@ InterceptedHttpChannel::CreateForSynthesis(
   RefPtr<InterceptedHttpChannel> ref = new InterceptedHttpChannel(
       aCreationTime, aCreationTimestamp, aAsyncOpenTimestamp);
 
-  ref->mResponseHead = MakeUnique<nsHttpResponseHead>(*aHead);
+  ref->mResponseHead = std::make_unique<nsHttpResponseHead>(*aHead);
   ref->mBodyReader = aBody;
   ref->mBodyCallback = aBodyCallback;
 

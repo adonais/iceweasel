@@ -113,7 +113,7 @@ inline already_AddRefed<nsIChannel> NS_NewSimpleChannel(
     F2&& aOpenContentStream) {
   using namespace mozilla;
 
-  auto callbacks = MakeUnique<net::SimpleChannelCallbacksImpl<F1, F2, T>>(
+  auto callbacks = std::make_unique<net::SimpleChannelCallbacksImpl<F1, F2, T>>(
       std::forward<F1>(aStartAsyncRead), std::forward<F2>(aOpenContentStream),
       context);
 

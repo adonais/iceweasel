@@ -508,6 +508,13 @@ already_AddRefed<Promise> InferenceSession::Run(
   for (uint32_t i = 0; i < outputNames.Length(); i++) {
     outputs[i] = nullptr;
   }
+  auto releaseOutputs = MakeScopeExit([&] {
+    for (auto* output : outputs) {
+      if (output) {
+        sAPI->ReleaseValue(output);
+      }
+    }
+  });
   OrtValue** ptr = outputs.Elements();
 
   {
@@ -545,6 +552,8 @@ already_AddRefed<Promise> InferenceSession::Run(
       p->MaybeReject(NS_ERROR_UNEXPECTED);
       return p.forget();
     }
+    auto releaseTypeInfo =
+        MakeScopeExit([&] { sAPI->ReleaseTypeInfo(typeInfo); });
 
     OrtTensorTypeAndShapeInfo* typeAndShapeInfo;
     status = sAPI->GetTensorTypeAndShape(outputs[i], &typeAndShapeInfo);
@@ -553,6 +562,8 @@ already_AddRefed<Promise> InferenceSession::Run(
       p->MaybeReject(NS_ERROR_UNEXPECTED);
       return p.forget();
     }
+    auto releaseTypeAndShapeInfo = MakeScopeExit(
+        [&] { sAPI->ReleaseTensorTypeAndShapeInfo(typeAndShapeInfo); });
 
     ONNXType type;
     status = sAPI->GetOnnxTypeFromTypeInfo(typeInfo, &type);
@@ -582,6 +593,11 @@ already_AddRefed<Promise> InferenceSession::Run(
     AutoTArray<int64_t, 16> dims;
     dims.SetLength(dimCount);
     status = sAPI->GetDimensions(typeAndShapeInfo, dims.Elements(), dimCount);
+    if (status) {
+      LOGD("GetDimensions failed: {}", status.Message());
+      p->MaybeReject(NS_ERROR_UNEXPECTED);
+      return p.forget();
+    }
 
     size_t outputSize = 1;
     for (size_t d = 0; d < dimCount; ++d) {
@@ -599,8 +615,6 @@ already_AddRefed<Promise> InferenceSession::Run(
         "Output tensor", ML_INFERENCE,
         MarkerOptions(MarkerTiming::IntervalUntilNowFrom(start)), "{}: {}",
         outputNames[i], outputTensor->ToString().get());
-
-    sAPI->ReleaseTensorTypeAndShapeInfo(typeAndShapeInfo);
 
     auto elem = rv.Entries().AppendElement();
     elem->mKey = outputNames[i];

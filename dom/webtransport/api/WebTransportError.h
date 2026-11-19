@@ -23,7 +23,8 @@ class WebTransportError final : public DOMException {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<WebTransportError> Constructor(
-      const GlobalObject& aGlobal, const nsAString& aMessage,
+      const GlobalObject& aGlobal,
+      const StringOrWebTransportErrorInit& aMessage,
       const WebTransportErrorOptions& aOptions);
 
   static already_AddRefed<WebTransportError> ReadStructuredClone(

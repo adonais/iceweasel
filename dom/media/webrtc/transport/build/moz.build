@@ -8,6 +8,7 @@ EXPORTS.transport += [
     "../dtlsidentity.h",
     "../m_cpp_utils.h",
     "../mediapacket.h",
+    "../MediaTransportTypes.h",
     "../nr_socket_proxy_config.h",
     "../nricectx.h",
     "../nricemediastream.h",

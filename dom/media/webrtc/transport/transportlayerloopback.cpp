@@ -70,7 +70,8 @@ nsresult TransportLayerLoopback::QueuePacket(MediaPacket& packet) {
     MOZ_MTLOG(ML_DEBUG, LAYER_INFO << " Enqueuing combined packets of length "
                                    << prevPacket->len() << " and "
                                    << packet.len());
-    auto combined = MakeUnique<uint8_t[]>(prevPacket->len() + packet.len());
+    auto combined =
+        std::make_unique<uint8_t[]>(prevPacket->len() + packet.len());
     memcpy(combined.get(), prevPacket->data(), prevPacket->len());
     memcpy(combined.get() + prevPacket->len(), packet.data(), packet.len());
     prevPacket->Take(std::move(combined), prevPacket->len() + packet.len());

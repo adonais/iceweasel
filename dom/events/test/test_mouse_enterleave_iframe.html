@@ -231,6 +231,12 @@ add_setup(async function() {
     iframe.src = "http://example.com/tests/dom/events/test/file_mouse_enterleave.html";
   }
   await Promise.all(promiseLoadingIFrames);
+
+  for (const iframe of document.querySelectorAll("iframe")) {
+    await SpecialPowers.spawn(iframe, [], () =>
+      SpecialPowers.contentTransformsReceived(content)
+    );
+  }
 });
 
 add_task(async function testMouseEnterLeave() {

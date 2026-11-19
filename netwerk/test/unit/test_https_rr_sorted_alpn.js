@@ -6,10 +6,6 @@
 
 let trrServer;
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
 add_setup(async function setup() {
   trr_test_setup();
   registerCleanupFunction(async () => {
@@ -20,11 +16,6 @@ add_setup(async function setup() {
       await trrServer.stop();
     }
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 });
 
 function checkResult(inRecord, noHttp2, noHttp3, result) {

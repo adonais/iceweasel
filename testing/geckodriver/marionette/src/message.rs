@@ -331,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_message_id_bounds() {
-        let overflow = i64::from(std::u32::MAX) + 1;
+        let overflow = i64::from(u32::MAX) + 1;
         let underflow = -1;
 
         fn get_timeouts(message_id: i64) -> Value {

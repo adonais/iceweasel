@@ -88,9 +88,11 @@ class CSSNumericValue : public CSSStyleValue {
   already_AddRefed<CSSNumericValue> Div(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-min
   already_AddRefed<CSSNumericValue> Min(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-max
   already_AddRefed<CSSNumericValue> Max(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 

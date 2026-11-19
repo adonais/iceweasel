@@ -7,7 +7,8 @@
 #include "nsISubstitutingProtocolHandler.h"
 #include "nsString.h"
 #include "nsNetUtil.h"
-#include "mozilla/UniquePtr.h"
+
+#include <memory>
 
 nsChromeRegistryContent::nsChromeRegistryContent() = default;
 
@@ -60,7 +61,7 @@ void nsChromeRegistryContent::RegisterPackage(const ChromePackage& aPackage) {
     if (NS_FAILED(rv)) return;
   }
 
-  mozilla::UniquePtr<PackageEntry> entry = mozilla::MakeUnique<PackageEntry>();
+  auto entry = std::make_unique<PackageEntry>();
   entry->flags = aPackage.flags;
   entry->contentBaseURI = std::move(content);
   entry->localeBaseURI = std::move(locale);

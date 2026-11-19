@@ -19,7 +19,19 @@ const TEST_SPACES = [" ", "\u3000", " \u3000", "\u3000 "];
 testEngine_setup();
 
 add_setup(async function () {
+  // These tests expect the unified search button prefs to default to false.
+  let unifiedSearchButtonDefaults = Services.prefs.getDefaultBranch(
+    "browser.urlbar.unifiedSearchButton."
+  );
+  let originalDefaults = {};
+  for (let name of ["always", "historyInSearchMode"]) {
+    originalDefaults[name] = unifiedSearchButtonDefaults.getBoolPref(name);
+    unifiedSearchButtonDefaults.setBoolPref(name, false);
+  }
   registerCleanupFunction(async () => {
+    for (let [name, value] of Object.entries(originalDefaults)) {
+      unifiedSearchButtonDefaults.setBoolPref(name, value);
+    }
     Services.prefs.clearUserPref(QUICKACTIONS_PREF);
     Services.prefs.clearUserPref(SUGGEST_ENABLED_PREF);
     Services.prefs.clearUserPref(PRIVATE_SEARCH_PREF);

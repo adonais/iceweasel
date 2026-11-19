@@ -68,7 +68,8 @@ typedef mozilla::Atomic<uint64_t, mozilla::MemoryOrdering::Relaxed>
 // UniquePtr<ProfilerCounter> myCounter;
 // ...
 // myCounter =
-//   MakeUnique<ProfilerCounter>("mything", "JIT", "Some JIT byte count"));
+//   std::make_unique<ProfilerCounter>("mything", "JIT", "Some JIT byte
+//   count"));
 // ...
 // void foo() { ... myCounter->Add(number_of_bytes_generated0; ... }
 

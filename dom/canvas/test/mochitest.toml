@@ -388,4 +388,11 @@ skip-if = ["os == 'android'"]
 
 ["test_toDataURL_parameters_png.html"]
 
+["test_webgl_context_loss_gpu_process.html"]
+subsuite = "gpu"
+skip-if = [
+  "os == 'win' && debug",
+  "verify",
+]
+
 ["test_windingRuleUndefined.html"]

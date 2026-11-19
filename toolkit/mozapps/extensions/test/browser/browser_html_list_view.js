@@ -677,6 +677,50 @@ add_task(async function testThemeList() {
   await closeView(win);
 });
 
+add_task(async function testDisabledThemesCardExpandedState() {
+  const PREF =
+    "extensions.htmlaboutaddons.themes-listview.disabled-themes-expanded";
+  await SpecialPowers.pushPrefEnv({ clear: [[PREF]] });
+
+  let win = await loadInitialView("theme");
+  let doc = win.document;
+  let enabledSection = getSection(doc, "theme-enabled-section");
+  let disabledSection = getSection(doc, "theme-disabled-section");
+  let disabledCard = () => disabledSection.querySelector("addon-card");
+
+  isnot(
+    enabledSection.getAttribute("type"),
+    "accordion",
+    "Enabled themes card is not an accordion"
+  );
+  is(
+    disabledSection.getAttribute("type"),
+    "accordion",
+    "Disabled themes card is an accordion"
+  );
+  await disabledSection.updateComplete;
+  ok(!disabledSection.expanded, "Disabled themes card is collapsed by default");
+  ok(
+    !disabledCard().checkVisibility(),
+    "Disabled themes are hidden when collapsed"
+  );
+
+  let toggled = BrowserTestUtils.waitForEvent(disabledSection, "toggle");
+  disabledSection.detailsEl.open = true;
+  await toggled;
+  ok(Services.prefs.getBoolPref(PREF, false), "Expanding updates the pref");
+  ok(disabledCard().checkVisibility(), "Disabled themes are visible");
+
+  await switchView(win, "extension");
+  await switchView(win, "theme");
+  disabledSection = getSection(win.document, "theme-disabled-section");
+  await disabledSection.updateComplete;
+  ok(disabledSection.expanded, "Disabled themes card is still expanded");
+
+  await closeView(win);
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function testBuiltInThemeButtons() {
   let win = await loadInitialView("theme");
   let doc = win.document;
@@ -942,13 +986,21 @@ add_task(async function testSectionHeadingKeys() {
 
     for (let status of ["enabled", "disabled"]) {
       let section = getSection(doc, `${type}-${status}-section`);
-      let el = section?.querySelector(".list-section-heading");
-      isnot(el, null, `Should have ${status} heading for ${type} section`);
-      is(
-        el && doc.l10n.getAttributes(el).id,
-        win.getL10nIdMapping(`${type}-${status}-heading`),
-        `Should have correct ${status} heading for ${type} section`
-      );
+      if (type === "theme") {
+        Assert.deepEqual(
+          section && doc.l10n.getAttributes(section).id,
+          win.getL10nIdMapping(`${type}-${status}-heading`),
+          `Should have correct ${status} heading for ${type} section`
+        );
+      } else {
+        let el = section?.querySelector(".list-section-heading");
+        isnot(el, null, `Should have ${status} heading for ${type} section`);
+        is(
+          el && doc.l10n.getAttributes(el).id,
+          win.getL10nIdMapping(`${type}-${status}-heading`),
+          `Should have correct ${status} heading for ${type} section`
+        );
+      }
     }
 
     await closeView(win);
@@ -1086,8 +1138,7 @@ add_task(async function testEmptyMessage() {
       `Empty addons message hidden on list view type ${test.type}`
     );
 
-    // Technically this would be always hidden unless browser.nova.enabled is
-    // set to true.
+    // Always hidden while there are enabled/disabled add-ons.
     is_element_hidden(
       emptyStatePromo,
       `Empty addons promo hidden on list view type ${test.type}`
@@ -1104,47 +1155,40 @@ add_task(async function testEmptyMessage() {
     }
 
     // Message should now be displayed
-    if (Services.prefs.getBoolPref("browser.nova.enabled")) {
-      switch (test.type) {
-        case "extension":
-          is_element_visible(
-            emptyStatePromo,
-            `Empty addons promo visible on list view type ${test.type}`
-          );
-          break;
-        case "theme": // eslint-disable-line no-fallthrough
-        // NOTE: Given that built-in themes are being preinstalled by default,
-        // is it really worth to have an promo to show for an unlikely empty
-        // theme list view?
-        case "plugin": // eslint-disable-line no-fallthrough
-        case "locale": // eslint-disable-line no-fallthrough
-        case "dictionary":
-          // NOTE: plugin, locale and dictionary category buttons should only
-          // be shown when there are addons of this type installed (or being
-          // installed) is it really worth to show a promo for the empty state
-          // of these lists?
-          //
-          // TODO(Bug 2050920): determine what to show for locale and dictionary
-          // types, because unlike plugins we do have AMO pages to direct users
-          // to.
-          todo(
-            false,
-            "Should we keep the old empty message or add new strings for " +
-              "per-type message and button label to set on the promo?"
-          );
-          is_element_hidden(
-            emptyStatePromo,
-            `Empty addons promo hidden on non empty list view type ${test.type}`
-          );
-          break;
-        default:
-          ok(false, `Unexpected list view type ${test.type}`);
-      }
-    } else {
-      is_element_visible(
-        message,
-        `Empty addons message visible on list view type ${test.type}`
-      );
+    switch (test.type) {
+      case "extension":
+        is_element_visible(
+          emptyStatePromo,
+          `Empty addons promo visible on list view type ${test.type}`
+        );
+        break;
+      case "theme": // eslint-disable-line no-fallthrough
+      // NOTE: Given that built-in themes are being preinstalled by default,
+      // is it really worth to have an promo to show for an unlikely empty
+      // theme list view?
+      case "plugin": // eslint-disable-line no-fallthrough
+      case "locale": // eslint-disable-line no-fallthrough
+      case "dictionary":
+        // NOTE: plugin, locale and dictionary category buttons should only
+        // be shown when there are addons of this type installed (or being
+        // installed) is it really worth to show a promo for the empty state
+        // of these lists?
+        //
+        // TODO(Bug 2050920): determine what to show for locale and dictionary
+        // types, because unlike plugins we do have AMO pages to direct users
+        // to.
+        todo(
+          false,
+          "Should we keep the old empty message or add new strings for " +
+            "per-type message and button label to set on the promo?"
+        );
+        is_element_hidden(
+          emptyStatePromo,
+          `Empty addons promo hidden on non empty list view type ${test.type}`
+        );
+        break;
+      default:
+        ok(false, `Unexpected list view type ${test.type}`);
     }
 
     await closeView(win);
@@ -1153,10 +1197,7 @@ add_task(async function testEmptyMessage() {
 
 add_task(async function testEmptyPromoButtonUtmContent() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.nova.enabled", true],
-      ["extensions.getAddons.link.url", AMO_TEST_URL],
-    ],
+    set: [["extensions.getAddons.link.url", AMO_TEST_URL]],
   });
 
   let win = await loadInitialView("extension");

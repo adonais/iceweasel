@@ -31,7 +31,8 @@ struct ImageEnablementCookie {
 };
 
 #ifdef MOZ_JXL
-static void UpdateDocumentViewerRegistration(const char* aPref, void* aData) {
+static void UpdateDocumentViewerRegistration(const char* /*aPref*/,
+                                             void* aData) {
   auto* cookie = static_cast<ImageEnablementCookie*>(aData);
 
   nsCOMPtr<nsICategoryManager> catMan =

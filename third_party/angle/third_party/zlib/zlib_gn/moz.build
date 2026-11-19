@@ -33,6 +33,16 @@ if CONFIG["MOZ_DEBUG"] == "1":
 
     DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "1"
 
+if CONFIG["OS_TARGET"] == "Android":
+
+    DEFINES["ANDROID"] = True
+    DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"
+    DEFINES["HAVE_SYS_UIO_H"] = True
+    DEFINES["_GNU_SOURCE"] = True
+    DEFINES["__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"] = True
+    DEFINES["__STDC_CONSTANT_MACROS"] = True
+    DEFINES["__STDC_FORMAT_MACROS"] = True
+
 if CONFIG["OS_TARGET"] == "Darwin":
 
     DEFINES["__STDC_CONSTANT_MACROS"] = True
@@ -67,6 +77,10 @@ if CONFIG["OS_TARGET"] == "WINNT":
 if CONFIG["TARGET_CPU"] == "aarch64":
 
     DEFINES["__ARM_NEON__"] = "1"
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Android":
+
+    DEFINES["_DEBUG"] = True
 
 if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Darwin":
 

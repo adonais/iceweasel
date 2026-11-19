@@ -669,7 +669,6 @@ export class DevToolsStartup {
         this.sendEntryPointTelemetry("CommandLine");
       }
     }
-    this.setSlowScriptDebugHandler();
   }
 
   /**
@@ -684,6 +683,11 @@ export class DevToolsStartup {
     if (this.hookedWindows.has(window)) {
       return;
     }
+
+    if (window.document.documentElement.hasAttribute("mini-window")) {
+      return;
+    }
+
     // Key Shortcuts need to be added on all the created windows.
     this.hookKeyShortcuts(window);
 
@@ -766,6 +770,10 @@ export class DevToolsStartup {
           this.onBeforeCreated(anchor.ownerDocument);
         },
         onBeforeCreated: doc => {
+          if (doc.documentElement.hasAttribute("mini-window")) {
+            return;
+          }
+
           // The developer toggle needs the "key_toggleToolbox" <key> element.
           // In DEV EDITION, the toggle is added before 1st paint and hookKeyShortcuts() is
           // not called yet when CustomizableUI creates the widget.
@@ -1135,7 +1143,7 @@ export class DevToolsStartup {
     );
     // Ensure loading main devtools module that hooks up into browser UI
     // and initialize all devtools machinery.
-    // eslint-disable-next-line import/no-unassigned-import
+    // eslint-disable-next-line import-x/no-unassigned-import
     require("devtools/client/framework/devtools-browser");
     return require;
   }
@@ -1405,100 +1413,6 @@ export class DevToolsStartup {
       dump("DevTools telemetry entry point failed: " + e + "\n");
     }
     this.recorded = true;
-  }
-
-  /**
-   * Hook the debugger tool to the "Debug Script" button of the slow script dialog.
-   */
-  setSlowScriptDebugHandler() {
-    const debugService = Cc["@mozilla.org/dom/slow-script-debug;1"].getService(
-      Ci.nsISlowScriptDebug
-    );
-
-    debugService.activationHandler = window => {
-      const chromeWindow = window.browsingContext.topChromeWindow;
-
-      let setupFinished = false;
-      this.slowScriptDebugHandler(chromeWindow.gBrowser.selectedTab).then(
-        () => {
-          setupFinished = true;
-        }
-      );
-
-      // Don't return from the interrupt handler until the debugger is brought
-      // up; no reason to continue executing the slow script.
-      const utils = window.windowUtils;
-      utils.enterModalState();
-      Services.tm.spinEventLoopUntil(
-        "devtools-browser.js:debugService.activationHandler",
-        () => {
-          return setupFinished;
-        }
-      );
-      utils.leaveModalState();
-    };
-
-    debugService.remoteActivationHandler = async (browser, callback) => {
-      try {
-        // Force selecting the freezing tab
-        const chromeWindow = browser.documentGlobal;
-        const tab = chromeWindow.gBrowser.getTabForBrowser(browser);
-        chromeWindow.gBrowser.selectedTab = tab;
-
-        await this.slowScriptDebugHandler(tab);
-      } catch (e) {
-        console.error(e);
-      }
-      callback.finishDebuggerStartup();
-    };
-  }
-
-  /**
-   * Called by setSlowScriptDebugHandler, when a tab freeze because of a slow running script
-   *
-   * @param {XULFrameElement} tab
-   */
-  async slowScriptDebugHandler(tab) {
-    if (this.isDisabledByPolicy()) {
-      // Devtools are disabled
-      return;
-    }
-    const require = this.initDevTools("SlowScript");
-    const { gDevTools } = require("devtools/client/framework/devtools");
-    const toolbox = await gDevTools.showToolboxForTab(tab, {
-      toolId: "jsdebugger",
-    });
-    const threadFront = toolbox.threadFront;
-
-    // Break in place, which means resuming the debuggee thread and pausing
-    // right before the next step happens.
-    switch (threadFront.state) {
-      case "paused":
-        // When the debugger is already paused.
-        threadFront.resumeThenPause();
-        break;
-      case "attached": {
-        // When the debugger is already open.
-        const onPaused = threadFront.once("paused");
-        threadFront.interrupt();
-        await onPaused;
-        threadFront.resumeThenPause();
-        break;
-      }
-      case "resuming": {
-        // The debugger is newly opened.
-        const onResumed = threadFront.once("resumed");
-        await threadFront.interrupt();
-        await onResumed;
-        threadFront.resumeThenPause();
-        break;
-      }
-      default:
-        throw Error(
-          "invalid thread front state in slow script debug handler: " +
-            threadFront.state
-        );
-    }
   }
 
   // Used by tests and the toolbox to register the same key shortcuts in toolboxes loaded

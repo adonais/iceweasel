@@ -181,8 +181,8 @@ public class PanZoomController {
     }
 
     /**
-     * @return One of the {@link #INPUT_RESULT_UNHANDLED INPUT_RESULT_*} indicating how the event
-     *     was handled.
+     * {@return one of the {@link #INPUT_RESULT_UNHANDLED INPUT_RESULT_*} indicating how the event
+     * was handled}
      */
     @AnyThread
     public @InputResult int handledResult() {
@@ -190,8 +190,8 @@ public class PanZoomController {
     }
 
     /**
-     * @return an OR-ed value of {@link #SCROLLABLE_FLAG_NONE SCROLLABLE_FLAG_*} indicating which
-     *     directions can be scrollable.
+     * {@return an OR-ed value of {@link #SCROLLABLE_FLAG_NONE SCROLLABLE_FLAG_*} indicating which
+     * directions can be scrollable}
      */
     @AnyThread
     public @ScrollableDirections int scrollableDirections() {
@@ -199,8 +199,8 @@ public class PanZoomController {
     }
 
     /**
-     * @return an OR-ed value of {@link #OVERSCROLL_FLAG_NONE OVERSCROLL_FLAG_*} indicating which
-     *     directions can be over-scrollable.
+     * {@return an OR-ed value of {@link #OVERSCROLL_FLAG_NONE OVERSCROLL_FLAG_*} indicating which
+     * directions can be over-scrollable}
      */
     @AnyThread
     public @OverscrollDirections int overscrollDirections() {
@@ -325,7 +325,7 @@ public class PanZoomController {
 
     @WrapForJNI(calledFrom = "ui")
     private native @InputResult int handleMouseEvent(
-        int action, long time, int metaState, float x, float y, int buttons);
+        int action, long time, int metaState, float x, float y, int buttons, int toolType);
 
     @WrapForJNI(calledFrom = "ui")
     private native void handleDragEvent(
@@ -480,7 +480,8 @@ public class PanZoomController {
         event.getMetaState(),
         x,
         y,
-        event.getButtonState());
+        event.getButtonState(),
+        event.getToolType(0));
   }
 
   /**

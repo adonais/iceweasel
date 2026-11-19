@@ -163,6 +163,25 @@ TEST(AudioPacketizer, Test)
   }
 }
 
+TEST(AudioPacketizer, RejectInvalidInput)
+{
+  const uint32_t channels = 2;
+  AudioPacketizer<float, float> ap(128, channels);
+
+  AutoBuffer<float> b(128 * channels);
+  for (uint32_t i = 0; i < 128 * channels; i++) {
+    b.Get()[i] = 0.0f;
+  }
+  EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b.Get(), 128)));
+  const uint32_t framesBefore = ap.FramesAvailable();
+
+  // Provide aFrameCount that will cause an invalid value when multiplied by
+  // mChannels.
+  EXPECT_EQ(ap.Input(b.Get(), UINT32_MAX / channels + 1),
+            NS_ERROR_DOM_MEDIA_OVERFLOW_ERR);
+  EXPECT_EQ(ap.FramesAvailable(), framesBefore);
+}
+
 TEST(TimedPacketizer, Test)
 {
   const int channels = 2;

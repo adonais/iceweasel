@@ -1567,7 +1567,7 @@ static bool CanonicalizeNaNFor(MIRGraph& graph, PhiList& philist,
         firstUseBlock->insertAfter(def->toInstruction(), canonical);
       } else {
         // Otherwise add to the start of the block.
-        firstUseBlock->insertBefore(*firstUseBlock->begin(), canonical);
+        firstUseBlock->insertBefore(firstUseBlock->safeInsertTop(), canonical);
       }
 
       // Replace the producer with the canonicalized NaN.

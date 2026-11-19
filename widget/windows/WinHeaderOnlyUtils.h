@@ -578,7 +578,7 @@ inline UniquePtr<wchar_t[]> GetFullModulePath(HMODULE aModule) {
   DWORD retLen;
 
   while (true) {
-    buf = mozilla::MakeUnique<wchar_t[]>(bufLen);
+    buf = std::make_unique<wchar_t[]>(bufLen);
     retLen = ::GetModuleFileNameW(aModule, buf.get(), bufLen);
     if (!retLen) {
       return nullptr;
@@ -597,7 +597,7 @@ inline UniquePtr<wchar_t[]> GetFullModulePath(HMODULE aModule) {
 
   // Since we're likely to have a bunch of unused space in buf, let's
   // reallocate a string to the actual size of the file name.
-  auto result = mozilla::MakeUnique<wchar_t[]>(retLen);
+  auto result = std::make_unique<wchar_t[]>(retLen);
   if (wcscpy_s(result.get(), retLen, buf.get())) {
     return nullptr;
   }
@@ -670,7 +670,7 @@ inline LauncherResult<ModuleVersion> GetModuleVersion(
     return LAUNCHER_ERROR_FROM_LAST();
   }
 
-  auto verInfoBuf = MakeUnique<BYTE[]>(verInfoLen);
+  auto verInfoBuf = std::make_unique<BYTE[]>(verInfoLen);
   if (!::GetFileVersionInfoW(aModuleFullPath, 0, verInfoLen,
                              verInfoBuf.get())) {
     return LAUNCHER_ERROR_FROM_LAST();
@@ -773,7 +773,7 @@ inline UniquePtr<wchar_t[]> GetPackageFamilyName() {
     return nullptr;
   }
 
-  UniquePtr<wchar_t[]> packageIdentity = MakeUnique<wchar_t[]>(packageNameSize);
+  auto packageIdentity = std::make_unique<wchar_t[]>(packageNameSize);
   if (pGetCurrentPackageFamilyName(&packageNameSize, packageIdentity.get()) !=
       ERROR_SUCCESS) {
     return nullptr;

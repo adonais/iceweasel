@@ -45,6 +45,7 @@
 #include "cairoint.h"
 
 #include "cairo-array-private.h"
+#include "cairo-compiler-private.h"
 #include "cairo-error-private.h"
 
 #if CAIRO_HAS_FONT_SUBSET
@@ -336,6 +337,24 @@ decode_number (unsigned char *p, double *number)
         p = decode_integer (p, &i);
         *number = i;
     }
+    return p;
+}
+
+/* return null if the operator would go past the end pointer */
+static unsigned char *
+decode_operator (unsigned char *p, unsigned char* end, unsigned short *operator)
+{
+    unsigned short op = 0;
+
+    op = *p++;
+    if (op == 12) {
+        if (p == end) {
+            return NULL;
+        }
+        op <<= 8;
+        op |= *p++;
+    }
+    *operator = op;
     return p;
 }
 
@@ -660,14 +679,10 @@ cff_dict_read (cairo_hash_table_t *dict, unsigned char *p, int dict_size)
 
             p += size;
         } else {
-            operator = *p++;
-            if (operator == 12) {
-                if (p >= end) {
-                  status = CAIRO_INT_STATUS_UNSUPPORTED;
-                  goto fail;
-                }
-                operator <<= 8;
-                operator |= *p++;
+            p = decode_operator (p, end, &operator);
+            if (unlikely (!p)) {
+                status = CAIRO_INT_STATUS_UNSUPPORTED;
+                goto fail;
             }
             status = cff_dict_create_operator (operator,
                                           _cairo_array_index (&operands, 0),
@@ -1023,6 +1038,7 @@ cairo_cff_font_read_cid_fontdict (cairo_cff_font_t *font, unsigned char *ptr)
     cairo_int_status_t status;
     unsigned char buf[100];
     unsigned char *end_buf;
+    size_t end_offset;
 
     cff_index_init (&index);
     status = cff_index_read (&index, &ptr, font->data_end);
@@ -1094,7 +1110,15 @@ cairo_cff_font_read_cid_fontdict (cairo_cff_font_t *font, unsigned char *ptr)
             goto fail;
         }
         decode_integer (operand, &offset);
-        if (unlikely (offset < 0 || (unsigned long)(size + offset) > font->data_length)) {
+        if (unlikely (offset < 0)) {
+            status = CAIRO_INT_STATUS_UNSUPPORTED;
+            goto fail;
+        }
+        if (unlikely (_cairo_add_size_t_overflow (size, offset, &end_offset))) {
+            status = CAIRO_INT_STATUS_UNSUPPORTED;
+            goto fail;
+        }
+        if (unlikely (end_offset > font->data_length)) {
             status = CAIRO_INT_STATUS_UNSUPPORTED;
             goto fail;
         }

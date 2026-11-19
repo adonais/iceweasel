@@ -113,8 +113,8 @@ class WebrtcVideoEncoderFactory : public GmpPluginNotifierInterface,
  public:
   explicit WebrtcVideoEncoderFactory(
       nsCOMPtr<nsISerialEventTarget> aOwningThread, std::string aPCHandle)
-      : mInternalFactory(MakeUnique<InternalFactory>(std::move(aOwningThread),
-                                                     std::move(aPCHandle))) {}
+      : mInternalFactory(std::make_unique<InternalFactory>(
+            std::move(aOwningThread), std::move(aPCHandle))) {}
 
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override {
     MOZ_CRASH("Unexpected call");

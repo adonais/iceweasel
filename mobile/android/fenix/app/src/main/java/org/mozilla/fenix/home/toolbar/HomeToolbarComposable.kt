@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -104,21 +105,12 @@ internal class HomeToolbarComposable(
     @Composable
     private fun DefaultToolbar() {
         val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
-        val queryWasPrefilled =
-            toolbarStore
-                .observeAsComposableState {
-                    it.editState.queryWasPrefilled
-                }
-                .value
-        val currentQuery = toolbarStore.observeAsComposableState { it.editState.query.current }.value
+        val isSearchActive = appStore.observeAsComposableState { it.searchState.isSearchActive }.value
         val isPrivateMode = browsingModeManager.mode.isPrivate
-        val isUniversalEdgeToEdge = settings.enableUniversalEdgeToEdgeWallpapers
-        val hasWallpaperBackground =
-            hasWallpaperBackground(appStore = appStore, settings = settings, isPrivateMode = isPrivateMode)
         // Tint the browser action icons outside the address bar (tab counter, menu) with the
         // wallpaper's text color. The page actions inside the address bar (e.g. voice search) keep
-        // the default color so they stay legible on the address bar background. Universal only.
-        val wallpaperTextColor = WallpaperTheme.onWallpaper.takeIf { isUniversalEdgeToEdge && hasWallpaperBackground }
+        // the default color so they stay legible on the address bar background.
+        val wallpaperTextColor = WallpaperTheme.onWallpaper.takeIf { !isPrivateMode }
 
         BackInvokedHandler(isSearching) {
             val sourceTabId = appStore.state.searchState.sourceTabId
@@ -130,22 +122,31 @@ internal class HomeToolbarComposable(
         }
 
         FirefoxTheme {
-            MaterialTheme(
-                colorScheme =
-                    homepageToolbarColors(
-                        isPrivateMode = isPrivateMode,
-                        shouldUseEdgeToEdgeColors =
-                            hasWallpaperBackground &&
-                                if (settings.enableHomepageTrendingRecentSearch) {
-                                    !isSearching
-                                } else {
-                                    !isSearching || (currentQuery.isEmpty() && !queryWasPrefilled)
-                                },
-                    )
-            ) {
+            MaterialTheme(colorScheme = toolbarColors(isSearching = isSearchActive)) {
                 ToolbarContent(wallpaperTextColor = wallpaperTextColor)
             }
         }
+    }
+
+    /** Colors of the toolbar and of the search screen shown together with it. */
+    @Composable
+    private fun toolbarColors(isSearching: Boolean): ColorScheme {
+        val queryWasPrefilled =
+            toolbarStore
+                .observeAsComposableState {
+                    it.editState.queryWasPrefilled
+                }
+                .value
+        val currentQuery = toolbarStore.observeAsComposableState { it.editState.query.current }.value
+        return homepageToolbarColors(
+            isPrivateMode = browsingModeManager.mode.isPrivate,
+            shouldUseEdgeToEdgeColors =
+                if (settings.enableHomepageTrendingRecentSearch) {
+                    !isSearching
+                } else {
+                    !isSearching || (currentQuery.isEmpty() && !queryWasPrefilled)
+                },
+        )
     }
 
     @Composable
@@ -158,7 +159,9 @@ internal class HomeToolbarComposable(
                 settings.shouldShowTabStripAtTop
             }
         }
-        val isTabStripAtBottom = remember { shouldUseBottomToolbar && settings.shouldShowTabStripAtBottom }
+        val isSearchActive = appStore.observeAsComposableState { it.searchState.isSearchActive }.value
+        val isTabStripAtBottom =
+            remember { shouldUseBottomToolbar && settings.shouldShowTabStripAtBottom } && !isSearchActive
 
         Column(
             modifier =
@@ -192,13 +195,13 @@ internal class HomeToolbarComposable(
     @Composable
     private fun ColumnScope.AddressBar(wallpaperTextColor: Color?) {
         val isAddressBarVisible = remember { addressBarVisibility }
-        val hasBottomStrip = remember {
+        val isSearchActive = appStore.observeAsComposableState { it.searchState.isSearchActive }.value
+        val hasBottomStrip =
             settings.shouldUseBottomToolbar &&
-                (settings.shouldShowTabStripAtBottom || settings.shouldShowTabGroupsStrip)
-        }
+                ((settings.shouldShowTabStripAtBottom && !isSearchActive) || settings.shouldShowTabGroupsStrip)
 
         Box {
-            if (settings.enableHomepageSearchBar) {
+            if (settings.isHomepageMiddleSearchEnabled) {
                 BrowserSimpleToolbar(toolbarStore, appStore)
             }
 
@@ -233,6 +236,12 @@ internal class HomeToolbarComposable(
     @Composable
     override fun Content() {
         DefaultToolbar()
+    }
+
+    @Composable
+    override fun searchBackgroundColor(): Color? {
+        val isSearchActive = appStore.observeAsComposableState { it.searchState.isSearchActive }.value
+        return if (isSearchActive) toolbarColors(isSearching = true).surface else null
     }
 
     override fun build(middleSearchEnabled: Boolean) {

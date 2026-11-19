@@ -5,9 +5,6 @@ tags = "os_integration"
 run-if = [
   "os == 'win'",
 ]
-skip-if = [
-  "ccov", # Bug 1531789
-]
 
 ["browser_xdg_pref.js"]
 run-if = [

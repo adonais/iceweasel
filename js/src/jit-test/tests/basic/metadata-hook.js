@@ -1,5 +1,5 @@
 
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 
 function Foo() {
   this.x = 0;
@@ -18,13 +18,13 @@ function hello() {
 }
 hello();
 
-var wc = getAllocationMetadata(w).index;
-var xc = getAllocationMetadata(x).index;
-var yc = getAllocationMetadata(y).index;
-var zc = getAllocationMetadata(z).index;
+var wl = getAllocationMetadata(w).line;
+var xl = getAllocationMetadata(x).line;
+var yl = getAllocationMetadata(y).line;
+var zl = getAllocationMetadata(z).line;
 
-assertEq(xc > wc, true);
-assertEq(yc > xc, true);
-assertEq(zc > yc, true);
-assertEq(getAllocationMetadata(x).stack[0], callee);
-assertEq(getAllocationMetadata(x).stack[1], hello);
+assertEq(xl > wl, true);
+assertEq(yl > xl, true);
+assertEq(zl > yl, true);
+assertEq(getAllocationMetadata(x).functionDisplayName, "there");
+assertEq(getAllocationMetadata(x).parent.functionDisplayName, "hello");

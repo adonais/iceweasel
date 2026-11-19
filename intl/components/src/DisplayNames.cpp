@@ -71,8 +71,8 @@ Result<UniquePtr<DisplayNames>, ICUError> DisplayNames::TryCreate(
   if (U_FAILURE(status)) {
     return Err(ToICUError(status));
   }
-  return MakeUnique<DisplayNames>(uLocaleDisplayNames, MakeStringSpan(locale),
-                                  aOptions);
+  return std::make_unique<DisplayNames>(uLocaleDisplayNames,
+                                        MakeStringSpan(locale), aOptions);
 };
 
 #ifdef DEBUG

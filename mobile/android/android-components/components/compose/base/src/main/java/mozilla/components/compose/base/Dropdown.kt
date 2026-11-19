@@ -4,21 +4,19 @@
 
 package mozilla.components.compose.base
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.requiredSizeIn
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,61 +25,37 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.menu.DropdownMenu
+import mozilla.components.compose.base.menu.AnchoredDropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
-private val IconSize = 24.dp
-private val HorizontalPadding = 4.dp
-private val IconSpace = 12.dp
-
-// The default padding from androidx.compose.material.DropdownMenuItemHorizontalPadding
-private val DefaultDropdownMenuItemHorizontalPadding = 16.dp
-private val DropdownMenuMaxHeight = 200.dp
-
-private val ContextMenuWidth =
-    2 * HorizontalPadding + IconSize + IconSpace + 2 * DefaultDropdownMenuItemHorizontalPadding
-
 /**
- * UI for a dropdown and a contextual menu that can be expanded or collapsed.
+ * A dropdown form field that displays a contextual menu to select an item to populate the field.
  *
  * @param label Text to be displayed above the dropdown.
  * @param placeholder The text to be displayed when no [dropdownItems] are selected.
  * @param dropdownItems The [MenuItem.CheckableItem]s that should be shown when the dropdown is expanded.
  * @param modifier Modifier to be applied to the dropdown layout.
- * @param dropdownMenuTextWidth The optional width to allocate for the text for each [MenuItem.CheckableItem]. If not
- *   specified, the best width will be determined based on the dropdown items provided.
- * @param isInLandscapeMode Whether the device is in landscape mode.
  */
-@Suppress("LongMethod")
-@Deprecated("Use Dropdown2 instead", ReplaceWith("Dropdown2", "mozilla.components.compose.base.Dropdown2"))
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Dropdown(
     label: String,
     placeholder: String,
     dropdownItems: List<MenuItem.CheckableItem>,
     modifier: Modifier = Modifier,
-    dropdownMenuTextWidth: Dp? = null,
-    isInLandscapeMode: Boolean = false,
 ) {
-    val dropdownMenuWidth = dropdownMenuTextWidth?.let { ContextMenuWidth + it }
-
     val checkedItemText by
         remember(dropdownItems) {
             derivedStateOf {
@@ -89,163 +63,149 @@ fun Dropdown(
             }
         }
 
-    val density = LocalDensity.current
+    val displayText = checkedItemText?.value ?: placeholder
 
     var expanded by remember { mutableStateOf(false) }
 
-    var measuredDropdownMenuWidthDp by remember { mutableStateOf(0.dp) }
+    val interactionSource = remember { MutableInteractionSource() }
 
-    Column(
-        modifier =
-            modifier
-                .clickable {
-                    expanded = true
-                }
-                .semantics { role = Role.DropdownList }
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.wrapContentSize().defaultMinSize(minHeight = 16.dp).wrapContentHeight(),
-            style = AcornTheme.typography.caption,
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        val placeholderText = checkedItemText?.value ?: placeholder
-
-        Box {
-            Row {
-                Text(
-                    text = placeholderText,
-                    modifier = Modifier.weight(1f),
-                    style = AcornTheme.typography.subtitle1,
-                )
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Icon(
-                    painter = painterResource(id = iconsR.drawable.mozac_ic_dropdown_arrow),
-                    contentDescription = null,
-                )
-            }
-
-            Box(modifier = Modifier.align(Alignment.TopEnd)) {
-                val widthModifier =
-                    if (dropdownMenuWidth == null) {
-                        Modifier
-                    } else {
-                        Modifier.width(width = dropdownMenuWidth)
-                    }
-
-                DropdownMenu(
-                    menuItems = dropdownItems,
-                    expanded = expanded,
-                    modifier =
-                        Modifier.onGloballyPositioned { coordinates ->
-                                measuredDropdownMenuWidthDp =
-                                    with(density) {
-                                        coordinates.size.width.toDp()
-                                    }
-                            }
-                            .requiredSizeIn(maxHeight = DropdownMenuMaxHeight)
-                            .then(widthModifier),
-                    offset =
-                        if (isInLandscapeMode) {
-                            DpOffset(
-                                -measuredDropdownMenuWidthDp,
-                                IconSize,
-                            )
-                        } else {
-                            DpOffset(
-                                0.dp,
-                                IconSize,
-                            )
-                        },
-                    onDismissRequest = { expanded = false },
-                )
-            }
+    val inputTextColor =
+        if (checkedItemText == null) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.onSurface
         }
 
-        HorizontalDivider(color = AcornTheme.colors.formDefault)
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier.semantics(mergeDescendants = true) { role = Role.DropdownList },
+    ) {
+        Box(
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+            propagateMinConstraints = true,
+        ) {
+            OutlinedTextFieldDefaults.DecorationBox(
+                value = displayText,
+                innerTextField = {
+                    Text(
+                        text = displayText,
+                        color = inputTextColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = AcornTheme.typography.body1,
+                    )
+                },
+                enabled = true,
+                singleLine = true,
+                visualTransformation = VisualTransformation.None,
+                interactionSource = interactionSource,
+                label = {
+                    Text(
+                        text = label,
+                        style = AcornTheme.typography.caption,
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_down_24),
+                        contentDescription = null,
+                    )
+                },
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.outline,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+            )
+        }
+
+        AnchoredDropdownMenu(
+            menuItems = dropdownItems,
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        )
     }
 }
 
-@Suppress("MagicNumber")
-private fun getDropdownItems(): List<MenuItem.CheckableItem> =
-    List(10) { index ->
-        MenuItem.CheckableItem(
-            text = Text.String("Item $index"),
-            isChecked = false,
-            onClick = {},
-        )
-    }
+private fun getDropdownItems(): List<Text> =
+    List(DEFAULT_PREVIEW_DROPDOWN_ITEMS) { index -> Text.String("Item $index") }
 
-private fun getSelectedDropdownItems(): List<MenuItem.CheckableItem> =
+private fun getSelectedDropdownItems(): List<Text> =
     listOf(
-        MenuItem.CheckableItem(
-            text = Text.String("Item 1"),
-            isChecked = true,
-            onClick = {},
-        ),
-        MenuItem.CheckableItem(
-            text = Text.String("Item 2"),
-            isChecked = false,
-            onClick = {},
-        ),
-        MenuItem.CheckableItem(
-            text = Text.String("Item 3"),
-            isChecked = false,
-            onClick = {},
-        ),
-        MenuItem.CheckableItem(
-            text = Text.String("Super super super long item exceeding width of small width"),
-            isChecked = false,
-            onClick = {},
-        ),
-        MenuItem.CheckableItem(
-            text =
-                Text.String(
-                    "Super super super super super super super super super long item " +
-                        "exceeding width of medium width"
-                ),
-            isChecked = false,
-            onClick = {},
-        ),
-        MenuItem.CheckableItem(
-            text =
-                Text.String(
-                    "Super super super super super super super super super super super " +
-                        "super super super super super super super super super super long item exceeding " +
-                        "width of large width"
-                ),
-            isChecked = false,
-            onClick = {},
+        Text.String("Item 1"),
+        Text.String("Item 2"),
+        Text.String("Item 3"),
+        Text.String("Super super super long item exceeding width of small width"),
+        Text.String("Super super super super super super super super super long item exceeding width of medium width"),
+        Text.String(
+            "Super super super super super super super super super super super " +
+                "super super super super super super super super super super long item exceeding " +
+                "width of large width"
         ),
     )
 
+@Composable
+private fun StatefulDropdownPreview(
+    label: String,
+    placeholder: String,
+    items: List<Text>,
+    initialSelectedIndex: Int? = null,
+) {
+    var selectedIndex by remember { mutableStateOf(initialSelectedIndex) }
+
+    Dropdown(
+        label = label,
+        placeholder = placeholder,
+        dropdownItems =
+            items.mapIndexed { index, text ->
+                MenuItem.CheckableItem(
+                    text = text,
+                    isChecked = index == selectedIndex,
+                    onClick = { selectedIndex = index },
+                )
+            },
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
 @FlexibleWindowLightDarkPreview
 @Composable
-@Suppress("Deprecation")
 private fun DropdownPreview() {
     AcornTheme {
         Surface {
             Column(modifier = Modifier.fillMaxSize()) {
-                Dropdown(
+                Spacer(modifier = Modifier.height(AcornTheme.layout.space.dynamic150))
+
+                StatefulDropdownPreview(
                     label = "Placeholder and nothing selected",
-                    dropdownItems = getDropdownItems(),
                     placeholder = "Placeholder",
-                    modifier = Modifier.fillMaxWidth(),
+                    items = getDropdownItems(),
                 )
 
                 Spacer(modifier = Modifier.height(AcornTheme.layout.space.dynamic150))
 
-                Dropdown(
+                StatefulDropdownPreview(
                     label = "Placeholder and item selected",
                     placeholder = "Placeholder",
-                    dropdownItems = getSelectedDropdownItems(),
-                    modifier = Modifier.fillMaxWidth(),
+                    items = getSelectedDropdownItems(),
+                    initialSelectedIndex = 0,
+                )
+
+                Spacer(modifier = Modifier.height(AcornTheme.layout.space.dynamic150))
+
+                StatefulDropdownPreview(
+                    label = "Long placeholder",
+                    placeholder = "Long Long Long Long Long Long Long Long Long Long Placeholder",
+                    items = getDropdownItems(),
                 )
             }
         }
     }
 }
+
+private const val DEFAULT_PREVIEW_DROPDOWN_ITEMS = 10

@@ -375,4 +375,14 @@ def add_artifacts(config, tasks):
             })
             task["attributes"]["aab"] = artifact_template["name"]
 
+        artifacts.append({
+            "type": "file",
+            "name": "public/build/mapping.txt",
+            "path": (
+                "/builds/worker/workspace/obj-build/gradle/build/mobile/android/"
+                f"{source_project_name}/app/outputs/mapping/"
+                f"{variant_config['name']}/mapping.txt"
+            ),
+        })
+
         yield task

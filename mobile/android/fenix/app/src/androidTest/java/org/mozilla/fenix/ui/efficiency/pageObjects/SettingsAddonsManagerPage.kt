@@ -37,7 +37,7 @@ class SettingsAddonsManagerPage(composeRule: AndroidComposeTestRule<HomeActivity
             to = pageName,
             steps =
                 listOf(
-                    NavigationStep.Click(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR),
+                    NavigationStep.Click(MainMenuSelectors.EXTENSIONS_BUTTON),
                     NavigationStep.Click(MainMenuSelectors.MANAGE_EXTENSIONS_BUTTON),
                 ),
         )
@@ -101,6 +101,8 @@ class SettingsAddonsManagerPage(composeRule: AndroidComposeTestRule<HomeActivity
         mozClick(SettingsAddonsManagerSelectors.INSTALLED_ADDON_ITEM(addonTitle))
         mozVerify(SettingsAddonsManagerSelectors.REMOVE_ADDON_BUTTON)
         mozClick(SettingsAddonsManagerSelectors.REMOVE_ADDON_BUTTON)
+        mozVerify(SettingsAddonsManagerSelectors.REMOVE_ADDON_DIALOG_CONFIRM_BUTTON)
+        mozClick(SettingsAddonsManagerSelectors.REMOVE_ADDON_DIALOG_CONFIRM_BUTTON)
         return this
     }
 

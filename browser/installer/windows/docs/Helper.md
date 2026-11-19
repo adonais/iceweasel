@@ -23,6 +23,13 @@ It's important to remember that PostUpdate is, indeed, post-update. It doesn't r
 
 PostUpdate actually runs two times after each update: once in an elevated context, and once as a regular user who performed the update. Both runs do similar work - the main difference being that we update HKLM registry entries are updated by the elevated instance, while HKCU ones are updated by the non-elevated instance.
 
+To prevent environment variables from affecting how PostUpdate behaves, the
+updater launches the helper with a minimal environment. The non-elevated
+instance gets the user's default environment rather than the environment
+inherited from the updater, so that any processes it starts, such as the push
+notification helper, have the environment they need to run normally. In every
+other case, the helper gets an empty environment.
+
 It's also important to remember that PostUpdate, being part of the installer code, only exists on Windows, so it can't be used to fix things up on other platforms the same way.
 
 To add a new task to run during PostUpdate, you need to determine when it should run, then add it to the corresponding function in `uninstaller_helpers.nsh`.

@@ -112,7 +112,7 @@ class IPProtectionLocationsFragment : Fragment(), SystemInsetsPaddedFragment {
         navController: NavController = findNavController(),
     ) {
         if (location != store.state.locationState.selectedLocation) {
-            store.dispatch(IPProtectionAction.LocationChanged(location, userAction = true))
+            store.dispatch(IPProtectionAction.LocationAction.LocationChanged(location, userAction = true))
         }
         navController.popBackStack(R.id.ipProtectionFragment, false)
     }

@@ -1322,14 +1322,10 @@ function runAboutPrefsUpdateTest(params, steps) {
       setUpdateURL(updateURL);
     }
 
-    let settingsRedesignEnabled = Services.prefs.getBoolPref(
-      "browser.settings-redesign.enabled",
-      false
+    tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "about:preferences#about"
     );
-    let prefUrl = settingsRedesignEnabled
-      ? "about:preferences#about"
-      : "about:preferences";
-    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, prefUrl);
     registerCleanupFunction(async () => {
       await BrowserTestUtils.removeTab(tab);
     });

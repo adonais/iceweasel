@@ -93,7 +93,7 @@ Variable += [
 
 | Parameter | Value                                                                                                                               |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Variable  | ALL_PROCESSES \| BROWSER_PROCESS \| CHILD_PROCESSES \| GMPLUGIN_PROCESSES \| GPU_PROCESSES \| SOCKET_PROCESSES \| UTILITY_PROCESSES |
+| Variable  | ALL_PROCESSES \| BROWSER_PROCESS \| CHILD_PROCESSES \| GMPLUGIN_PROCESSES \| GPU_PROCESSES \| UTILITY_PROCESSES                     |
 | EntryType | DllBlocklistEntry \| A11yBlocklistEntry \| RedirectToNoOpEntryPoint                                                                 |
 | Name      | A case-insensitive string representing a DLL's filename to block                                                                    |
 | Version   | One of the following formats:> - ALL_VERSIONS \| UNVERSIONED |
@@ -111,7 +111,6 @@ Choose one of the following predefined variables.
 - **CHILD_PROCESSES**: DLLs defined here are blocked in non-browser processes
 - **GMPLUGIN_PROCESSES**: DLLs defined here are blocked in GMPlugin processes
 - **GPU_PROCESSES**: DLLs defined here are blocked in GPU processes
-- **SOCKET_PROCESSES**: DLLs defined here are blocked in socket processes
 - **UTILITY_PROCESSES**: DLLs defined here are blocked in utility processes
 
 #### EntryType

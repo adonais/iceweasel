@@ -254,6 +254,27 @@ class Repository(abc.ABC):
         example, commits to the repo during the Finder's lifetime.
         """
 
+    def get_tracked_files(self, patterns: list[str]) -> list[str]:
+        """Return the sorted paths, relative to the repository root, of the
+        managed files in the working directory that match any of the
+        ``patterns``. Each pattern selects files by name with the ``*`` and
+        ``**`` wildcards, such as ``**/*.idl`` or ``dom/webidl/*.webidl``. A
+        pattern that only matches directories, such as ``dom/*``, is not
+        supported."""
+        if unsupported := [p for p in patterns if any(c in p for c in '?[]\\"')]:
+            raise ValueError(
+                f"Unsupported character in tracked file patterns: {', '.join(unsupported)}"
+            )
+        if not patterns:
+            return []
+        return self._get_tracked_files(patterns)
+
+    def _get_tracked_files(self, patterns: list[str]) -> list[str]:
+        finder = self.get_tracked_files_finder(self.path)
+        return sorted({
+            path for pattern in patterns for path, _ in finder.find(pattern)
+        })
+
     @abc.abstractmethod
     def get_ignored_files_finder(self):
         """Obtain a mozpack.files.BaseFinder of ignored files in the working

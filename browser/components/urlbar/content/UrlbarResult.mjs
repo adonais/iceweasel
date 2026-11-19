@@ -64,6 +64,7 @@ export class UrlbarResult {
    * @param {boolean} [params.heuristic]
    * @param {boolean} [params.hideRowLabel]
    * @param {boolean} [params.isBestMatch]
+   * @param {string} [params.bestMatchType]
    * @param {boolean} [params.isBottomUrlSuggestion]
    * @param {boolean} [params.isRichSuggestion]
    * @param {boolean} [params.isSuggestedIndexRelativeToGroup]
@@ -91,6 +92,7 @@ export class UrlbarResult {
     heuristic = false,
     hideRowLabel = false,
     isBestMatch = false,
+    bestMatchType = undefined,
     isBottomUrlSuggestion = false,
     isRichSuggestion = false,
     isSuggestedIndexRelativeToGroup = false,
@@ -143,7 +145,6 @@ export class UrlbarResult {
     this.#group = group;
     this.#heuristic = heuristic;
     this.#hideRowLabel = hideRowLabel;
-    this.#isBestMatch = isBestMatch;
     this.#isBottomUrlSuggestion = isBottomUrlSuggestion;
     this.#isRichSuggestion = isRichSuggestion;
     this.#isSuggestedIndexRelativeToGroup = isSuggestedIndexRelativeToGroup;
@@ -158,6 +159,15 @@ export class UrlbarResult {
     if (this.#type == UrlbarShared.RESULT_TYPE.TIP) {
       this.#isRichSuggestion = true;
       this.#richSuggestionIconSize = 24;
+    }
+
+    if (bestMatchType !== undefined) {
+      this.#bestMatchType = bestMatchType;
+    } else if (isBestMatch) {
+      // The default type is `LARGE`.
+      this.#bestMatchType = UrlbarShared.BEST_MATCH_TYPE.LARGE;
+    } else {
+      this.#bestMatchType = UrlbarShared.BEST_MATCH_TYPE.NONE;
     }
 
     this.#testForceNewContent = testForceNewContent;
@@ -271,7 +281,16 @@ export class UrlbarResult {
    * @type {boolean}
    */
   get isBestMatch() {
-    return this.#isBestMatch;
+    return this.#bestMatchType != UrlbarShared.BEST_MATCH_TYPE.NONE;
+  }
+
+  /**
+   * The result's best-match type, a `UrlbarShared.BEST_MATCH_TYPE` value.
+   *
+   * @type {string}
+   */
+  get bestMatchType() {
+    return this.#bestMatchType;
   }
 
   /**
@@ -616,7 +635,8 @@ export class UrlbarResult {
       group: this.#group,
       heuristic: this.#heuristic,
       hideRowLabel: this.#hideRowLabel,
-      isBestMatch: this.#isBestMatch,
+      isBestMatch: this.isBestMatch,
+      bestMatchType: this.#bestMatchType,
       isBottomUrlSuggestion: this.#isBottomUrlSuggestion,
       isRichSuggestion: this.#isRichSuggestion,
       isSuggestedIndexRelativeToGroup: this.#isSuggestedIndexRelativeToGroup,
@@ -681,7 +701,7 @@ export class UrlbarResult {
   #group;
   #heuristic;
   #hideRowLabel;
-  #isBestMatch;
+  #bestMatchType;
   #isBottomUrlSuggestion;
   #isRichSuggestion;
   #isSuggestedIndexRelativeToGroup;

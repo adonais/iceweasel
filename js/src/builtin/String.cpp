@@ -4306,6 +4306,9 @@ JSObject* StringObject::createPrototype(JSContext* cx, JSProtoKey key) {
   if (!StringObject::init(cx, proto, empty)) {
     return nullptr;
   }
+  if (!JSObject::setHasRealmFuseProperty(cx, proto)) {
+    return nullptr;
+  }
   return proto;
 }
 

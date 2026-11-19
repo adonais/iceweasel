@@ -192,11 +192,6 @@ add_task(async function test_getHistogramById() {
   Assert.equal(s.histogram_type, Telemetry.HISTOGRAM_EXPONENTIAL);
 });
 
-add_task(async function test_getSlowSQL() {
-  var slow = Telemetry.slowSQL;
-  Assert.ok("mainThread" in slow && "otherThreads" in slow);
-});
-
 // Check that telemetry doesn't record in private mode
 add_task(async function test_privateMode() {
   var h = Telemetry.getHistogramById("TELEMETRY_TEST_BOOLEAN");
@@ -301,20 +296,15 @@ add_task(
 add_task(async function test_can_record_in_process_regression_bug_1530361() {
   Telemetry.getSnapshotForHistograms("main", true);
 
-  // The socket and gpu processes should not have any histograms.
+  // The gpu process should not have any histograms.
   // Flag and count histograms have defaults, so if we're accidentally recording them
-  // in these processes they'd show up even immediately after being cleared.
+  // in this process they'd show up even immediately after being cleared.
   let snapshot = Telemetry.getSnapshotForHistograms("main", true);
 
   Assert.deepEqual(
     snapshot.gpu,
     {},
     "No histograms should have been recorded for the gpu process"
-  );
-  Assert.deepEqual(
-    snapshot.socket,
-    {},
-    "No histograms should have been recorded for the socket process"
   );
 });
 

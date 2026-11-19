@@ -238,4 +238,6 @@ load 2042237-1.html
 asserts(0-6) load 2052609.html
 pref(gfx.canvas.azure.backends,"cairo") pref(gfx.offscreencanvas.shared-provider,false) load 2045777.html
 load 2075736.html
+pref(ui.caretBlinkTime,0) load 1805333-1.html
 pref(dom.meta-viewport.enabled,true) pref(formhelper.autozoom,true) load 2086198.html
+load 2087171.html

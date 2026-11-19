@@ -15,6 +15,8 @@ head = "head.js"
 
 ["test_permmanager_getAllByTypes.js"]
 
+["test_permmanager_getAllForOriginAttributesPattern.js"]
+
 ["test_permmanager_getAllForPrincipal.js"]
 
 ["test_permmanager_getAllWithTypePrefix.js"]

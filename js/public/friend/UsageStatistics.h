@@ -68,7 +68,6 @@ class JS_PUBLIC_API JSObject;
   _(GC_PARALLEL_MARK_UTILIZATION, Percentage)       \
   _(GC_PARALLEL_MARK_INTERRUPTIONS, Integer)        \
   _(GC_TASK_START_DELAY_US, TimeDuration)           \
-  _(ION_COMPILE_TIME, TimeDuration)                 \
   _(GC_TIME_BETWEEN_MINOR_MS, TimeDuration)
 
 // clang-format off

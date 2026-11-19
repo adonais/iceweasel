@@ -52,8 +52,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowTabStatesManager.sys.mjs",
   AIWindowMenu:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowMenu.sys.mjs",
+  AuthImplSelector:
+    "moz-src:///browser/components/aiwindow/models/auth/AuthImplSelector.sys.mjs",
   AuthProvider:
     "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs",
+  FxaSignedInWatcher:
+    "moz-src:///browser/components/aiwindow/models/auth/FxaSignedInWatcher.sys.mjs",
   AutoTabGroupingSuggestions:
     "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
@@ -79,6 +83,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/sessionstore/SessionStartup.sys.mjs",
   MemoriesSchedulers:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
+  MonitorAgent:
+    "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs",
   MONITOR_CONDITION_MET_TOPIC:
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
   MONITOR_RUN_FAILED_TOPIC:
@@ -87,6 +93,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorAttention.sys.mjs",
   MonitorUIUtils:
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorUIUtils.sys.mjs",
+  SmartWindowLocation:
+    "moz-src:///browser/components/aiwindow/models/SmartWindowLocation.sys.mjs",
   SmartWindowTelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
   TelemetryScheduler:
@@ -230,6 +238,7 @@ export const AIWindow = {
   _startSchedulers() {
     lazy.MemoriesSchedulers.maybeRunAndSchedule();
     lazy.TelemetryScheduler.maybeInit();
+    lazy.SmartWindowLocation.refresh();
   },
 
   handlePlacesEvents(events) {
@@ -280,6 +289,7 @@ export const AIWindow = {
     if (lazy.NimbusFeatures.smartWindow.getVariable("enabled")) {
       Services.prefs.setBoolPref(PREF_SMARTWINDOW_ENABLED, true);
     }
+    lazy.AuthImplSelector.applyNimbusAuthImpl();
   },
 
   onAuthProviderLogout() {
@@ -405,6 +415,7 @@ export const AIWindow = {
     if (!this.isAvailable) {
       this._onAccountLogout();
     }
+    lazy.MonitorAgent.onBlockedStateChanged().catch(console.error);
   },
 
   _updateButtonVisibility(node) {
@@ -697,7 +708,7 @@ export const AIWindow = {
 
     if (this.isAIWindowActive(win)) {
       // Window already opened as Smart via the BrowserContentHandler
-      // startup gate, which uses ToS consentTime as a synchronous proxy for
+      // startup gate, which uses ToU consentTime as a synchronous proxy for
       // "previously signed in". Verify the actual auth state now and prompt
       // sign-in if the user has since logged out — without this, signed-out
       // users would get a Smart Window with broken auth-gated features.
@@ -1126,20 +1137,16 @@ export const AIWindow = {
    *   not available yet, in which case the tab count is reported as 0
    */
   recordOpenWindowTelemetry(trigger, win) {
-    let signedIn = false;
     const opened_tabs = win?.gBrowser?.tabs.length ?? 0;
-    lazy.AuthProvider.isSignedIn()
-      .then(result => {
-        signedIn = result;
-      })
-      .finally(() => {
-        Glean.smartWindow.openWindow.record({
-          trigger,
-          fxa: signedIn,
-          onboarding: !lazy.hasFirstrunCompleted,
-          opened_tabs,
-        });
+    this.getAuthTelemetryExtras().then(({ fxa, provider }) => {
+      Glean.smartWindow.openWindow.record({
+        trigger,
+        fxa,
+        onboarding: !lazy.hasFirstrunCompleted,
+        opened_tabs,
+        auth_provider: provider,
       });
+    });
   },
 
   /**
@@ -1152,18 +1159,29 @@ export const AIWindow = {
    * @param {boolean} openNewWindow - Whether a new window will be opened
    */
   recordLaunchCommandTelemetry(trigger, openNewWindow) {
-    let signedIn = false;
-    lazy.AuthProvider.isSignedIn()
-      .then(result => {
-        signedIn = result;
-      })
-      .finally(() => {
-        Glean.smartWindow.launchCommandInvoked.record({
-          trigger,
-          fxa: signedIn,
-          new_window: openNewWindow,
-        });
+    this.getAuthTelemetryExtras().then(({ fxa, provider }) => {
+      Glean.smartWindow.launchCommandInvoked.record({
+        trigger,
+        fxa,
+        new_window: openNewWindow,
+        auth_provider: provider,
       });
+    });
+  },
+
+  /**
+   * Reads the fxa and provider extras recorded on open_window and
+   * launch_command_invoked. fxa reflects the Mozilla account only, whichever
+   * provider is active.
+   *
+   * @returns {Promise<{fxa: boolean, provider: string|undefined}>}
+   */
+  async getAuthTelemetryExtras() {
+    const [fxa, provider] = await Promise.all([
+      lazy.FxaSignedInWatcher.isFxaSignedIn(),
+      lazy.AuthProvider.getProviderName().catch(() => undefined),
+    ]);
+    return { fxa, provider };
   },
 
   /**
@@ -1227,6 +1245,9 @@ export const AIWindow = {
         // SessionStore entry before closeSidebar fires.
         this._uninitTabStateManager(win);
         lazy.AIWindowUI.closeSidebar(win);
+        // Classic windows don't need the hidden sidebar document;
+        // ensureBrowserIsAppended recreates it.
+        win.document.getElementById(lazy.AIWindowUI.BROWSER_ID)?.remove();
         this._recordSmartWindowUsage();
         Glean.smartWindow.classicSwitch.record({ duration_ms, opened_tabs });
       }
@@ -1671,7 +1692,7 @@ export const AIWindow = {
    * @returns {Promise<void>}
    */
   async makeAvailable() {
-    lazy.AuthProvider.clearToSConsent();
+    lazy.AuthProvider.clearToUConsent();
     // Set memory generation pref to default
     Services.prefs.setBoolPref(PREF_MEMORIES_CONVERSATION, true);
     Services.prefs.setBoolPref(PREF_MEMORIES_HISTORY, true);

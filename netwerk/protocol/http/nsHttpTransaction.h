@@ -23,6 +23,7 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsITLSSocketControl.h"
 #include "nsITimer.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsIWebTransport.h"
 #include "nsTHashMap.h"
 #include "nsThreadUtils.h"
@@ -237,6 +238,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void GetHashKeyOfConnectionEntry(nsACString& aResult);
 
   bool IsForWebTransport() override { return mIsForWebTransport; }
+  void GetWebTransportAnticipatedStreams(uint16_t* aUni, uint16_t* aBidi);
   bool IsResettingForTunnelConn() override { return mIsResettingForTunnelConn; }
   void SetResettingForTunnelConn(bool aValue) override {
     mIsResettingForTunnelConn = aValue;
@@ -317,8 +319,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   // reading the content.  When this returns true, WriteSegments returns
   // WOULD_BLOCK.
   bool ShouldThrottle();
-
-  void NotifyTransactionObserver(nsresult reason);
 
   // When echConfig is enabled, this function put other available records
   // in mRecordsForRetry. Returns true when mRecordsForRetry is not empty,
@@ -621,7 +621,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mSubmittedRatePacing{false};
   bool mPassedRatePacing{false};
   bool mSynchronousRatePaceRequest{false};
-  nsCOMPtr<nsICancelable> mTokenBucketCancel;
+  // Weak reference to the token bucket's cancelable for this transaction. The
+  // cancelable keeps a strong reference back to the transaction while queued
+  // (see TokenBucketCancelable::mEvent), so this must be weak to avoid a cycle.
+  nsWeakPtr mTokenBucketCancel;
 
   void CollectTelemetryForUploads();
 
@@ -646,7 +649,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void MaybeStartHttp3BackupTimer();
 
  private:
-  TransactionObserverFunc mTransactionObserver;
   NetAddr mSelfAddr;
   NetAddr mPeerAddr;
   nsILoadInfo::IPAddressSpace mTargetIpAddressSpace{

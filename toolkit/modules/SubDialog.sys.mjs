@@ -81,6 +81,31 @@ export function SubDialog({
   this._overlay.hidden = false;
 }
 
+/**
+ * Whether an event that opens a dialog came from the keyboard. This follows
+ * the event, then the events that caused it, e.g. the keypress or the <key>
+ * element behind a command.
+ *
+ * @param {Event} [event]
+ * @returns {boolean}
+ */
+function isKeyboardEvent(event) {
+  while (event) {
+    // Commands of <key> elements don't carry the keypress as sourceEvent.
+    if (KeyboardEvent.isInstance(event) || event.target?.localName == "key") {
+      return true;
+    }
+    // Events with a known input source tell us directly. Others, like
+    // synthesized commands, may say through the event that caused them.
+    let inputSource = event.inputSource ?? MouseEvent.MOZ_SOURCE_UNKNOWN;
+    if (inputSource != MouseEvent.MOZ_SOURCE_UNKNOWN) {
+      return inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD;
+    }
+    event = event.sourceEvent;
+  }
+  return false;
+}
+
 SubDialog.prototype = {
   _closingCallback: null,
   _closingEvent: null,
@@ -96,6 +121,9 @@ SubDialog.prototype = {
   _id: null,
   _titleElement: null,
   _closeButton: null,
+  // Whether the user opened the dialog with the keyboard, in which case its
+  // initial focus shows a focus ring.
+  _openedByKeyboard: false,
 
   get frameContentWindow() {
     return this._frame?.contentWindow;
@@ -142,14 +170,24 @@ SubDialog.prototype = {
     doc.insertBefore(contentStylesheet, doc.documentElement);
   },
 
+  /**
+   * @param {string} aURL - URL of the dialog document.
+   * @param {object} [options]
+   * @param {Event} [options.triggeringEvent] - The event that made the user
+   * open the dialog. If it came from the keyboard, the initial focus shows a
+   * focus ring.
+   * @param {...any} aParams - Arguments for the dialog's window.
+   */
   async open(
     aURL,
-    { features, closingCallback, closedCallback, sizeTo } = {},
+    { features, closingCallback, closedCallback, sizeTo, triggeringEvent } = {},
     ...aParams
   ) {
     if (["available", "limitheight"].includes(sizeTo)) {
       this._box.setAttribute("sizeto", sizeTo);
     }
+
+    this._openedByKeyboard = isKeyboardEvent(triggeringEvent);
 
     // Create a promise so consumers can tell when we're done setting up.
     this._dialogReady = new Promise(resolve => {
@@ -876,31 +914,34 @@ SubDialog.prototype = {
 
   /**
    * Focus the dialog content.
-   * If the embedded document defines a custom focus handler it will be called.
-   * Otherwise we will focus the first focusable element in the content window.
+   * If the embedded document defines a custom focus handler it will be called
+   * with isInitialFocus and `{ focusVisible }`, which says whether the focused
+   * element should show a focus ring (because the user opened the dialog with
+   * the keyboard) and can be passed as is to Element.focus(). Otherwise we
+   * will focus the first focusable element in the content window.
    *
    * @param {boolean} [isInitialFocus] - Whether the dialog is focused for the
    * first time after opening.
    */
   focus(isInitialFocus = false) {
+    let focusVisible = this._openedByKeyboard;
     // If the content window has its own focus logic, hand off the focus call.
     let focusHandler = this._frame?.contentDocument?.subDialogSetDefaultFocus;
     if (focusHandler) {
-      focusHandler(isInitialFocus);
+      focusHandler(isInitialFocus, { focusVisible });
       return;
     }
     // Handle focus ourselves. Try to move the focus to the first element in
     // the content window.
     let fm = Services.focus;
 
-    // We're intentionally hiding the focus ring here for now per bug 1704882,
-    // but we aim to have a better fix that retains the focus ring for users
-    // that had brought up the dialog by keyboard in bug 1708261.
+    // The focus ring is hidden for mouse users per bug 1704882, but shown for
+    // users who brought up the dialog with the keyboard (bug 1708261).
     let focusedElement = fm.moveFocus(
       this._frame.contentWindow,
       null,
       fm.MOVEFOCUS_FIRST,
-      fm.FLAG_NOSHOWRING
+      focusVisible ? fm.FLAG_SHOWRING : fm.FLAG_NOSHOWRING
     );
     if (!focusedElement) {
       // Ensure the focus is pulled out of the content document even if there's
@@ -999,6 +1040,7 @@ export class SubDialogManager {
       allowDuplicateDialogs,
       sizeTo,
       hideContent,
+      triggeringEvent,
     } = {},
     ...aParams
   ) {
@@ -1046,6 +1088,7 @@ export class SubDialogManager {
         closingCallback,
         closedCallback,
         sizeTo,
+        triggeringEvent,
       },
       ...aParams
     );

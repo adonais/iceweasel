@@ -17,7 +17,6 @@ use api::units::*;
 use api::channel::{single_msg_channel, Sender, Receiver};
 use crate::bump_allocator::ChunkPool;
 use crate::AsyncPropertySampler;
-use crate::box_shadow::BoxShadow;
 #[cfg(feature = "replay")]
 use crate::dl_interner::DlBuilderMap;
 #[cfg(any(feature = "capture", feature = "replay"))]
@@ -175,6 +174,7 @@ macro_rules! declare_dl_stores {
         #[derive(Default)]
         pub struct DlStores {
             $( pub $field: crate::dl_interner::DlStore<$key, $template>, )*
+            uids: crate::dl_interner::DlUids,
         }
 
         impl DlStores {
@@ -192,7 +192,7 @@ macro_rules! declare_dl_stores {
                     let (ins, rem) = crate::dl_interner::count_dl_ops(&updates.$field);
                     totals.0 += ins;
                     totals.1 += rem;
-                    self.$field.apply(updates.$field);
+                    self.$field.apply(updates.$field, &mut self.uids);
                     profile.set(profiler::$gauge, self.$field.len());
                 )*
                 totals
@@ -204,8 +204,9 @@ macro_rules! declare_dl_stores {
             fn with_pending(&self, updates: &DlUpdates) -> DlStores {
                 let mut stores = DlStores {
                     $( $field: self.$field.clone(), )*
+                    uids: self.uids.clone(),
                 };
-                $( stores.$field.apply(updates.$field.clone()); )*
+                $( stores.$field.apply(updates.$field.clone(), &mut stores.uids); )*
                 stores
             }
 
@@ -351,44 +352,35 @@ impl DataStores {
             PrimitiveKind::Rectangle { handle } => {
                 &dl_stores.rectangles[handle].common
             }
-            PrimitiveKind::Image { data_handle, .. } => {
-                let prim_data = &self.image[data_handle];
-                &prim_data.common
+            PrimitiveKind::Image { handle } => {
+                &dl_stores.images[handle].common
             }
-            PrimitiveKind::ImageBorder { data_handle, .. } => {
-                let prim_data = &self.image_border[data_handle];
-                &prim_data.common
+            PrimitiveKind::ImageBorder { handle } => {
+                &dl_stores.image_borders[handle].common
             }
-            PrimitiveKind::LineDecoration { data_handle, .. } => {
-                let prim_data = &self.line_decoration[data_handle];
-                &prim_data.common
+            PrimitiveKind::LineDecoration { handle } => {
+                &dl_stores.line_decorations[handle].common
             }
-            PrimitiveKind::LinearGradient { data_handle, .. } => {
-                let prim_data = &self.linear_grad[data_handle];
-                &prim_data.common
+            PrimitiveKind::LinearGradient { handle } => {
+                &dl_stores.linear_gradients[handle].common
             }
-            PrimitiveKind::NormalBorder { data_handle, .. } => {
-                let prim_data = &self.normal_border[data_handle];
-                &prim_data.common
+            PrimitiveKind::NormalBorder { handle } => {
+                &dl_stores.normal_borders[handle].common
             }
             PrimitiveKind::Picture { .. } => {
                 panic!("BUG: picture prims don't have common data!");
             }
-            PrimitiveKind::RadialGradient { data_handle, .. } => {
-                let prim_data = &self.radial_grad[data_handle];
-                &prim_data.common
+            PrimitiveKind::RadialGradient { handle } => {
+                &dl_stores.radial_gradients[handle].common
             }
-            PrimitiveKind::ConicGradient { data_handle, .. } => {
-                let prim_data = &self.conic_grad[data_handle];
-                &prim_data.common
+            PrimitiveKind::ConicGradient { handle } => {
+                &dl_stores.conic_gradients[handle].common
             }
-            PrimitiveKind::TextRun { data_handle, .. }  => {
-                let prim_data = &self.text_run[data_handle];
-                &prim_data.common
+            PrimitiveKind::TextRun { handle } => {
+                &dl_stores.text_runs[handle].common
             }
-            PrimitiveKind::YuvImage { data_handle, .. } => {
-                let prim_data = &self.yuv_image[data_handle];
-                &prim_data.common
+            PrimitiveKind::YuvImage { handle } => {
+                &dl_stores.yuv_images[handle].common
             }
             PrimitiveKind::BackdropCapture { data_handle, .. } => {
                 let prim_data = &self.backdrop_capture[data_handle];
@@ -398,9 +390,8 @@ impl DataStores {
                 let prim_data = &self.backdrop_render[data_handle];
                 &prim_data.common
             }
-            PrimitiveKind::BoxShadow { data_handle, .. } => {
-                let prim_data = &self.box_shadow[data_handle];
-                &prim_data.common
+            PrimitiveKind::BoxShadow { handle } => {
+                &dl_stores.box_shadows[handle].common
             }
         }
     }
@@ -2774,7 +2765,6 @@ impl RenderBackend {
                 scene,
                 view: view.scene.clone(),
                 config: win.frame_config.clone(),
-                fonts: win.resource_cache.get_fonts(),
                 build_frame,
                 interners,
                 spatial_tree: scene_spatial_tree,

@@ -41,7 +41,7 @@ RefPtr<CSSMathNegate> CSSMathNegate::Create(
       CSSNumericValue::Create(aParent, *aMathNegate.value);
 
   return Create(std::move(aParent),
-                MakeUnique<StyleNumericType>(aMathNegate.numeric_type),
+                std::make_unique<StyleNumericType>(aMathNegate.numeric_type),
                 std::move(value));
 }
 
@@ -65,7 +65,8 @@ already_AddRefed<CSSMathNegate> CSSMathNegate::Constructor(
   // Step 1.
   RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, aArg);
 
-  auto numericType = MakeUnique<StyleNumericType>(value->GetNumericType());
+  auto numericType =
+      std::make_unique<StyleNumericType>(value->GetNumericType());
 
   // Step 2.
 
@@ -96,7 +97,8 @@ void CSSMathNegate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
 }
 
 StyleMathNegate CSSMathNegate::ToStyleMathNegate() const {
-  auto value = MakeUnique<StyleNumericValue>(mValue->ToStyleNumericValue());
+  auto value =
+      std::make_unique<StyleNumericValue>(mValue->ToStyleNumericValue());
 
   return StyleMathNegate{GetNumericType(),
                          StyleBox<StyleNumericValue>(std::move(value))};

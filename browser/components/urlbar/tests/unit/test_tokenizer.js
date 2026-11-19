@@ -499,3 +499,26 @@ add_task(async function test_tokenizer() {
     );
   }
 });
+
+add_task(function test_getOriginInfo() {
+  const tests = [
+    ["example.com", { host: "example.com", path: "" }],
+    ["Example.COM/Foo%20bar", { host: "example.com", path: "/Foo%20bar" }],
+    ["https://www.example.com/a/b", { host: "example.com", path: "/a/b" }],
+    ["http://example.com", { host: "example.com", path: "" }],
+    ["example.com:8080/foo", { host: "example.com", path: "/foo" }],
+    ["ftp://example.com/foo", null],
+    ["user:pass@example.com/foo", null],
+    ["example", null],
+    ["example.com.", { host: "example.com", path: "" }],
+    ["www.example.com./foo", { host: "example.com", path: "/foo" }],
+  ];
+  for (let [searchString, expected] of tests) {
+    let [token] = UrlbarTokenizer.tokenize(createContext(searchString));
+    Assert.deepEqual(
+      UrlbarTokenizer.getOriginInfo(token),
+      expected,
+      `Origin info for "${searchString}"`
+    );
+  }
+});

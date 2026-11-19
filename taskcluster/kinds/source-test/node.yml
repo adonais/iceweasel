@@ -180,10 +180,8 @@ devtools-verify-bundle:
               path: /builds/worker/issues.json
     run:
         command: >
-            cd devtools/client/debugger &&
-            npm ci &&
-            $MOZ_FETCHES_DIR/node/bin/node bin/bundle.js &&
-            cd ../../.. &&
+            ./mach npm ci --prefix devtools/client/debugger &&
+            ./mach node devtools/client/debugger/bin/bundle.js &&
             ./mach python taskcluster/scripts/misc/verify-devtools-bundle.py --output /builds/worker/issues.json
     fetches:
         toolchain:

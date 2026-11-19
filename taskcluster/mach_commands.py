@@ -9,6 +9,7 @@ import logging
 import os
 import pathlib
 import sys
+import tempfile
 import time
 import traceback
 from functools import partial
@@ -282,14 +283,22 @@ def taskgraph_decision(command_context, **options):
 
         in_automation = os.environ.get("MOZ_AUTOMATION") == "1"
         moz_upload_dir = os.environ.get("MOZ_UPLOAD_DIR")
+        monitor = None
+        forward_path = None
         if in_automation and moz_upload_dir:
             monitor = SystemResourceMonitor(poll_interval=0.1)
             monitor.start()
-        else:
-            monitor = None
+            if not monitor.forwarding:
+                fd, forward_path = tempfile.mkstemp(
+                    prefix="taskgraph-", suffix=".jsonl"
+                )
+                os.close(fd)
+                monitor.accept_forwarded(forward_path)
 
         try:
             t_params_start = time.monotonic()
+            if monitor is not None:
+                monitor.begin_phase("parameters")
             graph_config = load_graph_config(options.get("root") or "taskcluster")
             register_gecko_taskgraph(graph_config)
             # Honor the graph_config's own register hook (e.g.
@@ -302,13 +311,22 @@ def taskgraph_decision(command_context, **options):
                 graph_config.register()
             parameters = get_decision_parameters(graph_config, options)
             t_params_end = time.monotonic()
+            if monitor is not None:
+                monitor.finish_phase("parameters")
 
             t_taskgraph_start = time.monotonic()
+            if monitor is not None:
+                monitor.begin_phase("taskgraph")
             ret = taskgraph_decision(options, parameters)
             t_taskgraph_end = time.monotonic()
+            if monitor is not None:
+                monitor.finish_phase("taskgraph")
         finally:
             if monitor is not None:
                 monitor.stop()
+            if forward_path:
+                os.remove(forward_path)
+            if monitor is not None and not monitor.forwarding:
                 upload_dir = pathlib.Path(moz_upload_dir)
                 profile_path = upload_dir / "profile_build_resources.json"
                 with open(profile_path, "w", encoding="utf-8", newline="\n") as f:

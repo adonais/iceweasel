@@ -20,16 +20,10 @@ PRETTIER_FORMATTING_MESSAGE = (
 
 
 def run_prettier(cmd_args, config, fix):
-    shell = False
-    if is_windows():
-        # The eslint binary needs to be run from a shell with msys
-        shell = True
     encoding = "utf-8"
 
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    proc = subprocess.Popen(
-        cmd_args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     signal.signal(signal.SIGINT, orig)
 
     try:

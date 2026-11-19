@@ -176,11 +176,8 @@ function startClient(port, beConservative, expectSuccess) {
       );
       equal(req.responseText, "OK", "response text should be 'OK'");
 
-      // Only check telemetry if network process is disabled.
-      if (!mozinfo.socketprocess_networking) {
-        HandshakeTelemetryHelpers.checkSuccess(flavors);
-        HandshakeTelemetryHelpers.checkEmpty(nonflavors);
-      }
+      HandshakeTelemetryHelpers.checkSuccess(flavors);
+      HandshakeTelemetryHelpers.checkEmpty(nonflavors);
 
       resolve();
     };
@@ -190,15 +187,12 @@ function startClient(port, beConservative, expectSuccess) {
         `should ${!expectSuccess ? "" : "not "}have gotten an error`
       );
 
-      // Only check telemetry if network process is disabled.
-      if (!mozinfo.socketprocess_networking) {
-        HandshakeTelemetryHelpers.checkEntry(
-          flavors,
-          "SSL_ERROR_PROTOCOL_VERSION_ALERT",
-          1
-        );
-        HandshakeTelemetryHelpers.checkEmpty(nonflavors);
-      }
+      HandshakeTelemetryHelpers.checkEntry(
+        flavors,
+        "SSL_ERROR_PROTOCOL_VERSION_ALERT",
+        1
+      );
+      HandshakeTelemetryHelpers.checkEmpty(nonflavors);
 
       resolve();
     };

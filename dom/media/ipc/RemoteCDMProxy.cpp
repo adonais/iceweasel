@@ -148,6 +148,12 @@ void RemoteCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
                        fmt::ptr(self.get()), aPromiseId, aValue.IsResolve());
 
                   if (aValue.IsReject()) {
+                    // The GPU process, or decoding in it, is disabled.
+                    if (self->mLocation == RemoteMediaIn::GpuProcess &&
+                        aValue.RejectValue() == NS_ERROR_NOT_AVAILABLE) {
+                      self->FallbackToRDD(aPromiseId, originID);
+                      return;
+                    }
                     self->RejectPromise(
                         aPromiseId,
                         MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
@@ -157,6 +163,27 @@ void RemoteCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
                   self->InitInternal(aPromiseId, originID);
                 });
           });
+}
+
+void RemoteCDMProxy::FallbackToRDD(PromiseId aPromiseId,
+                                   const nsCString& aOriginID) {
+  LOGD("[{}] RemoteCDMProxy::FallbackToRDD -- promise {}", fmt::ptr(this),
+       aPromiseId);
+  MOZ_ASSERT(mLocation == RemoteMediaIn::GpuProcess);
+  mLocation = RemoteMediaIn::RddProcess;
+  RemoteMediaManagerChild::LaunchRDDProcessIfNeeded()->Then(
+      mThread, __func__,
+      [self = RefPtr{this}, aPromiseId, originID = nsCString(aOriginID)](
+          const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
+        if (aValue.IsReject()) {
+          self->RejectPromise(
+              aPromiseId,
+              MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
+                          "PRemoteCDMChild ensure process fail"_ns));
+          return;
+        }
+        self->InitInternal(aPromiseId, originID);
+      });
 }
 
 void RemoteCDMProxy::InitInternal(PromiseId aPromiseId,

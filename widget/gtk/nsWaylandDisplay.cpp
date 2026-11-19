@@ -757,7 +757,7 @@ static const struct wl_output_listener output_listener = {
 
 void nsWaylandDisplay::AddMonitorConfig(int aId, wl_output* aWlOutput) {
   LOG("nsWaylandDisplay add monitor ID %d num %zu", aId, mMonitors.Length());
-  mMonitors.AppendElement(MakeUnique<MonitorConfig>(aId, aWlOutput));
+  mMonitors.AppendElement(std::make_unique<MonitorConfig>(aId, aWlOutput));
 }
 
 nsWaylandDisplay::MonitorConfig::MonitorConfig(int aId,

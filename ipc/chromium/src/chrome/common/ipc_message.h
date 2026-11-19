@@ -239,13 +239,14 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   void set_relay(bool new_relay) { header()->flags.SetRelay(new_relay); }
 
   template <class T>
-  static bool Dispatch(const Message* msg, T* obj, void (T::*func)()) {
+  static bool Dispatch(const Message* /*msg*/, T* obj, void (T::*func)()) {
     (obj->*func)();
     return true;
   }
 
   template <class T>
-  static bool Dispatch(const Message* msg, T* obj, void (T::*func)() const) {
+  static bool Dispatch(const Message* /*msg*/, T* obj,
+                       void (T::*func)() const) {
     (obj->*func)();
     return true;
   }

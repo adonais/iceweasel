@@ -470,7 +470,7 @@ WeakFrame& WeakFrame::operator=(WeakFrame&& aOther) {
 }
 
 nsIFrame* NS_NewEmptyFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell) nsIFrame(aStyle, aPresShell->GetPresContext());
+  return new nsIFrame(aStyle, aPresShell->GetPresContext());
 }
 
 nsIFrame::~nsIFrame() {
@@ -648,7 +648,7 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   mContent = aContent;
   mParent = aParent;
-  MOZ_ASSERT(!mParent || PresShell() == mParent->PresShell());
+  MOZ_RELEASE_ASSERT(!mParent || PresContext() == mParent->PresContext());
 
   if (aPrevInFlow) {
     mWritingMode = aPrevInFlow->GetWritingMode();
@@ -1108,8 +1108,8 @@ void nsIFrame::Destroy(DestroyContext& aContext) {
 #endif
 
   // Now that we're totally cleaned out, we need to add ourselves to
-  // the presshell's recycler.
-  ps->FreeFrame(id, this);
+  // the frame arena.
+  FrameArena::Free(id, this);
 }
 
 std::pair<int32_t, int32_t> nsIFrame::GetOffsets() const {
@@ -2392,7 +2392,8 @@ static nsIFrame* GetActiveSelectionFrame(nsPresContext* aPresContext,
                                          nsIFrame* aFrame) {
   nsIContent* capturingContent = PresShell::GetCapturingContent();
   if (capturingContent) {
-    nsIFrame* activeFrame = aPresContext->GetPrimaryFrameFor(capturingContent);
+    nsIFrame* activeFrame =
+        aPresContext->GetPrimaryOrAreaImageFrameFor(capturingContent);
     return activeFrame ? activeFrame : aFrame;
   }
 
@@ -3355,7 +3356,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
     // Start a new preserves3d context to keep informations on
     // nsDisplayListBuilder.
     autoPreserves3DContext =
-        MakeUnique<nsDisplayListBuilder::AutoPreserves3DContext>(aBuilder);
+        std::make_unique<nsDisplayListBuilder::AutoPreserves3DContext>(
+            aBuilder);
     // Save dirty rect on the builder to avoid being distorted for
     // multiple transforms along the chain.
     aBuilder->SavePreserves3DRect();

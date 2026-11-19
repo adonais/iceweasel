@@ -78,6 +78,7 @@ def apply_patches(angle_src_dir: Path, patch_dir: Path) -> None:
                 str(patch),
                 "--no-backup-if-mismatch",
                 "--batch",
+                "--forward",
             ]
             result = subprocess.run(command, check=False)
             reject_content = reject_path.read_text()
@@ -93,8 +94,36 @@ def apply_patches(angle_src_dir: Path, patch_dir: Path) -> None:
 def prune_unused_files(angle_src_dir: Path, gn_configs) -> None:
     print("Pruning unused files")
 
-    # Ensure we retain the LICENSE file.
-    required_files = {Path("LICENSE")}
+    # Ensure we retain the LICENSE file
+    required_files = {
+        Path("LICENSE"),
+        Path("src/third_party/khronos/GL/wglext.h"),
+    }
+
+    # Headers included by Vulkan's C API are not all listed in its GN target.
+    # Keep the Android include closure; no need to retain the entire include tree.
+    vulkan_include_dir = Path("third_party/vulkan-headers/src/include")
+    required_files.update(
+        vulkan_include_dir / header
+        for header in (
+            "vk_video/vulkan_video_codec_av1std.h",
+            "vk_video/vulkan_video_codec_av1std_decode.h",
+            "vk_video/vulkan_video_codec_av1std_encode.h",
+            "vk_video/vulkan_video_codec_h264std.h",
+            "vk_video/vulkan_video_codec_h264std_decode.h",
+            "vk_video/vulkan_video_codec_h264std_encode.h",
+            "vk_video/vulkan_video_codec_h265std.h",
+            "vk_video/vulkan_video_codec_h265std_decode.h",
+            "vk_video/vulkan_video_codec_h265std_encode.h",
+            "vk_video/vulkan_video_codec_vp9std.h",
+            "vk_video/vulkan_video_codec_vp9std_decode.h",
+            "vk_video/vulkan_video_codecs_common.h",
+            "vulkan/vk_platform.h",
+            "vulkan/vulkan.h",
+            "vulkan/vulkan_android.h",
+            "vulkan/vulkan_core.h",
+        )
+    )
 
     # Resolve a GN-style path to a angle_src_dir-relative path.
     def resolve_path(path: str) -> Path:

@@ -44,7 +44,7 @@ enum class TopLayerIndex : uint16_t {
 
 ViewportFrame* NS_NewViewportFrame(PresShell* aPresShell,
                                    ComputedStyle* aStyle) {
-  return new (aPresShell) ViewportFrame(aStyle, aPresShell->GetPresContext());
+  return new ViewportFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(ViewportFrame)
@@ -228,13 +228,6 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForContentTopLayer(
     if (!frame) {
       continue;
     }
-    if (frame->GetContent() != elem->AsContent()) {
-      // area elements in image maps point to the image frame as their primary
-      // frame but we should treat them like they don't have their own frame
-      // here. See also bug 135040.
-      continue;
-    }
-
     if (frame->IsHiddenByContentVisibilityOnAnyAncestor(
             nsIFrame::IncludeContentVisibility::Hidden)) {
       continue;

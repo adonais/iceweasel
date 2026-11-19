@@ -998,7 +998,7 @@ nsresult nsPNGDecoder::FinishInternal() {
 #ifdef PNG_APNG_SUPPORTED
 // got the header of a new frame that's coming
 void nsPNGDecoder::frame_info_callback(png_structp png_ptr,
-                                       png_uint_32 frame_num) {
+                                       png_uint_32 /*frame_num*/) {
   nsPNGDecoder* decoder =
       static_cast<nsPNGDecoder*>(png_get_progressive_ptr(png_ptr));
 
@@ -1055,7 +1055,7 @@ void nsPNGDecoder::frame_info_callback(png_structp png_ptr,
 }
 #endif
 
-void nsPNGDecoder::end_callback(png_structp png_ptr, png_infop info_ptr) {
+void nsPNGDecoder::end_callback(png_structp png_ptr, png_infop /*info_ptr*/) {
   /* libpng comments:
    *
    * this function is called when the whole image has been read,
@@ -1097,7 +1097,7 @@ void nsPNGDecoder::error_callback(png_structp png_ptr,
   png_longjmp(png_ptr, 1);
 }
 
-void nsPNGDecoder::warning_callback(png_structp png_ptr,
+void nsPNGDecoder::warning_callback(png_structp /*png_ptr*/,
                                     png_const_charp warning_msg) {
   MOZ_LOG(sPNGLog, LogLevel::Warning, ("libpng warning: %s\n", warning_msg));
 }

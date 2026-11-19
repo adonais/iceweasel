@@ -54,7 +54,7 @@ class LensUploadViewModelTest {
             coEvery { uploader.uploadImage(image, isPrivate = true) } returns
                 LensImageUploader.UploadResult(resultUrl = resultUrl, httpStatusCode = 200)
 
-            viewModel.start(imageUri, isPrivate = true)
+            viewModel.start(imageUri, isPrivate = true, source = "photo_picker")
             testDispatcher.scheduler.advanceUntilIdle()
 
             val state = assertIs<LensUploadState.Succeeded>(viewModel.state.value)
@@ -77,7 +77,7 @@ class LensUploadViewModelTest {
                     CompletableDeferred<LensImageUploader.UploadResult>().await()
                 }
 
-            viewModel.start(imageUri, isPrivate = false)
+            viewModel.start(imageUri, isPrivate = false, source = "photo_picker")
 
             assertEquals(LensUploadState.Loading(visual = null), viewModel.state.value)
 
@@ -92,11 +92,16 @@ class LensUploadViewModelTest {
         runTest(testDispatcher) {
             coEvery { uploader.decodeImage(imageUri) } returns null
 
-            viewModel.start(imageUri, isPrivate = false)
+            viewModel.start(imageUri, isPrivate = false, source = "photo_picker")
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(
-                LensUploadState.Failed(LensUploadFailure.IMAGE_LOAD, imageUri, isPrivate = false),
+                LensUploadState.Failed(
+                    LensUploadFailure.IMAGE_LOAD,
+                    imageUri,
+                    isPrivate = false,
+                    source = "photo_picker",
+                ),
                 viewModel.state.value,
             )
             coVerify(exactly = 0) { uploader.uploadImage(any(), any()) }
@@ -113,11 +118,11 @@ class LensUploadViewModelTest {
             coEvery { uploader.uploadImage(any(), any()) } returns
                 LensImageUploader.UploadResult(resultUrl = null, httpStatusCode = 400)
 
-            viewModel.start(imageUri, isPrivate = false)
+            viewModel.start(imageUri, isPrivate = false, source = "photo_picker")
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(
-                LensUploadState.Failed(LensUploadFailure.UPLOAD, imageUri, isPrivate = false),
+                LensUploadState.Failed(LensUploadFailure.UPLOAD, imageUri, isPrivate = false, source = "photo_picker"),
                 viewModel.state.value,
             )
             val events = GoogleLens.searchCompleted.testGetValue()
@@ -131,11 +136,16 @@ class LensUploadViewModelTest {
         runTest(testDispatcher) {
             coEvery { uploader.decodeImage(imageUri) } throws SecurityException("revoked")
 
-            viewModel.start(imageUri, isPrivate = false)
+            viewModel.start(imageUri, isPrivate = false, source = "photo_picker")
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(
-                LensUploadState.Failed(LensUploadFailure.IMAGE_LOAD, imageUri, isPrivate = false),
+                LensUploadState.Failed(
+                    LensUploadFailure.IMAGE_LOAD,
+                    imageUri,
+                    isPrivate = false,
+                    source = "photo_picker",
+                ),
                 viewModel.state.value,
             )
         }
@@ -146,11 +156,41 @@ class LensUploadViewModelTest {
             coEvery { uploader.decodeImage(imageUri) } returns image
             coEvery { uploader.uploadImage(any(), any()) } throws IOException("offline")
 
-            viewModel.start(imageUri, isPrivate = true)
+            viewModel.start(imageUri, isPrivate = true, source = "photo_picker")
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(
-                LensUploadState.Failed(LensUploadFailure.UPLOAD, imageUri, isPrivate = true),
+                LensUploadState.Failed(LensUploadFailure.UPLOAD, imageUri, isPrivate = true, source = "photo_picker"),
+                viewModel.state.value,
+            )
+        }
+
+    @Test
+    fun `GIVEN a camera capture WHEN the upload completes THEN the search is recorded with the camera source`() =
+        runTest(testDispatcher) {
+            coEvery { uploader.decodeImage(imageUri) } returns image
+            coEvery { uploader.uploadImage(any(), any()) } returns
+                LensImageUploader.UploadResult(resultUrl = resultUrl, httpStatusCode = 200)
+
+            viewModel.start(imageUri, isPrivate = false, source = "camera")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val events = GoogleLens.searchCompleted.testGetValue()
+            assertNotNull(events)
+            assertEquals("camera", events.single().extra?.get("source"))
+        }
+
+    @Test
+    fun `GIVEN a camera capture WHEN the upload fails THEN the failure keeps the camera source to retry with`() =
+        runTest(testDispatcher) {
+            coEvery { uploader.decodeImage(imageUri) } returns image
+            coEvery { uploader.uploadImage(any(), any()) } throws IOException("offline")
+
+            viewModel.start(imageUri, isPrivate = false, source = "camera")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(
+                LensUploadState.Failed(LensUploadFailure.UPLOAD, imageUri, isPrivate = false, source = "camera"),
                 viewModel.state.value,
             )
         }
@@ -161,7 +201,7 @@ class LensUploadViewModelTest {
             val pendingUpload = CompletableDeferred<LensImageUploader.UploadResult>()
             coEvery { uploader.decodeImage(imageUri) } returns image
             coEvery { uploader.uploadImage(any(), any()) } coAnswers { pendingUpload.await() }
-            viewModel.start(imageUri, isPrivate = false)
+            viewModel.start(imageUri, isPrivate = false, source = "photo_picker")
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(viewModel.cancel())
@@ -178,7 +218,7 @@ class LensUploadViewModelTest {
             coEvery { uploader.decodeImage(imageUri) } returns image
             coEvery { uploader.uploadImage(any(), any()) } returns
                 LensImageUploader.UploadResult(resultUrl = resultUrl, httpStatusCode = 200)
-            viewModel.start(imageUri, isPrivate = false)
+            viewModel.start(imageUri, isPrivate = false, source = "photo_picker")
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertFalse(viewModel.cancel())

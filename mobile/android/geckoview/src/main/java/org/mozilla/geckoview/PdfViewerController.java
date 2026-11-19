@@ -18,6 +18,8 @@ import org.mozilla.gecko.util.ThreadUtils;
  */
 @ExperimentalGeckoViewApi
 public class PdfViewerController {
+  /** Public constructor for PdfViewerController. */
+  public PdfViewerController() {}
 
   /** The session editor contains functions related to editing a PDF, such as adding a signature. */
   @ExperimentalGeckoViewApi

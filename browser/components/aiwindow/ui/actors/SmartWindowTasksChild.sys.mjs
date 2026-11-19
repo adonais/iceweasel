@@ -29,6 +29,20 @@ export class SmartWindowTasksChild extends JSWindowActorChild {
   ]);
 
   /**
+   * Forwards messages from the parent to the content.
+   *
+   * @param {object} message
+   * @param {string} message.name
+   */
+  receiveMessage({ name }) {
+    if (name === "SmartWindowTasks:BlockedStateChanged") {
+      this.contentWindow?.dispatchEvent(
+        new this.contentWindow.CustomEvent(name)
+      );
+    }
+  }
+
+  /**
    * Receives events from the content process and sends to the parent.
    *
    * @param {CustomEvent} event

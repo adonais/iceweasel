@@ -32,9 +32,6 @@ skip-if = [
 support-files = ["download_server.sjs", "echo_headers.sjs"]
 
 ["browser_intervention_gating.js"]
-skip-if = [
-  "debug", # disabled until bug 1961939 is fixed.
-]
 
 ["browser_interventions.js"]
 
@@ -64,8 +61,6 @@ skip-if = [
 ["browser_smartblockembeds_mutation.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt && socketprocess_networking", # Bug 1960066
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1960066
 ] # Bug 1858919, 1960066
 
 ["browser_smartblockembeds_trustpanel.js"]

@@ -58,14 +58,14 @@ async function doTest({
 
   const { cleanup, loader } = await NimbusTestUtils.setupTest({
     init: false,
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       for (const slug of existingEnrollments) {
         NimbusTestUtils.addEnrollmentForRecipe(
           RECIPES.find(e => e.slug === slug),
           { store }
         );
       }
-    }),
+    },
     experiments: RECIPES,
     migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
   });

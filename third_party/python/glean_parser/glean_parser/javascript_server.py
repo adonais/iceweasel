@@ -41,6 +41,10 @@ from . import util
 # and might require changes to the template.
 SUPPORTED_METRIC_TYPES = ["string", "event"]
 
+# Pings defined in the glean-server library (server_telemetry/server-side-pings.yaml)
+# are available to all server apps without needing a local pings.yaml definition.
+KNOWN_SERVER_PINGS = {"events", "server-deletion-request"}
+
 
 def event_class_name(
     ping_name: str, metrics_by_type: Dict[str, List[metrics.Metric]]
@@ -164,23 +168,23 @@ def output(
         + " parser doesn't generate individual metric files. Make sure to pass all"
         + " your ping and metric definitions in a single invocation of the parser."
     )
-    if "pings" not in objs:
-        # If events are meant to be sent in custom pings, we need to make sure they
-        # are defined. Otherwise we won't have destination tables defined and
-        # submissions won't pass validation at ingestion.
-        if event_metric_exists:
-            if "events" not in ping_to_metrics:
-                # Event metrics can be sent in standard `events` ping
-                # or in custom pings.
-                print(
-                    "❌ "
-                    + PING_METRIC_ERROR_MSG
-                    + "\n You need to either send your event metrics in standard"
-                    + " `events` ping or define a custom one."
-                )
-                return
-        else:
+    # If custom pings are targeted, they must be explicitly defined in a
+    # pings.yaml - otherwise destination tables aren't set up and submissions
+    # fail ingestion. Pings from the glean-server library are exempt: they're
+    # centrally defined and available to all server apps.
+    if "pings" not in objs and not all(
+        p in KNOWN_SERVER_PINGS for p in ping_to_metrics
+    ):
+        if not event_metric_exists:
             print("❌ No ping definition found." + PING_METRIC_ERROR_MSG)
+            return
+        if "events" not in ping_to_metrics:
+            print(
+                "❌ "
+                + PING_METRIC_ERROR_MSG
+                + "\n You need to either send your event metrics in standard"
+                + " `events` ping or define a custom one."
+            )
             return
 
     if not ping_to_metrics:

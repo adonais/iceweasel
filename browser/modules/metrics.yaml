@@ -2240,3 +2240,45 @@ theme_picker:
         description: >
           Whether native theme styling was enabled. Set when `property` is
           `"nativeTheme"`.
+
+  appearance:
+    type: string
+    lifetime: application
+    description: >
+      The current appearance mode from the theme picker, one of `"light"`,
+      `"dark"`, or `"device"`, derived from the `ui.systemUsesDarkTheme`
+      preference. Recorded at startup and again on each daily idle. A value of
+      `"device"` doesn't distinguish users who never changed the setting from
+      users who changed it and switched back.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081853
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081853
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - tgiles@mozilla.com
+      - mstriemer@mozilla.com
+      - athomas@mozilla.com
+    expires: never
+
+  native_theme:
+    type: boolean
+    lifetime: application
+    description: >
+      Whether native theme styling is enabled, i.e. the value of the
+      `browser.theme.native-theme` preference. Its default differs by
+      platform. Recorded at startup and again on each daily idle. A default
+      value doesn't distinguish users who never changed the setting from users
+      who changed it and switched back.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081853
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2081853
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - tgiles@mozilla.com
+      - mstriemer@mozilla.com
+      - athomas@mozilla.com
+    expires: never

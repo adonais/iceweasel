@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.home.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +34,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -43,15 +46,16 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
+import mozilla.components.ui.icons.R as iconsR
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.History
 import org.mozilla.fenix.GleanMetrics.HomeBookmarks
 import org.mozilla.fenix.GleanMetrics.RecentlyVisitedHomepage
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
@@ -118,6 +122,7 @@ private const val POPULAR_SITES_TO_SHOW = 8
  * @param interactor [HomepageInteractor] for interactions with the homepage UI.
  * @param onCollectionsMigrationCardAction Invoked with the [CollectionsMigrationCardAction] to dispatch.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
+ * @param onMiddleSearchBarVisibilityChanged Invoked when the middle search bar is shown/hidden.
  * @param modifier [Modifier] to be applied to the layout.
  */
 @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
@@ -127,6 +132,7 @@ internal fun Homepage(
     interactor: HomepageInteractor,
     onCollectionsMigrationCardAction: (CollectionsMigrationCardAction) -> Unit,
     onTopSitesItemBound: () -> Unit,
+    onMiddleSearchBarVisibilityChanged: (isVisible: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -161,37 +167,49 @@ internal fun Homepage(
                 )
             }
 
-            when (val headerState = state.headerState) {
-                is HeaderState.Experimental.Normal -> {
-                    val settings = components.settings
-
-                    ExperimentalHomepageHeader(
-                        showStoriesButton = headerState.showStoriesButton,
-                        showButtonAnimation = headerState.showButtonAnimation,
-                        onPrivateModeTapped = { browsingModeChanged(BrowsingMode.Private) },
-                        onStoriesTapped = { interactor.onDiscoverMoreClicked() },
-                        onNewsAnimationShown = { settings.recordNewsButtonAnimationShown() },
-                    )
-                }
-
-                is HeaderState.Experimental.Private -> {
-                    ExperimentalPrivateHomepageHeader(onHomeTapped = { browsingModeChanged(BrowsingMode.Normal) })
-                }
-
-                is HeaderState.Normal -> {
-                    HomepageHeader(
-                        browsingMode = state.browsingMode,
-                        showStoriesButton = headerState.showStoriesButton,
-                        browsingModeChanged = browsingModeChanged,
-                        onStoriesTapped = { interactor.onDiscoverMoreClicked() },
-                    )
-                }
-            }
+            HomepageHeader(
+                browsingMode = state.browsingMode,
+                showStoriesButton = state.headerState.showStoriesButton,
+                showButtons = state.headerState.showButtons,
+                browsingModeChanged = browsingModeChanged,
+                onStoriesTapped = { interactor.onDiscoverMoreClicked() },
+            )
 
             if (state.firstFrameDrawn) {
                 with(state) {
                     when (this) {
                         is HomepageState.Private -> {
+                            if (middleSearchState.searchBarEnabled) {
+                                LaunchedEffect(middleSearchState.searchBarVisible) {
+                                    onMiddleSearchBarVisibilityChanged(middleSearchState.searchBarVisible)
+                                }
+                            }
+
+                            Image(
+                                painter = painterResource(id = iconsR.drawable.mozac_ic_private_mode_circle_fill_72),
+                                contentDescription = null,
+                                modifier =
+                                    Modifier.thenConditional(
+                                            Modifier.padding(vertical = FirefoxTheme.layout.space.static50)
+                                        ) {
+                                            middleSearchState.isShown
+                                        }
+                                        .size(40.dp),
+                            )
+
+                            if (middleSearchState.isShown) {
+                                Spacer(Modifier.height(FirefoxTheme.layout.space.static400))
+
+                                SearchBar(
+                                    modifier = Modifier.padding(horizontal = horizontalMargin),
+                                    onClick = interactor::onNavigateSearch,
+                                )
+
+                                Spacer(Modifier.height(FirefoxTheme.layout.space.static400))
+                            } else {
+                                Spacer(Modifier.height(FirefoxTheme.layout.space.static500))
+                            }
+
                             PrivateBrowsingDescription(onLearnMoreClick = interactor::onLearnMoreClicked)
                         }
 
@@ -211,6 +229,21 @@ internal fun Homepage(
                             LaunchedEffect(longfoxEntryPointShown) {
                                 if (longfoxEntryPointShown) {
                                     interactor.onLongfoxEntryPointShown()
+                                }
+                            }
+
+                            if (middleSearchState.searchBarEnabled) {
+                                LaunchedEffect(middleSearchState.searchBarVisible) {
+                                    onMiddleSearchBarVisibilityChanged(middleSearchState.searchBarVisible)
+                                }
+
+                                if (middleSearchState.searchBarVisible) {
+                                    SearchBar(
+                                        modifier = Modifier.padding(horizontal = horizontalMargin),
+                                        onClick = interactor::onNavigateSearch,
+                                    )
+
+                                    Spacer(Modifier.height(FirefoxTheme.layout.space.static500))
                                 }
                             }
 
@@ -628,7 +661,7 @@ private fun HomepagePreview() {
                         longfoxEnabled = false,
                         showLongfoxAnimation = false,
                         trackersBlockedCount = 754,
-                        headerState = HeaderState.Normal(showStoriesButton = true),
+                        headerState = HeaderState(showStoriesButton = true),
                         middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = false),
                         firstFrameDrawn = true,
                         setupChecklistState = null,
@@ -639,6 +672,7 @@ private fun HomepagePreview() {
                 interactor = FakeHomepagePreview.homepageInteractor,
                 onCollectionsMigrationCardAction = {},
                 onTopSitesItemBound = {},
+                onMiddleSearchBarVisibilityChanged = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -670,7 +704,7 @@ private fun HomepageBannerPreview() {
                         longfoxEnabled = false,
                         showLongfoxAnimation = false,
                         trackersBlockedCount = 754,
-                        headerState = HeaderState.Normal(showStoriesButton = true),
+                        headerState = HeaderState(showStoriesButton = true),
                         middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = false),
                         firstFrameDrawn = true,
                         setupChecklistState = null,
@@ -681,6 +715,7 @@ private fun HomepageBannerPreview() {
                 interactor = FakeHomepagePreview.homepageInteractor,
                 onCollectionsMigrationCardAction = {},
                 onTopSitesItemBound = {},
+                onMiddleSearchBarVisibilityChanged = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -703,7 +738,7 @@ private fun HomepagePreviewCollections() {
                         longfoxEnabled = false,
                         showLongfoxAnimation = false,
                         trackersBlockedCount = 754,
-                        headerState = HeaderState.Normal(showStoriesButton = true),
+                        headerState = HeaderState(showStoriesButton = true),
                         middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = false),
                         firstFrameDrawn = true,
                         setupChecklistState = null,
@@ -714,6 +749,7 @@ private fun HomepagePreviewCollections() {
                 interactor = FakeHomepagePreview.homepageInteractor,
                 onCollectionsMigrationCardAction = {},
                 onTopSitesItemBound = {},
+                onMiddleSearchBarVisibilityChanged = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -736,7 +772,7 @@ private fun HomepageCollectionsMigrationCardPreview() {
                         longfoxEnabled = false,
                         showLongfoxAnimation = false,
                         trackersBlockedCount = 754,
-                        headerState = HeaderState.Normal(showStoriesButton = true),
+                        headerState = HeaderState(showStoriesButton = true),
                         middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = false),
                         firstFrameDrawn = true,
                         setupChecklistState = null,
@@ -747,6 +783,7 @@ private fun HomepageCollectionsMigrationCardPreview() {
                 interactor = FakeHomepagePreview.homepageInteractor,
                 onCollectionsMigrationCardAction = {},
                 onTopSitesItemBound = {},
+                onMiddleSearchBarVisibilityChanged = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -773,7 +810,7 @@ private fun MinimalHomepagePreview() {
                         longfoxEnabled = false,
                         showLongfoxAnimation = false,
                         trackersBlockedCount = 754,
-                        headerState = HeaderState.Normal(showStoriesButton = true),
+                        headerState = HeaderState(showStoriesButton = true),
                         firstFrameDrawn = true,
                         setupChecklistState = null,
                         isSearchInProgress = false,
@@ -783,6 +820,7 @@ private fun MinimalHomepagePreview() {
                 interactor = FakeHomepagePreview.homepageInteractor,
                 onCollectionsMigrationCardAction = {},
                 onTopSitesItemBound = {},
+                onMiddleSearchBarVisibilityChanged = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -796,13 +834,14 @@ private fun PrivateHomepagePreview() {
         Homepage(
             state =
                 HomepageState.Private(
-                    headerState = HeaderState.Normal(showStoriesButton = true),
+                    headerState = HeaderState(showStoriesButton = true),
                     firstFrameDrawn = true,
                     isSearchInProgress = false,
                 ),
             interactor = FakeHomepagePreview.homepageInteractor,
             onCollectionsMigrationCardAction = {},
             onTopSitesItemBound = {},
+            onMiddleSearchBarVisibilityChanged = {},
             modifier = Modifier.fillMaxSize(),
         )
     }

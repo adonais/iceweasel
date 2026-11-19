@@ -10,6 +10,7 @@ import mozilla.components.lib.crash.store.CrashReportOption
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -41,6 +42,12 @@ class CrashReportingTest {
     @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/308906
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CrashReportingTest#closeTabFromCrashedTabReporterTest"],
+        bug = 2084953,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun closeTabFromCrashedTabReporterTest() {
         navigationToolbar(composeTestRule) {}
@@ -52,6 +59,12 @@ class CrashReportingTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2336134
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CrashReportingTest#restoreTabFromTabCrashedReporterTest"],
+        bug = 2084953,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun restoreTabFromTabCrashedReporterTest() {
         val website = mockWebServer.getGenericAsset(1)

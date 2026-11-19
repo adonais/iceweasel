@@ -93,13 +93,13 @@ _cairo_xcb_connection_shm_get_image (cairo_xcb_connection_t *connection,
 							XCB_IMAGE_FORMAT_Z_PIXMAP,
 							shmseg, offset),
 				     NULL);
-    free (reply);
 
     if (!reply) {
 	/* an error here should be impossible */
 	return _cairo_error (CAIRO_STATUS_READ_ERROR);
     }
 
+    free (reply);
     return CAIRO_STATUS_SUCCESS;
 }
 

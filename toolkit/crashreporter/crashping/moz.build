@@ -15,6 +15,7 @@ GeneratedFile(
 GeneratedFile(
     "glean_metrics.rs",
     script="glean_rust.py",
+    flags=[CONFIG["MOZ_APP_VERSION"]],
     inputs=[
         "/toolkit/components/glean/tags.yaml",
         "pings.yaml",

@@ -141,12 +141,10 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                              Register allocSite, Register output,
                              const wasm::TrapSiteDesc& trapSiteDesc);
 
-  void setCompilationTime(mozilla::TimeDuration duration) {
-    compileTime_ = duration;
-  }
-  mozilla::TimeDuration getCompilationTime() const { return compileTime_; }
-
  private:
+  template <typename... Addrs>
+  void emitPreBarrier(const MInstruction* mir, const Addrs&... addresses);
+
   void emitPostWriteBarrier(const LAllocation* obj);
   void emitPostWriteBarrier(Register objreg);
   void emitPostWriteBarrierS(Address address, Register prev, Register next);
@@ -166,7 +164,8 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                                           Register indexScratch,
                                           Register kindScratch,
                                           ValueOperand result);
-  void visitStoreSlotByIteratorIndexCommon(Register object,
+  void visitStoreSlotByIteratorIndexCommon(const MInstruction* mir,
+                                           Register object,
                                            Register indexScratch,
                                            Register kindScratch,
                                            ValueOperand value);
@@ -300,7 +299,8 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void emitGetNextEntryForIterator(LGetNextEntryForIterator* lir);
 
   template <class TableObject>
-  void emitLoadIteratorValues(Register result, Register temp, Register front);
+  void emitLoadIteratorValues(const MInstruction* mir, Register result,
+                              Register temp, Register front);
 
   void emitStringToInt64(LInstruction* lir, Register input, Register64 output);
 
@@ -425,9 +425,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   // Script counts created during code generation.
   IonScriptCounts* scriptCounts_;
-
-  // Total Ion compilation time.
-  mozilla::TimeDuration compileTime_;
 
 #ifdef FUZZING_JS_FUZZILLI
   void emitFuzzilliHashObject(LInstruction* lir, Register obj, Register output);

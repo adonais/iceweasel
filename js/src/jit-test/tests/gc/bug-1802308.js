@@ -5,4 +5,4 @@ function test() {
 test();
 test();
 gczeal(4);
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();

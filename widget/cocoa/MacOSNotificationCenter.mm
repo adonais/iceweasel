@@ -6,6 +6,7 @@
 #import <AppKit/AppKit.h>
 #include "imgIContainer.h"
 #include "imgIRequest.h"
+#include "nsAlertsUtils.h"
 #include "nsCOMPtr.h"
 #import "nsCocoaUtils.h"
 #include "nsComponentManagerUtils.h"
@@ -36,7 +37,21 @@ static constexpr nsLiteralString kActionSuffix = u"-moz"_ns;
   [super init];
   // We should *never* outlive this MacOSNotificationCenter.
   mMacOSNC = macosnc;
+  [[NSNotificationCenter defaultCenter]
+      addObserver:self
+         selector:@selector(applicationDidBecomeActive:)
+             name:NSApplicationDidBecomeActiveNotification
+           object:NSApp];
   return self;
+}
+
+- (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [super dealloc];
+}
+
+- (void)applicationDidBecomeActive:(NSNotification*)aNotification {
+  mMacOSNC->OnApplicationDidBecomeActive();
 }
 
 - (void)userNotificationCenter:(NSUserNotificationCenter*)center
@@ -397,6 +412,25 @@ void MacOSNotificationCenter::CloseAlertCocoaString(NSString* aAlertName) {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
+void MacOSNotificationCenter::OnApplicationDidBecomeActive() {
+  mLastApplicationActivation = TimeStamp::Now();
+}
+
+nsIAlertCallbacks::ApplicationState
+MacOSNotificationCenter::GetApplicationState() const {
+  if (!nsAlertsUtils::HasOpenBrowserWindows()) {
+    return nsIAlertCallbacks::ApplicationState::BACKGROUND_NO_WINDOWS;
+  }
+  // macOS may activate the application before informing us of a notification
+  // click, so an activation this recent is assumed to be caused by the click.
+  bool wasActive =
+      [NSApp isActive] && (mLastApplicationActivation.IsNull() ||
+                           TimeStamp::Now() - mLastApplicationActivation >
+                               TimeDuration::FromSeconds(1));
+  return wasActive ? nsIAlertCallbacks::ApplicationState::FOREGROUND
+                   : nsIAlertCallbacks::ApplicationState::BACKGROUND_WINDOWS;
+}
+
 void MacOSNotificationCenter::OnActivate(
     NSString* aAlertName, NSUserNotificationActivationType aActivationType,
     NSUserNotificationAction* aAdditionalActivationAction) {
@@ -432,12 +466,14 @@ void MacOSNotificationCenter::OnActivate(
             nsCOMPtr<nsIAlertAction> action;
             macosni->mAlertNotification->GetAction(actionName,
                                                    getter_AddRefs(action));
-            macosni->mAlertCallbacks->OnAlertClick(action);
+            macosni->mAlertCallbacks->OnAlertClick(action,
+                                                   GetApplicationState());
             break;
           }
           case NSUserNotificationActivationTypeActionButtonClicked:
           default:
-            macosni->mAlertCallbacks->OnAlertClick(nullptr);
+            macosni->mAlertCallbacks->OnAlertClick(nullptr,
+                                                   GetApplicationState());
             break;
         }
       }

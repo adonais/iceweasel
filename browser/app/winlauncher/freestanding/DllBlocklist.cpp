@@ -71,11 +71,6 @@ static BlockAction CheckBlockInfo(const DllBlockInfo* aInfo,
     return BlockAction::Allow;
   }
 
-  if ((aInfo->mFlags & DllBlockInfoFlags::SOCKET_PROCESSES_ONLY) &&
-      !(gBlocklistInitFlags & eDllBlocklistInitFlagIsSocketProcess)) {
-    return BlockAction::Allow;
-  }
-
   if ((aInfo->mFlags & DllBlockInfoFlags::GPU_PROCESSES_ONLY) &&
       !(gBlocklistInitFlags & eDllBlocklistInitFlagIsGPUProcess)) {
     return BlockAction::Allow;

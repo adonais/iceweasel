@@ -57,7 +57,7 @@ static Maybe<TimesToStartsMutex::AutoLock> GetTimesToStartsLock() {
     return Nothing();
   }
   if (!*lock) {
-    *lock = MakeUnique<nsTHashMap<ScalarIDHashKey, TimeStamp>>();
+    *lock = std::make_unique<nsTHashMap<ScalarIDHashKey, TimeStamp>>();
     RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
         auto lock = sTimespanStarts.Lock();

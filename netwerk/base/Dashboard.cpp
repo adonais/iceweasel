@@ -19,7 +19,6 @@
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/net/HTTPSSVC.h"
 #include "mozilla/net/HttpInfo.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "nsHttp.h"
 #include "nsHttpHandler.h"
 #include "nsICancelable.h"
@@ -517,31 +516,6 @@ Dashboard::RequestSockets(nsINetDashboardCallback* aCallback) {
       "nsINetDashboardCallback", aCallback, true);
   socketData->mEventTarget = GetCurrentSerialEventTarget();
 
-  if (nsIOService::UseSocketProcess()) {
-    if (!gIOService->SocketProcessReady()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    RefPtr<Dashboard> self(this);
-    RefPtr<SocketProcessParent> socketParent =
-        SocketProcessParent::GetSingleton();
-    socketParent->SendGetSocketData()->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [self{std::move(self)},
-         socketData{std::move(socketData)}](SocketDataArgs&& args) {
-          socketData->mData.Assign(args.info());
-          socketData->mTotalSent = args.totalSent();
-          socketData->mTotalRecv = args.totalRecv();
-          socketData->mEventTarget->Dispatch(
-              NewRunnableMethod<RefPtr<SocketData>>(
-                  "net::Dashboard::GetSockets", self, &Dashboard::GetSockets,
-                  socketData),
-              NS_DISPATCH_NORMAL);
-        },
-        [](const mozilla::ipc::ResponseRejectReason) {});
-    return NS_OK;
-  }
-
   gSocketTransportService->Dispatch(
       NewRunnableMethod<RefPtr<SocketData>>(
           "net::Dashboard::GetSocketsDispatch", this,
@@ -610,29 +584,6 @@ Dashboard::RequestHttpConnections(nsINetDashboardCallback* aCallback) {
   httpData->mCallback = new nsMainThreadPtrHolder<nsINetDashboardCallback>(
       "nsINetDashboardCallback", aCallback, true);
   httpData->mEventTarget = GetCurrentSerialEventTarget();
-
-  if (nsIOService::UseSocketProcess()) {
-    if (!gIOService->SocketProcessReady()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    RefPtr<Dashboard> self(this);
-    RefPtr<SocketProcessParent> socketParent =
-        SocketProcessParent::GetSingleton();
-    socketParent->SendGetHttpConnectionData()->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [self{std::move(self)}, httpData](nsTArray<HttpRetParams>&& params) {
-          httpData->mData.Assign(std::move(params));
-          self->GetHttpConnections(httpData);
-          httpData->mEventTarget->Dispatch(
-              NewRunnableMethod<RefPtr<HttpData>>(
-                  "net::Dashboard::GetHttpConnections", self,
-                  &Dashboard::GetHttpConnections, httpData),
-              NS_DISPATCH_NORMAL);
-        },
-        [](const mozilla::ipc::ResponseRejectReason) {});
-    return NS_OK;
-  }
 
   nsCOMPtr<nsIEventTarget> target;
   nsresult rv = gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
@@ -737,30 +688,6 @@ Dashboard::RequestHttp3ConnectionStats(nsINetDashboardCallback* aCallback) {
   data->mCallback = new nsMainThreadPtrHolder<nsINetDashboardCallback>(
       "nsINetDashboardCallback", aCallback, true);
   data->mEventTarget = GetCurrentSerialEventTarget();
-
-  if (nsIOService::UseSocketProcess()) {
-    if (!gIOService->SocketProcessReady()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    RefPtr<Dashboard> self(this);
-    RefPtr<SocketProcessParent> socketParent =
-        SocketProcessParent::GetSingleton();
-    socketParent->SendGetHttp3ConnectionStatsData()->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [self{std::move(self)},
-         data](nsTArray<Http3ConnectionStatsParams>&& params) {
-          data->mData.Assign(std::move(params));
-          self->GetHttp3ConnectionStats(data);
-          data->mEventTarget->Dispatch(
-              NewRunnableMethod<RefPtr<Http3ConnectionStatsData>>(
-                  "net::Dashboard::GetHttp3ConnectionStats", self,
-                  &Dashboard::GetHttp3ConnectionStats, data),
-              NS_DISPATCH_NORMAL);
-        },
-        [](const mozilla::ipc::ResponseRejectReason) {});
-    return NS_OK;
-  }
 
   nsCOMPtr<nsIEventTarget> target;
   nsresult rv = gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
@@ -989,29 +916,6 @@ Dashboard::RequestDNSInfo(nsINetDashboardCallback* aCallback) {
     if (NS_FAILED(rv)) {
       return rv;
     }
-  }
-
-  if (nsIOService::UseSocketProcess()) {
-    if (!gIOService->SocketProcessReady()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    RefPtr<Dashboard> self(this);
-    RefPtr<SocketProcessParent> socketParent =
-        SocketProcessParent::GetSingleton();
-    socketParent->SendGetDNSCacheEntries()->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [self{std::move(self)},
-         dnsData{std::move(dnsData)}](nsTArray<DNSCacheEntries>&& entries) {
-          dnsData->mData.Assign(std::move(entries));
-          dnsData->mEventTarget->Dispatch(
-              NewRunnableMethod<RefPtr<DnsData>>(
-                  "net::Dashboard::GetDNSCacheEntries", self,
-                  &Dashboard::GetDNSCacheEntries, dnsData),
-              NS_DISPATCH_NORMAL);
-        },
-        [](const mozilla::ipc::ResponseRejectReason) {});
-    return NS_OK;
   }
 
   gSocketTransportService->Dispatch(
@@ -1358,29 +1262,6 @@ Dashboard::RequestSSLTokensCache(nsINetDashboardCallback* aCallback) {
   data->mCallback = new nsMainThreadPtrHolder<nsINetDashboardCallback>(
       "nsINetDashboardCallback", aCallback, true);
   data->mEventTarget = GetCurrentSerialEventTarget();
-
-  if (nsIOService::UseSocketProcess()) {
-    if (!gIOService->SocketProcessReady()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    RefPtr<Dashboard> self(this);
-    RefPtr<SocketProcessParent> socketParent =
-        SocketProcessParent::GetSingleton();
-    socketParent->SendGetSSLTokensCacheData()->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [self{std::move(self)},
-         data](nsTArray<SSLTokensCacheRecordInfo>&& records) {
-          data->mData.Assign(std::move(records));
-          data->mEventTarget->Dispatch(
-              NewRunnableMethod<RefPtr<SSLTokensCacheData>>(
-                  "net::Dashboard::GetSSLTokensCache", self,
-                  &Dashboard::GetSSLTokensCache, data),
-              NS_DISPATCH_NORMAL);
-        },
-        [](const mozilla::ipc::ResponseRejectReason) {});
-    return NS_OK;
-  }
 
   SSLTokensCache::GetAllRecords(data->mData);
   return GetSSLTokensCache(data);

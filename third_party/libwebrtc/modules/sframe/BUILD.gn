@@ -14,6 +14,7 @@ if (!build_with_mozilla) {
     ":sframe_context_factory",
     ":sframe_decrypt_error_reporter",
     ":sframe_decryptor",
+    ":sframe_encryption_config",
     ":sframe_encryptor",
     ":sframe_media_decryptor_interface",
     ":sframe_media_encryptor_interface",
@@ -34,13 +35,22 @@ rtc_library("sframe_context_factory") {
   ]
 }
 
+rtc_source_set("sframe_encryption_config") {
+  sources = [ "sframe_encryption_config.h" ]
+  deps = [
+    ":sframe_media_encryptor_interface",
+    "../../api:scoped_refptr",
+    "../../api:sframe_types",
+    "//third_party/abseil-cpp/absl/base:nullability",
+  ]
+}
+
 rtc_library("sframe_media_encryptor_interface") {
   visibility = [ "*" ]
   sources = [ "sframe_media_encryptor_interface.h" ]
   deps = [
     "../../api:rtc_error",
     "../../api:sframe_encryptor_interface",
-    "../../api:sframe_types",
   ]
 }
 

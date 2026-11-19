@@ -20,8 +20,8 @@ add_task(async function test_config_renders_with_expected_cards() {
     vpnPromoCard,
     relayPromoCard,
     mdnCard,
-    soloCard,
     thunderbirdCard,
+    enterpriseCard,
     newProductsCard,
   } = await getPromoCards();
 
@@ -47,8 +47,8 @@ add_task(async function test_config_renders_with_expected_cards() {
   ok(vpnPromoCard, "VPN card is present");
   ok(relayPromoCard, "Relay card is present");
   ok(mdnCard, "MDN card is present");
-  ok(soloCard, "Solo card is present");
   ok(thunderbirdCard, "Thunderbird card is present");
+  ok(enterpriseCard, "Firefox Enterprise card is present");
   ok(newProductsCard, "Mozilla New Products card is present");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

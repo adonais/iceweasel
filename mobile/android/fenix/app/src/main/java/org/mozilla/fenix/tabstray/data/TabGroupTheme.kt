@@ -8,8 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+
+private val logger = Logger(tag = "TabGroupTheme")
 
 /** Value class representing the possible themes for Tab Groups. */
 enum class TabGroupTheme {
@@ -110,7 +113,7 @@ enum class TabGroupTheme {
     /** The color of content displayed on top of [primary]. */
     @get:Composable @get:ReadOnlyComposable abstract val onPrimary: Color
 
-    /** The accessibility label for this theme. //todo replace with localized text */
+    /** The accessibility label for this theme. */
     @get:Composable @get:ReadOnlyComposable abstract val contentLabel: String
 
     /** Returns the next [TabGroupTheme] in the list, cycling back to the start if the current theme is the last one. */
@@ -118,6 +121,9 @@ enum class TabGroupTheme {
         val themes = TabGroupTheme.entries
         return themes[(ordinal + 1) % themes.size]
     }
+
+    /** Converts this theme to the value persisted in tab group storage. */
+    fun toStorageValue(): String = name
 
     companion object {
         /** The color of content displayed on top of [primary]. */
@@ -127,3 +133,12 @@ enum class TabGroupTheme {
 
 /** Returns the next [TabGroupTheme] that follows the last used theme or [TabGroupTheme.default] if there is none. */
 fun TabGroupTheme?.nextOrDefault(): TabGroupTheme = this?.next() ?: TabGroupTheme.default
+
+/** Converts a theme value persisted in tab group storage back to a [TabGroupTheme], falling back to the default. */
+fun String.toTabGroupTheme(): TabGroupTheme =
+    try {
+        TabGroupTheme.valueOf(this)
+    } catch (_: IllegalArgumentException) {
+        logger.info(message = "Failed to parse TabGroupTheme: $this")
+        TabGroupTheme.default
+    }

@@ -27,7 +27,6 @@ class BeetmoverDescriptionSchema(Schema, kw_only=True):
     dependencies: TaskDescriptionSchema.__annotations__["dependencies"]  # noqa: F821
     treeherder: TaskDescriptionSchema.__annotations__["treeherder"] = None
     run_on_projects: TaskDescriptionSchema.__annotations__["run_on_projects"]  # noqa: F821
-    run_on_hg_branches: TaskDescriptionSchema.__annotations__["run_on_hg_branches"]  # noqa: F821
     bucket_scope: str
     shipping_phase: TaskDescriptionSchema.__annotations__["shipping_phase"] = None
     shipping_product: TaskDescriptionSchema.__annotations__["shipping_product"] = None
@@ -102,8 +101,6 @@ def make_task_description(config, jobs):
 
         if job.get("locale"):
             attributes["locale"] = job["locale"]
-
-        attributes["run_on_hg_branches"] = job["run-on-hg-branches"]
 
         task = {
             "label": f"{package}-{label}",

@@ -27,12 +27,11 @@ void DoSelectClientAuthCertificate(NSSSocketControl* info,
                                    mozilla::UniqueCERTCertificate&& serverCert,
                                    nsTArray<nsTArray<uint8_t>>&& caNames);
 
-// Base class for continuing the operation of selecting a client authentication
-// certificate. Should not be used directly.
-class ClientAuthCertificateSelectedBase : public mozilla::Runnable {
+// Continues the operation of selecting a client authentication certificate.
+class ClientAuthCertificateSelected : public mozilla::Runnable {
  public:
-  ClientAuthCertificateSelectedBase()
-      : Runnable("ClientAuthCertificateSelectedBase") {}
+  explicit ClientAuthCertificateSelected(NSSSocketControl* socketInfo)
+      : Runnable("ClientAuthCertificateSelected"), mSocketInfo(socketInfo) {}
 
   // Call to indicate that a client authentication certificate has been
   // selected.
@@ -40,23 +39,15 @@ class ClientAuthCertificateSelectedBase : public mozilla::Runnable {
       nsTArray<uint8_t>&& selectedCertBytes,
       nsTArray<nsTArray<uint8_t>>&& selectedCertChainBytes);
 
- protected:
+  NS_IMETHOD Run() override;
+
+ private:
+  RefPtr<NSSSocketControl> mSocketInfo;
   nsTArray<uint8_t> mSelectedCertBytes;
   // The bytes of the certificates that form a chain from the selected
   // certificate to a root. Necessary so NSS can include them in the TLS
   // handshake (see note about mClientCertChain in NSSSocketControl).
   nsTArray<nsTArray<uint8_t>> mSelectedCertChainBytes;
-};
-
-class ClientAuthCertificateSelected : public ClientAuthCertificateSelectedBase {
- public:
-  explicit ClientAuthCertificateSelected(NSSSocketControl* socketInfo)
-      : mSocketInfo(socketInfo) {}
-
-  NS_IMETHOD Run() override;
-
- private:
-  RefPtr<NSSSocketControl> mSocketInfo;
 };
 
 // This class is used to store the needed information for invoking the client
@@ -97,7 +88,7 @@ class SelectClientAuthCertificate : public mozilla::Runnable {
       mozilla::UniqueCERTCertList&& potentialClientCertificates,
       nsTArray<nsTArray<nsTArray<uint8_t>>>&& potentialClientCertificateChains,
       nsTArray<nsTArray<uint8_t>>&& caNames,
-      ClientAuthCertificateSelectedBase* continuation, uint64_t browserId)
+      ClientAuthCertificateSelected* continuation, uint64_t browserId)
       : Runnable("SelectClientAuthCertificate"),
         mInfo(std::move(info)),
         mServerCert(std::move(serverCert)),
@@ -119,7 +110,7 @@ class SelectClientAuthCertificate : public mozilla::Runnable {
   mozilla::UniqueCERTCertList mPotentialClientCertificates;
   nsTArray<nsTArray<nsTArray<uint8_t>>> mPotentialClientCertificateChains;
   nsTArray<nsTArray<uint8_t>> mCANames;
-  RefPtr<ClientAuthCertificateSelectedBase> mContinuation;
+  RefPtr<ClientAuthCertificateSelected> mContinuation;
 
   uint64_t mBrowserId;
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;

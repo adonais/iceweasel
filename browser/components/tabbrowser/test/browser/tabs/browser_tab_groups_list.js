@@ -88,8 +88,15 @@ async function waitForNewTabGroup(buttonToClick) {
   );
   Assert.equal(tabGroup.tagName, "tab-group", "tab group was created");
   Assert.equal(tabGroup.tabs.length, 1, "tab group has 1 tab");
+  let browser = tabGroup.tabs[0].linkedBrowser;
+  // A tab that didn't get the preloaded browser is still loading.
+  if (browser.currentURI.spec != window.BROWSER_NEW_TAB_URL) {
+    await BrowserTestUtils.browserLoaded(browser, {
+      wantLoad: window.BROWSER_NEW_TAB_URL,
+    });
+  }
   Assert.equal(
-    tabGroup.tabs[0].linkedBrowser.currentURI.spec,
+    browser.currentURI.spec,
     window.BROWSER_NEW_TAB_URL,
     "new tab in the group uses the new tab URL"
   );

@@ -448,6 +448,10 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .urlbar-input {
+  /* global-shared.css sets this in chrome documents, but not in the page that
+     hosts an in-page bar. */
+  min-width: 0;
+
   /* Make the editable line box span the field's full inner height so clicking
      anywhere in the field places the caret. The value equals the input's
      available height so it fills the field without growing it. */
@@ -461,7 +465,21 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
+/* The following properties will be used by UrlbarValueFormatter to keep the
+   base domain clear of the overflow masks and the scheme box. */
+@property --urlbar-overflow-fade-size {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --urlbar-scheme-size {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0;
+}
+
 #urlbar-input {
+  --urlbar-overflow-fade-size: 3ch;
   mask-repeat: no-repeat;
   unicode-bidi: plaintext;
   text-align: match-parent;
@@ -494,16 +512,22 @@ toolbar[inactive="true"] .urlbar,
   /* The following rules apply overflow masks to the unfocused urlbar
      This mask may be overriden when a Contextual Feature Recommendation is shown. */
   .urlbar:not([focused])[textoverflow="both"] > .urlbar-input-container > .urlbar-input-box > & {
-    mask-image: linear-gradient(to right, transparent, black 3ch, black calc(100% - 3ch), transparent);
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black var(--urlbar-overflow-fade-size),
+      black calc(100% - var(--urlbar-overflow-fade-size)),
+      transparent
+    );
   }
   .urlbar:not([focused])[textoverflow="right"] > .urlbar-input-container > .urlbar-input-box > & {
-    mask-image: linear-gradient(to left, transparent, black 3ch);
+    mask-image: linear-gradient(to left, transparent, black var(--urlbar-overflow-fade-size));
   }
   .urlbar:not([focused])[textoverflow="left"] > .urlbar-input-container > .urlbar-input-box > & {
-    mask-image: linear-gradient(to right, transparent, black 3ch);
+    mask-image: linear-gradient(to right, transparent, black var(--urlbar-overflow-fade-size));
   }
   .urlbar:not([focused])[textoverflow="left"][domaindir="rtl"] > .urlbar-input-container > .urlbar-input-box > & {
-    mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
+    mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + var(--urlbar-overflow-fade-size)));
   }
 }
 
@@ -594,6 +618,11 @@ toolbar[inactive="true"] .urlbar,
     overflow-clip-margin: var(--urlbar-joint-background-shadow-margin);
 
     max-height: min(calc(100% - var(--urlbarview-joint-background-outset-block)), 100vh);
+
+    @media (-moz-platform: macos) and (not -moz-pref("layout.css.anchor-positioning.follows-transforms.enabled")) {
+      translate: 0 var(--fullscreen-menubar-shift, 0);
+      max-height: min(calc(100% - var(--urlbarview-joint-background-outset-block) - var(--fullscreen-menubar-shift, 0px)), 100vh);
+    }
   }
 }
 
@@ -641,7 +670,7 @@ toolbar[inactive="true"] .urlbar,
   flex: 1;
   min-width: 0;
   height: 100%;
-  margin-inline-start: var(--urlbar-input-gap);
+  margin-inline: var(--urlbar-input-gap);
   cursor: text;
 
   /* With the search engine button on its own row, a plain glass marks the

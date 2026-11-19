@@ -935,6 +935,11 @@ class MozBuildRewriteException(Exception):
     pass
 
 
+class MozBuildFileNotListedException(MozBuildRewriteException):
+    """The file to remove isn't mentioned in any of the moz.build files that
+    could list it, so there is nothing to remove."""
+
+
 def remove_file_from_moz_build_file(
     normalized_filename_to_remove, moz_yaml_dir=None, vendoring_dir=None
 ):
@@ -992,7 +997,17 @@ def remove_file_from_moz_build_file(
                     return
 
         normalized_filename_to_remove = original_normalized_filename_to_remove
-    raise MozBuildRewriteException("Could not remove " + normalized_filename_to_remove)
+
+    basename = os.path.basename(normalized_filename_to_remove)
+    for normalized_mozbuild_filename in all_possible_normalized_mozbuild_filenames:
+        with open(normalized_mozbuild_filename) as file:
+            if basename in file.read():
+                raise MozBuildRewriteException(
+                    "Could not remove " + normalized_filename_to_remove
+                )
+    raise MozBuildFileNotListedException(
+        normalized_filename_to_remove + " is not listed in any moz.build file"
+    )
 
 
 def add_file_to_moz_build_file(

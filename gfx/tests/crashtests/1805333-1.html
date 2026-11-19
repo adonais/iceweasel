@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<style>body { margin: 0 }</style>
+<svg width="300" height="100" style="display: block">
+  <text id="t" x="-10" y="50" font-size="30">A</text>
+</svg>
+<div style="height: 30000px"></div>
+<script>
+function frame() {
+  return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+}
+async function step() {
+  await frame();
+  await frame();
+}
+onload = async () => {
+  document.designMode = "on";
+  const tn = t.firstChild;
+  getSelection().collapse(tn, 1);
+  await step();
+  scrollTo(0, 20000);
+  await step();
+  tn.appendData("AAAA");
+  getSelection().collapse(tn, 1);
+  await step();
+  scrollTo(0, 0);
+  await step();
+  document.documentElement.removeAttribute("class");
+};
+</script>
+</html>

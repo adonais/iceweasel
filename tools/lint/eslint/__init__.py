@@ -66,11 +66,8 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
     # This allows ./mach format and similar mechanisms to work correctly.
     if not lintargs.get("formatonly", False):
         exclude_args = []
-        for path in config.get("exclude", []):
-            exclude_args.extend([
-                "--ignore-pattern",
-                os.path.relpath(path, lintargs["root"]),
-            ])
+        for path in config.get("global_exclude", []):
+            exclude_args.extend(["--ignore-pattern", path])
 
         for rule in rules:
             extra_args.extend(["--rule", rule])
@@ -170,19 +167,10 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
 
 
 def run(cmd_args, config):
-    shell = False
-    if (
-        os.environ.get("MSYSTEM") in ("MINGW32", "MINGW64")
-        or "MOZILLABUILD" in os.environ
-    ):
-        # The eslint binary needs to be run from a shell with msys
-        shell = True
     encoding = "utf-8"
 
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    proc = subprocess.Popen(
-        cmd_args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     signal.signal(signal.SIGINT, orig)
 
     try:

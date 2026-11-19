@@ -25,6 +25,9 @@ support-files = [
   "resources/session-history/index.html",
   "resources/session-history/iframe.html",
   "resources/session-history/index_with_title.html",
+  "resources/speculative-loads/prefetch-status.sjs",
+  "resources/speculative-loads/index.html",
+  "resources/speculative-loads/target.sjs",
   "!/devtools/client/debugger/test/mochitest/shared-head.js",
   "!/devtools/client/shared/test/shared-head.js",
 ]
@@ -47,9 +50,6 @@ skip-if = [
 https_first_disabled = true
 fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1781317
 ]
 
 ["browser_application_panel_list-several-workers.js"]
@@ -115,6 +115,16 @@ fail-if = [
 ]
 
 ["browser_application_panel_sidebar.js"]
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
+
+["browser_application_panel_speculative-load-status.js"]
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
+
+["browser_application_panel_speculative-loads.js"]
 fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
 ]

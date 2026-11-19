@@ -1,6 +1,27 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
+ChromeUtils.defineESModuleGetters(this, {
+  PromiseTestUtils: "resource://testing-common/PromiseTestUtils.sys.mjs",
+});
+
+function focusEngineItem(win, popup, engineName) {
+  let itemCount = popup.querySelectorAll("panel-item").length;
+  for (
+    let i = 0;
+    i < itemCount &&
+    win.document.activeElement?.dataset?.engineName != engineName;
+    i++
+  ) {
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  }
+  Assert.equal(
+    win.document.activeElement?.dataset?.engineName,
+    engineName,
+    `${engineName} is focused`
+  );
+}
+
 async function unloadSearchExtension(extension) {
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
@@ -127,6 +148,10 @@ add_task(async function disabled_unified_button() {
 });
 
 add_task(async function basic() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.unifiedSearchButton.historyInSearchMode", false]],
+  });
+
   info("Open the urlbar and searchmode switcher popup");
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -154,15 +179,17 @@ add_task(async function basic() {
     source: 3,
   });
   await gURLBar.lastQueryContextPromise;
-
-  info("Press the close button and escape search mode");
-  gURLBar.querySelector(".searchmode-switcher-close").click();
-  await UrlbarTestUtils.assertSearchMode(window, null);
   observer.disconnect();
   Assert.ok(
     !viewOpened,
     "The view never opened, since the engine had no results to show"
   );
+
+  info("Press the close button and escape search mode");
+  gURLBar.querySelector(".searchmode-switcher-close").click();
+  await UrlbarTestUtils.assertSearchMode(window, null);
+
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function privileged_chicklet() {
@@ -425,13 +452,7 @@ add_task(async function open_engine_page_directly() {
         newWin
       );
     } else {
-      let panelItems = Array.from(popup.querySelectorAll(`panel-item`));
-      let index = panelItems.findIndex(
-        item => item.dataset.engineName == "MozSearch"
-      );
-      for (let i = 0; i < index; i++) {
-        EventUtils.synthesizeKey("KEY_ArrowDown", {}, newWin);
-      }
+      focusEngineItem(newWin, popup, "MozSearch");
       EventUtils.synthesizeKey("KEY_Enter", { shiftKey: true }, newWin);
     }
 
@@ -550,13 +571,7 @@ add_task(async function open_engine_page_in_tab() {
           newWin
         );
       } else /* action == "key" */ {
-        let panelItems = Array.from(popup.querySelectorAll("panel-item"));
-        let index = panelItems.findIndex(
-          item => item.dataset.engineName == "MozSearch"
-        );
-        for (let i = 0; i < index; i++) {
-          EventUtils.synthesizeKey("KEY_ArrowDown", {}, newWin);
-        }
+        focusEngineItem(newWin, popup, "MozSearch");
         EventUtils.synthesizeKey("KEY_Enter", { accelKey: true }, newWin);
       }
 
@@ -797,6 +812,9 @@ add_task(async function test_readonly() {
 });
 
 add_task(async function test_search_service_fail() {
+  // Exiting search mode requeries, and if the view opens and hides while the
+  // stub is active, the one-offs may reject trying to get the default engine.
+  PromiseTestUtils.allowMatchingRejectionsGlobally(/Initialization failed/);
   let stub = sinon
     .stub(SearchService, "promiseInitialized")
     .get(() => Promise.reject(new Error("Initialization failed")));
@@ -1127,118 +1145,6 @@ add_task(async function search_engines_with_accel_updown() {
   Assert.ok(true, "We navigated to the correct SERP");
 
   await BrowserTestUtils.closeWindow(win);
-});
-
-add_task(
-  {
-    skip_if: () =>
-      // Proton has only one separator, so ignore this test.
-      !Services.prefs.getBoolPref("browser.nova.enabled", false) ||
-      // Settings redesign changes means that the local search modes cannot be
-      // hidden, hence this test doesn't apply.
-      Services.prefs.getBoolPref("browser.settings-redesign.enabled", false),
-  },
-  async function footer_separator_visibility() {
-    let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
-    let installedSeparator = popup.querySelector(
-      ".searchmode-switcher-panel-installed-engine-separator"
-    );
-    let footerSeparator = popup.querySelector(
-      ".searchmode-switcher-panel-footer-separator"
-    );
-    Assert.notEqual(
-      footerSeparator.previousElementSibling,
-      installedSeparator,
-      "There are items between the separators"
-    );
-    Assert.ok(
-      BrowserTestUtils.isVisible(footerSeparator),
-      "Footer separator is visible when there are items between the separators"
-    );
-
-    let onClose = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-    EventUtils.synthesizeKey("KEY_Escape");
-    await onClose;
-
-    info("Disable all local search modes");
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.urlbar.shortcuts.bookmarks", false],
-        ["browser.urlbar.shortcuts.tabs", false],
-        ["browser.urlbar.shortcuts.history", false],
-        ["browser.urlbar.shortcuts.actions", false],
-      ],
-    });
-
-    popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
-    installedSeparator = popup.querySelector(
-      ".searchmode-switcher-panel-installed-engine-separator"
-    );
-    footerSeparator = popup.querySelector(
-      ".searchmode-switcher-panel-footer-separator"
-    );
-    Assert.equal(
-      footerSeparator.previousElementSibling,
-      installedSeparator,
-      "There are no items between the separators"
-    );
-    Assert.ok(
-      BrowserTestUtils.isHidden(footerSeparator),
-      "Footer separator is hidden when there are no items between the separators"
-    );
-
-    onClose = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-    EventUtils.synthesizeKey("KEY_Escape");
-    await onClose;
-    await SpecialPowers.popPrefEnv();
-  }
-);
-
-add_task(async function hideLocalSearchModes() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.shortcuts.bookmarks", false]],
-  });
-
-  // Seperate call, so that it can be popped on its own.
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", false]],
-  });
-
-  let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
-  Assert.ok(
-    !BrowserTestUtils.isVisible(gURLBar.view.panel),
-    "The UrlbarView is not visible"
-  );
-
-  Assert.ok(
-    !popup.querySelector(".search-button-bookmarks"),
-    "Should not have found the local search mode for bookmarks"
-  );
-
-  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  EventUtils.synthesizeKey("KEY_Escape");
-  await popupHidden;
-
-  // When the redesign is enabled, the engine should be shown regardless of the
-  // one-off setting.
-  await SpecialPowers.popPrefEnv();
-
-  popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
-  Assert.ok(
-    !BrowserTestUtils.isVisible(gURLBar.view.panel),
-    "The UrlbarView is not visible"
-  );
-
-  Assert.ok(
-    popup.querySelector(".search-button-bookmarks"),
-    "Should have found the local search mode for bookmarks when settings redesign is enabled"
-  );
-
-  popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  EventUtils.synthesizeKey("KEY_Escape");
-  await popupHidden;
-
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_local_search_mode_shortcuts() {

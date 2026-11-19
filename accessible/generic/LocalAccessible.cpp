@@ -3031,7 +3031,8 @@ RootAccessible* LocalAccessible::RootAccessible() const {
 }
 
 nsIFrame* LocalAccessible::GetFrame() const {
-  return mContent ? mContent->GetPrimaryFrame() : nullptr;
+  return mContent ? nsLayoutUtils::GetPrimaryOrAreaImageFrame(mContent)
+                  : nullptr;
 }
 
 nsINode* LocalAccessible::GetNode() const { return mContent; }
@@ -3902,7 +3903,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     if (boundsChanged) {
       mBounds = Some(newBoundsRect);
 
-      UniquePtr<nsRect> ptr = MakeUnique<nsRect>(newBoundsRect);
+      auto ptr = std::make_unique<nsRect>(newBoundsRect);
       fields->SetAttribute(CacheKey::ParentRelativeBounds, std::move(ptr));
     }
 
@@ -4088,7 +4089,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       // point caching it.
       transformed = !mtx.IsIdentity();
       if (transformed) {
-        UniquePtr<gfx::Matrix4x4> ptr = MakeUnique<gfx::Matrix4x4>(mtx);
+        auto ptr = std::make_unique<gfx::Matrix4x4>(mtx);
         fields->SetAttribute(CacheKey::TransformMatrix, std::move(ptr));
       }
     }

@@ -141,23 +141,15 @@ _cairo_win32_scaled_font_init_glyph_path (cairo_win32_scaled_font_t *scaled_font
 #define NEARLY_ZERO(d) (fabs(d) < (1. / 65536.))
 
 static HDC
-_get_global_font_dc (void)
+_get_thread_font_dc (void)
 {
-    static DWORD hdc_tls_index;
-    HDC hdc;
+    cairo_win32_thread_data_t *data = cairo_win32_thread_data_get ();
 
-    if (!hdc_tls_index) {
-	CAIRO_MUTEX_LOCK (_cairo_win32_font_dc_mutex);
-	if (!hdc_tls_index) {
-	    hdc_tls_index = TlsAlloc ();
-	    assert (hdc_tls_index != TLS_OUT_OF_INDEXES);
-	}
-	CAIRO_MUTEX_UNLOCK (_cairo_win32_font_dc_mutex);
-    }
+    if (!data->hdc) {
+        HDC hdc_screen = GetDC (NULL);
+        HDC hdc;
 
-    hdc = TlsGetValue (hdc_tls_index);
-    if (!hdc) {
-	hdc = CreateCompatibleDC (NULL);
+	hdc = CreateCompatibleDC (hdc_screen);
 	if (!hdc) {
             fprintf (stderr, "%s:%s\n", __FUNCTION__, "CreateCompatibleDC");
 	    return NULL;
@@ -169,13 +161,19 @@ _get_global_font_dc (void)
 	    return NULL;
 	}
 
-	if (!TlsSetValue (hdc_tls_index, hdc)) {
-	    DeleteDC (hdc);
-	    return NULL;
-	}
+        data->hdc = hdc;
+        /* From MSDN docs for CreateCompatibleDC:
+         *
+         * If [the reference] hdc is NULL, the thread that calls CreateCompatibleDC
+         * owns the HDC that is created. When this thread is destroyed, the HDC is
+         * no longer valid.
+         */
+        data->free_hdc = (hdc_screen != NULL);
+
+        ReleaseDC (NULL, hdc_screen);
     }
 
-    return hdc;
+    return data->hdc;
 }
 
 static cairo_status_t
@@ -316,7 +314,7 @@ _win32_scaled_font_create (LOGFONTW                   *logfont,
     cairo_matrix_t scale;
     cairo_status_t status;
 
-    hdc = _get_global_font_dc ();
+    hdc = _get_thread_font_dc ();
     if (hdc == NULL)
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 
@@ -656,7 +654,7 @@ _cairo_win32_scaled_font_ucs4_to_index (void		*abstract_font,
     HDC hdc = NULL;
     cairo_status_t status;
 
-    hdc = _get_global_font_dc ();
+    hdc = _get_thread_font_dc ();
     assert (hdc != NULL);
 
     status = cairo_win32_scaled_font_select_font (&scaled_font->base, hdc);
@@ -684,7 +682,7 @@ _cairo_win32_scaled_font_set_metrics (cairo_win32_scaled_font_t *scaled_font)
     TEXTMETRIC metrics = {0};
     HDC hdc;
 
-    hdc = _get_global_font_dc ();
+    hdc = _get_thread_font_dc ();
     assert (hdc != NULL);
 
     if (scaled_font->preserve_axes || scaled_font->base.options.hint_metrics == CAIRO_HINT_METRICS_OFF) {
@@ -766,7 +764,7 @@ _cairo_win32_scaled_font_init_glyph_metrics (cairo_win32_scaled_font_t *scaled_f
     cairo_text_extents_t extents;
     HDC hdc;
 
-    hdc = _get_global_font_dc ();
+    hdc = _get_thread_font_dc ();
     assert (hdc != NULL);
 
     if (scaled_font->is_bitmap) {
@@ -901,7 +899,7 @@ _cairo_win32_scaled_font_glyph_bbox (void		 *abstract_font,
 	cairo_status_t status;
 	int i;
 
-	hdc = _get_global_font_dc ();
+	hdc = _get_thread_font_dc ();
 	assert (hdc != NULL);
 
 	status = cairo_win32_scaled_font_select_font (&scaled_font->base, hdc);
@@ -1145,7 +1143,7 @@ _cairo_win32_scaled_font_load_truetype_table (void	       *abstract_font,
     cairo_status_t status;
     DWORD ret;
 
-    hdc = _get_global_font_dc ();
+    hdc = _get_thread_font_dc ();
     assert (hdc != NULL);
 
     tag = (tag&0x000000ffu)<<24 | (tag&0x0000ff00)<<8 | (tag&0x00ff0000)>>8 | (tag&0xff000000)>>24;
@@ -1178,7 +1176,7 @@ _cairo_win32_scaled_font_index_to_ucs4 (void		*abstract_font,
     unsigned int i, j, num_glyphs;
     cairo_status_t status;
 
-    hdc = _get_global_font_dc ();
+    hdc = _get_thread_font_dc ();
     assert (hdc != NULL);
 
     status = cairo_win32_scaled_font_select_font (&scaled_font->base, hdc);
@@ -1473,7 +1471,7 @@ _cairo_win32_scaled_font_init_glyph_path (cairo_win32_scaled_font_t *scaled_font
     if (scaled_font->is_bitmap)
 	return CAIRO_INT_STATUS_UNSUPPORTED;
 
-    hdc = _get_global_font_dc ();
+    hdc = _get_thread_font_dc ();
     assert (hdc != NULL);
 
     path = _cairo_path_fixed_create ();

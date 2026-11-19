@@ -510,34 +510,6 @@ extern JS_PUBLIC_API void PrepareScriptEnvironmentAndInvoke(
 JS_PUBLIC_API void SetScriptEnvironmentPreparer(
     JSContext* cx, ScriptEnvironmentPreparer* preparer);
 
-// Abstract base class for objects that build allocation metadata for JavaScript
-// values.
-struct AllocationMetadataBuilder {
-  AllocationMetadataBuilder() = default;
-
-  // Return a metadata object for the newly constructed object |obj|, or
-  // nullptr if there's no metadata to attach.
-  //
-  // Implementations should treat all errors as fatal; there is no way to
-  // report errors from this callback. In particular, the caller provides an
-  // oomUnsafe for overriding implementations to use.
-  virtual JSObject* build(JSContext* cx, JS::HandleObject obj,
-                          AutoEnterOOMUnsafeRegion& oomUnsafe) const {
-    return nullptr;
-  }
-};
-
-/**
- * Specify a callback to invoke when creating each JS object in the current
- * compartment, which may return a metadata object to associate with the
- * object.
- */
-JS_PUBLIC_API void SetAllocationMetadataBuilder(
-    JSContext* cx, const AllocationMetadataBuilder* callback);
-
-/** Get the metadata associated with an object. */
-JS_PUBLIC_API JSObject* GetAllocationMetadata(JSObject* obj);
-
 JS_PUBLIC_API bool GetElementsWithAdder(JSContext* cx, JS::HandleObject obj,
                                         JS::HandleObject receiver,
                                         uint32_t begin, uint32_t end,

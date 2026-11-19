@@ -29,11 +29,19 @@ pub(crate) struct Metrics {
     conn_infos: HashMap<happy_eyeballs::Id, ConnInfo>,
     attempt_count: u32,
     cancelled_count: u32,
-    // Arrival time of the first and last positive DNS answer (A, AAAA or
-    // HTTPS) seen before the first connection attempt, used to record the
-    // spread between them at the end of the run.
-    first_positive_response: Option<Instant>,
-    last_positive_response: Option<Instant>,
+    // Arrival times of positive DNS answers (A, AAAA or HTTPS).
+    first_positive: Option<Instant>,
+    last_positive_before_first_attempt: Option<Instant>,
+    last_positive: Option<Instant>,
+    // The address family the algorithm waits for before moving on without the
+    // resolution delay timer, and whether it and the HTTPS record were
+    // answered before the first connection attempt.
+    preferred: happy_eyeballs::DnsRecordType,
+    preferred_answered: bool,
+    https_answered: bool,
+    // Record type of the last answer before the first connection attempt, if
+    // that answer was negative.
+    last_negative: Option<happy_eyeballs::DnsRecordType>,
     alt_svc_h3: bool,
     https_record_received: bool,
     https_rr_h3: bool,
@@ -46,7 +54,10 @@ pub(crate) struct Metrics {
 }
 
 impl Metrics {
-    pub(crate) fn new(alt_svc: &[happy_eyeballs::AltSvc]) -> Self {
+    pub(crate) fn new(
+        alt_svc: &[happy_eyeballs::AltSvc],
+        preferred: happy_eyeballs::DnsRecordType,
+    ) -> Self {
         let alt_svc_h3 = alt_svc
             .iter()
             .any(|a| matches!(a.http_version, happy_eyeballs::HttpVersion::H3));
@@ -57,8 +68,13 @@ impl Metrics {
             conn_infos: HashMap::new(),
             attempt_count: 0,
             cancelled_count: 0,
-            first_positive_response: None,
-            last_positive_response: None,
+            first_positive: None,
+            last_positive_before_first_attempt: None,
+            last_positive: None,
+            preferred,
+            preferred_answered: false,
+            https_answered: false,
+            last_negative: None,
             alt_svc_h3,
             https_record_received: false,
             https_rr_h3: false,
@@ -100,13 +116,24 @@ impl Metrics {
             .get(label)
             .accumulate_single_sample_signed(elapsed_ms);
 
+        if positive {
+            self.first_positive.get_or_insert(now);
+            self.last_positive = Some(now);
+        }
+
         // Only answers that arrive before the first connection attempt inform
         // the resolution delay; once racing begins the delay no longer applies,
         // so later answers (including ones from queries a failed attempt
-        // triggers) are left out of the spread.
-        if positive && !self.first_attempt_dispatched {
-            self.first_positive_response.get_or_insert(now);
-            self.last_positive_response = Some(now);
+        // triggers) are left out of the until_first_attempt spread.
+        if !self.first_attempt_dispatched {
+            self.preferred_answered |= info.record_type == self.preferred;
+            self.https_answered |= info.record_type == happy_eyeballs::DnsRecordType::Https;
+            if positive {
+                self.last_positive_before_first_attempt = Some(now);
+                self.last_negative = None;
+            } else {
+                self.last_negative = Some(info.record_type);
+            }
         }
     }
 
@@ -138,6 +165,7 @@ impl Metrics {
             self.first_attempt_dispatched = true;
             let elapsed_ms = self.start.elapsed().as_millis() as i64;
             glean::happy_eyeballs_time_to_first_attempt.accumulate_single_sample_signed(elapsed_ms);
+            self.record_last_answer_to_attempt();
         }
 
         self.conn_infos.insert(
@@ -146,6 +174,41 @@ impl Metrics {
                 index: self.attempt_count,
             },
         );
+    }
+
+    /// Records the time from the last positive DNS answer to the first
+    /// connection attempt, labeled by what ended the wait: the resolution delay
+    /// timer while the preferred address family and/or HTTPS record were still
+    /// pending, or a negative answer for one of them.
+    fn record_last_answer_to_attempt(&self) {
+        let Some(last) = self.last_positive_before_first_attempt else {
+            return;
+        };
+        let wait_ms = last.elapsed().as_millis() as i64;
+        let label = match (
+            self.preferred_answered,
+            self.https_answered,
+            self.last_negative,
+        ) {
+            _ if wait_ms == 0 => "no_wait",
+            (false, false, _) => "both_timeout",
+            (false, true, _) => "address_timeout",
+            (true, false, _) => "https_timeout",
+            (true, true, Some(happy_eyeballs::DnsRecordType::Https)) => "https_negative",
+            (
+                true,
+                true,
+                Some(happy_eyeballs::DnsRecordType::A | happy_eyeballs::DnsRecordType::Aaaa),
+            ) => "address_negative",
+            // The last arm can record values >= 1ms into the no_wait label. This
+            // can happen due to processing delay between the last answer
+            // arriving and the attempt being started, but is not the algorithm
+            // blocking.
+            (true, true, None) => "no_wait",
+        };
+        glean::happy_eyeballs_last_answer_to_attempt
+            .get(label)
+            .accumulate_single_sample_signed(wait_ms);
     }
 
     pub(crate) fn connection_cancelled(&mut self, id: happy_eyeballs::Id) {
@@ -184,10 +247,20 @@ impl Drop for Metrics {
         let elapsed = match outcome {
             Outcome::Succeeded { elapsed, .. } | Outcome::Failed { elapsed } => *elapsed,
         };
-        if let Some(first) = self.first_positive_response {
-            let last = self.last_positive_response.unwrap_or(first);
-            let spread_ms = last.duration_since(first).as_millis() as i64;
-            glean::happy_eyeballs_dns_answer_spread.accumulate_single_sample_signed(spread_ms);
+        if let (Some(first), Some(last)) =
+            (self.first_positive, self.last_positive_before_first_attempt)
+        {
+            let spread = last.duration_since(first);
+            glean::happy_eyeballs_dns_answer_spread
+                .accumulate_single_sample_signed(spread.as_millis() as i64);
+            glean::happy_eyeballs_dns_answer_spread_v2
+                .get("until_first_attempt")
+                .accumulate_raw_duration(spread);
+        }
+        if let (Some(first), Some(last)) = (self.first_positive, self.last_positive) {
+            glean::happy_eyeballs_dns_answer_spread_v2
+                .get("until_end")
+                .accumulate_raw_duration(last.duration_since(first));
         }
 
         let elapsed_ms = elapsed.as_millis() as i64;

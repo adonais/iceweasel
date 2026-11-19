@@ -932,8 +932,7 @@ void LUL::NotifyAfterMap(uintptr_t aRXavma, size_t aSize, const char* aFileName,
   // Ignore obviously-stupid notifications.
   if (aSize > 0) {
     // Here's a new mapping, for this object.
-    mozilla::UniquePtr<SecMap> smap =
-        mozilla::MakeUnique<SecMap>(aRXavma, (uint32_t)aSize, mLog);
+    auto smap = std::make_unique<SecMap>(aRXavma, (uint32_t)aSize, mLog);
 
     // Read CFI or EXIDX unwind data into |smap|.
     if (!aMappedImage) {

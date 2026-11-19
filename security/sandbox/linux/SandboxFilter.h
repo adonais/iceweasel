@@ -17,7 +17,6 @@ namespace mozilla {
 class SandboxBrokerClient;
 
 struct ContentProcessSandboxParams;
-struct SocketProcessSandboxParams;
 
 UniquePtr<sandbox::bpf_dsl::Policy> GetContentSandboxPolicy(
     SandboxBrokerClient* aMaybeBroker, ContentProcessSandboxParams&& aParams);
@@ -30,9 +29,6 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(
 
 UniquePtr<sandbox::bpf_dsl::Policy> GetDecoderSandboxPolicy(
     SandboxBrokerClient* aMaybeBroker);
-
-UniquePtr<sandbox::bpf_dsl::Policy> GetSocketProcessSandboxPolicy(
-    SandboxBrokerClient* aMaybeBroker, SocketProcessSandboxParams&& aParams);
 
 UniquePtr<sandbox::bpf_dsl::Policy> GetUtilitySandboxPolicy(
     SandboxBrokerClient* aMaybeBroker);

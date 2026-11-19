@@ -19,7 +19,6 @@ class HttpTransactionShell;
 class nsHttpConnectionInfo;
 class HttpConnectionBase;
 class nsHttpConnectionMgr;
-class HttpConnectionMgrParent;
 class SpeculativeTransaction;
 class ClassOfService;
 
@@ -75,6 +74,9 @@ class HttpConnectionMgrShell : public nsISupports {
   // such as Happy Eyeballs history.
   [[nodiscard]] virtual nsresult DoShiftReloadConnectionCleanupWithConnInfo(
       nsHttpConnectionInfo*) = 0;
+
+  // Close all idle persistent connections and keep active ones.
+  [[nodiscard]] virtual nsresult CloseAllIdleConnections() = 0;
 
   // called to force the connection manager to prune its list of idle
   // connections.
@@ -164,7 +166,6 @@ class HttpConnectionMgrShell : public nsISupports {
       nsIHttpUpgradeListener* aUpgradeListener) = 0;
 
   virtual nsHttpConnectionMgr* AsHttpConnectionMgr() = 0;
-  virtual HttpConnectionMgrParent* AsHttpConnectionMgrParent() = 0;
 };
 
 #define NS_DECL_HTTPCONNECTIONMGRSHELL                                         \
@@ -181,6 +182,7 @@ class HttpConnectionMgrShell : public nsISupports {
   virtual nsresult DoShiftReloadConnectionCleanup() override;                  \
   virtual nsresult DoShiftReloadConnectionCleanupWithConnInfo(                 \
       nsHttpConnectionInfo*) override;                                         \
+  virtual nsresult CloseAllIdleConnections() override;                         \
   virtual nsresult PruneDeadConnections() override;                            \
   virtual void AbortAndCloseAllConnections(int32_t, ARefBase*) override;       \
   virtual nsresult UpdateParam(nsParamName name, uint16_t value) override;     \
@@ -211,8 +213,7 @@ class HttpConnectionMgrShell : public nsISupports {
   virtual nsresult CompleteUpgrade(HttpTransactionShell* aTrans,               \
                                    nsIHttpUpgradeListener* aUpgradeListener)   \
       override;                                                                \
-  nsHttpConnectionMgr* AsHttpConnectionMgr() override;                         \
-  HttpConnectionMgrParent* AsHttpConnectionMgrParent() override;
+  nsHttpConnectionMgr* AsHttpConnectionMgr() override;
 
 }  // namespace mozilla::net
 

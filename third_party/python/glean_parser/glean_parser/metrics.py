@@ -165,7 +165,9 @@ class Metric:
             **metric_info,
         )
 
-    def serialize(self) -> Dict[str, util.JSONType]:
+    def serialize(
+        self, rename_fields: Optional[Dict[str, str]] = None
+    ) -> Dict[str, util.JSONType]:
         """
         Serialize the metric back to JSON object model.
         """
@@ -178,6 +180,13 @@ class Metric:
                 d[key] = sorted(list(val))
             if isinstance(val, list) and len(val) and isinstance(val[0], enum.Enum):
                 d[key] = [x.name for x in val]
+
+        if rename_fields is not None:
+            for key, val in rename_fields.items():
+                if key in d:
+                    d[val] = d[key]
+                    del d[key]
+
         del d["name"]
         del d["category"]
         if not d["unit"]:
@@ -399,11 +408,13 @@ class Labeled(Metric):
             self.labels = None
         super().__init__(*args, **kwargs)
 
-    def serialize(self) -> Dict[str, util.JSONType]:
+    def serialize(
+        self, rename_fields: Optional[Dict[str, str]] = None
+    ) -> Dict[str, util.JSONType]:
         """
         Serialize the metric back to JSON object model.
         """
-        d = super().serialize()
+        d = super().serialize(rename_fields=rename_fields)
         d["labels"] = self.ordered_labels
         del d["ordered_labels"]
         return d
@@ -604,11 +615,13 @@ class DualLabeledCounter(Metric):
             self.categories = None
         super().__init__(*args, **kwargs)
 
-    def serialize(self) -> Dict[str, util.JSONType]:
+    def serialize(
+        self, rename_fields: Optional[Dict[str, str]] = None
+    ) -> Dict[str, util.JSONType]:
         """
         Serialize the metric back to JSON object model.
         """
-        d = super().serialize()
+        d = super().serialize(rename_fields=rename_fields)
         d["keys"] = self.ordered_keys
         d["categories"] = self.ordered_categories
         del d["ordered_keys"]

@@ -13,10 +13,10 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
-  PushCrypto: "resource://gre/modules/PushCrypto.sys.mjs",
-  PushService: "resource://gre/modules/PushService.sys.mjs",
-  PushServiceWebSocket: "resource://gre/modules/PushServiceWebSocket.sys.mjs",
-  pushBroadcastService: "resource://gre/modules/PushBroadcastService.sys.mjs",
+  PushCrypto: "moz-src:///dom/push/PushCrypto.sys.mjs",
+  PushService: "moz-src:///dom/push/PushService.sys.mjs",
+  PushServiceWebSocket: "moz-src:///dom/push/PushServiceWebSocket.sys.mjs",
+  pushBroadcastService: "moz-src:///dom/push/PushBroadcastService.sys.mjs",
 });
 
 var {

@@ -280,6 +280,8 @@ const kEventConstructors = {
                                                           }
                                                         : null,
                                              },
+  PageRevealEvent: { create (aName, aProps) { return new PageRevealEvent(aName, aProps); } },
+  PageSwapEvent: { create (aName, aProps) { return new PageSwapEvent(aName, aProps); } },
   PageTransitionEvent:                       { create (aName, aProps) {
                                                          return new PageTransitionEvent(aName, aProps);
                                                        },

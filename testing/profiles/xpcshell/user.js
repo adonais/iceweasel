@@ -61,22 +61,11 @@ user_pref("app.update.disabledForTesting", true);
 // Better stacks for errors.
 user_pref("javascript.options.asyncstack_capture_debuggee_only", false);
 
-// Disable writing to the ProfileDatastoreService by Nimbus in xpcshell tests.
-// TODO(bug 1967779): Require the ProfileDatastoreService by default and remove
-// this.
-// TODO(bug 2032586): Remove this pref.
-user_pref("nimbus.profilesdatastoreservice.enabled", false);
-
-// Disable reading from the ProfilesDatastoreService by Nimbus in xpcshell tests.
-// TODO(bug 1967779): Require the ProfileDatastoreService by default.
-// TODO(bug 2032586): Remove this pref.
-user_pref("nimbus.profilesdatastoreservice.read.enabled", false);
-
-// Disable syncing enrollments from other profiles in xpcshell tests.
-// TODO(bug 1967779): Require the ProfileDatastoreService by default.
-// TODO(bug 2032586): Remove this pref.
-user_pref("nimbus.profilesdatastoreservice.sync.enabled", false);
-
 // Turn off semantic history search as it triggers network connections to
 // download ML models.
 user_pref("places.semanticHistory.featureGate", false);
+
+// Disable Nimbus persistence in all xpcshell tests. Persistence requires the
+// ProfilesDatastoreService to be enabled, which is not initialized by default
+// in xpcshell tests.
+user_pref("nimbus.persistence.enabled", false);

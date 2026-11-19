@@ -8,7 +8,6 @@
 #include <dcomp.h>
 #include <dxgi1_2.h>
 
-#include "FxROutputHandler.h"
 #include "GLContext.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
@@ -53,8 +52,8 @@ UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
     return nullptr;
   }
 
-  UniquePtr<RenderCompositorANGLE> compositor =
-      MakeUnique<RenderCompositorANGLE>(aWidget, std::move(gl));
+  auto compositor =
+      std::make_unique<RenderCompositorANGLE>(aWidget, std::move(gl));
   if (!compositor->Initialize(aError)) {
     return nullptr;
   }
@@ -171,7 +170,7 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
     return false;
   }
 
-  InitializeUsePartialPresent();
+  InitializeUseWindowPartialPresent();
 
   return true;
 }
@@ -181,7 +180,7 @@ HWND RenderCompositorANGLE::GetCompositorHwnd() {
     return mWidget->AsWindows()->GetCompositorHwnd();
   }
 
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   // When GPU process does not exist, we do not need to use compositor window.
   return mWidget->AsWindows()->GetHwnd();
 }
@@ -451,14 +450,6 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
 
   if (!UseLayerCompositor()) {
     auto start = TimeStamp::Now();
-    if (auto* fxrHandler = mWidget->AsWindows()->GetFxrOutputHandler()) {
-      // There is a Firefox Reality handler for this swapchain. Update this
-      // window's contents to the VR window.
-      if (fxrHandler->TryInitialize(mSwapChain, mDevice)) {
-        fxrHandler->UpdateOutput(mCtx);
-      }
-    }
-
     const UINT interval =
         mFirstPresent ||
                 StaticPrefs::
@@ -468,7 +459,7 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
     const UINT flags = 0;
 
     const LayoutDeviceIntSize& bufferSize = mBufferSize.ref();
-    if (mUsePartialPresent && mSwapChain1) {
+    if (mUseWindowPartialPresent && mSwapChain1) {
       // Clear full render flag.
       mFullRender = false;
       // If there is no diry rect, we skip SwapChain present.
@@ -597,7 +588,7 @@ bool RenderCompositorANGLE::ResizeBufferIfNeeded() {
     return false;
   }
 
-  if (mUsePartialPresent) {
+  if (mUseWindowPartialPresent) {
     mFullRender = true;
   }
   return true;
@@ -813,22 +804,41 @@ bool RenderCompositorANGLE::ShouldUseLayerCompositor() const {
   return UseLayerCompositor();
 }
 
+// Without the layer compositor, WebRender's only swapchain is mSwapChain,
+// which is presented in EndFrame, so the base class implementations apply.
+
 void RenderCompositorANGLE::CompositorBeginFrame() {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::CompositorBeginFrame();
+    return;
+  }
   mDCLayerTree->CompositorBeginFrame();
 }
 
 void RenderCompositorANGLE::CompositorEndFrame() {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::CompositorEndFrame();
+    return;
+  }
   mDCLayerTree->CompositorEndFrame();
 }
 
 void RenderCompositorANGLE::BindSwapChain(wr::NativeSurfaceId aId,
                                           const wr::DeviceIntRect* aDirtyRects,
                                           size_t aNumDirtyRects) {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::BindSwapChain(aId, aDirtyRects, aNumDirtyRects);
+    return;
+  }
   mDCLayerTree->BindSwapChain(aId, aDirtyRects, aNumDirtyRects);
 }
 void RenderCompositorANGLE::PresentSwapChain(
     wr::NativeSurfaceId aId, const wr::DeviceIntRect* aDirtyRects,
     size_t aNumDirtyRects) {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::PresentSwapChain(aId, aDirtyRects, aNumDirtyRects);
+    return;
+  }
   mDCLayerTree->PresentSwapChain(aId, aDirtyRects, aNumDirtyRects);
 }
 
@@ -836,26 +846,41 @@ void RenderCompositorANGLE::CreateSwapChainSurface(wr::NativeSurfaceId aId,
                                                    wr::DeviceIntSize aSize,
                                                    bool aIsOpaque,
                                                    bool aNeedsSyncDcompCommit) {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::CreateSwapChainSurface(aId, aSize, aIsOpaque,
+                                             aNeedsSyncDcompCommit);
+    return;
+  }
   mDCLayerTree->CreateSwapChainSurface(aId, aSize, aIsOpaque,
                                        aNeedsSyncDcompCommit);
 }
 
 void RenderCompositorANGLE::ResizeSwapChainSurface(wr::NativeSurfaceId aId,
                                                    wr::DeviceIntSize aSize) {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::ResizeSwapChainSurface(aId, aSize);
+    return;
+  }
   mDCLayerTree->ResizeSwapChainSurface(aId, aSize);
 }
 
 void RenderCompositorANGLE::CreateExternalSurface(wr::NativeSurfaceId aId,
                                                   bool aIsOpaque) {
+  MOZ_RELEASE_ASSERT(UseLayerCompositor());
   mDCLayerTree->CreateExternalSurface(aId, aIsOpaque);
 }
 
 void RenderCompositorANGLE::DestroySurface(NativeSurfaceId aId) {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::DestroySurface(aId);
+    return;
+  }
   mDCLayerTree->DestroySurface(aId);
 }
 
 void RenderCompositorANGLE::AttachExternalImage(
     wr::NativeSurfaceId aId, wr::ExternalImageId aExternalImage) {
+  MOZ_RELEASE_ASSERT(UseLayerCompositor());
   mDCLayerTree->AttachExternalImage(aId, aExternalImage);
 }
 
@@ -863,6 +888,11 @@ void RenderCompositorANGLE::AddSurface(
     wr::NativeSurfaceId aId, const wr::CompositorSurfaceTransform& aTransform,
     wr::DeviceIntRect aClipRect, wr::ImageRendering aImageRendering,
     wr::DeviceIntRect aRoundedClipRect, wr::ClipRadius aClipRadius) {
+  if (!UseLayerCompositor()) {
+    RenderCompositor::AddSurface(aId, aTransform, aClipRect, aImageRendering,
+                                 aRoundedClipRect, aClipRadius);
+    return;
+  }
   mDCLayerTree->AddSurface(aId, aTransform, aClipRect, aImageRendering,
                            aRoundedClipRect, aClipRadius);
 }
@@ -902,21 +932,23 @@ bool RenderCompositorANGLE::RecreateNonNativeCompositorSwapChain() {
   return ResizeBufferIfNeeded();
 }
 
-void RenderCompositorANGLE::InitializeUsePartialPresent() {
+void RenderCompositorANGLE::InitializeUseWindowPartialPresent() {
   // Even when mSwapChain1 is null, we could enable WR partial present, since
   // when mSwapChain1 is null, SwapChain is blit model swap chain with one
   // buffer.
-  mUsePartialPresent = !UseLayerCompositor() &&
-                       !mWidget->AsWindows()->HasFxrOutputHandler() &&
-                       gfx::gfxVars::WebRenderMaxPartialPresentRects() > 0;
+  mUseWindowPartialPresent =
+      !UseLayerCompositor() &&
+      gfx::gfxVars::WebRenderMaxPartialPresentRects() > 0;
 }
 
-bool RenderCompositorANGLE::UsePartialPresent() { return mUsePartialPresent; }
+bool RenderCompositorANGLE::UseWindowPartialPresent() {
+  return mUseWindowPartialPresent;
+}
 
 bool RenderCompositorANGLE::RequestFullRender() { return mFullRender; }
 
 uint32_t RenderCompositorANGLE::GetMaxPartialPresentRects() {
-  if (!mUsePartialPresent) {
+  if (!UseLayerCompositor() && !mUseWindowPartialPresent) {
     return 0;
   }
   return gfx::gfxVars::WebRenderMaxPartialPresentRects();

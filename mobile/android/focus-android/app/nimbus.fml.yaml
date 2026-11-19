@@ -39,6 +39,15 @@ features:
           Uses search configuration from remote servers .
         type: Boolean
         default: false
+  search-config-v3:
+    description: Feature to read search configuration from the search-config-v3 collection in Focus for Android.
+    variables:
+      enabled:
+        description: >
+          Reads search configuration from the `search-config-v3` Remote Settings
+          collection instead of `search-config-v2`.
+        type: Boolean
+        default: false
   pki:
     description: Certificate verification configuration
     variables:

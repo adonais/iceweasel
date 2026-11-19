@@ -25,8 +25,12 @@ const baseState = {
       "widgets.system.crossword.enabled": true,
       "widgets.crossword.enabled": true,
       "widgets.crossword.size": "",
-      "widgets.crossword.endpoint":
-        "https://prod-games-particle.merino.prod.webservices.mozgcp.net/index.html",
+      "widgets.framed.allowedHostSuffixes": ".mozgcp.net",
+    },
+  },
+  FramedWidgets: {
+    crossword: {
+      url: "https://prod-games-particle.merino.prod.webservices.mozgcp.net/index.html",
     },
   },
 };
@@ -247,8 +251,9 @@ describe("<Crossword>", () => {
       );
     });
 
-    it("prefers the trainhopConfig endpoint over the raw pref", () => {
-      const trainhopEndpoint = "https://example.com/crossword/index.html";
+    it("prefers the trainhop namespace iframeSrcOverride over the manifest url", () => {
+      const trainhopSrc =
+        "https://hotfix.merino.prod.webservices.mozgcp.net/index.html";
       const state = {
         ...baseState,
         Prefs: {
@@ -256,7 +261,7 @@ describe("<Crossword>", () => {
           values: {
             ...baseState.Prefs.values,
             trainhopConfig: {
-              widgets: { crosswordEndpoint: trainhopEndpoint },
+              widgetCrossword: { iframeSrcOverride: trainhopSrc },
             },
           },
         },
@@ -264,31 +269,15 @@ describe("<Crossword>", () => {
       const { container } = renderCrossword({ state });
       expect(container.querySelector("iframe.crossword-frame")).toHaveAttribute(
         "src",
-        trainhopEndpoint
+        trainhopSrc
       );
     });
 
-    it("prefers the dedicated widgetCrossword endpoint over the shared widgets key", () => {
-      const dedicatedEndpoint = "https://example.com/dedicated/index.html";
-      const sharedEndpoint = "https://example.com/shared/index.html";
-      const state = {
-        ...baseState,
-        Prefs: {
-          ...baseState.Prefs,
-          values: {
-            ...baseState.Prefs.values,
-            trainhopConfig: {
-              widgetCrossword: { endpoint: dedicatedEndpoint },
-              widgets: { crosswordEndpoint: sharedEndpoint },
-            },
-          },
-        },
-      };
-      const { container } = renderCrossword({ state });
-      expect(container.querySelector("iframe.crossword-frame")).toHaveAttribute(
-        "src",
-        dedicatedEndpoint
-      );
+    it("renders nothing without a manifest entry", () => {
+      const { container } = renderCrossword({
+        state: { ...baseState, FramedWidgets: {} },
+      });
+      expect(container.querySelector("article.crossword")).toBeNull();
     });
   });
 
@@ -411,12 +400,8 @@ describe("<Crossword>", () => {
     it("does not post when the endpoint is malformed (no resolvable origin)", () => {
       const state = {
         ...baseState,
-        Prefs: {
-          ...baseState.Prefs,
-          values: {
-            ...baseState.Prefs.values,
-            "widgets.crossword.endpoint": "not-a-valid-url",
-          },
+        FramedWidgets: {
+          crossword: { url: "not-a-valid-url" },
         },
       };
       const { container } = renderCrossword({ state });
@@ -870,22 +855,30 @@ describe("<Crossword>", () => {
   });
 
   describe("powered by particle action", () => {
-    it("dispatches OPEN_LINK to particle.news", () => {
-      const { container, dispatch } = renderCrossword();
+    it("opens particle.news in a new tab", () => {
+      const { container, dispatch, handleUserInteraction } = renderCrossword();
       fireEvent.click(
-        container.querySelector("panel-item.powered-by-particle")
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-crossword-menu-powered-by-particle']"
+        )
       );
 
       const openLinkCall = dispatch.mock.calls.find(
         ([action]) => action?.type === at.OPEN_LINK
       );
-      expect(openLinkCall?.[0].data.url).toBe("https://particle.news");
+      expect(openLinkCall?.[0].data).toEqual({
+        url: "https://particle.news",
+        where: "tab",
+      });
+      expect(handleUserInteraction).toHaveBeenCalledWith("crossword");
     });
 
     it("dispatches a powered_by_particle WIDGETS_USER_EVENT", () => {
       const { container, dispatch } = renderCrossword();
       fireEvent.click(
-        container.querySelector("panel-item.powered-by-particle")
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-crossword-menu-powered-by-particle']"
+        )
       );
 
       const userEventCall = dispatch.mock.calls.find(
@@ -921,8 +914,10 @@ describe("<Crossword>", () => {
         "Solve puzzle"
       );
       expect(
-        menu.querySelector("panel-item.powered-by-particle")
-      ).toHaveTextContent("Powered by Particle");
+        menu.querySelector(
+          "panel-item[data-l10n-id='newtab-crossword-menu-powered-by-particle']"
+        )
+      ).toBeInTheDocument();
 
       // Generic chrome keeps the shared, translated Fluent ids.
       expect(

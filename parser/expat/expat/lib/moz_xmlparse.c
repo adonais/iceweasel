@@ -137,7 +137,11 @@ XML_Size MOZ_XML_GetCurrentColumnNumber(XML_Parser parser) {
 }
 
 XML_Index MOZ_XML_GetCurrentByteIndex(XML_Parser parser) {
-  return XML_GetCurrentByteIndex(parser);
+  XML_Index index = XML_GetCurrentByteIndex(parser);
+  if (index < 0 && parser) {
+    return (XML_Index)parser->m_parseEndByteIndex;
+  }
+  return index;
 }
 
 void

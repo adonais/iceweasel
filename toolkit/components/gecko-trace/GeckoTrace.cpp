@@ -8,7 +8,6 @@
 #include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
-#include "mozilla/net/SocketProcessChild.h"
 
 #include "opentelemetry/context/runtime_context.h"
 #include "opentelemetry/sdk/common/global_log_handler.h"
@@ -205,8 +204,6 @@ void InitializeTracerProvider() {
       [[fallthrough]];
     case GeckoProcessType_Content:
       [[fallthrough]];
-    case GeckoProcessType_Socket:
-      [[fallthrough]];
     case GeckoProcessType_Utility:
       break;
     default:
@@ -225,9 +222,6 @@ void InitializeTracerProvider() {
             return true;
           case GeckoProcessType_Content:
             return mozilla::dom::ContentChild::GetSingleton()
-                ->SendGeckoTraceExport(std::move(aBuffer));
-          case GeckoProcessType_Socket:
-            return net::SocketProcessChild::GetSingleton()
                 ->SendGeckoTraceExport(std::move(aBuffer));
           case GeckoProcessType_Utility:
             // TODO: Add more process types when needed.

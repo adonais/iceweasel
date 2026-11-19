@@ -25,7 +25,7 @@ browser {
   align-items: center;
   background-color: var(--sidebar-background-color);
   color: var(--sidebar-text-color);
-  border-bottom: 1px solid var(--border-color);
+  border-block-end: 1px solid var(--border-color);
   display: flex;
   flex-direction: row;
   padding-inline: var(--space-large);
@@ -116,7 +116,7 @@ browser {
   }
 
   .welcome-text {
-    margin-bottom: var(--space-xlarge);
+    margin-block-end: var(--space-xlarge);
     padding-inline: 0;
   }
 
@@ -125,7 +125,7 @@ browser {
   }
 
   .tiles-single-select-container {
-    margin-top: 0;
+    margin-block-start: 0;
 
     @media not -moz-pref("browser.ml.chat.onboarding.unresponsive") {
       --fade-height: 20px;
@@ -138,18 +138,18 @@ browser {
       &::before {
         content: "\00a0";
         font-size: var(--fade-height);
-        margin-top: calc(-1 * var(--fade-height) + var(--fade-padding));
+        margin-block-start: calc(-1 * var(--fade-height) + var(--fade-padding));
         pointer-events: none;
         position: sticky;
         z-index: 1;
       }
       &::after {
         background: linear-gradient(transparent, var(--background-color-canvas));
-        bottom: 0;
+        inset-block-end: 0;
       }
       &::before {
         background: linear-gradient(var(--background-color-canvas), transparent);
-        top: 0;
+        inset-block-start: 0;
       }
     }
   }
@@ -243,7 +243,7 @@ browser {
 }
 
 #footer {
-  border-top: 1px solid var(--border-color);
+  border-block-start: 1px solid var(--border-color);
 
   &.promo-active {
     --promo-background: linear-gradient(
@@ -290,11 +290,11 @@ browser {
     border-radius: var(--border-radius-small);
     color: var(--button-text-color-primary-hover);
     font-size: var(--font-size-small);
+    inset-block-start: 4px;
     inset-inline-start: 10px;
     padding: var(--space-xxsmall) var(--space-small);
     position: absolute;
     text-align: center;
-    top: 4px;
     z-index: 1;
 
     @media not -moz-pref("browser.ml.chat.page.footerBadge") {

@@ -375,7 +375,7 @@ UniquePtr<SharedSurface_D3D11Interop> SharedSurface_D3D11Interop::Create(
     return nullptr;
   }
 
-  data.interopRb = MakeUnique<Renderbuffer>(*gl);
+  data.interopRb = std::make_unique<Renderbuffer>(*gl);
   data.lockHandle = interop->RegisterObject(data.texD3D, data.interopRb->name,
                                             LOCAL_GL_RENDERBUFFER,
                                             LOCAL_WGL_ACCESS_WRITE_DISCARD_NV);

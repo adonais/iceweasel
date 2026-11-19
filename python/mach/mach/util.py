@@ -7,6 +7,8 @@ from __future__ import annotations
 import hashlib
 import os
 import sys
+import time
+from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from typing import Optional, Union
 
@@ -16,6 +18,34 @@ class UserError(Exception):
     an internal `mach` failure. Exceptions that are subclasses of this class
     will not be reported as failures to Sentry.
     """
+
+
+@contextmanager
+def resource_marker(name, text):
+    """Record the time the block takes as a marker in the resource usage
+    profile of the SystemResourceMonitor running in this process or, when
+    there is none yet, of one in a parent process accepting forwarded records,
+    e.g. run-task's."""
+    start = time.monotonic()
+    try:
+        yield
+    finally:
+        record_resource_marker(
+            name, start, time.monotonic(), {"type": "Text", "text": text}
+        )
+
+
+def record_resource_marker(name, start, end, data):
+    """Record a marker spanning the given time.monotonic() timestamps, like
+    resource_marker() does."""
+    monitor_module = sys.modules.get("mozsystemmonitor.resourcemonitor")
+    if monitor_module is None and os.environ.get("MOZ_RESOURCE_MONITOR_FORWARD"):
+        try:
+            from mozsystemmonitor import resourcemonitor as monitor_module
+        except ImportError:
+            pass
+    if monitor_module is not None:
+        monitor_module.SystemResourceMonitor.forward_marker(name, start, end, data)
 
 
 def setenv(key, value):

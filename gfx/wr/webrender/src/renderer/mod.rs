@@ -37,7 +37,7 @@
 use api::{ColorF, MixBlendMode, TextureCacheCategory};
 use api::{DocumentId, Epoch, ExternalImageHandler, RenderReasons};
 use api::{PipelineId, Checkpoint, NotificationRequest, ImageBufferKind};
-use api::{FramePublishId, ImageFormat, RenderBackendId};
+use api::{FramePublishId, ImageFormat, RenderBackendId, Parameter, IntParameter};
 #[cfg(any(feature = "capture", feature = "replay"))]
 use api::{ExternalImageSource, ExternalImageType, ExternalTextureHandle};
 #[cfg(feature = "replay")]
@@ -116,6 +116,7 @@ mod composite;
 mod debug;
 mod external_image;
 mod gpu_buffer;
+mod layer_tree;
 mod shade;
 mod vertex;
 mod upload;
@@ -741,6 +742,8 @@ pub struct Renderer {
 
     debug: debug::LazyInitializedDebugRenderer,
     debug_flags: DebugFlags,
+    /// See IntParameter::PathAaSamples.
+    path_aa_samples: i32,
     profile: TransactionProfile,
     frame_counter: u64,
     resource_upload_time: f64,
@@ -820,6 +823,8 @@ pub struct Renderer {
 
     /// The compositing config, affecting how WR composites into the final scene.
     compositor_config: CompositorConfig,
+    /// Swapchain surfaces used by the Layer compositor.
+    layer_tree: layer_tree::LayerTree,
     current_compositor_kind: CompositorKind,
     /// Limit external compositing to one visible SDR YUV tile per frame.
     limit_sdr_yuv_external_composites: bool,
@@ -837,9 +842,8 @@ pub struct Renderer {
     /// State related to the debug / profiling overlays
     debug_overlay_state: DebugOverlayState,
 
-    /// Tracks the dirty rectangles from previous frames. Used on platforms
-    /// that require keeping the front buffer fully correct when doing
-    /// partial present (e.g. unix desktop with EGL_EXT_buffer_age).
+    /// Tracks the dirty rectangles from previous frames, to find the region
+    /// of the back buffer that must be redrawn given its buffer age.
     buffer_damage_tracker: BufferDamageTracker,
 
     max_primitive_instance_count: usize,
@@ -1190,6 +1194,9 @@ impl Renderer {
                     self.pending_shader_updates.push(path);
                 }
                 ResultMsg::SetParameter(ref param) => {
+                    if let Parameter::Int(IntParameter::PathAaSamples, samples) = *param {
+                        self.path_aa_samples = samples;
+                    }
                     self.device.set_parameter(param);
                     self.profiler.set_parameter(param);
                 }
@@ -1554,8 +1561,10 @@ impl Renderer {
     /// Renders the current frame.
     ///
     /// A Frame is supplied by calling [`generate_frame()`][webrender_api::Transaction::generate_frame].
-    /// buffer_age is the age of the current backbuffer. It is only relevant if partial present
-    /// is active, otherwise 0 should be passed here.
+    /// buffer_age is the number of frames since the current backbuffer was last presented.
+    /// 1 means that it holds the previous frame, and 0 means that its content is unknown,
+    /// which forces a full redraw. It is only relevant if partial present is active,
+    /// otherwise 0 should be passed here.
     pub fn render(
         &mut self,
         device_size: DeviceIntSize,
@@ -1815,6 +1824,7 @@ impl Renderer {
             debug::bind_debug_overlay(
                 &mut self.device,
                 &mut self.compositor_config,
+                &mut self.layer_tree,
                 self.current_compositor_kind,
                 &self.debug_overlay_state,
                 device_size,
@@ -2021,6 +2031,7 @@ impl Renderer {
             // can occur afer this point.
             debug::unbind_debug_overlay(
                 &mut self.compositor_config,
+                &mut self.layer_tree,
                 self.current_compositor_kind,
                 &self.debug_overlay_state,
             );
@@ -2031,16 +2042,14 @@ impl Renderer {
             // compositing is enabled. This must be called after any debug / profiling compositor
             // surfaces have been drawn and added to the visual tree.
             match self.current_compositor_kind {
-                CompositorKind::Layer { .. } => {
-                    let compositor = self.compositor_config.layer_compositor().unwrap();
-                    compositor.end_frame();
-                }
                 CompositorKind::Native { .. } => {
                     tracy_rs::profile_scope!("compositor.end_frame");
                     let compositor = self.compositor_config.compositor().unwrap();
                     compositor.end_frame();
                 }
-                CompositorKind::Draw { .. } => {}
+                CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
+                    self.layer_tree.end_frame(&mut self.compositor_config);
+                }
             }
         }
 
@@ -2784,7 +2793,7 @@ impl Renderer {
                     self.set_blend_mode(BlendMode::PremultipliedDestOut, FramebufferKind::Other);
                 }
 
-                self.shaders.borrow_mut().cs_path_tile().bind(
+                self.shaders.borrow_mut().cs_path_tile(self.path_aa_samples).bind(
                     &mut self.device,
                     projection,
                     None,
@@ -4181,6 +4190,9 @@ impl Renderer {
     pub fn deinit(mut self) {
         //Note: this is a fake frame, only needed because texture deletion is require to happen inside a frame
         self.device.begin_frame();
+        // Destroy any swapchain surfaces owned by the Layer compositor. This must
+        // happen before the native compositor is moved out of the config below.
+        self.layer_tree.deinit(&mut self.compositor_config);
         // If we are using a native compositor, ensure that any remaining native
         // surfaces are freed.
         if let CompositorConfig::Native { mut compositor, .. } = self.compositor_config {

@@ -12,6 +12,10 @@ const nodePolyfills = require("rollup-plugin-node-polyfills");
 const projectPath = path.resolve(__dirname, "..");
 const bundlePath = path.join(projectPath, "./dist");
 
+// Some rollup plugins resolve their default file filters against the current
+// working directory, so ensure the output doesn't depend on where we're run from.
+process.chdir(projectPath);
+
 process.env.NODE_ENV = "production";
 
 function getEntry(filename) {

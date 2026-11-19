@@ -16,7 +16,7 @@ async function write_datagrams(writer, signal) {
     }
     var token = counter.toString();
     sentTokens.push(token);
-    writer.write(encoder.encode(token));
+    writer.write(encoder.encode(token)).catch(() => {});
     counter++;
   }
   return sentTokens;
@@ -65,7 +65,7 @@ async function write_numbers(writer, signal) {
     sentNumbers.push(counter);
     chunk = new Uint8Array(1);
     chunk[0] = counter;
-    writer.write(chunk);
+    writer.write(chunk).catch(() => {});
     counter++;
   }
   return sentNumbers;
@@ -81,7 +81,7 @@ async function write_large_datagrams(writer, signal) {
     if (signal.aborted) {
       break;
     }
-    writer.write(new Uint8Array(10));
+    writer.write(new Uint8Array(10)).catch(() => {});
   }
 }
 
@@ -326,7 +326,7 @@ promise_test(async t => {
   // Write 10*N datagrams with incrementing sequence numbers.
   const totalDatagrams = 10 * N;
   for (let counter = 0; counter < totalDatagrams; counter++) {
-    writer.write(encoder.encode(counter.toString()));
+    writer.write(encoder.encode(counter.toString())).catch(() => {});
     await writer.ready;
   }
 

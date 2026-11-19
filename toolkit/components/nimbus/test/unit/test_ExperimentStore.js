@@ -53,7 +53,7 @@ add_task(async function test_usageBeforeInitialization() {
 });
 
 add_task(async function test_initOnUpdateEventsFire() {
-  const storePath = await NimbusTestUtils.createStoreWith(store => {
+  const populateStore = store => {
     NimbusTestUtils.addEnrollmentForRecipe(
       NimbusTestUtils.factories.recipe.withFeatureConfig("testFeature-1", {
         featureId: "testFeature",
@@ -115,11 +115,11 @@ add_task(async function test_initOnUpdateEventsFire() {
       }),
       { store, extra: { source: "test" } }
     );
-  });
+  };
 
   const { sandbox, cleanup } = await setupTest({
     init: false,
-    storePath,
+    populateStore,
     migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
@@ -623,7 +623,7 @@ add_task(async function test_syncDataStore_setDefault() {
 add_task(async function test_syncDataStore_getDefault() {
   const { store, cleanup } = await setupTest();
 
-  const rollout = await NimbusTestUtils.addEnrollmentForRecipe(
+  const rollout = NimbusTestUtils.addEnrollmentForRecipe(
     NimbusTestUtils.factories.recipe.withFeatureConfig(
       "aboutwelcome-slug",
       { featureId: "aboutwelcome", value: { remote: true } },
@@ -760,13 +760,6 @@ add_task(async function test_cleanupOldRecipes() {
   const inactiveOverTwelveMonths =
     NimbusTestUtils.factories.recipe("inactive-over-12mo");
 
-  const inactiveNoLastSeen = NimbusTestUtils.factories.enrollment(
-    NimbusTestUtils.factories.recipe("inactive-unknown"),
-    { branchSlug: "control", extra: { active: false } }
-  );
-
-  delete inactiveNoLastSeen.lastSeen;
-
   NimbusTestUtils.addEnrollmentForRecipe(active, {
     store,
     branchSlug: "control",
@@ -813,11 +806,6 @@ add_task(async function test_cleanupOldRecipes() {
 
   await NimbusTestUtils.flushStore();
 
-  // There is a NOT NULL constraint that prevents adding this enrollment to the
-  // database and addEnrollment() is stubbed to validate the enrollment so we
-  // must use set() here.
-  store.set(inactiveNoLastSeen.slug, inactiveNoLastSeen);
-
   // Insert a row belonging to another profile.
   const otherProfileId = Services.uuid.generateUUID().toString().slice(1, -1);
 
@@ -836,11 +824,6 @@ add_task(async function test_cleanupOldRecipes() {
     store.get(inactiveOverTwelveMonths.slug),
     null,
     "Expired enrollment removed from in memory store"
-  );
-  Assert.equal(
-    store.get(inactiveNoLastSeen.slug),
-    null,
-    "invalid enrollment removed from the store"
   );
 
   await NimbusTestUtils.assert.enrollmentExists(active.slug, { active: true });
@@ -875,7 +858,7 @@ add_task(async function test_cleanupOldRecipes() {
 
 add_task(async function test_restore() {
   const { store, cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe("experiment"),
         { store, branchSlug: "control", extra: { source: "test" } }
@@ -884,7 +867,7 @@ add_task(async function test_restore() {
         NimbusTestUtils.factories.recipe("rollout", { isRollout: true }),
         { store, extra: { source: "test" } }
       );
-    }),
+    },
     migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
@@ -892,76 +875,5 @@ add_task(async function test_restore() {
   Assert.ok(store.get("rollout")?.active);
 
   await NimbusTestUtils.cleanupManager(["experiment", "rollout"]);
-  await cleanup();
-});
-
-add_task(async function test_restoreDatabaseConsistency() {
-  Services.fog.testResetFOG();
-
-  const storePath = await NimbusTestUtils.createStoreWith(store => {
-    const experimentRecipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
-      "experiment",
-      { featureId: "no-feature-firefox-desktop" }
-    );
-
-    const rolloutRecipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
-      "rollout",
-      { featureId: "no-feature-firefox-desktop" },
-      { isRollout: true }
-    );
-
-    const inactiveRecipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
-      "inactive",
-      { featureId: "no-feature-firefox-desktop" }
-    );
-
-    NimbusTestUtils.addEnrollmentForRecipe(experimentRecipe, {
-      store,
-      extra: { source: "test" },
-    });
-    NimbusTestUtils.addEnrollmentForRecipe(rolloutRecipe, {
-      store,
-      extra: { source: "test" },
-    });
-    NimbusTestUtils.addEnrollmentForRecipe(inactiveRecipe, {
-      store,
-      extra: { active: false, source: "test" },
-    });
-  });
-
-  {
-    // We should expect to see one successful databaseWrite event.
-    const events = Glean.nimbusEvents.databaseWrite
-      .testGetValue("events")
-      .map(ev => ev.extra);
-
-    Assert.deepEqual(events, [{ success: "true" }]);
-  }
-
-  // Initializing the store above will submit the event we care about. Disregard
-  // any metrics previously recorded.
-  Services.fog.testResetFOG();
-
-  const { cleanup } = await NimbusTestUtils.setupTest({
-    storePath,
-    clearTelemetry: true,
-    migrationState: NimbusTestUtils.migrationState.LATEST,
-  });
-
-  const events = Glean.nimbusEvents.startupDatabaseConsistency
-    .testGetValue("events")
-    .map(ev => ev.extra);
-  Assert.deepEqual(events, [
-    {
-      total_db_count: "3",
-      total_store_count: "3",
-      db_active_count: "2",
-      store_active_count: "2",
-      trigger: "startup",
-      primary: "database",
-    },
-  ]);
-
-  await NimbusTestUtils.cleanupManager(["rollout", "experiment"]);
   await cleanup();
 });

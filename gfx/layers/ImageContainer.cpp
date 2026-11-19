@@ -1146,7 +1146,7 @@ static I420Buffer CreateI420Buffer(const PlanarYCbCrData& aData) {
   if (NS_WARN_IF(!bufferLength.isValid())) {
     return {};
   }
-  I420Buffer result{MakeUnique<uint8_t[]>(bufferLength.value()), aData};
+  I420Buffer result{std::make_unique<uint8_t[]>(bufferLength.value()), aData};
 
   PlanarYCbCrData& dst = result.mData;
   dst.mCbCrStride = cbcrSize.width;
@@ -1333,7 +1333,7 @@ nsresult NVImage::SetData(const Data& aData) {
 const NVImage::Data* NVImage::GetData() const { return &mData; }
 
 UniquePtr<uint8_t[]> NVImage::AllocateBuffer(uint32_t aSize) {
-  return MakeUnique<uint8_t[]>(aSize);
+  return std::make_unique<uint8_t[]>(aSize);
 }
 
 SourceSurfaceImage::SourceSurfaceImage(const gfx::IntSize& aSize,

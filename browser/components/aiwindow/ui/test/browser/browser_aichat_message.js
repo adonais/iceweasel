@@ -191,7 +191,7 @@ add_task(async function test_user_message_website_mentions_render_as_chips() {
       }
 
       await content.customElements.whenDefined("ai-chat-message");
-      await content.customElements.whenDefined("ai-website-chip");
+      await content.customElements.whenDefined("smartwindow-chip");
 
       const doc = content.document;
 
@@ -230,7 +230,7 @@ add_task(async function test_user_message_website_mentions_render_as_chips() {
             return false;
           }
           return (
-            msg.querySelector("ai-website-chip") ||
+            msg.querySelector("smartwindow-chip") ||
             msg.querySelector('a[href^="mention:"]')
           );
         },
@@ -243,7 +243,7 @@ add_task(async function test_user_message_website_mentions_render_as_chips() {
       );
 
       const msg = el.shadowRoot.querySelector(".message-user");
-      const chip = msg.querySelector("ai-website-chip");
+      const chip = msg.querySelector("smartwindow-chip");
       const mentionAnchor = msg.querySelector('a[href^="mention:"]');
 
       info("message-user HTML: " + msg.innerHTML);
@@ -253,7 +253,7 @@ add_task(async function test_user_message_website_mentions_render_as_chips() {
         !mentionAnchor,
         `mention anchor should be replaced (got: ${mentionAnchor?.outerHTML})`
       );
-      Assert.ok(chip, "ai-website-chip should be rendered");
+      Assert.ok(chip, "smartwindow-chip should be rendered");
 
       // Validate via rendered DOM (stable, avoids Xray property visibility)
       await ContentTaskUtils.waitForCondition(
@@ -311,7 +311,7 @@ add_task(async function test_user_message_tab_group_mention_renders_icon() {
       }
 
       await content.customElements.whenDefined("ai-chat-message");
-      await content.customElements.whenDefined("ai-website-chip");
+      await content.customElements.whenDefined("smartwindow-chip");
 
       const doc = content.document;
       const markdown =
@@ -326,11 +326,13 @@ add_task(async function test_user_message_tab_group_mention_renders_icon() {
       el.setAttribute("message", markdown);
 
       await ContentTaskUtils.waitForCondition(
-        () => el.shadowRoot?.querySelector(".message-user ai-website-chip"),
+        () => el.shadowRoot?.querySelector(".message-user smartwindow-chip"),
         "the tab group mention should become a chip"
       );
 
-      const chip = el.shadowRoot.querySelector(".message-user ai-website-chip");
+      const chip = el.shadowRoot.querySelector(
+        ".message-user smartwindow-chip"
+      );
       await ContentTaskUtils.waitForCondition(
         () => !!chip.shadowRoot,
         "chip should have a shadowRoot"
@@ -416,7 +418,7 @@ add_task(
         }
 
         await content.customElements.whenDefined("ai-chat-message");
-        await content.customElements.whenDefined("ai-website-chip");
+        await content.customElements.whenDefined("smartwindow-chip");
 
         const doc = content.document;
 
@@ -444,13 +446,16 @@ add_task(
         await new Promise(resolve => content.setTimeout(resolve, 100));
 
         const msg = el.shadowRoot.querySelector(".message-user");
-        const chip = msg.querySelector("ai-website-chip");
+        const chip = msg.querySelector("smartwindow-chip");
         const mentionAnchor = msg.querySelector('a[href^="mention:"]');
 
         info("message-user HTML with empty URL: " + msg.innerHTML);
 
         // Empty URL should not create chip, but should leave the mention anchor
-        Assert.ok(!chip, "ai-website-chip should not be created for empty URL");
+        Assert.ok(
+          !chip,
+          "smartwindow-chip should not be created for empty URL"
+        );
         Assert.ok(mentionAnchor, "mention anchor should remain for empty URL");
 
         // Test with URL that's too long (>2048 chars) - should not create chip
@@ -464,7 +469,7 @@ add_task(
         await new Promise(resolve => content.setTimeout(resolve, 100));
 
         const longMsg = el.shadowRoot.querySelector(".message-user");
-        const longChip = longMsg.querySelector("ai-website-chip");
+        const longChip = longMsg.querySelector("smartwindow-chip");
         const longMentionAnchor = longMsg.querySelector('a[href^="mention:"]');
 
         info("message-user HTML with long URL: " + longMsg.innerHTML);
@@ -472,7 +477,7 @@ add_task(
         // Too long URL should not create chip, but should leave the mention anchor
         Assert.ok(
           !longChip,
-          "ai-website-chip should not be created for URL longer than 2048 chars"
+          "smartwindow-chip should not be created for URL longer than 2048 chars"
         );
         Assert.ok(
           longMentionAnchor,
@@ -489,18 +494,18 @@ add_task(
         await ContentTaskUtils.waitForCondition(
           () => {
             const message = el.shadowRoot?.querySelector(".message-user");
-            return message?.querySelector("ai-website-chip");
+            return message?.querySelector("smartwindow-chip");
           },
           () => {
             const message = el.shadowRoot?.querySelector(".message-user");
-            return `Expected ai-website-chip for valid URL. message-user=${
+            return `Expected smartwindow-chip for valid URL. message-user=${
               message ? message.innerHTML : "<none>"
             }`;
           }
         );
 
         const updatedMsg = el.shadowRoot.querySelector(".message-user");
-        const validChip = updatedMsg.querySelector("ai-website-chip");
+        const validChip = updatedMsg.querySelector("smartwindow-chip");
         const validMentionAnchor = updatedMsg.querySelector(
           'a[href^="mention:"]'
         );
@@ -508,7 +513,10 @@ add_task(
         info("message-user HTML with valid URL: " + updatedMsg.innerHTML);
 
         // Valid URL should create chip and remove mention anchor
-        Assert.ok(validChip, "ai-website-chip should be created for valid URL");
+        Assert.ok(
+          validChip,
+          "smartwindow-chip should be created for valid URL"
+        );
         Assert.ok(
           !validMentionAnchor,
           "mention anchor should be replaced for valid URL"

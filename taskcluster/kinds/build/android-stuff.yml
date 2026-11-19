@@ -5,7 +5,6 @@
 task-defaults:
     tags:
         android-stuff: "true"
-    run:
 
 android-geckoview-docs/opt:
     description: "Android GeckoView docs"
@@ -19,10 +18,11 @@ android-geckoview-docs/opt:
         symbol: android(gv-docs)
     run-on-projects: [mozilla-central-only]
     worker-type: b-linux-docker-amd
+    use-gradle: offline
+    use-gradle-cache: true
     worker:
         docker-image: {in-tree: android-build}
         env:
-            GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
             PERFHERDER_EXTRA_OPTIONS: android-geckoview-docs
             GECKOVIEW_DOCS_UPLOAD_SECRET: "project/releng/gecko/build/level-{{level}}/geckoview-docs-upload"
         artifacts:
@@ -54,4 +54,19 @@ android-geckoview-docs/opt:
         skip-unless-changed:
             - "mobile/android/**/*.java"
             - "mobile/android/gradle.configure"
-            - "**/*.gradle"
+            - "build.gradle"
+            - "settings.gradle"
+            - "gradle.properties"
+            - "gradle/**"
+            - "gradlew"
+            - "gradlew.bat"
+            - "mobile/android/shared-settings.gradle"
+            - "mobile/android/version.txt"
+            - "mobile/android/gradle/**"
+            - "mobile/android/annotations/build.gradle"
+            - "mobile/android/geckoview/build.gradle"
+            - "mobile/android/geckoview/src/main/aidl/**"
+            - "third_party/application-services/.buildconfig-android.yml"
+            - "third_party/application-services/**/*.gradle"
+            - "mobile/android/gradle.py"
+            - "mobile/android/mach_commands.py"

@@ -11,6 +11,3 @@ skip-if = [
 
 ["test_total_cpu_time.js"]
 support-files = ["test_total_cpu_time_child.js"]
-skip-if = [
-  "socketprocess_networking",
-]

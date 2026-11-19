@@ -76,7 +76,8 @@ internal constructor(
     internal fun playing(chunkIndex: Int) = copy(playingChunkIndex = chunkIndex)
 
     /**
-     * The player was given a new playlist that starts on the chunk at [chunkIndex], [startMs] into the article.
+     * The player was given a new playlist that starts on the chunk at [chunkIndex], [startMs] into the article. A seek
+     * waits on [startMs] from now, since the made chunk can be shorter or longer than estimated, which moves the start.
      *
      * @param chunkDurationsBeforePlaylistMs The durations of the chunks before the chunk at [chunkIndex] that the
      *   session placed the playlist.
@@ -87,6 +88,8 @@ internal constructor(
             playingChunkIndex = chunkIndex,
             lastQueuedChunkIndex = chunkIndex,
             restartedAtMs = startMs,
+            seekingToMs = seekingToMs?.let { startMs },
+            reportsBeforeSeek = 0,
             isFinished = false,
         )
 

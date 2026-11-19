@@ -3708,12 +3708,6 @@ void Debugger::updateObservesNativeCallOnDebuggees(IsObserving observing) {
 /*** Allocations Tracking ***************************************************/
 
 /* static */
-bool Debugger::cannotTrackAllocations(const GlobalObject& global) {
-  auto existingCallback = global.realm()->getAllocationMetadataBuilder();
-  return existingCallback && existingCallback != &SavedStacks::metadataBuilder;
-}
-
-/* static */
 bool DebugAPI::isObservedByDebuggerTrackingAllocations(
     const GlobalObject& debuggee) {
   JS::AutoAssertNoGC nogc;
@@ -3736,30 +3730,14 @@ void Debugger::addAllocationsTracking(JSContext* cx,
   // Debugger that is tracking allocations.
   MOZ_ASSERT(DebugAPI::isObservedByDebuggerTrackingAllocations(*debuggee));
 
-  // Precondition: There is no existing callback installed.
-  MOZ_ASSERT(!cannotTrackAllocations(*debuggee));
-
-  debuggee->realm()->setAllocationMetadataBuilder(
-      &SavedStacks::metadataBuilder);
+  debuggee->realm()->enableAllocationMetadataBuilder();
   debuggee->realm()->chooseAllocationSamplingProbability();
-}
-
-/* static */
-bool Debugger::checkCanAddAllocationsTracking(JSContext* cx,
-                                              Handle<GlobalObject*> debuggee) {
-  if (Debugger::cannotTrackAllocations(*debuggee)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_OBJECT_METADATA_CALLBACK_ALREADY_SET);
-    return false;
-  }
-
-  return true;
 }
 
 /* static */
 void Debugger::removeAllocationsTracking(GlobalObject& global) {
   // If there are still Debuggers that are observing allocations, we cannot
-  // remove the metadata callback yet. Recompute the sampling probability
+  // disable the metadata builder yet. Recompute the sampling probability
   // based on the remaining debuggers' needs.
   if (DebugAPI::isObservedByDebuggerTrackingAllocations(global)) {
     global.realm()->chooseAllocationSamplingProbability();
@@ -3767,37 +3745,21 @@ void Debugger::removeAllocationsTracking(GlobalObject& global) {
   }
 
   if (!global.realm()->runtimeFromMainThread()->recordAllocationCallback) {
-    // Something like the Gecko Profiler could request from the the JS runtime
+    // Something like the Gecko Profiler could request from the JS runtime
     // to record allocations. If it is recording allocations, then do not
-    // destroy the allocation metadata builder at this time.
-    global.realm()->forgetAllocationMetadataBuilder();
+    // disable the allocation metadata builder at this time.
+    global.realm()->disableAllocationMetadataBuilder();
   }
 }
 
-bool Debugger::addAllocationsTrackingForAllDebuggees(JSContext* cx) {
+void Debugger::addAllocationsTrackingForAllDebuggees(JSContext* cx) {
   MOZ_ASSERT(trackingAllocationSites);
 
-  // We don't want to end up in a state where we added allocations
-  // tracking to some of our debuggees, but failed to do so for
-  // others. Before attempting to start tracking allocations in *any* of
-  // our debuggees, ensure that we will be able to track allocations for
-  // *all* of our debuggees.
   Rooted<GlobalObject*> g(cx);
   for (auto iter = debuggees.iter(); !iter.done(); iter.next()) {
     g = iter.get().get();
-    if (!checkCanAddAllocationsTracking(cx, g)) {
-      return false;
-    }
-  }
-
-  for (auto iter = debuggees.iter(); !iter.done(); iter.next()) {
-    // This should always succeed, since we already checked for the
-    // error case above.
-    g = iter.get().get();
     Debugger::addAllocationsTracking(cx, g);
   }
-
-  return true;
 }
 
 void Debugger::removeAllocationsTrackingForAllDebuggees() {
@@ -5069,18 +5031,13 @@ bool Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global) {
     }
   }
 
-  // Check whether we can add allocations tracking.
-  if (!Debugger::checkCanAddAllocationsTracking(cx, global)) {
-    return false;
-  }
-
   // For global to become this js::Debugger's debuggee:
   //
   // 1. this js::Debugger must be in global->getDebuggers(),
   // 2. global must be in this->debuggees,
   // 3. the debuggee's zone must be in this->debuggeeZones,
-  // 4. if we are tracking allocations, the SavedStacksMetadataBuilder must be
-  //    installed for this realm, and
+  // 4. if we are tracking allocations, the allocation metadata builder must be
+  //    enabled for this realm, and
   // 5. Realm::isDebuggee()'s bit must be set.
   //
   // All five indications must be kept consistent.
@@ -5248,8 +5205,8 @@ void Debugger::removeDebuggeeGlobal(JS::GCContext* gcx, GlobalObject* global,
   }
   MOZ_ASSERT_IF(debuggees.empty(), !firstBreakpoint());
 
-  // If we are tracking allocation sites, we need to remove the object
-  // metadata callback from this global's realm.
+  // If we are tracking allocation sites, we need to disable the allocation
+  // metadata builder for this global's realm.
   if (trackingAllocationSites) {
     Debugger::removeAllocationsTracking(*global);
   }

@@ -30,7 +30,8 @@
  *                       widget row when its effective size equals "small". Size alone is not
  *                       sufficient — this flag must be set explicitly so that future
  *                       widgets that support "small" but stay in the row are not
- *                       accidentally moved to the sidebar.
+ *                       accidentally moved to the sidebar. The sidebar holds one
+ *                       widget: see resolveSidebarWidget.
  *   systemEnabledPref — system/operator pref that gates this widget independent of the user pref
  *   trainhopEnabledKey — key in trainhopConfig.widgets.* for the enabled override
  *   trainhopSizeKey    — key in trainhopConfig.widgets.* for the size default suggestion
@@ -124,6 +125,9 @@ export const PREF_LISTS_SIZE = "widgets.lists.size";
 export const PREF_FOCUS_TIMER_SIZE = "widgets.focusTimer.size";
 export const PREF_WEATHER_SIZE = "widgets.weather.size";
 export const PREF_WIDGETS_ORDER = "widgets.order";
+// The widgets pinned to Home where a thematic spaces config names a
+// widgetLibrary, as a JSON array of ids.
+export const PREF_HOME_WIDGETS = "widgets.home";
 export const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 export const PREF_WIDGETS_SYSTEM_TIMER_ENABLED =
   "widgets.system.focusTimer.enabled";
@@ -153,12 +157,13 @@ export const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
 export const PREF_CROSSWORD_SIZE = "widgets.crossword.size";
 export const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
   "widgets.system.crossword.enabled";
+export const PREF_FRAMED_WIDGETS_ALLOWED_HOST_SUFFIXES =
+  "widgets.framed.allowedHostSuffixes";
 export const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
 export const PREF_STOCKS_SIZE = "widgets.stocks.size";
 export const PREF_STOCKS_WATCHLIST = "widgets.stocks.watchlist";
 export const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED =
   "widgets.system.stocks.enabled";
-export const PREF_CROSSWORD_ENDPOINT = "widgets.crossword.endpoint";
 export const PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED =
   "widgets.pictureOfTheDay.enabled";
 export const PREF_PICTURE_OF_THE_DAY_SIZE = "widgets.pictureOfTheDay.size";
@@ -181,6 +186,23 @@ export const PREF_WIDGETS_SOLITAIRE_ENABLED = "widgets.solitaire.enabled";
 export const PREF_SOLITAIRE_SIZE = "widgets.solitaire.size";
 export const PREF_WIDGETS_SYSTEM_SOLITAIRE_ENABLED =
   "widgets.system.solitaire.enabled";
+export const PREF_WIDGETS_WREXHAMAFC_ENABLED = "widgets.wrexhamAFC.enabled";
+export const PREF_WREXHAMAFC_SIZE = "widgets.wrexhamAFC.size";
+export const PREF_WIDGETS_SYSTEM_WREXHAMAFC_ENABLED =
+  "widgets.system.wrexhamAFC.enabled";
+export const PREF_WREXHAMAFC_VIEW = "widgets.wrexhamAFC.view";
+
+/**
+ * An item in the menu of a FramedWidgetCard.
+ *
+ * @typedef {object} WidgetMenuItem
+ * @property {"choice"|"action"} type - A "choice" is a submenu of checkable options whose value is stored in a pref and passed to the widget's document as an `id=value` parameter in its URL fragment. An "action" runs one of the host actions FramedWidgetCard supports.
+ * @property {string} id - Names the item in telemetry and, for a choice, its URL fragment parameter.
+ * @property {string} l10nId - Fluent id of the item's label.
+ * @property {string} [pref] - For a choice, the pref storing the chosen value. It must be registered in PREFS_CONFIG in lib/ActivityStream.sys.mjs, or changes to it never reach the card. Until it holds one of the options, the first option is chosen.
+ * @property {{value: string, l10nId: string, size?: string}[]} [options] - For a choice, its options. While an option with a size is chosen, the widget is drawn at least that size where the layout allows it (see resolveWidgetDisplaySize), and choosing a smaller size switches the choice to its first option that fits that size: one without a size, or no larger than it.
+ * @property {"show-customize"} [action] - For an action, the host action it runs.
+ */
 
 /**
  * @typedef {object} WidgetRegistryEntry
@@ -204,8 +226,12 @@ export const PREF_WIDGETS_SYSTEM_SOLITAIRE_ENABLED =
  * @property {boolean} [retired] - When true the widget never renders and gets no settings or devtools toggle, whatever its prefs and trainhopConfig say.
  * @property {boolean} [skipNightlyDefault] - When true, the widget opts out of being on everywhere in Nightly. See skipsNightlyDefault in lib/ActivityStream.sys.mjs.
  * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. All widgets define this today.
- * @property {string} [src] - URL of the widget's document; a trainhop namespace `src` overrides it.
+ * @property {string} [src] - URL of the widget's document; a trainhop namespace `iframeSrcOverride` overrides it.
+ * @property {boolean} [framed] - When true, the widget's document URL comes from its entry in the Merino framed widgets manifest, which FramedWidgetsFeed stores in the FramedWidgets state under its id; the widget is hidden while it has no enabled entry (see resolveWidgetFrame). A trainhop namespace `iframeSrcOverride` still overrides it, but only when isAllowedFrameUrl accepts it; otherwise it is ignored. The frame-src CSP in render-activity-stream-html.js must allow the host too.
  * @property {string} [extensionID] - ID of an extension that provides the widget's document. getWidgets keeps the entry only while the ExtensionWidgets state has this extension.
+ * @property {string} [icon] - URL of a 16px image drawn before the widget's name in its MozWidgetCard header.
+ * @property {"FramedWidgetCard"} [card] - The name of the card component that draws an entry without its own row component: FramedWidgetCard, for a document a hosted page provides. Without it, MozWidgetCard draws the entry.
+ * @property {WidgetMenuItem[]} [menu] - Items drawn above the shared items in the widget's card menu. Only FramedWidgetCard reads it, so it needs `card: "FramedWidgetCard"`.
  * @property {string} [l10nId] - Fluent id of the widget's name. The message carries .title, .label and .menu-label attributes.
  */
 
@@ -318,12 +344,14 @@ export const WIDGET_REGISTRY = [
     enabledPref: PREF_WIDGETS_PRIVACY_ENABLED,
     sizePref: PREF_PRIVACY_SIZE,
     defaultSize: "medium",
-    validSizes: ["medium", "large"],
+    // Small is reached only through the trainhop sidebar config; the widget's
+    // size menu only displays medium and large.
+    validSizes: ["small", "medium", "large"],
     hasSidebar: false,
     systemEnabledPref: PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED,
     trainhopEnabledKey: "privacyEnabled",
     trainhopSizeKey: "privacySize",
-    trainhopSidebarKey: null,
+    trainhopSidebarKey: "privacySidebar",
     widgetsSettingsVisibleKey: "privacyVisible",
     widgetsSettingsEnabledKey: "privacyEnabled",
     trainhopNamespace: "widgetPrivacy",
@@ -347,6 +375,7 @@ export const WIDGET_REGISTRY = [
     widgetsSettingsVisibleKey: "crosswordVisible",
     widgetsSettingsEnabledKey: "crosswordEnabled",
     trainhopNamespace: "widgetCrossword",
+    framed: true,
   },
   {
     id: "stocks",
@@ -404,6 +433,7 @@ export const WIDGET_REGISTRY = [
     widgetsSettingsVisibleKey: "horoscopesVisible",
     widgetsSettingsEnabledKey: "horoscopesEnabled",
     trainhopNamespace: "widgetHoroscopes",
+    framed: true,
   },
   {
     id: "travel",
@@ -423,6 +453,7 @@ export const WIDGET_REGISTRY = [
     widgetsSettingsVisibleKey: "travelVisible",
     widgetsSettingsEnabledKey: "travelEnabled",
     trainhopNamespace: "widgetTravel",
+    framed: true,
   },
   {
     id: "solitaire",
@@ -442,6 +473,60 @@ export const WIDGET_REGISTRY = [
     widgetsSettingsVisibleKey: "solitaireVisible",
     widgetsSettingsEnabledKey: "solitaireEnabled",
     trainhopNamespace: "widgetSolitaire",
+    framed: true,
+  },
+  {
+    id: "wrexhamAFC",
+    telemetryName: "wrexhamafc",
+    customizeL10nId: "newtab-custom-widget-wrexhamafc",
+    customizeEventSource: "WIDGET_WREXHAMAFC",
+    order: 12,
+    enabledPref: PREF_WIDGETS_WREXHAMAFC_ENABLED,
+    sizePref: PREF_WREXHAMAFC_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_WREXHAMAFC_ENABLED,
+    trainhopEnabledKey: "wrexhamAFCEnabled",
+    trainhopSizeKey: "wrexhamAFCSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "wrexhamAFCVisible",
+    widgetsSettingsEnabledKey: "wrexhamAFCEnabled",
+    trainhopNamespace: "widgetWrexhamAFC",
+    framed: true,
+    card: "FramedWidgetCard",
+    icon: "chrome://activity-stream/content/data/content/tippytop/images/wrexham@2x.png",
+    l10nId: "newtab-custom-widget-wrexhamafc",
+    menu: [
+      {
+        type: "choice",
+        id: "view",
+        l10nId: "newtab-widget-wrexhamafc-menu-view",
+        pref: PREF_WREXHAMAFC_VIEW,
+        options: [
+          {
+            value: "matches",
+            l10nId: "newtab-widget-wrexhamafc-view-matches",
+          },
+          {
+            value: "table",
+            l10nId: "newtab-widget-wrexhamafc-view-table",
+            size: "large",
+          },
+          {
+            value: "fixtures",
+            l10nId: "newtab-widget-wrexhamafc-view-fixtures",
+            size: "large",
+          },
+        ],
+      },
+      {
+        type: "action",
+        id: "manage_wallpaper",
+        l10nId: "newtab-widget-wrexhamafc-menu-wallpapers",
+        action: "show-customize",
+      },
+    ],
   },
 ];
 
@@ -482,6 +567,24 @@ export function resolveWidgetOrder(prefs) {
     return getWidgetOrder(trainhopOrder);
   }
   return getWidgetOrder(null);
+}
+
+/**
+ * The widget ids the user has pinned to Home, or null until they first pin or
+ * unpin one, when the spaces config's default applies. An empty array is a
+ * choice, so it is not null.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string[]|null}
+ */
+export function parsePinnedWidgetIds(prefs) {
+  try {
+    const ids = JSON.parse(prefs?.[PREF_HOME_WIDGETS]);
+    if (Array.isArray(ids)) {
+      return ids.filter(id => typeof id === "string");
+    }
+  } catch {}
+  return null;
 }
 
 /**
@@ -526,21 +629,64 @@ export function getWidgets(registry, extensionWidgets) {
     );
 }
 
+export const FRAMED_WIDGETS = WIDGET_REGISTRY.filter(w => w.framed);
+
 /**
- * Returns the document URL a widget's card should load, in precedence order:
- * the trainhop namespace src, the entry's static src.
+ * Returns true if a framed widget may load this URL. Framed widget URLs set the
+ * iframe src and the origin the widget trusts for postMessage, so only https
+ * URLs whose host ends with one of the comma-separated suffixes in the
+ * widgets.framed.allowedHostSuffixes pref are accepted.
+ *
+ * @param {string} value - candidate document URL
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isAllowedFrameUrl(value, prefs) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+  const suffixes = (prefs[PREF_FRAMED_WIDGETS_ALLOWED_HOST_SUFFIXES] ?? "")
+    .split(",")
+    .map(item => item.trim())
+    .filter(item => item);
+  return (
+    url.protocol === "https:" &&
+    suffixes.some(suffix => url.hostname.endsWith(suffix))
+  );
+}
+
+/**
+ * Returns the document URL a widget's card should load and its frame state.
+ *
+ * The trainhop namespace iframeSrcOverride wins and is treated as healthy; for a
+ * framed widget it must also pass isAllowedFrameUrl. Otherwise a framed widget
+ * takes its URL and state from the Merino frames manifest:
+ * it is "ok" while the manifest has an enabled entry for it and "hidden"
+ * otherwise. A non-framed
+ * widget loads its static src and is always "ok".
  *
  * @param {object} widget - a WIDGET_REGISTRY entry
  * @param {object} prefs - current pref values from the Redux store
- * @returns {string} document URL, "" when the widget has no document
+ * @param {object} [framedWidgets] - the FramedWidgets state, keyed by widget id
+ * @returns {{src: string, state: "ok" | "hidden"}}
  */
-export function resolveWidgetSrc(widget, prefs) {
-  return (
-    (widget?.trainhopNamespace &&
-      prefs.trainhopConfig?.[widget.trainhopNamespace]?.src) ||
-    widget?.src ||
-    ""
-  );
+export function resolveWidgetFrame(widget, prefs, framedWidgets) {
+  const override =
+    widget?.trainhopNamespace &&
+    prefs.trainhopConfig?.[widget.trainhopNamespace]?.iframeSrcOverride;
+  if (override && (!widget.framed || isAllowedFrameUrl(override, prefs))) {
+    return { src: override, state: "ok" };
+  }
+  if (!widget?.framed) {
+    return { src: widget?.src || "", state: "ok" };
+  }
+  const frame = framedWidgets?.[widget.id];
+  return frame?.url
+    ? { src: frame.url, state: "ok" }
+    : { src: "", state: "hidden" };
 }
 
 /**
@@ -693,6 +839,47 @@ export function resolveWidgetSize(widget, prefs) {
 }
 
 /**
+ * Returns the chosen option of a WidgetMenuItem of type "choice": the one its
+ * pref holds, or the first option while the pref holds none of them.
+ *
+ * @param {WidgetMenuItem} item - a choice
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {{value: string, l10nId: string, size?: string}}
+ */
+export function getChosenOption(item, prefs) {
+  return (
+    item.options.find(option => option.value === prefs[item.pref]) ??
+    item.options[0]
+  );
+}
+
+/**
+ * Returns the size a widget is drawn at: resolveWidgetSize, grown for a
+ * `card: "FramedWidgetCard"` widget to the largest size the chosen options of its menu
+ * choices need when the layout allows widgets to be resized.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {boolean} widgetsMayBeMaximized - whether the layout allows resizing
+ * @returns {string}
+ */
+export function resolveWidgetDisplaySize(widget, prefs, widgetsMayBeMaximized) {
+  const size = resolveWidgetSize(widget, prefs);
+  if (!widgetsMayBeMaximized || widget.card !== "FramedWidgetCard") {
+    return size;
+  }
+  const sizes = widget.validSizes ?? [];
+  return (widget.menu ?? [])
+    .filter(item => item.type === "choice")
+    .map(item => getChosenOption(item, prefs).size)
+    .reduce(
+      (biggest, needed) =>
+        sizes.indexOf(needed) > sizes.indexOf(biggest) ? needed : biggest,
+      size
+    );
+}
+
+/**
  * Returns whether the widget should be placed in the sidebar.
  * A trainhop override (trainhopSidebarKey) takes precedence over the
  * static registry hasSidebar flag when present.
@@ -712,20 +899,47 @@ export function resolveWidgetHasSidebar(widget, prefs) {
 }
 
 /**
+ * Returns the one widget that renders in the inline-end sidebar, or null.
+ *
+ * The sidebar holds a single widget. When more than one qualifies to show, the
+ * first in registry order wins and the rest stay in the widget row. The row and
+ * the layout helpers read this too, so a widget never renders in both places.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {boolean} [widgetsEnabled] - the master toggle, passed explicitly when
+ *   the spaces experiment is overriding it
+ * @returns {object|null} a WIDGET_REGISTRY entry
+ */
+export function resolveSidebarWidget(
+  prefs,
+  widgetsEnabled = prefs["widgets.enabled"]
+) {
+  return (
+    WIDGET_REGISTRY.find(
+      w =>
+        resolveWidgetHasSidebar(w, prefs) &&
+        isWidgetEnabled(w, prefs, widgetsEnabled) &&
+        resolveWidgetSize(w, prefs) === "small"
+    ) ?? null
+  );
+}
+
+/**
  * Returns true if the widget renders in the inline-end sidebar rather than the
- * content area. Weather is the only widget that can move there, and only at its
- * small size.
+ * content area.
  *
  * @param {object} widget - a WIDGET_REGISTRY entry
  * @param {object} prefs - current pref values from the Redux store
+ * @param {boolean} [widgetsEnabled] - the master toggle, passed explicitly when
+ *   the spaces experiment is overriding it
  * @returns {boolean}
  */
-export function isWidgetInSidebar(widget, prefs) {
-  return (
-    widget.id === "weather" &&
-    resolveWidgetHasSidebar(widget, prefs) &&
-    resolveWidgetSize(widget, prefs) === "small"
-  );
+export function isWidgetInSidebar(
+  widget,
+  prefs,
+  widgetsEnabled = prefs["widgets.enabled"]
+) {
+  return resolveSidebarWidget(prefs, widgetsEnabled) === widget;
 }
 
 /**
@@ -746,25 +960,8 @@ export function hasContentAreaWidgets(
 ) {
   return WIDGET_REGISTRY.some(
     w =>
-      isWidgetEnabled(w, prefs, widgetsEnabled) && !isWidgetInSidebar(w, prefs)
-  );
-}
-
-/**
- * Returns the Merino endpoint the Crossword widget iframe should load.
- * The dedicated widgetCrossword trainhop object wins, then the legacy
- * widgets.crosswordEndpoint key, then the raw pref, so the endpoint can be
- * swapped (e.g. staging to production) without a release. The raw pref is never
- * read directly by the component.
- *
- * @param {object} prefs - current pref values from the Redux store
- * @returns {string}
- */
-export function resolveCrosswordEndpoint(prefs) {
-  return (
-    prefs.trainhopConfig?.widgetCrossword?.endpoint ||
-    prefs.trainhopConfig?.widgets?.crosswordEndpoint ||
-    prefs[PREF_CROSSWORD_ENDPOINT]
+      isWidgetEnabled(w, prefs, widgetsEnabled) &&
+      !isWidgetInSidebar(w, prefs, widgetsEnabled)
   );
 }
 

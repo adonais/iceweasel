@@ -14,7 +14,7 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "mozilla/net/NeckoChannelParams.h"  // For HttpActivityArgs.
+#include "mozilla/net/HttpActivityArgs.h"
 #include "nsDNSService2.h"
 #include "nsHttpConnection.h"
 #include "nsHttpConnectionMgr.h"
@@ -57,8 +57,9 @@ static void NotifyActivity(nsHttpConnectionInfo* aConnInfo, uint32_t aSubtype) {
       aConnInfo->HashKey(), aConnInfo->GetOrigin(), aConnInfo->OriginPort(),
       aConnInfo->EndToEndSSL(), !aConnInfo->GetEchConfig().IsEmpty(),
       aConnInfo->IsHttp3());
-  gHttpHandler->ObserveHttpActivityWithArgs(
-      activity, NS_ACTIVITY_TYPE_HTTP_CONNECTION, aSubtype, PR_Now(), 0, ""_ns);
+  gHttpHandler->ObserveHttpActivityWithArgs(HttpActivityArgs(activity),
+                                            NS_ACTIVITY_TYPE_HTTP_CONNECTION,
+                                            aSubtype, PR_Now(), 0, ""_ns);
 }
 
 DnsAndConnectSocket::DnsAndConnectSocket(nsHttpConnectionInfo* ci,

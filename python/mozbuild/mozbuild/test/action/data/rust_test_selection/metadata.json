@@ -1,0 +1,68 @@
+{
+  "packages": [
+    {
+      "name": "gkrust",
+      "manifest_path": "/src/toolkit/library/rust/Cargo.toml",
+      "dependencies": [
+        {"name": "gkrust-shared", "rename": null},
+        {"name": "mozilla-central-workspace-hack", "rename": null}
+      ],
+      "features": {
+        "moz_memory": ["gkrust-shared/moz_memory"],
+        "mozilla-central-workspace-hack": []
+      },
+      "targets": [{"name": "gkrust", "test": false, "doctest": false}]
+    },
+    {
+      "name": "gkrust-shared",
+      "manifest_path": "/src/toolkit/library/rust/shared/Cargo.toml",
+      "dependencies": [
+        {"name": "crashreporter", "rename": null},
+        {"name": "l10nregistry", "rename": null}
+      ],
+      "features": {"for_xul": [], "moz_memory": []},
+      "targets": [{"name": "gkrust-shared", "test": true, "doctest": true}]
+    },
+    {
+      "name": "crashreporter",
+      "manifest_path": "/src/toolkit/crashreporter/client/app/Cargo.toml",
+      "dependencies": [
+        {"name": "crashping", "rename": null},
+        {"name": "mozilla-central-workspace-hack", "rename": null}
+      ],
+      "features": {"mock": [], "mozilla-central-workspace-hack": []},
+      "targets": [{"name": "crashreporter", "test": true, "doctest": false}]
+    },
+    {
+      "name": "crashping",
+      "manifest_path": "/src/toolkit/crashreporter/crashping/Cargo.toml",
+      "dependencies": [],
+      "features": {"gecko_tests": []},
+      "targets": [{"name": "crashping", "test": true, "doctest": true}]
+    },
+    {
+      "name": "l10nregistry",
+      "manifest_path": "/src/intl/l10n/rust/l10nregistry-rs/Cargo.toml",
+      "dependencies": [],
+      "features": {},
+      "targets": [{"name": "l10nregistry", "test": true, "doctest": true}]
+    },
+    {
+      "name": "geckodriver",
+      "manifest_path": "/src/testing/geckodriver/Cargo.toml",
+      "dependencies": [
+        {"name": "webdriver", "rename": null},
+        {"name": "mozilla-central-workspace-hack", "rename": null}
+      ],
+      "features": {"mozilla-central-workspace-hack": []},
+      "targets": [{"name": "geckodriver", "test": true, "doctest": false}]
+    },
+    {
+      "name": "webdriver",
+      "manifest_path": "/src/testing/webdriver/Cargo.toml",
+      "dependencies": [{"name": "hyper", "rename": "http"}],
+      "features": {},
+      "targets": [{"name": "webdriver", "test": true, "doctest": true}]
+    }
+  ]
+}

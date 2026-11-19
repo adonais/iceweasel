@@ -6,12 +6,14 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Ignore
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertYoutubeAppOpens
 import org.mozilla.fenix.helpers.OpenLinksInApp
 import org.mozilla.fenix.helpers.TestAssetHelper.externalLinksAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
+import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 
 class SettingsOpenLinksInAppsTest : BaseTest() {
 
@@ -77,5 +79,26 @@ class SettingsOpenLinksInAppsTest : BaseTest() {
         on.browserPage.verifyOpenLinkInAppPrompt(appName = "YouTube")
         on.browserPage.clickOpenLinkInAppPromptOpenButton()
         assertYoutubeAppOpens()
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1058617
+    @Critical
+    @Test
+    fun dismissOpenLinksInAppCFRTest() {
+        composeRule.activityRule.applySettingsExceptions {
+            it.isOpenInAppBannerEnabled = true
+            it.openLinksInExternalApp = OpenLinksInApp.NEVER
+        }
+
+        on.browserPage
+            .navigateToPage("https://m.youtube.com/")
+            .mozVerify(BrowserPageSelectors.OPEN_IN_APP_CFR_CONTAINER, timeout = waitingTimeLong)
+            .mozVerifyElementsByGroup(BrowserPageSelectors.Group.OPEN_IN_APP_CFR)
+        on.browserPage
+            .mozClick(BrowserPageSelectors.OPEN_IN_APP_CFR_DISMISS_BUTTON)
+            .mozVerifyElementsByGroupAbsent(BrowserPageSelectors.Group.OPEN_IN_APP_CFR)
+            .navigateToPage("play.google.com", forceNavigation = true)
+            .mozVerifyElementAbsent(BrowserPageSelectors.OPEN_IN_APP_CFR_CONTAINER)
+            .mozVerifyElementsByGroupAbsent(BrowserPageSelectors.Group.OPEN_IN_APP_CFR)
     }
 }

@@ -617,8 +617,8 @@ nsresult nsImageMap::GetBoundsForAreaContent(nsIContent* aContent,
 }
 
 void nsImageMap::AreaRemoved(HTMLAreaElement* aArea) {
-  if (aArea->GetPrimaryFrame() == mImageFrame) {
-    aArea->SetPrimaryFrame(nullptr);
+  if (aArea->GetImageFrame() == mImageFrame) {
+    aArea->SetImageFrame(nullptr);
   }
 
   aArea->RemoveSystemEventListener(u"focus"_ns, this, false);
@@ -694,18 +694,18 @@ void nsImageMap::AddArea(HTMLAreaElement* aArea) {
     case AttrArray::ATTR_MISSING:
     case 0:
     case 1:
-      area = MakeUnique<RectArea>(aArea);
+      area = std::make_unique<RectArea>(aArea);
       break;
     case 2:
     case 3:
-      area = MakeUnique<CircleArea>(aArea);
+      area = std::make_unique<CircleArea>(aArea);
       break;
     case 4:
-      area = MakeUnique<DefaultArea>(aArea);
+      area = std::make_unique<DefaultArea>(aArea);
       break;
     case 5:
     case 6:
-      area = MakeUnique<PolyArea>(aArea);
+      area = std::make_unique<PolyArea>(aArea);
       break;
     default:
       area = nullptr;
@@ -717,12 +717,7 @@ void nsImageMap::AddArea(HTMLAreaElement* aArea) {
   aArea->AddSystemEventListener(u"focus"_ns, this, false, false);
   aArea->AddSystemEventListener(u"blur"_ns, this, false, false);
 
-  // This is a nasty hack.  It needs to go away: see bug 135040.  Once this is
-  // removed, the code added to RestyleManager::RestyleElement,
-  // nsCSSFrameConstructor::ContentRemoved (both hacks there), and
-  // RestyleManager::ProcessRestyledFrames to work around this issue can
-  // be removed.
-  aArea->SetPrimaryFrame(mImageFrame);
+  aArea->SetImageFrame(mImageFrame);
 
   nsAutoString coords;
   aArea->GetAttr(nsGkAtoms::coords, coords);

@@ -7,9 +7,6 @@ prefs = ["dom.security.https_first=false"] #Disable https-first because of expli
 ["test_cookie_behavior.js"]
 
 ["test_getPartitionKeyFromURL.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["test_purge_trackers.js"]
 requesttimeoutfactor = 2
@@ -17,9 +14,6 @@ requesttimeoutfactor = 2
 ["test_purge_trackers_telemetry.js"]
 
 ["test_staticPartition_authhttp.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["test_staticPartition_clientAuthRemember.js"]
 
@@ -27,19 +21,10 @@ skip-if = [
 support-files = ["data/font.woff"]
 
 ["test_staticPartition_image.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["test_staticPartition_prefetch.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["test_staticPartition_preload.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["test_strip_on_share_list.js"]
 
@@ -52,6 +37,3 @@ skip-if = [
 ["test_validate_strip_on_share_list.js"]
 
 ["test_view_source.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035 (not as common on win, perma on linux/osx)
-]

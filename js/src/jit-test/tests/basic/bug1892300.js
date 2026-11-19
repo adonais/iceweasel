@@ -1,4 +1,4 @@
 newGlobal().eval(`(function () {
-  enableShellAllocationMetadataBuilder();
+  enableTrackAllocations();
   return arguments[Symbol.iterator];
 })();`);

@@ -168,7 +168,7 @@ static ipc::ReadOnlySharedMemoryHandle LoadFromURI(nsIURI* aURI,
 
   // Read from the URI into a temporary buffer, compile it, then copy the
   // compiled resource to a shared memory region.
-  auto buffer = MakeUnique<char[]>(available);
+  auto buffer = std::make_unique<char[]>(available);
   uint32_t bytesRead = 0;
   if (NS_FAILED(instream->Read(buffer.get(), available, &bytesRead)) ||
       bytesRead != available) {

@@ -28,7 +28,6 @@ void RenderTextureHostWrapper::EnsureTextureHost() const {
   }
 
   mTextureHost = RenderThread::Get()->GetRenderTexture(mExternalImageId);
-  MOZ_ASSERT(mTextureHost);
   if (!mTextureHost) {
     gfxCriticalNoteOnce << "Failed to get RenderTextureHost for extId:"
                         << AsUint64(mExternalImageId);

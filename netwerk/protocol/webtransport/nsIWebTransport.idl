@@ -71,7 +71,9 @@ interface nsIWebTransport : nsISupports {
                     in Array<AString> aProtocols,
                     in Array<ACString> aHeaderNames,
                     in Array<ACString> aHeaderValues,
-                    in nsIWebTransport_HTTPVersion aVersion);
+                    in nsIWebTransport_HTTPVersion aVersion,
+                    in unsigned short aAnticipatedConcurrentIncomingUnidirectionalStreams,
+                    in unsigned short aAnticipatedConcurrentIncomingBidirectionalStreams);
 
   // Asynchronously get stats. On success (NS_OK), results in exactly one
   // call to onStatsAvailable(), even if stats could not be gathered (in
@@ -132,6 +134,13 @@ interface nsIWebTransport : nsISupports {
   // Register a send group with a caller-provided ID.
   void registerSendGroup(in uint64_t groupId);
 
+  // Set anticipated concurrent incoming stream limits. These raise the peer's
+  // stream limit via MAX_STREAMS frames; they cannot lower it. Callable from
+  // any thread, and before the session is ready, in which case the value is
+  // applied once it comes up.
+  void setAnticipatedConcurrentIncomingUnidirectionalStreams(in unsigned short aValue);
+  void setAnticipatedConcurrentIncomingBidirectionalStreams(in unsigned short aValue);
+
   // This can be only called after onSessionReady().
   // After this point, we can retarget the underlying WebTransportSessionProxy
   // object off main thread.
@@ -188,7 +197,7 @@ interface WebTransportSessionEventListener : nsISupports {
   void onStatsAvailable(in nsIWebTransportSessionStats aStats);
 };
 
-[uuid(8fb30aa9-5163-4eb3-81f3-371e1ccb5b0e)]
+[uuid(8d265242-8a8c-46d2-a9e2-8859bf9b9a88)]
 interface WebTransportSessionEventListenerInternal : nsISupports {
   // This is used internally to pass the reference of WebTransportSession
   // object to WebTransportSessionProxy.
@@ -200,6 +209,11 @@ interface WebTransportSessionEventListenerInternal : nsISupports {
 
   // This is used internally to pass the datagram to WebTransportSessionProxy.
   void onDatagramReceivedInternal(in Datagram aData);
+
+  // The anticipatedConcurrentIncoming{Uni,Bi}directionalStreams values to
+  // apply once the CONNECT has been sent. 0 means not requested.
+  void getAnticipatedConcurrentIncomingStreams(out uint16_t aUni,
+                                               out uint16_t aBidi);
 };
 
 [uuid(faad75bd-83c6-420b-9fdb-a70bd70be449)]

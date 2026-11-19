@@ -38,10 +38,6 @@ reason = "ASRouter is Firefox-only."
 
 ["test_backgroundtask_no_output.js"]
 requesttimeoutfactor = 2  # Slow on Windows
-skip-if = [
-  "ccov",
-]
-reason = "Bug 1804825: code coverage harness prints [CodeCoverage] output in early startup."
 
 ["test_backgroundtask_not_ephemeral_profile.js"]
 run-sequentially = ["true"] # Uses global profile directory `DefProfRt`

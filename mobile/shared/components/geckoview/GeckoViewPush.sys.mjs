@@ -9,7 +9,7 @@ const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewPush");
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  PushCrypto: "resource://gre/modules/PushCrypto.sys.mjs",
+  PushCrypto: "moz-src:///dom/push/PushCrypto.sys.mjs",
 });
 
 // Observer notification topics for push messages and subscription status

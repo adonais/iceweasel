@@ -240,3 +240,131 @@ add_task(
     );
   }
 );
+
+/**
+ * Tests that fields added together with other nodes in a single mutation are
+ * identified, even when the first added node isn't an element.
+ */
+add_task(async function fields_identified_when_added_in_a_single_mutation() {
+  const html = `
+    <form id="form">
+      <input id="name" autocomplete="name">
+      <input id="email" autocomplete="email">
+      <input id="tel" autocomplete="tel">
+    </form>
+    <script>
+      document.getElementById("email").addEventListener("input", () => {
+        const fields = ["street-address", "address-level2", "postal-code"].map(
+          autocomplete => {
+            const input = document.createElement("input");
+            input.autocomplete = autocomplete;
+            return input;
+          }
+        );
+        document
+          .getElementById("form")
+          .append(document.createTextNode(" "), ...fields);
+      });
+    </script>`;
+
+  await BrowserTestUtils.withNewTab(
+    "https://example.org/document-builder.sjs?html=" + encodeURIComponent(html),
+    async browser => {
+      let fieldDetectionCompleted = getFieldDetectionCompletedPromiseResolver();
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.getElementById("email").focus();
+      });
+      await fieldDetectionCompleted;
+      await verifyCurrentIdentifiedFields(browser, [
+        {
+          fields: [
+            { fieldName: "name" },
+            { fieldName: "email" },
+            { fieldName: "tel" },
+          ],
+        },
+      ]);
+
+      fieldDetectionCompleted = getFieldDetectionCompletedPromiseResolver();
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.getElementById("email").setUserInput("a@b.c");
+      });
+      await fieldDetectionCompleted;
+      await verifyCurrentIdentifiedFields(browser, [
+        {
+          fields: [
+            { fieldName: "name" },
+            { fieldName: "email" },
+            { fieldName: "tel" },
+            { fieldName: "street-address" },
+            { fieldName: "address-level2" },
+            { fieldName: "postal-code" },
+          ],
+        },
+      ]);
+    }
+  );
+});
+
+/**
+ * Tests that new form-less fields are identified when all the previously
+ * identified fields were removed.
+ */
+add_task(async function formless_fields_identified_after_all_fields_replaced() {
+  const html = `
+    <div id="container">
+      <input id="name" autocomplete="name">
+      <input id="email" autocomplete="email">
+      <input id="tel" autocomplete="tel">
+    </div>
+    <script>
+      document.getElementById("email").addEventListener("input", () => {
+        const container = document.getElementById("container");
+        container.textContent = "";
+        for (const autocomplete of [
+          "street-address",
+          "address-level2",
+          "postal-code",
+        ]) {
+          const input = document.createElement("input");
+          input.autocomplete = autocomplete;
+          container.append(input);
+        }
+      });
+    </script>`;
+
+  await BrowserTestUtils.withNewTab(
+    "https://example.org/document-builder.sjs?html=" + encodeURIComponent(html),
+    async browser => {
+      let fieldDetectionCompleted = getFieldDetectionCompletedPromiseResolver();
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.getElementById("email").focus();
+      });
+      await fieldDetectionCompleted;
+      await verifyCurrentIdentifiedFields(browser, [
+        {
+          fields: [
+            { fieldName: "name" },
+            { fieldName: "email" },
+            { fieldName: "tel" },
+          ],
+        },
+      ]);
+
+      fieldDetectionCompleted = getFieldDetectionCompletedPromiseResolver();
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.getElementById("email").setUserInput("a@b.c");
+      });
+      await fieldDetectionCompleted;
+      await verifyCurrentIdentifiedFields(browser, [
+        {
+          fields: [
+            { fieldName: "street-address" },
+            { fieldName: "address-level2" },
+            { fieldName: "postal-code" },
+          ],
+        },
+      ]);
+    }
+  );
+});

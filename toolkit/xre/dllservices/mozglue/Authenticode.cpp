@@ -107,7 +107,7 @@ static CertContextUniquePtr GetCertificateFromCryptMsg(
     return nullptr;
   }
 
-  auto certInfoBuf = mozilla::MakeUnique<char[]>(certInfoLen);
+  auto certInfoBuf = std::make_unique<char[]>(certInfoLen);
 
   ok = CryptMsgGetParam(aCryptMsg.get(), CMSG_SIGNER_CERT_INFO_PARAM, 0,
                         certInfoBuf.get(), &certInfoLen);
@@ -132,7 +132,7 @@ static mozilla::UniquePtr<wchar_t[]> GetSignerOrganizationFromCertificate(
     return nullptr;
   }
 
-  auto result = mozilla::MakeUnique<wchar_t[]>(charCount);
+  auto result = std::make_unique<wchar_t[]>(charCount);
   charCount = CertGetNameStringW(certCtx.get(), CERT_NAME_SIMPLE_DISPLAY_TYPE,
                                  0, nullptr, result.get(), charCount);
   MOZ_ASSERT(charCount > 1);
@@ -165,7 +165,7 @@ bool SignedBinary::HasNestedMicrosoftSignature() const {
     return false;
   }
 
-  auto attributesBuf = mozilla::MakeUnique<char[]>(attributesLen);
+  auto attributesBuf = std::make_unique<char[]>(attributesLen);
   ok = CryptMsgGetParam(mCryptMsg.get(), CMSG_SIGNER_UNAUTH_ATTR_PARAM, 0,
                         attributesBuf.get(), &attributesLen);
   if (!ok) {
@@ -334,7 +334,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
       return false;
     }
 
-    hashBuf = mozilla::MakeUnique<BYTE[]>(hashLen);
+    hashBuf = std::make_unique<BYTE[]>(hashLen);
 
     if (!pCryptCATAdminCalcHashFromFileHandle2(rawCatAdmin, rawFile, &hashLen,
                                                hashBuf.get(), 0)) {
@@ -355,7 +355,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
       return false;
     }
 
-    hashBuf = mozilla::MakeUnique<BYTE[]>(hashLen);
+    hashBuf = std::make_unique<BYTE[]>(hashLen);
 
     if (!pCryptCATAdminCalcHashFromFileHandle(rawFile, &hashLen, hashBuf.get(),
                                               0)) {
@@ -424,7 +424,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
   // representation of the file hash, so we build that here.
 
   DWORD strHashBufLen = (hashLen * 2) + 1;
-  auto strHashBuf = mozilla::MakeUnique<wchar_t[]>(strHashBufLen);
+  auto strHashBuf = std::make_unique<wchar_t[]>(strHashBufLen);
   if (!::CryptBinaryToStringW(hashBuf.get(), hashLen,
                               CRYPT_STRING_HEXRAW | CRYPT_STRING_NOCRLF,
                               strHashBuf.get(), &strHashBufLen)) {

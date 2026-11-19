@@ -110,38 +110,4 @@ struct SSLTokensCacheRecordInfo {
 }  // namespace net
 }  // namespace mozilla
 
-namespace IPC {
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SocketInfo, host, sent,
-                                  received, port, active, type,
-                                  originAttributesSuffix);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::DNSCacheEntries, hostname,
-                                  hostaddr, family, expiration, TRR,
-                                  originAttributesSuffix, flags, resolveType);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::DnsAndConnectSockets,
-                                  speculative);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::HttpConnInfo, ttl, rtt,
-                                  protocolVersion);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::HttpRetParams, host, active,
-                                  idle, dnsAndSocks, counter, port, httpVersion,
-                                  ssl, originAttributesSuffix);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::Http3ConnStats, packetsRx,
-                                  dupsRx, droppedRx, savedDatagrams, packetsTx,
-                                  lost, lateAck, ptoAck, ptoCounts,
-                                  wouldBlockRx, wouldBlockTx);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::Http3ConnectionStatsParams,
-                                  host, port, stats);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SSLTokensCacheRecordInfo, key,
-                                  expirationTime, overridableError, restored,
-                                  id, compressedPayload);
-
-}  // namespace IPC
-
 #endif  // mozilla_net_DashboardTypes_h_

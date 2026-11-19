@@ -1217,10 +1217,7 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
       case "downloadsCmd_showBlockedInfo":
         return this.download.hasBlockedData;
     }
-    return DownloadsViewUI.DownloadElementShell.prototype.isCommandEnabled.call(
-      this,
-      aCommand
-    );
+    return super.isCommandEnabled(aCommand);
   }
 
   doCommand(aCommand) {
@@ -1438,15 +1435,14 @@ var DownloadsViewController = {
   // Other functions
 
   updateCommands() {
-    function updateCommandsForObject(object) {
-      for (let name in object) {
-        if (DownloadsViewUI.isCommandName(name)) {
-          goUpdateCommand(name);
-        }
-      }
+    const commands = [
+      ...DownloadsViewUI.getCommandNamesFrom(this),
+      ...DownloadsViewUI.getCommandNamesFrom(DownloadsViewItem),
+    ];
+
+    for (let command of commands) {
+      goUpdateCommand(command);
     }
-    updateCommandsForObject(this);
-    updateCommandsForObject(DownloadsViewItem.prototype);
   },
 
   // Selection-independent commands
@@ -1743,7 +1739,6 @@ var DownloadsBlockedSubview = {
     const { download } = DownloadsView.itemForElement(element);
 
     let e = this.elements;
-    let s = DownloadsCommon.strings;
 
     e.deleteButton.hidden =
       download.error?.becauseBlockedByContentAnalysis &&
@@ -1769,14 +1764,18 @@ var DownloadsBlockedSubview = {
     e.details2.textContent = details[1];
 
     if (download.launchWhenSucceeded) {
-      e.unblockButton.label = s.unblockButtonOpen;
+      document.l10n.setAttributes(
+        e.unblockButton,
+        "downloads-unblock-button-open"
+      );
       e.unblockButton.command = "downloadsCmd_unblockAndOpen";
     } else {
-      e.unblockButton.label = s.unblockButtonUnblock;
+      document.l10n.setAttributes(
+        e.unblockButton,
+        "downloads-unblock-button-unblock"
+      );
       e.unblockButton.command = "downloadsCmd_unblockAndSave";
     }
-
-    e.deleteButton.label = s.unblockButtonConfirmBlock;
 
     let verdict = element.getAttribute("verdict");
     this.subview.setAttribute("verdict", verdict);

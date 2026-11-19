@@ -447,8 +447,7 @@ nsresult FetchDriver::Fetch(AbortSignalImpl* aSignalImpl,
   MOZ_RELEASE_ASSERT(!mRequest->IsSynchronous(),
                      "Synchronous fetch not supported");
 
-  UniquePtr<mozilla::ipc::PrincipalInfo> principalInfo =
-      std::make_unique<mozilla::ipc::PrincipalInfo>();
+  auto principalInfo = std::make_unique<mozilla::ipc::PrincipalInfo>();
   nsresult rv = PrincipalToPrincipalInfo(mPrincipal, principalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -1171,8 +1170,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
     response = MakeSafeRefPtr<InternalResponse>(responseStatus, statusText,
                                                 mRequest->GetCredentialsMode());
 
-    UniquePtr<mozilla::ipc::PrincipalInfo> principalInfo =
-        std::make_unique<mozilla::ipc::PrincipalInfo>();
+    auto principalInfo = std::make_unique<mozilla::ipc::PrincipalInfo>();
     nsresult rv = PrincipalToPrincipalInfo(mPrincipal, principalInfo.get());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -1390,7 +1388,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
     SRICheck::IntegrityMetadata(mRequest->GetIntegrity(), sourceUri, reporter,
                                 &mSRIMetadata);
     mSRIDataVerifier =
-        MakeUnique<SRICheckDataVerifier>(mSRIMetadata, channel, reporter);
+        std::make_unique<SRICheckDataVerifier>(mSRIMetadata, channel, reporter);
 
     // Do not retarget off main thread when using SRI API.
     return NS_OK;

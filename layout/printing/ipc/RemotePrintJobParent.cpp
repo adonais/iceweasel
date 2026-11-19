@@ -90,7 +90,7 @@ void RemotePrintJobParent::InitializePrint(const nsAString& aDocumentTitle,
     return;
   }
 
-  mPrintTranslator = MakeUnique<PrintTranslator>(mPrintDeviceContext);
+  mPrintTranslator = std::make_unique<PrintTranslator>(mPrintDeviceContext);
   FileDescriptor fd;
   rv = PrepareNextPageFD(&fd);
   if (NS_FAILED(rv)) {

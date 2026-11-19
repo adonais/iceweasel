@@ -7,6 +7,12 @@
 
 add_common_setup();
 
+const { getMozRemoteImageURL } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/modules/FaviconUtils.sys.mjs"
+);
+
+add_setup(setupBuiltInTestTrackers);
+
 async function checkURLWidget(rbs, blurringClick, expectedFavicon) {
   const { url, win, urlComponent } = rbs;
   const { emphasizedUrl, faviconImg, input, reset, wrapper } = urlComponent;
@@ -20,6 +26,7 @@ async function checkURLWidget(rbs, blurringClick, expectedFavicon) {
       () => expectedFavicon == faviconImg.src,
       "got the correct favicon"
     );
+    ok(faviconImg.src.startsWith("moz-remote-image:"), "favicon src is remote");
   } else {
     ok(await isNotDisplayed(faviconImg), "no favicon, so should be hidden");
   }
@@ -228,7 +235,12 @@ add_task(async function testURLWidgets() {
       () => tab.linkedBrowser.mIconURL,
       "Waiting for favicon"
     );
-    const favicon = tab.linkedBrowser.mIconURL;
+    const faviconUrl = tab.linkedBrowser.mIconURL;
+    const favicon = faviconUrl
+      ? getMozRemoteImageURL(faviconUrl, {
+          size: 16,
+        })
+      : undefined;
     await checkURLWidgets(AppMenu(win), favicon);
     await checkURLWidgets(ProtectionsPanel(win), favicon);
     await checkURLWidgets(HelpMenu(win), favicon);

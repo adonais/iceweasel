@@ -1,0 +1,22 @@
+--- a/CPP/Windows/Synchronization.h
++++ b/CPP/Windows/Synchronization.h
+@@ -275,7 +275,7 @@
+   CBaseHandle_WFMO(): _sync(NULL) {}
+   virtual ~CBaseHandle_WFMO();
+ 
+-  operator CHandle_WFMO() { return this; }
++  operator CHandle_WFMO() Z7_lifetimebound { return this; }
+   virtual bool IsSignaledAndUpdate() = 0;
+ };
+ 
+--- a/CPP/Windows/FileFind.cpp
++++ b/CPP/Windows/FileFind.cpp
+@@ -1078,7 +1078,7 @@
+ }
+ 
+ 
+-static const char *Get_Name_from_Path(CFSTR path) throw()
++static const char *Get_Name_from_Path(CFSTR path Z7_lifetimebound) throw()
+ {
+   size_t len = strlen(path);
+   if (len == 0)

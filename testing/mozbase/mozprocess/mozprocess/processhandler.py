@@ -249,7 +249,7 @@ class ProcessHandlerMixin:
 
         def kill(self, sig=None, timeout=None):
             self.send_signal(sig)
-            self.returncode = self.wait(timeout)
+            self.wait(timeout)
             self._cleanup()
             return self.returncode
 
@@ -272,7 +272,7 @@ class ProcessHandlerMixin:
             Returns the main process's exit code
             """
             # This call will be different for each OS
-            self.returncode = self._custom_wait(timeout=timeout)
+            self._custom_wait(timeout=timeout)
             if self.returncode is not None:
                 self._cleanup()
             return self.returncode
@@ -596,6 +596,22 @@ falling back to not using job objects for managing child processes""",
                             self.debug("We got a message %s" % msgid.value)
                             pass
 
+            def _update_returncode(self, exited=False):
+                """Set returncode if the process has exited. Returns False if
+                its handle has already been closed by _cleanup (possibly on
+                another thread).
+
+                - exited: the caller knows the process has exited, so an exit
+                  code equal to STILL_ACTIVE is the real exit code.
+                """
+                with self._cleanup_lock:
+                    if not self._handle:
+                        return False
+                    returncode = winprocess.GetExitCodeProcess(self._handle)
+                    if exited or returncode != winprocess.STILL_ACTIVE:
+                        self.returncode = returncode
+                    return True
+
             def _custom_wait(self, timeout=None):
                 """Custom implementation of wait.
 
@@ -603,11 +619,7 @@ falling back to not using job objects for managing child processes""",
                   will wait indefinitely.
                 """
                 # First, check to see if the process is still running
-                if self._handle:
-                    returncode = winprocess.GetExitCodeProcess(self._handle)
-                    if returncode != winprocess.STILL_ACTIVE:
-                        self.returncode = returncode
-                else:
+                if not self._update_returncode():
                     # Dude, the process is like totally dead!
                     return self.returncode
 
@@ -650,10 +662,7 @@ falling back to not using job objects for managing child processes""",
                             "IO Completion Port failed to signal process shutdown"
                         )
                     finally:
-                        if self._handle:
-                            returncode = winprocess.GetExitCodeProcess(self._handle)
-                            if returncode != winprocess.STILL_ACTIVE:
-                                self.returncode = returncode
+                        self._update_returncode()
 
                 else:
                     # Not managing with job objects, so all we can reasonably do
@@ -686,7 +695,7 @@ falling back to not using job objects for managing child processes""",
                     elif rc == winprocess.WAIT_OBJECT_0:
                         # We caught WAIT_OBJECT_0, which indicates all is well
                         self.debug("Single process terminated successfully")
-                        self.returncode = winprocess.GetExitCodeProcess(self._handle)
+                        self._update_returncode(exited=True)
                     else:
                         # An error occured we should probably throw
                         rc = winprocess.GetLastError()
@@ -950,7 +959,7 @@ falling back to not using job objects for managing child processes""",
         # processed.
         elif not self._ignore_children and self.reader.is_alive():
             return None
-        elif hasattr(self, "returncode"):
+        elif getattr(self, "returncode", None) is not None:
             return self.returncode
         else:
             return self.proc.poll()

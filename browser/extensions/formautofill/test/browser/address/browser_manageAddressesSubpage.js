@@ -49,10 +49,7 @@ async function withManageAddressesPage(taskFn) {
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.settings-redesign.enabled", true],
-      ["extensions.formautofill.addresses.enabled", true],
-    ],
+    set: [["extensions.formautofill.addresses.enabled", true]],
   });
 
   await clearAddresses();

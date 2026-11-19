@@ -3,6 +3,7 @@
 ["browser_console_storage_window_leak.js"]
 support-files = [
   "ConsoleStorageLeakHelper.sys.mjs",
+  "file_empty.html",
 ]
 
 ["browser_console_to_mozlog.js"]

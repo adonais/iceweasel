@@ -43,6 +43,7 @@
 #include "mozilla/dom/SVGViewportElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PatternHelpers.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsDisplayList.h"
 #include "nsFrameList.h"
@@ -379,6 +380,12 @@ float SVGUtils::ComputeOpacity(const nsIFrame* aFrame, bool aHandleOpacity) {
   return styleEffects->mOpacity;
 }
 
+static bool UseWebRenderPaths() {
+  return gfxVars::UseSoftwareWebRender()
+             ? StaticPrefs::gfx_webrender_paths_swgl()
+             : StaticPrefs::gfx_webrender_paths();
+}
+
 SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
                                                  bool aHandleOpacity) {
   MaskUsage usage;
@@ -402,6 +409,10 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
   SVGObserverUtils::GetAndObserveClipPath(firstFrame, &clipPathFrame);
   MOZ_ASSERT(!clipPathFrame || svgReset->mClipPath.IsUrl());
 
+  const bool fragmented =
+      firstFrame != aFrame ||
+      nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
+
   switch (svgReset->mClipPath.tag) {
     case ClipPathType::Url:
       if (clipPathFrame) {
@@ -410,9 +421,6 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
           // clipPathUnits="objectBoundingBox" resolves against the union of a
           // fragmented box's fragments, which a single clip shape positioned
           // relative to one fragment cannot describe.
-          const bool fragmented =
-              firstFrame != aFrame ||
-              nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
           if (StaticPrefs::gfx_webrender_svg_simple_clips() &&
               !usage.mShouldGenerateMaskLayer && !fragmented) {
             CSSRect rect;
@@ -428,9 +436,14 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
     case ClipPathType::Shape: {
       usage.mShouldApplyBasicShapeOrPath = true;
       const auto& shape = svgReset->mClipPath.AsShape()._0;
+      // These are rendered with WebRender clips rather than mask images.
+      // Paths are positioned relative to one fragment, while the mask clips
+      // every fragment with the first fragment's reference box.
       usage.mIsSimpleClipShape =
           !usage.mShouldGenerateMaskLayer &&
-          (shape->IsRect() || shape->IsCircle() || shape->IsEllipse());
+          (shape->IsRect() || shape->IsCircle() || shape->IsEllipse() ||
+           ((shape->IsPathOrShape() || shape->IsPolygon()) &&
+            UseWebRenderPaths() && !fragmented));
       break;
     }
     case ClipPathType::Box:

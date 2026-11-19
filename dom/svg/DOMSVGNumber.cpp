@@ -74,6 +74,8 @@ void DOMSVGNumber::CleanupWeakRefs() {
   // free / soon-to-be-free memory. If GC has unlinked us using the cycle
   // collector code, then that has already happened, and mList is null.
   if (mList) {
+    // The slot we clear must really be ours; otherwise we'd leave our own
+    // slot holding a dangling pointer (use-after-free).
     MOZ_RELEASE_ASSERT(mList->mItems[mListIndex] == this,
                        "Clearing out the wrong list index...?");
     mList->mItems[mListIndex] = nullptr;

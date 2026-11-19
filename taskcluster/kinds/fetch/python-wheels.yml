@@ -37,3 +37,57 @@ pycairo-1.29.0:
         sha256: f3f7fde97325cae80224c09f12564ef58d0d0f655da0e3b040f5807bd5bd3142
         size: 665871
         artifact-name: pycairo.tar.zst
+
+psutil-linux-x86_64:
+    description: psutil-7.2.2 wheel for linux x86_64
+    fetch:
+        type: static-url
+        url: https://files.pythonhosted.org/packages/b5/70/5d8df3b09e25bce090399cf48e452d25c935ab72dad19406c77f4e828045/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl
+        sha256: 076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9
+        size: 155560
+        artifact-name: psutil-linux-x86_64.whl
+
+psutil-linux-aarch64:
+    description: psutil-7.2.2 wheel for linux aarch64
+    fetch:
+        type: static-url
+        url: https://files.pythonhosted.org/packages/63/65/37648c0c158dc222aba51c089eb3bdfa238e621674dc42d48706e639204f/psutil-7.2.2-cp36-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
+        sha256: b0726cecd84f9474419d67252add4ac0cd9811b04d61123054b9fb6f57df6e9e
+        size: 156997
+        artifact-name: psutil-linux-aarch64.whl
+
+psutil-macosx-x86_64:
+    description: psutil-7.2.2 wheel for macOS x86_64
+    fetch:
+        type: static-url
+        url: https://files.pythonhosted.org/packages/e7/36/5ee6e05c9bd427237b11b3937ad82bb8ad2752d72c6969314590dd0c2f6e/psutil-7.2.2-cp36-abi3-macosx_10_9_x86_64.whl
+        sha256: ed0cace939114f62738d808fdcecd4c869222507e266e574799e9c0faa17d486
+        size: 129090
+        artifact-name: psutil-macosx-x86_64.whl
+
+psutil-macosx-arm64:
+    description: psutil-7.2.2 wheel for macOS arm64
+    fetch:
+        type: static-url
+        url: https://files.pythonhosted.org/packages/80/c4/f5af4c1ca8c1eeb2e92ccca14ce8effdeec651d5ab6053c589b074eda6e1/psutil-7.2.2-cp36-abi3-macosx_11_0_arm64.whl
+        sha256: 1a7b04c10f32cc88ab39cbf606e117fd74721c831c98a27dc04578deb0c16979
+        size: 129859
+        artifact-name: psutil-macosx-arm64.whl
+
+psutil-win-amd64:
+    description: psutil-7.2.2 wheel for Windows amd64
+    fetch:
+        type: static-url
+        url: https://files.pythonhosted.org/packages/b4/90/e2159492b5426be0c1fef7acba807a03511f97c5f86b3caeda6ad92351a7/psutil-7.2.2-cp37-abi3-win_amd64.whl
+        sha256: eb7e81434c8d223ec4a219b5fc1c47d0417b12be7ea866e24fb5ad6e84b3d988
+        size: 137737
+        artifact-name: psutil-win-amd64.whl
+
+psutil-win-arm64:
+    description: psutil-7.2.2 wheel for Windows arm64
+    fetch:
+        type: static-url
+        url: https://files.pythonhosted.org/packages/8c/c7/7bb2e321574b10df20cbde462a94e2b71d05f9bbda251ef27d104668306a/psutil-7.2.2-cp37-abi3-win_arm64.whl
+        sha256: 8c233660f575a5a89e6d4cb65d9f938126312bca76d8fe087b947b3a1aaac9ee
+        size: 134617
+        artifact-name: psutil-win-arm64.whl

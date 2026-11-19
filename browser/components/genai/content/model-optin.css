@@ -35,7 +35,7 @@
 }
 
 .optin-footer-message {
-  margin-top: var(--space-large);
+  margin-block-start: var(--space-large);
   text-align: center;
 }
 
@@ -51,7 +51,7 @@
 }
 
 .optin-progress-bar-wrapper {
-  margin-bottom: var(--space-medium);
+  margin-block-end: var(--space-medium);
 }
 
 .optin-progress-bar {

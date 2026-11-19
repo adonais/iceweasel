@@ -1143,11 +1143,11 @@ void CacheStorageService::RecordMemoryOnlyEntry(CacheEntry* aEntry,
       return;
     }
 
-    entries = sGlobalEntryTables
-                  ->InsertOrUpdate(
-                      memoryStorageID,
-                      MakeUnique<CacheEntryTable>(CacheEntryTable::MEMORY_ONLY))
-                  .get();
+    entries =
+        sGlobalEntryTables
+            ->InsertOrUpdate(memoryStorageID, std::make_unique<CacheEntryTable>(
+                                                  CacheEntryTable::MEMORY_ONLY))
+            .get();
     LOG(("  new memory-only storage table for %s", memoryStorageID.get()));
   }
 
@@ -1666,7 +1666,7 @@ nsresult CacheStorageService::AddStorageEntry(
                 [&aContextKey] {
                   LOG(("  new storage entries table for context '%s'",
                        PromiseFlatCString(aContextKey).get()));
-                  return MakeUnique<CacheEntryTable>(
+                  return std::make_unique<CacheEntryTable>(
                       CacheEntryTable::ALL_ENTRIES);
                 })
             .get();

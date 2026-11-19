@@ -2350,6 +2350,26 @@ void MacroAssembler::branchTestNull(Condition cond, const ValueOperand& value,
   branchTestNullImpl(cond, value, label);
 }
 
+void MacroAssembler::branchTestNullOrUndefined(Condition cond, Register tag,
+                                               Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  if (cond == Equal) {
+    branchTestNull(Equal, tag, label);
+    branchTestUndefined(Equal, tag, label);
+    return;
+  }
+  Label done;
+  branchTestNull(Equal, tag, &done);
+  branchTestUndefined(NotEqual, tag, label);
+  bind(&done);
+}
+
+void MacroAssembler::branchTestNullOrUndefined(Condition cond,
+                                               const ValueOperand& value,
+                                               Label* label) {
+  branchTestNullOrUndefined(cond, value.typeReg(), label);
+}
+
 template <typename T>
 void MacroAssembler::branchTestNullImpl(Condition cond, const T& t,
                                         Label* label) {
@@ -2382,6 +2402,11 @@ void MacroAssembler::branchTestObjectImpl(Condition cond, const T& t,
                                           Label* label) {
   Condition c = testObject(cond, t);
   ma_b(label, c);
+}
+
+void MacroAssembler::branchTestGCThing(Condition cond, Register tag,
+                                       Label* label) {
+  branchTestGCThingImpl(cond, tag, label);
 }
 
 void MacroAssembler::branchTestGCThing(Condition cond, const Address& address,

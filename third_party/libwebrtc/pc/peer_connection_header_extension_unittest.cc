@@ -92,7 +92,6 @@ class PeerConnectionHeaderExtensionTest
     factory_dependencies.env =
         CreateEnvironment(CreateTestFieldTrialsPtr(field_trials_string));
     factory_dependencies.network_thread = Thread::Current();
-    factory_dependencies.worker_thread = Thread::Current();
     factory_dependencies.signaling_thread = Thread::Current();
     EnableFakeMedia(factory_dependencies, std::move(media_engine));
 

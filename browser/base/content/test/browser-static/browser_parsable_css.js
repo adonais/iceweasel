@@ -25,10 +25,11 @@ let ignoreList = [
     errorMessage: /Unknown property.*-moz-/i,
     isFromDevTools: false,
   },
-  // content: -moz-alt-content is UA-only.
+  // color: -moz-inherit-from-body is UA-only.
   {
-    sourceName: /\b(html)\.css$/i,
-    errorMessage: /Error in parsing value for ‘content:/i,
+    sourceName: /\b(quirk)\.css$/i,
+    errorMessage:
+      /Error in parsing value for ‘color: -moz-inherit-from-body;’./i,
     isFromDevTools: false,
   },
   // megalist-agent.css is loaded as an agent sheet, so its UA-only

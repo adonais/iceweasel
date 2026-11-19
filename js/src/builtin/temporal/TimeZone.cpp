@@ -804,6 +804,42 @@ bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
 }
 
 /**
+ * GetOffsetNanosecondsFor ( timeZone, epochNs )
+ *
+ * Wrapper handling ZonedDateTimeObject offset cache.
+ */
+bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
+                                           Handle<ZonedDateTime> zonedDateTime,
+                                           int64_t* offsetNanoseconds) {
+  Handle<ZonedDateTimeObject*> zdtObj = zonedDateTime.object();
+
+  if (zdtObj != nullptr) {
+    if (mozilla::Maybe<int32_t> cached = zdtObj->cachedOffsetSeconds()) {
+      *offsetNanoseconds =
+          int64_t(*cached) * ToNanoseconds(TemporalUnit::Second);
+      return true;
+    }
+  }
+
+  if (!GetOffsetNanosecondsFor(cx, zonedDateTime.timeZone(),
+                               zonedDateTime.epochNanoseconds(),
+                               offsetNanoseconds)) {
+    return false;
+  }
+
+  // IANA tzdata, and by extension ICU zoneinfo64, record offsets with second
+  // precision.
+  MOZ_ASSERT(*offsetNanoseconds % ToNanoseconds(TemporalUnit::Second) == 0,
+             "TZ offset must be an exact second value");
+
+  if (zdtObj != nullptr) {
+    zdtObj->setCachedOffsetSeconds(
+        int32_t(*offsetNanoseconds / ToNanoseconds(TemporalUnit::Second)));
+  }
+  return true;
+}
+
+/**
  * TimeZoneEquals ( one, two )
  */
 bool js::temporal::TimeZoneEquals(const TimeZoneValue& one,
@@ -904,6 +940,28 @@ bool js::temporal::GetISODateTimeFor(JSContext* cx,
   // Step 1.
   int64_t offsetNanoseconds;
   if (!GetOffsetNanosecondsFor(cx, timeZone, epochNs, &offsetNanoseconds)) {
+    return false;
+  }
+  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
+
+  // Steps 2-3.
+  *result = GetISODateTimeFor(epochNs, offsetNanoseconds);
+  return true;
+}
+
+/**
+ * GetISODateTimeFor ( timeZone, epochNs )
+ */
+bool js::temporal::GetISODateTimeFor(JSContext* cx,
+                                     Handle<ZonedDateTime> zonedDateTime,
+                                     ISODateTime* result) {
+  EpochNanoseconds epochNs = zonedDateTime.epochNanoseconds();
+
+  MOZ_ASSERT(IsValidEpochNanoseconds(epochNs));
+
+  // Step 1.
+  int64_t offsetNanoseconds;
+  if (!GetOffsetNanosecondsFor(cx, zonedDateTime, &offsetNanoseconds)) {
     return false;
   }
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));

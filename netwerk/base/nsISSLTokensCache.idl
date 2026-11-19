@@ -15,13 +15,12 @@ interface nsISSLTokensCache : nsISupports {
   /**
    * Clears both the NSS in-memory session cache and all SSLTokensCache
    * resumption tokens.
-   * WARNING: May be racy when using the socket process.
    */
   void clearSSLExternalAndInternalSessionCache();
 
   /**
    * Same as clearSSLExternalAndInternalSessionCache(), but returns a promise
-   * that resolves once the socket process (if any) has also cleared.
+   * that resolves once the caches have been cleared.
    */
   [implicit_jscontext]
   Promise asyncClearSSLExternalAndInternalSessionCache();

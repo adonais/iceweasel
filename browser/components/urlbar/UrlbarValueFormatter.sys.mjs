@@ -61,6 +61,7 @@ export class UrlbarValueFormatter {
     // Cleanup that must be done in any case, even if there's no value.
     this.#urlbarInput.removeAttribute("domaindir");
     this.#scheme.value = "";
+    this.#inputField.style.setProperty("--urlbar-scheme-size", "0px");
 
     if (!this.#urlbarInput.value) {
       return;
@@ -107,22 +108,28 @@ export class UrlbarValueFormatter {
   }
 
   #scrollHostIntoView(isRTL) {
-    if (this.#hostRange) {
-      const hostRect = this.#hostRange.getBoundingClientRect();
-      const urlbarRect = this.#inputField.getBoundingClientRect();
-
-      const scrollDelta = isRTL
-        ? hostRect.left - urlbarRect.left
-        : hostRect.right - urlbarRect.right;
-
-      const scrollTarget = this.#inputField.scrollLeft + scrollDelta;
-
-      this.#inputField.scrollLeft = isRTL
-        ? Math.min(this.#inputField.scrollLeftMax, scrollTarget)
-        : Math.max(0, scrollTarget);
-    } else {
+    if (!this.#hostRange) {
       this.#inputField.scrollLeft = isRTL ? this.#inputField.scrollLeftMax : 0;
+      return;
     }
+
+    const hostRect = this.#hostRange.getBoundingClientRect();
+    const urlbarRect = this.#inputField.getBoundingClientRect();
+    const style = this.#window.getComputedStyle(this.#inputField);
+    const fadeSize = parseFloat(
+      style.getPropertyValue("--urlbar-overflow-fade-size")
+    );
+    const schemeSize = isRTL
+      ? parseFloat(style.getPropertyValue("--urlbar-scheme-size"))
+      : 0;
+    const scrollDelta = isRTL
+      ? hostRect.left - (urlbarRect.left + fadeSize + schemeSize)
+      : hostRect.right - (urlbarRect.right - fadeSize);
+    const scrollTarget = this.#inputField.scrollLeft + scrollDelta;
+
+    this.#inputField.scrollLeft = isRTL
+      ? Math.min(this.#inputField.scrollLeftMax, scrollTarget)
+      : Math.max(0, scrollTarget);
   }
 
   #ensureFormattedHostVisible(urlMetaData) {

@@ -7,13 +7,16 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -22,7 +25,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -38,24 +41,17 @@ import mozilla.components.browser.menu.R as menuR
 import mozilla.components.compose.menu.R as MozacMenuR
 import org.hamcrest.Matchers.allOf
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
-import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
-import org.mozilla.fenix.components.menu.MenuDialogTestTag.EXTENSIONS
-import org.mozilla.fenix.components.menu.MenuDialogTestTag.EXTENSIONS_OPTION_CHEVRON
-import org.mozilla.fenix.components.menu.MenuDialogTestTag.MORE_OPTION_CHEVRON
-import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
+import org.mozilla.fenix.components.menu.MenuTestTag
 import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndDescription
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
-import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
@@ -103,10 +99,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
                 "verifyCloseAllTabsButton: Trying to verify that the \"Customize Reader view\" button is displayed",
             )
             composeTestRule
-                .onNodeWithContentDescription(
-                    getStringResource(R.string.browser_menu_customize_reader_view_2),
-                    useUnmergedTree = true,
-                )
+                .onNodeWithText(getStringResource(R.string.browser_menu_customize_reader_view_2))
                 .assertIsDisplayed()
             Log.i(TAG, "verifyCloseAllTabsButton: Verified that the \"Customize Reader view\" button is displayed")
         } else {
@@ -115,10 +108,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
                 "verifyCloseAllTabsButton: Trying to verify that the \"Customize Reader view\" button is not displayed",
             )
             composeTestRule
-                .onNodeWithContentDescription(
-                    getStringResource(R.string.browser_menu_customize_reader_view_2),
-                    useUnmergedTree = true,
-                )
+                .onNodeWithText(getStringResource(R.string.browser_menu_customize_reader_view_2))
                 .assertIsNotDisplayed()
             Log.i(TAG, "verifyCloseAllTabsButton: Verified that the \"Customize Reader view\" button is not displayed")
         }
@@ -127,9 +117,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyQuitButtonExists() {
         Log.i(TAG, "verifyShareTabButton: Trying to verify that the \"Quit $appName\" button is visible")
         composeTestRule
-            .onNodeWithContentDescription(
-                getStringResource(R.string.browser_menu_delete_browsing_data_on_quit, appName)
-            )
+            .onNodeWithText(getStringResource(R.string.browser_menu_delete_browsing_data_on_quit, appName))
             .assertIsDisplayed()
         Log.i(TAG, "verifyShareTabButton: Verified that the \"Quit $appName\" button is visible")
     }
@@ -182,9 +170,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun verifySwitchToDesktopSiteButtonIsEnabled(isEnabled: Boolean) {
         Log.i(TAG, "verifySuggestedUserName: Waiting for the \"Desktop site\" button to exist")
-        composeTestRule.waitUntilAtLeastOneExists(
-            hasContentDescription(getStringResource(R.string.browser_menu_desktop_site), substring = true)
-        )
+        composeTestRule.waitUntilAtLeastOneExists(hasText(getStringResource(R.string.browser_menu_desktop_site)))
         Log.i(TAG, "verifySuggestedUserName: Waited for the \"Desktop site\" button to exist")
         Log.i(
             TAG,
@@ -238,7 +224,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
         composeTestRule.shareButton().assertIsDisplayed()
         Log.i(TAG, "verifyPageMainMenuItems: Verified that the \"Share\" button exists.")
         Log.i(TAG, "verifyPageMainMenuItems: Trying to verify that the \"Bookmark page\" button exists.")
-        assertUIObjectExists(itemWithDescription(getStringResource(R.string.browser_menu_bookmark_this_page_2)))
+        assertUIObjectExists(itemWithText(getStringResource(R.string.browser_menu_bookmark_this_page_2)))
         Log.i(TAG, "verifyPageMainMenuItems: Verified that the \"Bookmark page\" button exists.")
         Log.i(TAG, "verifyPageMainMenuItems: Trying to verify that the \"Find in page\" button exists.")
         composeTestRule.findInPageButton().assertIsDisplayed()
@@ -291,7 +277,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
         composeTestRule.shareButton().assertIsDisplayed()
         Log.i(TAG, "verifyPageMainMenuItemsInLandscapeMode: Verified that the \"Share\" button exists.")
         Log.i(TAG, "verifyPageMainMenuItemsInLandscapeMode: Trying to verify that the \"Bookmark page\" button exists.")
-        assertUIObjectExists(itemWithDescription(getStringResource(R.string.browser_menu_bookmark_this_page_2)))
+        assertUIObjectExists(itemWithText(getStringResource(R.string.browser_menu_bookmark_this_page_2)))
         Log.i(TAG, "verifyPageMainMenuItemsInLandscapeMode: Verified that the \"Bookmark page\" button exists.")
         Log.i(TAG, "verifyPageMainMenuItemsInLandscapeMode: Trying to verify that the \"Find in page\" button exists.")
         composeTestRule.findInPageButton().assertIsDisplayed()
@@ -309,7 +295,8 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             TAG,
             "verifyPageMainMenuItemsInLandscapeMode: Trying to scroll to and verify that the \"History\" button exists.",
         )
-        composeTestRule.historyButton().performScrollTo().assertIsDisplayed()
+        composeTestRule.scrollMainMenuTo(getStringResource(R.string.library_history))
+        composeTestRule.historyButton().assertIsDisplayed()
         Log.i(TAG, "verifyPageMainMenuItemsInLandscapeMode: Verified that the \"History\" button exists.")
         Log.i(
             TAG,
@@ -333,13 +320,15 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             TAG,
             "verifyPageMainMenuItemsInLandscapeMode: Trying to scroll to and verify that the \"Sign in\" button exists.",
         )
-        composeTestRule.signInButton().performScrollTo().assertIsDisplayed()
+        composeTestRule.scrollMainMenuTo(getStringResource(R.string.browser_menu_sign_in))
+        composeTestRule.signInButton().assertIsDisplayed()
         Log.i(TAG, "verifyPageMainMenuItemsInLandscapeMode: Verified that the \"Sign in\" button exists.")
         Log.i(
             TAG,
             "verifyPageMainMenuItemsInLandscapeMode: Trying to scroll to and verify that the \"Settings\" button exists.",
         )
-        composeTestRule.settingsButton().performScrollTo().assertIsDisplayed()
+        composeTestRule.scrollMainMenuTo(getStringResource(R.string.browser_menu_settings))
+        composeTestRule.settingsButton().assertIsDisplayed()
         Log.i(TAG, "verifyPageMainMenuItemsInLandscapeMode: Verified that the \"Settings\" button exists.")
         Log.i(
             TAG,
@@ -451,7 +440,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             TAG,
             "clickMoreOptionChevron: Trying to click the \"More option chevron\" button from the new main menu design.",
         )
-        composeTestRule.moreChevronButton().performClick()
+        composeTestRule.moreButton().performClick()
         Log.i(TAG, "clickMoreOptionChevron: Clicked the \"More option chevron\" button from the new main menu design.")
         composeTestRule.waitForIdle()
         mDevice.waitForIdle()
@@ -525,7 +514,10 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             "verifyExtensionsButtonWithInstalledExtension: Trying to verify the extensions button shows: $extensionTitle",
         )
         composeTestRule.waitUntil(waitingTimeLong) {
-            itemWithResIdAndDescription(EXTENSIONS, extensionTitle).exists()
+            composeTestRule
+                .onAllNodes(extensionsItem().and(hasText(extensionTitle, substring = true)))
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .isNotEmpty()
         }
         Log.i(
             TAG,
@@ -537,38 +529,23 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
     fun clickExtensionActionButton(extensionTitle: String) {
         // Extension browserAction or pageAction button. On desktop they render
         // in different UI surfaces, on mobile they are in the same place.
-        val extActionButton =
-            hasTestTag(WEB_EXTENSION_ITEM).and(hasContentDescription(extensionTitle, substring = true))
+        // The collapsed Extensions row also lists the extension title in its summary.
+        val extActionButton = hasText(extensionTitle, substring = true).and(!extensionsItem())
 
         Log.i(TAG, "clickExtensionActionButton: Waiting for the Extensions section")
-        composeTestRule.waitUntil(waitingTimeLong) {
-            composeTestRule
-                .onAllNodes(hasTestTag(EXTENSIONS_OPTION_CHEVRON), useUnmergedTree = true)
-                .fetchSemanticsNodes(atLeastOneRootRequired = false)
-                .isNotEmpty()
-        }
+        composeTestRule.waitUntilAtLeastOneExists(extensionsItem(), waitingTimeLong)
 
         // The extension's action button lives inside the collapsible
         // Extensions submenu; expand it if it is not already showing.
-        if (
-            composeTestRule
-                .onAllNodes(extActionButton, useUnmergedTree = true)
-                .fetchSemanticsNodes(atLeastOneRootRequired = false)
-                .isEmpty()
-        ) {
+        if (composeTestRule.onAllNodes(extActionButton).fetchSemanticsNodes(atLeastOneRootRequired = false).isEmpty()) {
             Log.i(TAG, "clickExtensionActionButton: Expanding the Extensions section")
-            composeTestRule.extensionsChevronButton().performClick()
+            composeTestRule.extensionsButton().performClick()
         }
 
         Log.i(TAG, "clickExtensionActionButton: Waiting for the $extensionTitle action button")
-        composeTestRule.waitUntil(waitingTimeLong) {
-            composeTestRule
-                .onAllNodes(extActionButton, useUnmergedTree = true)
-                .fetchSemanticsNodes(atLeastOneRootRequired = false)
-                .isNotEmpty()
-        }
+        composeTestRule.waitUntilAtLeastOneExists(extActionButton, waitingTimeLong)
         Log.i(TAG, "clickExtensionActionButton: Clicking the $extensionTitle action button")
-        composeTestRule.onNode(extActionButton, useUnmergedTree = true).performClick()
+        composeTestRule.onNode(extActionButton).performClick()
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -578,7 +555,8 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             "verifyTryRecommendedExtensionButton: Trying to verify that the \"Extensions - Try a recommended extension\" button exists.",
         )
         composeTestRule.waitUntilAtLeastOneExists(
-            hasContentDescription("Extensions Try a recommended extension", substring = true),
+            extensionsItem()
+                .and(hasText(getStringResource(R.string.browser_menu_try_a_recommended_extension_description))),
             waitingTimeLong,
         )
         Log.i(
@@ -655,10 +633,8 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             localizedText: String = getStringResource(R.string.browser_menu_settings),
             interact: SettingsRobot.() -> Unit,
         ): SettingsRobot.Transition {
-            // Match the content description exactly: a "contains" match also resolves to the VPN
-            // row, whose control is described "Open VPN settings", and clicks it instead.
             Log.i(TAG, "clickSettingsButton: Trying to click the Settings button from the new main menu design.")
-            mDevice.findObject(UiSelector().description(localizedText)).click()
+            mDevice.findObject(UiSelector().text(localizedText)).click()
             Log.i(TAG, "clickSettingsButton: Clicked the Settings button from the new main menu design.")
             composeTestRule.waitForIdle()
             mDevice.waitForIdle()
@@ -692,7 +668,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             interact: SettingsSignInToSyncRobot.() -> Unit
         ): SettingsSignInToSyncRobot.Transition {
             Log.i(TAG, "clickSignInToSyncButton: Trying to click \"Sign in\" main menu button")
-            composeTestRule.onNodeWithContentDescription("Sign in Sync passwords, bookmarks, and more").performClick()
+            composeTestRule.signInButton().performClick()
             Log.i(TAG, "clickSignInToSyncButton: Clicked \"Sign in\" main menu button")
 
             SettingsSignInToSyncRobot().interact()
@@ -701,7 +677,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
 
         fun clickBookmarksButton(interact: BookmarksRobot.() -> Unit): BookmarksRobot.Transition {
             Log.i(TAG, "clickBookmarksButton: Trying to click the Bookmarks button from the new main menu design.")
-            itemWithDescription(getStringResource(R.string.library_bookmarks)).click()
+            itemWithText(getStringResource(R.string.library_bookmarks)).click()
             Log.i(TAG, "clickBookmarksButton: Clicked the Bookmarks button from the new main menu design.")
             composeTestRule.waitForIdle()
 
@@ -840,7 +816,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
 
         fun forceRefreshPage(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "forceRefreshPage: Trying to long click the \"Refresh\" button")
-            mDevice.findObject(By.desc(getStringResource(R.string.browser_menu_refresh))).click(LONG_CLICK_DURATION)
+            mDevice.findObject(By.text(getStringResource(R.string.browser_menu_refresh))).click(LONG_CLICK_DURATION)
             Log.i(TAG, "forceRefreshPage: Long clicked the \"Refresh\" button")
 
             BrowserRobot(composeTestRule).interact()
@@ -877,10 +853,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
         fun clickCustomizeReaderViewButton(interact: ReaderViewRobot.() -> Unit): ReaderViewRobot.Transition {
             Log.i(TAG, "clickCustomizeReaderViewButton: Trying to click the \"Customize reader view\" button")
             composeTestRule
-                .onNodeWithContentDescription(
-                    getStringResource(R.string.browser_menu_customize_reader_view_2),
-                    useUnmergedTree = true,
-                )
+                .onNodeWithText(getStringResource(R.string.browser_menu_customize_reader_view_2))
                 .performClick()
             Log.i(TAG, "clickCustomizeReaderViewButton: Clicked the \"Customize reader view\" button")
 
@@ -949,7 +922,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
                 "clickAddToHomeScreenButton: Waiting for $waitingTime until the \"Add app to Home screen…\" button does not exist.",
             )
             composeTestRule.waitUntilDoesNotExist(
-                hasContentDescription(getStringResource(R.string.browser_menu_add_app_to_homescreen)),
+                hasText(getStringResource(R.string.browser_menu_add_app_to_homescreen)),
                 waitingTime,
             )
             Log.i(
@@ -980,8 +953,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             interact: SettingsSubMenuAddonsManagerRobot.() -> Unit
         ): SettingsSubMenuAddonsManagerRobot.Transition {
             Log.i(TAG, "clickExtensionsButton: Trying to click the \"Extensions\" button")
-            assertUIObjectExists(itemWithResId("mainMenu.extensions"))
-            itemWithResId("mainMenu.extensions").clickAndWaitForNewWindow(waitingTimeShort)
+            composeTestRule.extensionsButton().performClick()
             Log.i(TAG, "clickExtensionsButton: Clicked the \"Extensions\" button")
             composeTestRule.waitForIdle()
             waitForAppWindowToBeUpdated()
@@ -1015,7 +987,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
         fun clickTranslatedButton(interact: TranslationsRobot.() -> Unit): TranslationsRobot.Transition {
             Log.i(TAG, "clickTranslateButton: Trying to click the Translate button from the new main menu design.")
             composeTestRule.waitUntilAtLeastOneExists(
-                hasContentDescription(getStringResource(R.string.browser_menu_translated)),
+                hasText(getStringResource(R.string.browser_menu_translated)),
                 waitingTime,
             )
             composeTestRule.translatedButton().assertIsDisplayed()
@@ -1054,13 +1026,8 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
                 TAG,
                 "clickExtensionsChevronFromMainMenu: Trying to click the \"Extensions chevron\" button from the new main menu design.",
             )
-            composeTestRule.waitUntil(waitingTimeLong) {
-                composeTestRule
-                    .onAllNodes(hasTestTag(EXTENSIONS_OPTION_CHEVRON), useUnmergedTree = true)
-                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
-                    .isNotEmpty()
-            }
-            composeTestRule.extensionsChevronButton().performClick()
+            composeTestRule.waitUntilAtLeastOneExists(extensionsItem(), waitingTimeLong)
+            composeTestRule.extensionsButton().performClick()
             Log.i(
                 TAG,
                 "clickExtensionsChevronFromMainMenu: Clicked the \"Extensions chevron\" button from the new main menu design.",
@@ -1131,98 +1098,111 @@ private fun ComposeTestRule.refreshButton() = onNodeWithText("Refresh")
 
 private fun ComposeTestRule.shareButton() = onNodeWithText("Share")
 
-private fun ComposeTestRule.signInButton() = onNodeWithContentDescription("Sign in Sync passwords, bookmarks, and more")
+/** The menu items are in a lazy list, which only has nodes for the items scrolled into view. */
+private fun ComposeTestRule.scrollMainMenuTo(text: String) =
+    onNode(hasScrollToNodeAction().and(hasAnyAncestor(hasTestTag(MenuTestTag.MAIN_MENU))))
+        .performScrollToNode(hasText(text))
+
+private fun ComposeTestRule.signInButton() = onNodeWithText(getStringResource(R.string.browser_menu_sign_in))
 
 private fun ComposeTestRule.settingsButton(localizedText: String = getStringResource(R.string.browser_menu_settings)) =
-    onNodeWithContentDescription(localizedText)
+    onNodeWithText(localizedText)
 
-private fun ComposeTestRule.extensionsButton() = onNodeWithTag(EXTENSIONS)
+private fun extensionsItem() = hasText(getStringResource(R.string.browser_menu_extensions))
+
+private fun ComposeTestRule.extensionsButton() = onNode(extensionsItem())
 
 private fun ComposeTestRule.noExtensionsEnabledButton() =
-    onNodeWithContentDescription("Extensions No extensions enabled", substring = true)
+    onNode(extensionsItem().and(hasText(getStringResource(R.string.browser_menu_no_extensions_installed_description))))
 
-private fun ComposeTestRule.moreButton() = onNodeWithContentDescription("More Collapsed")
+private fun ComposeTestRule.moreButton() = onNodeWithText(getStringResource(R.string.browser_menu_more_settings))
 
-private fun ComposeTestRule.moreChevronButton() = onNodeWithTag(MORE_OPTION_CHEVRON, useUnmergedTree = true)
+private fun ComposeTestRule.bookmarksButton() = onNodeWithText(getStringResource(R.string.library_bookmarks))
 
-private fun ComposeTestRule.bookmarksButton() =
-    onNodeWithContentDescription(getStringResource(R.string.library_bookmarks), substring = true)
+private fun ComposeTestRule.historyButton() = onNodeWithText(getStringResource(R.string.library_history))
 
-private fun ComposeTestRule.historyButton() =
-    onNodeWithContentDescription(getStringResource(R.string.library_history), substring = true)
+private fun ComposeTestRule.downloadsButton() = onNodeWithText(getStringResource(R.string.library_downloads))
 
-private fun ComposeTestRule.downloadsButton() =
-    onNodeWithContentDescription(getStringResource(R.string.library_downloads), substring = true)
+private fun ComposeTestRule.passwordsButton() = onNodeWithText(getStringResource(R.string.browser_menu_passwords))
 
-private fun ComposeTestRule.passwordsButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_passwords), substring = true)
-
-private fun ComposeTestRule.quitFirefoxButton() = onNodeWithContentDescription("Quit $appName")
+private fun ComposeTestRule.quitFirefoxButton() =
+    onNodeWithText(getStringResource(R.string.browser_menu_delete_browsing_data_on_quit, appName))
 
 // Page main menu items
 
-private fun ComposeTestRule.findInPageButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_find_in_page), substring = true)
+private fun ComposeTestRule.findInPageButton() = onNodeWithText(getStringResource(R.string.browser_menu_find_in_page))
 
 private fun ComposeTestRule.toolsMenuButton() = onNodeWithTag("mainMenu.tools")
 
 private fun ComposeTestRule.saveMenuButton() = onNodeWithTag("mainMenu.save")
 
 private fun ComposeTestRule.bookmarkPageButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_bookmark_this_page_2))
+    onNodeWithText(getStringResource(R.string.browser_menu_bookmark_this_page_2))
 
-private fun ComposeTestRule.desktopSiteButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_desktop_site), substring = true)
+private fun ComposeTestRule.desktopSiteButton() = onNodeWithText(getStringResource(R.string.browser_menu_desktop_site))
 
-private fun ComposeTestRule.enabledDesktopSiteButton() = onNodeWithTag(DESKTOP_SITE_ON)
+private fun ComposeTestRule.enabledDesktopSiteButton() =
+    onNode(
+        hasText(getStringResource(R.string.browser_menu_desktop_site))
+            .and(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    getStringResource(R.string.browser_feature_desktop_site_on),
+                )
+            )
+    )
 
-private fun ComposeTestRule.disabledDesktopSiteButton() = onNodeWithTag(DESKTOP_SITE_OFF)
+private fun ComposeTestRule.disabledDesktopSiteButton() =
+    onNode(
+        hasText(getStringResource(R.string.browser_menu_desktop_site))
+            .and(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    getStringResource(R.string.browser_feature_desktop_site_off),
+                )
+            )
+    )
 
 // Save sub menu items
 
 private fun ComposeTestRule.editBookmarkButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_edit_bookmark))
+    onNodeWithText(getStringResource(R.string.browser_menu_edit_bookmark))
 
 private fun ComposeTestRule.addToShortcutsButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_add_to_shortcuts))
+    onNodeWithText(getStringResource(R.string.browser_menu_add_to_shortcuts))
 
 private fun ComposeTestRule.removeFromShortcutsButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_remove_from_shortcuts))
+    onNodeWithText(getStringResource(R.string.browser_menu_remove_from_shortcuts))
 
 private fun ComposeTestRule.addToHomeScreenButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_add_to_homescreen))
+    onNodeWithText(getStringResource(R.string.browser_menu_add_to_homescreen))
 
 private fun ComposeTestRule.addAppToHomeScreenButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_add_app_to_homescreen))
+    onNodeWithText(getStringResource(R.string.browser_menu_add_app_to_homescreen))
 
 private fun ComposeTestRule.saveToCollectionButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_save_to_collection_2))
+    onNodeWithText(getStringResource(R.string.browser_menu_save_to_collection_2))
 
-private fun ComposeTestRule.saveAsPDFButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_save_as_pdf_2))
+private fun ComposeTestRule.saveAsPDFButton() = onNodeWithText(getStringResource(R.string.browser_menu_save_as_pdf_2))
 
 private fun ComposeTestRule.translatePageButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_translations))
+    onNodeWithText(getStringResource(R.string.browser_menu_translate_page_2))
 
-private fun ComposeTestRule.translatedButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_translated))
+private fun ComposeTestRule.translatedButton() = onNodeWithText(getStringResource(R.string.browser_menu_translated))
 
 private fun ComposeTestRule.reportBrokenSiteButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_webcompat_reporter_2))
+    onNodeWithText(getStringResource(R.string.browser_menu_webcompat_reporter_2))
 
-private fun ComposeTestRule.printContentButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_print_2))
+private fun ComposeTestRule.printContentButton() = onNodeWithText(getStringResource(R.string.browser_menu_print_2))
 
 private fun ComposeTestRule.defaultOpenInAppButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_open_app_link))
+    onNodeWithText(getStringResource(R.string.browser_menu_open_app_link))
 
 private fun ComposeTestRule.openInAppNameButton(appName: String) =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_open_in_fenix, appName))
-
-private fun ComposeTestRule.extensionsChevronButton() = onNodeWithTag(EXTENSIONS_OPTION_CHEVRON, useUnmergedTree = true)
+    onNodeWithText(getStringResource(R.string.browser_menu_open_in_fenix, appName))
 
 private fun ComposeTestRule.summarizePageButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_summarize_page))
+    onNodeWithText(getStringResource(R.string.browser_menu_summarize_page))
 
 private fun ComposeTestRule.customizeHomepageButton() =
-    onNodeWithContentDescription(getStringResource(R.string.browser_menu_customize_homepage))
+    onNodeWithText(getStringResource(R.string.browser_menu_customize_homepage))

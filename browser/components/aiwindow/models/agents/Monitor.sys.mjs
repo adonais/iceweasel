@@ -71,6 +71,11 @@ export const MONITOR_PROMPT_VERSION = String(
 export const MONITOR_AGENTS_CHANGED_TOPIC =
   "smartwindow-monitor-agents-changed";
 
+// Notified when monitors are suspended or resumed because Smart Window was
+// blocked or unblocked in AI Controls.
+export const MONITOR_BLOCKED_STATE_CHANGED_TOPIC =
+  "smartwindow-monitor-blocked-state-changed";
+
 // Failure categories for monitor runs. Stored on error history entries as
 // errorCode for the UI and reused as the telemetry error_code. ACTIVE_LIMIT is
 // the one non-run code: creating or resuming a monitor past the active cap.
@@ -351,8 +356,8 @@ export class Monitor {
    * @returns {Promise<void>}
    */
   async run({ manual = false, timeoutMs = MONITOR_RUN_TIMEOUT_MS } = {}) {
-    // if the monitor is disposed, don't run it
-    if (this.#disposed) {
+    // if the monitor is disposed or Smart Window is blocked, don't run it
+    if (this.#disposed || lazy.MonitorAgent.isBlocked) {
       return;
     }
 
@@ -629,6 +634,9 @@ export class Monitor {
    */
   async captureInitialSnapshot({ conversation = null, signal = null } = {}) {
     throwIfAborted(signal);
+    if (lazy.MonitorAgent.isBlocked) {
+      throw new Error("Smart Window is blocked by AI Controls.");
+    }
     // own controller so dispose() and cancelSnapshotCapture() can cancel a
     // capture that no caller waits on
     const abortController = new AbortController();

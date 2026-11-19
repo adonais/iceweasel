@@ -17,22 +17,33 @@ import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.store.MenuAction
 
-/** [MenuItemProvider] for the menu item allowing to open the application settings. */
-class SettingsMenuItemProvider : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        MutableStateFlow(
-            StandardMenuItem(
-                title = MenuItemTitle(Text.Resource(R.string.browser_menu_settings)),
-                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_settings_24),
-                onClickEvent = MenuAction.Navigate.Settings,
-            )
-        )
+/**
+ * [MenuItemProvider] for the menu item allowing to open the application settings.
+ *
+ * @param target [MenuTarget] for which this menu item would be shown for.
+ */
+class SettingsMenuItemProvider(private val target: MenuTarget) : MenuItemProvider {
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.Navigate.Settings)))
+        }
 
     override fun handles(event: MenuEvent) = event == MenuAction.Navigate.Settings
 
     override fun onEvent(event: MenuEvent, menu: MenuHost) {
         menu.navigate(NavGraphDirections.actionGlobalSettingsFragment())
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_settings)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_settings_24),
+            )
     }
 }

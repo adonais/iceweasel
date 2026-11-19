@@ -54,13 +54,13 @@ use crate::gecko_bindings::structs::{nsAtom, nsIContent, nsINode_BooleanFlag};
 use crate::global_style_data::GLOBAL_STYLE_DATA;
 use crate::invalidation::element::restyle_hints::RestyleHint;
 use crate::properties::{
-    ComputedValues, Importance, OwnedPropertyDeclarationId, PropertyDeclaration,
-    PropertyDeclarationBlock, PropertyDeclarationId, PropertyDeclarationIdSet,
+    ComputedValues, OwnedPropertyDeclarationId, PropertyDeclarationBlock, PropertyDeclarationId,
+    PropertyDeclarationIdSet,
     animated_properties::{AnimationValue, AnimationValueMap},
 };
 use crate::rule_tree::CascadeLevel as ServoCascadeLevel;
 use crate::rule_tree::CascadeOrigin as ServoCascadeOrigin;
-use crate::rule_tree::{StyleSource, StyleSourceBorrow};
+use crate::rule_tree::StyleSourceBorrow;
 use crate::selector_parser::{AttrValue, Lang};
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
@@ -1436,6 +1436,8 @@ impl<'le> TElement for GeckoElement<'le> {
         }
         let ptr = self.0.mServoData.get();
         unsafe {
+            // NOTE: When adding flags here consider whether they need to be dropped in
+            // Element::ClearServoData.
             self.unset_flags(
                 ELEMENT_HAS_SNAPSHOT
                     | ELEMENT_HANDLED_SNAPSHOT
@@ -1462,11 +1464,10 @@ impl<'le> TElement for GeckoElement<'le> {
     #[inline]
     fn may_have_animations(&self) -> bool {
         if let Some(pseudo) = self.implemented_pseudo_element()
-            && pseudo.animations_stored_in_parent()
+            && pseudo.animations_stored_in_originating_element()
         {
-            // FIXME(emilio): When would the parent of a ::before / ::after
-            // pseudo-element be null?
-            return self.parent_element().is_some_and(|p| {
+            // FIXME(emilio): When would the originating element be null here?
+            return self.pseudo_element_originating_element().is_some_and(|p| {
                 p.as_node()
                     .get_bool_flag(nsINode_BooleanFlag::ElementHasAnimations)
             });
@@ -1645,6 +1646,12 @@ impl<'le> TElement for GeckoElement<'le> {
         }
     }
 
+    #[inline]
+    fn has_unique_presentational_hints(&self) -> bool {
+        // Mapped blocks are per-element.
+        self.has_attr_impl() && unsafe { (*self.0.mAttrs.mImpl.mPtr).mMappedAttributeBits != 0 }
+    }
+
     fn synthesize_presentational_hints_for_legacy_attributes<'a, V>(
         &self,
         visited_handling: VisitedHandlingMode,
@@ -1653,26 +1660,6 @@ impl<'le> TElement for GeckoElement<'le> {
         V: Push<ApplicableDeclarationBlock<'a>>,
         Self: 'a,
     {
-        use crate::properties::longhands::_x_lang::SpecifiedValue as SpecifiedLang;
-        use crate::properties::longhands::color::SpecifiedValue as SpecifiedColor;
-        use crate::stylesheets::layer_rule::LayerOrder;
-        use crate::values::specified::{color::Color, font::XTextScale};
-        use std::sync::LazyLock;
-
-        fn static_pres_hint(decl: PropertyDeclaration) -> StyleSource {
-            let global_style_data = &*GLOBAL_STYLE_DATA;
-            let pdb = PropertyDeclarationBlock::with_one(decl, Importance::Normal);
-            StyleSource::from_declarations(Arc::new_leaked(global_style_data.shared_lock.wrap(pdb)))
-        }
-
-        fn to_pres_hint<'a>(source: StyleSourceBorrow<'a>) -> ApplicableDeclarationBlock<'a> {
-            ApplicableDeclarationBlock::from_declarations(
-                source,
-                ServoCascadeLevel::new(ServoCascadeOrigin::PresHints),
-                LayerOrder::root(),
-            )
-        }
-
         /// # Safety
         ///
         /// The declarations must outlive `'a`. That's the case for the presentational hints below,
@@ -1680,36 +1667,16 @@ impl<'le> TElement for GeckoElement<'le> {
         unsafe fn pres_hint_from_raw<'a>(
             declarations: *const Locked<PropertyDeclarationBlock>,
         ) -> Option<ApplicableDeclarationBlock<'a>> {
+            use crate::stylesheets::layer_rule::LayerOrder;
+
             let declarations = unsafe { declarations.as_ref()? };
-            Some(to_pres_hint(StyleSourceBorrow::from_declarations(unsafe {
-                ArcBorrow::from_ref(declarations)
-            })))
+            Some(ApplicableDeclarationBlock::from_declarations(
+                StyleSourceBorrow::from_declarations(unsafe { ArcBorrow::from_ref(declarations) }),
+                ServoCascadeLevel::new(ServoCascadeOrigin::PresHints),
+                LayerOrder::root(),
+            ))
         }
 
-        static TABLE_COLOR_RULE: LazyLock<StyleSource> = LazyLock::new(|| {
-            static_pres_hint(PropertyDeclaration::Color(SpecifiedColor(
-                Color::InheritFromBodyQuirk,
-            )))
-        });
-        static MATHML_LANG_RULE: LazyLock<StyleSource> = LazyLock::new(|| {
-            static_pres_hint(PropertyDeclaration::XLang(SpecifiedLang(atom!("x-math"))))
-        });
-        static SVG_TEXT_DISABLE_SCALE_RULE: LazyLock<StyleSource> =
-            LazyLock::new(|| static_pres_hint(PropertyDeclaration::XTextScale(XTextScale::None)));
-
-        let ns = self.namespace_id();
-        // <th> elements get a default MozCenterOrInherit which may get overridden
-        if ns == structs::kNameSpaceID_XHTML as i32
-            && self.local_name().as_ptr() == atom!("table").as_ptr()
-            && self.as_node().owner_doc().quirks_mode() == QuirksMode::Quirks
-        {
-            hints.push(to_pres_hint(TABLE_COLOR_RULE.borrow()));
-        }
-        if ns == structs::kNameSpaceID_SVG as i32
-            && self.local_name().as_ptr() == atom!("text").as_ptr()
-        {
-            hints.push(to_pres_hint(SVG_TEXT_DISABLE_SCALE_RULE.borrow()));
-        }
         if let Some(hint) =
             unsafe { pres_hint_from_raw(bindings::Gecko_GetMappedAttributeDeclarations(self.0)) }
         {
@@ -1754,14 +1721,6 @@ impl<'le> TElement for GeckoElement<'le> {
             {
                 hints.push(hint);
             }
-        }
-
-        // MathML's default lang has precedence over both `lang` and `xml:lang`
-        if !crate::pref!("mathml.font_family_math.enabled")
-            && ns == structs::kNameSpaceID_MathML as i32
-            && self.local_name().as_ptr() == atom!("math").as_ptr()
-        {
-            hints.push(to_pres_hint(MATHML_LANG_RULE.borrow()));
         }
     }
 

@@ -9,11 +9,11 @@ import {
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { escapeHtmlEntities, navigateToLink } from "./helpers.mjs";
 import { ViewPage } from "./viewpage.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/migration/migration-wizard.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-label.mjs";
 
 const lazy = {};

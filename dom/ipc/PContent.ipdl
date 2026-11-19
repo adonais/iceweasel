@@ -47,6 +47,9 @@ include protocol PSpeechRecognition;
 include protocol PRemoteWorkerDebuggerManager;
 include protocol PRemoteWorkerService;
 include protocol PProfiler;
+#ifdef MOZ_WIDGET_ANDROID
+include protocol PProcInfo;
+#endif
 include protocol PScriptCache;
 include protocol PSessionStorageObserver;
 include CrashReporterInitArgs;
@@ -67,7 +70,6 @@ include ClientIPCTypes;
 include HangTypes;
 include PrefsTypes;
 include NeckoChannelParams;
-include PSMIPCTypes;
 include LookAndFeelTypes;
 include ProfilerTypes;
 
@@ -605,6 +607,9 @@ child:
     async InitGMPService(Endpoint<PGMPServiceChild> service);
     async InitProcessHangMonitor(Endpoint<PProcessHangMonitorChild> hangMonitor);
     async InitProfiler(Endpoint<PProfilerChild> aEndpoint);
+#ifdef MOZ_WIDGET_ANDROID
+    async InitProcInfo(Endpoint<PProcInfoChild> aEndpoint);
+#endif
 
     // Give the content process its endpoints to the compositor.
     async InitRendering(
@@ -625,7 +630,6 @@ child:
       uint32_t[] namespaces);
 
     async NetworkLinkTypeChange(uint32_t type);
-    async SocketProcessCrashed();
 
     // Re-create the rendering stack for a device reset.
     async ReinitRenderingForDeviceReset();
@@ -1082,15 +1086,15 @@ child:
     // captures its state in the next rendering update. The reply comes after
     // the capture, or right away if there is nothing to capture.
     // aSnapshotTargetTab is the tab of a document restored from BFCache that
-    // takes the snapshots, or 0.
+    // takes the snapshots, or 0. captured is true if the old document captured
+    // its state.
     async BeginOutboundCrossDocumentViewTransition(
         MaybeDiscardedBrowsingContext aContext,
         SessionHistoryInfo? aPageSwapTargetInfo,
         NavigationType aNavigationType,
-        TabId aSnapshotTargetTab) returns (bool unused);
+        TabId aSnapshotTargetTab) returns (bool captured);
     async ReactivateDocuments(MaybeDiscardedBrowsingContext aContext,
-                              SessionHistoryInfo? aReactivatedEntry,
-                              SessionHistoryInfo[] aNewSHEs,
+                              NavigationReactivationData[] aReactivationData,
                               PreviousSessionHistoryInfo? aPreviousEntryForActivation);
     // Fires pageswap without a view transition, for a navigation that does not
     // use BeginOutboundCrossDocumentViewTransition.
@@ -1838,8 +1842,7 @@ parent:
 
     async NotifyOnHistoryReload(MaybeDiscardedBrowsingContext aContext,
                                 uint32_t aReloadFlags)
-            returns (bool canReload, nsDocShellLoadState? loadState,
-                     bool? reloadActiveEntry);
+            returns (bool canReload, nsDocShellLoadState? loadState);
 
     async HistoryCommit(MaybeDiscardedBrowsingContext aContext,
                         uint64_t aLoadID, nsID aChangeID, uint32_t aLoadType,
@@ -1914,7 +1917,8 @@ both:
      *
      * This message may only be sent to the parent in limited situations. If the
      * new BrowsingContext has a parent window, it must be owned by the
-     * embedding process, otherwise it must be owned by the opener, if set.
+     * embedding process, otherwise the opener window, if set, must belong to
+     * the sending process.
      */
     [LazySend] async CreateBrowsingContext(uint64_t aGroupId, BrowsingContextInitializer aInit);
 

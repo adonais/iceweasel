@@ -162,11 +162,11 @@ struct StyleBox {
     delete mRaw;
   }
 
-  StyleBox(const StyleBox& aOther) : StyleBox(MakeUnique<T>(*aOther)) {}
+  StyleBox(const StyleBox& aOther) : StyleBox(std::make_unique<T>(*aOther)) {}
 
   StyleBox& operator=(const StyleBox& aOther) const {
     delete mRaw;
-    mRaw = MakeUnique<T>(*aOther).release();
+    mRaw = std::make_unique<T>(*aOther).release();
     return *this;
   }
 

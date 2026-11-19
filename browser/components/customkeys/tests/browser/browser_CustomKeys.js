@@ -97,6 +97,31 @@ add_task(async function testChangeKey() {
   CustomKeys.resetAll();
 });
 
+// Test that a customization applies to a key element added to an existing
+// keyset.
+add_task(async function testAddedKey() {
+  const id = "testAddedKey";
+  CustomKeys.changeKey(id, {
+    modifiers: consts.unusedModifiers,
+    key: consts.unusedKey,
+  });
+  const keyEl = document.createXULElement("key");
+  keyEl.id = id;
+  document.getElementById("mainKeyset").append(keyEl);
+  await BrowserTestUtils.waitForMutationCondition(
+    keyEl,
+    { attributeFilter: ["key"] },
+    () => keyEl.getAttribute("key") == consts.unusedKey
+  );
+  info(`Pressing ${consts.unusedDisplay}`);
+  const command = BrowserTestUtils.waitForEvent(keyEl, "command");
+  EventUtils.synthesizeKey(consts.unusedKey, consts.unusedOptions, window);
+  await command;
+  ok(true, "The added key ran with its customized shortcut");
+  keyEl.remove();
+  CustomKeys.resetKey(id);
+});
+
 // Test clearing a key.
 add_task(async function testClearKey() {
   is(
@@ -363,6 +388,32 @@ add_task(async function testDuplicateTab() {
   CustomKeys.resetAll();
 });
 
+add_task(async function testCopyTabURL() {
+  CustomKeys.changeKey("key_copyTabURL", {
+    modifiers: consts.unusedModifiers,
+    key: consts.unusedKey,
+  });
+  try {
+    const url = "https://example.com/?copy=tab#fragment";
+    await BrowserTestUtils.withNewTab(url, async () => {
+      await SimpleTest.promiseClipboardChange(url, () =>
+        EventUtils.synthesizeKey(consts.unusedKey, consts.unusedOptions, window)
+      );
+      await BrowserTestUtils.withNewTab("about:robots", async () => {
+        await SimpleTest.promiseClipboardChange("about:robots", () =>
+          EventUtils.synthesizeKey(
+            consts.unusedKey,
+            consts.unusedOptions,
+            window
+          )
+        );
+      });
+    });
+  } finally {
+    CustomKeys.resetKey("key_copyTabURL");
+  }
+});
+
 // Test that changes apply to other windows.
 add_task(async function testOtherWindow() {
   // Test changing a key before a new window is opened.
@@ -474,4 +525,111 @@ add_task(async function testOtherWindow() {
 
   info("Closing new window");
   await BrowserTestUtils.closeWindow(newWin);
+});
+
+// Test a key whose shortcut the operating system assigned, as the user can do
+// for a menu item in macOS System Settings. The assignment sits above a
+// customization: the customization goes into the built-in layer and applies
+// once the assignment is gone. The key element used here is not shown by any
+// menu item, so that on macOS the widget code, which mirrors real assignments
+// for menu items, leaves the simulated one alone.
+add_task(async function testSystemAssignedKey() {
+  const keyEl = document.getElementById("key_selectTab1");
+  const originalKey = keyEl.getAttribute("key");
+  const originalModifiers = keyEl.getAttribute("modifiers");
+  is(originalKey, "1", "key_selectTab1 selects with the 1 key");
+
+  simulateSystemAssignment(keyEl, "accel,alt,shift", "Y");
+  ok(CustomKeys.isSystemAssigned(keyEl), "key_selectTab1 is system assigned");
+  is(
+    keyEl.getAttribute("data-builtin-key"),
+    originalKey,
+    "The built-in key is kept"
+  );
+  is(
+    keyEl.getAttribute("data-builtin-modifiers"),
+    originalModifiers,
+    "The built-in modifiers are kept"
+  );
+
+  info(`Customizing key_selectTab1 to ${consts.unusedDisplay} while assigned`);
+  CustomKeys.changeKey("key_selectTab1", {
+    modifiers: consts.unusedModifiers,
+    key: consts.unusedKey,
+  });
+  Assert.deepEqual(
+    CustomKeys.getDefaultKey("key_selectTab1"),
+    { modifiers: originalModifiers, key: originalKey },
+    "The default is the built-in shortcut, not the assigned one"
+  );
+  is(keyEl.getAttribute("key"), "Y", "The assigned key is untouched");
+  is(
+    keyEl.getAttribute("modifiers"),
+    "accel,alt,shift",
+    "The assigned modifiers are untouched"
+  );
+  is(
+    keyEl.getAttribute("data-builtin-key"),
+    consts.unusedKey,
+    "The customization went into the built-in key"
+  );
+  is(
+    keyEl.getAttribute("data-builtin-modifiers"),
+    consts.unusedModifiers,
+    "The customization went into the built-in modifiers"
+  );
+
+  info("Removing the assignment");
+  simulateSystemAssignmentRemoval(keyEl);
+  ok(
+    !CustomKeys.isSystemAssigned(keyEl),
+    "key_selectTab1 is no longer assigned"
+  );
+  is(keyEl.getAttribute("key"), consts.unusedKey, "The customization applies");
+  is(
+    keyEl.getAttribute("modifiers"),
+    consts.unusedModifiers,
+    "The customized modifiers apply"
+  );
+  isnot(
+    gBrowser.selectedTab,
+    gBrowser.tabs[0],
+    "The first tab is not selected"
+  );
+  info(`Pressing ${consts.unusedDisplay}`);
+  const selected = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "TabSelect"
+  );
+  EventUtils.synthesizeKey(consts.unusedKey, consts.unusedOptions, window);
+  await selected;
+  is(gBrowser.selectedTab, gBrowser.tabs[0], "The first tab is selected");
+  gBrowser.selectedTab = gBrowser.tabs[gBrowser.tabs.length - 1];
+
+  info("Assigning again and resetting the customization underneath");
+  simulateSystemAssignment(keyEl, "accel,alt,shift", "Y");
+  CustomKeys.resetKey("key_selectTab1");
+  is(
+    CustomKeys.getDefaultKey("key_selectTab1"),
+    null,
+    "key_selectTab1 is no longer customized"
+  );
+  is(keyEl.getAttribute("key"), "Y", "The assigned key is still untouched");
+  is(
+    keyEl.getAttribute("data-builtin-key"),
+    originalKey,
+    "The built-in key is back"
+  );
+  is(
+    keyEl.getAttribute("data-builtin-modifiers"),
+    originalModifiers,
+    "The built-in modifiers are back"
+  );
+  simulateSystemAssignmentRemoval(keyEl);
+  is(keyEl.getAttribute("key"), originalKey, "The original key is back");
+  is(
+    keyEl.getAttribute("modifiers"),
+    originalModifiers,
+    "The original modifiers are back"
+  );
 });

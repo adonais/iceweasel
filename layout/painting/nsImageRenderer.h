@@ -109,10 +109,20 @@ class nsImageRenderer {
   ~nsImageRenderer() = default;
   /**
    * Populates member variables to get ready for rendering.
+   * @param aPositionParams If provided, positioning information for the image
+   * that is used to determine if the image ends up not visible due to its
+   * positioning in the background.
    * @return true iff the image is ready, and there is at least a pixel to
    * draw.
    */
-  bool PrepareImage();
+  struct PositionParams {
+    // Style of the layer this image is used in
+    const nsStyleImageLayers::Layer& mLayer;
+    const nsRect& mBorderArea;
+    const nsRect& mBackgroundClipRect;
+  };
+  bool PrepareImage(
+      const mozilla::Maybe<PositionParams>& aPositionParams = Nothing{});
 
   /**
    * The three Compute*Size functions correspond to the sizing algorthms and
@@ -291,6 +301,9 @@ class nsImageRenderer {
    */
   already_AddRefed<gfxDrawable> DrawableForElement(const nsRect& aImageRect,
                                                    gfxContext& aContext);
+
+  bool ImageIsDefinitelyNotVisible(const PositionParams& aPositionParams,
+                                   imgRequestProxy& aRequest);
 
   nsIFrame* mForFrame;
   const mozilla::StyleImage* mImage;

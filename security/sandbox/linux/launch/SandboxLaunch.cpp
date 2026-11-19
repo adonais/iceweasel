@@ -270,10 +270,6 @@ static int GetEffectiveSandboxLevel(GeckoProcessType aType,
       return 0;
     case GeckoProcessType_RDD:
       return PR_GetEnv("MOZ_DISABLE_RDD_SANDBOX") == nullptr ? 1 : 0;
-    case GeckoProcessType_Socket:
-      // GetEffectiveSocketProcessSandboxLevel is main-thread-only due to prefs.
-      MOZ_ASSERT(NS_IsMainThread());
-      return GetEffectiveSocketProcessSandboxLevel();
     case GeckoProcessType_Utility:
       return IsUtilitySandboxEnabled(aKind);
     default:
@@ -335,12 +331,6 @@ bool SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
   // Warning: don't combine multiple case labels, even if the code is
   // currently the same, to avoid mistakes when changes are made.
   switch (aType) {
-    case GeckoProcessType_Socket:
-      if (level >= 1) {
-        canChroot = true;
-        flags |= CLONE_NEWIPC;
-      }
-      break;
     case GeckoProcessType_GMPlugin:
       if (level >= 1) {
         canChroot = true;

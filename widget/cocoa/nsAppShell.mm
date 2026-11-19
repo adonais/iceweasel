@@ -258,6 +258,14 @@ static bool PiPPlayerHandlesAccessibilityFrontmost() {
 
 - (void)sendEvent:(NSEvent*)anEvent {
   mozilla::BackgroundHangMonitor().NotifyActivity();
+  if (anEvent.type == NSEventTypeApplicationDefined &&
+      anEvent.subtype == kEventSubtypeNativeTest) {
+    if (nsCOMPtr<nsIObserverService> obs =
+            mozilla::services::GetObserverService()) {
+      obs->NotifyObservers(nullptr, "appshell-native-test-event", nullptr);
+    }
+    return;
+  }
   [super sendEvent:anEvent];
 }
 
@@ -269,12 +277,36 @@ static bool PiPPlayerHandlesAccessibilityFrontmost() {
   if (expiration) {
     mozilla::BackgroundHangMonitor().NotifyWait();
   }
-  NSEvent* nextEvent = [super nextEventMatchingMask:mask
-                                          untilDate:expiration
-                                             inMode:mode
-                                            dequeue:flag];
-  if (expiration) {
-    mozilla::BackgroundHangMonitor().NotifyActivity();
+  NSEvent* nextEvent = nil;
+  @try {
+    nextEvent = [super nextEventMatchingMask:mask
+                                   untilDate:expiration
+                                      inMode:mode
+                                     dequeue:flag];
+  } @catch (NSException* exception) {
+    // All nested AppKit event loops we host (context menus, popup
+    // menus, modal dialogs, sheets, file pickers, color and print
+    // panels, drag-and-drop sessions, NSWindow resize/move tracking,
+    // NSAlert, ...) re-enter -[NSApplication nextEventMatchingMask:...],
+    // so this is the lowest layer at which a standard NSException
+    // raised inside one of those loops can be intercepted. Catching
+    // here centralizes nsObjCExceptionLog and the
+    // ShouldIgnoreObjCException allow-list (currently the
+    // "Missing Touches" case from bug 1694000).
+    //
+    // This does not help with exceptions that do not carry standard
+    // ObjC type info (see bug 2041942 and bug 2042800 comment 1+).
+    // Those bypass every @catch (NSException*) on the stack, including
+    // this one, and need a different lever.
+    nsObjCExceptionLog(exception);
+    if (!ShouldIgnoreObjCException(exception)) {
+      @throw;
+    }
+    // Suppressed: drop this event tick; Apple's loop iterates again.
+  } @finally {
+    if (expiration) {
+      mozilla::BackgroundHangMonitor().NotifyActivity();
+    }
   }
   return nextEvent;
 }
@@ -459,8 +491,7 @@ nsresult nsAppShell::Init() {
   // related initialization that is not needed for these process types.
   bool isNSApplicationProcessType =
       (XRE_GetProcessType() != GeckoProcessType_Content) &&
-      (XRE_GetProcessType() != GeckoProcessType_RDD) &&
-      (XRE_GetProcessType() != GeckoProcessType_Socket);
+      (XRE_GetProcessType() != GeckoProcessType_RDD);
 
   if (isNSApplicationProcessType) {
     // This call initializes NSApplication unless:
@@ -514,9 +545,9 @@ nsresult nsAppShell::Init() {
     ScreenManager& screenManager = ScreenManager::GetSingleton();
 
     if (gfxPlatform::IsHeadless()) {
-      screenManager.SetHelper(mozilla::MakeUnique<HeadlessScreenHelper>());
+      screenManager.SetHelper(std::make_unique<HeadlessScreenHelper>());
     } else {
-      screenManager.SetHelper(mozilla::MakeUnique<ScreenHelperCocoa>());
+      screenManager.SetHelper(std::make_unique<ScreenHelperCocoa>());
     }
 
     InitMemoryPressureObserver();
@@ -565,6 +596,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
 
   if (self->mRunningEventLoop) {
     self->mRunningEventLoop = false;
+    ++self->mNativeWakeups;
 
     // The run loop may be sleeping -- [NSRunLoop runMode:...]
     // won't return until it's given a reason to wake up.  Awaken it by
@@ -765,6 +797,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   }
 
   bool wasRunningEventLoop = mRunningEventLoop;
+  uint32_t wakeupsAtEntry = mNativeWakeups;
   mRunningEventLoop = aMayWait;
   NSDate* waitUntil = nil;
   if (aMayWait) waitUntil = [NSDate distantFuture];
@@ -789,6 +822,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
     NS_ASSERTION(mAutoreleasePools && ::CFArrayGetCount(mAutoreleasePools),
                  "No autorelease pool for native event");
 
+    uint32_t wakeupsBeforeWait = mNativeWakeups;
     if (aMayWait && [[GeckoNSApplication sharedApplication] didLaunch]) {
       currentMode = [currentRunLoop currentMode];
       if (!currentMode) currentMode = NSDefaultRunLoopMode;
@@ -863,6 +897,9 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       eventProcessed = true;
 #endif
     }
+    if (mRunningEventLoop && mNativeWakeups != wakeupsBeforeWait) {
+      ++mLostNativeWakeups;
+    }
   } while (mRunningEventLoop);
 
   if (eventProcessed) {
@@ -873,7 +910,9 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
     moreEvents = !!nextEvent;
   }
 
-  mRunningEventLoop = wasRunningEventLoop;
+  // A wake-up consumed by this nested loop was also meant for any enclosing
+  // native loop, so don't let it go back to waiting.
+  mRunningEventLoop = wasRunningEventLoop && mNativeWakeups == wakeupsAtEntry;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 
@@ -1032,6 +1071,34 @@ nsAppShell::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) {
   return nsBaseAppShell::OnProcessNextEvent(aThread, aMayWait);
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
+}
+
+NS_IMPL_ISUPPORTS_INHERITED(nsAppShell, nsBaseAppShell,
+                            nsICocoaAppShellTestUtils)
+
+NS_IMETHODIMP
+nsAppShell::PostNativeTestEvent() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
+                                      location:NSMakePoint(0, 0)
+                                 modifierFlags:0
+                                     timestamp:0
+                                  windowNumber:0
+                                       context:nullptr
+                                       subtype:kEventSubtypeNativeTest
+                                         data1:0
+                                         data2:0]
+           atStart:NO];
+  return NS_OK;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
+}
+
+NS_IMETHODIMP
+nsAppShell::GetLostNativeWakeups(uint32_t* aResult) {
+  *aResult = mLostNativeWakeups;
+  return NS_OK;
 }
 
 // AfterProcessNextEvent

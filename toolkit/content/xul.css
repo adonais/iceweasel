@@ -143,36 +143,41 @@ label html|span.accesskey {
 
 :is(label, description)[value] {
   white-space: nowrap;
-}
 
-:is(label, description)[value]::before {
-  /* This displays the value attribute, along with the underlined
-   * accesskey if needed */
-  content: -moz-label-content;
+  &::before {
+    /* This displays the value attribute, along with the underlined
+     * accesskey if needed */
+    content: attr(value);
+  }
+
+  &[crop] {
+    min-width: 0;
+    /* This implements crop=end */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Invert the direction to clip at the start rather than end */
+  &[crop="start"]::before {
+    direction: rtl;
+    /* Mark text as ltr to preserve punctuation/numeric order */
+    content: "\200e" attr(value);
+  }
+
+  &[crop="start"]:-moz-locale-dir(rtl)::before {
+    direction: ltr;
+    /* Mark text as rtl to preserve punctuation/numeric order */
+    content: "\200f" attr(value);
+  }
 }
 
 label[value=""]::before {
-  content: "\200b" !important; /* zwsp */
+  content: "\200b" / "" !important; /* zwsp */
 }
 
-:is(label, description)[value][crop] {
-  min-width: 0;
-  /* This implements crop=end */
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Invert the direction to clip at the start rather than end */
-:is(label, description)[value][crop="start"]::before {
-  direction: rtl;
-  /* Mark text as ltr to preserve punctuation/numeric order */
-  content: "\200e" -moz-label-content;
-}
-
-:is(label, description)[value][crop="start"]:-moz-locale-dir(rtl)::before {
-  direction: ltr;
-  /* Mark text as rtl to preserve punctuation/numeric order */
-  content: "\200f" -moz-label-content;
+label[value][accesskey]::before {
+  /* We don't support crop="start" with accesskey */
+  content: -moz-label-content;
 }
 
 .checkbox-label-box,

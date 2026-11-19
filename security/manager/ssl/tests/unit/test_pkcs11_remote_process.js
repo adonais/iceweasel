@@ -2,6 +2,10 @@
 // http://creativecommons.org/publicdomain/zero/1.0/
 "use strict";
 
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
+
 var gPrompt = {
   QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
 
@@ -211,6 +215,15 @@ add_task(async function test_pkcs11_remote_process() {
 
   // Scope these certificates so any associated NSS resources can be released.
   {
+    Services.prefs.setIntPref(
+      "security.utility_pkcs11_module_process.scan_delay_ms",
+      0
+    );
+    // Because remotely scanning for certificates is costly, there is a
+    // cooldown before another scan can occur. Setting the cooldown to 0ms
+    // still requires at least 1ms to have passed between scans.
+    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+    await new Promise(resolve => setTimeout(resolve, 1));
     let testClientCertificate = await findCertByCommonName("client cert rsa");
     ok(
       testClientCertificate,
@@ -247,6 +260,9 @@ add_task(async function test_pkcs11_remote_process() {
     "should not be able to find test module after unloading it"
   );
 
+  // Ensure 1ms has passed since the last scan.
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 1));
   testClientCertificate = await findCertByCommonName("client cert rsa");
   ok(
     !testClientCertificate,

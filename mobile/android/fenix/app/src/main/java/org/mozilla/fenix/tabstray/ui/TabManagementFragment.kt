@@ -56,17 +56,16 @@ import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.google.android.material.R as materialR
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.places.BookmarkRoot
-import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.draggable.ItemInteractionHandler
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.feature.accounts.push.CloseTabsUseCases
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
+import mozilla.components.feature.tabdata.coordinator.data.TabsSnapshot
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.view.setNavigationBarTheme
@@ -82,7 +81,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.share.CacheHelper
 import org.mozilla.fenix.compose.navigation.BottomSheetSceneStrategy
-import org.mozilla.fenix.ext.actualInactiveTabs
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.registerForActivityResult
@@ -114,12 +112,13 @@ import org.mozilla.fenix.tabstray.controller.DefaultTabManagerController
 import org.mozilla.fenix.tabstray.controller.DefaultTabManagerInteractor
 import org.mozilla.fenix.tabstray.controller.TabManagerController
 import org.mozilla.fenix.tabstray.controller.TabManagerInteractor
-import org.mozilla.fenix.tabstray.data.TabData
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.toTabStorageUpdate
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.ext.withStorageUpdate
 import org.mozilla.fenix.tabstray.redux.middleware.CollectionsMigrationMiddleware
 import org.mozilla.fenix.tabstray.redux.middleware.TabManagerUiStateStorageMiddleware
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchMiddleware
@@ -734,12 +733,7 @@ class TabManagementFragment : Fragment() {
                         TabSearchMiddleware(),
                         TabSearchNavigationMiddleware(onSearchResultClicked = ::performTabClick),
                         TabStorageMiddleware(
-                            inactiveTabsEnabled = requireComponents.settings.inactiveTabsAreEnabled,
-                            tabGroupsEnabled = requireComponents.settings.tabGroupsEnabled,
-                            tabDataFlow = requireComponents.core.store.stateFlow.map { TabData(it) },
-                            tabGroupRepository = requireComponents.core.tabGroupRepository,
-                            removeTabsUseCase = requireComponents.useCases.tabsUseCases.removeTabs,
-                            moveTabsUseCase = requireComponents.useCases.tabsUseCases.moveTabs,
+                            tabDataCoordinator = requireComponents.tabDataCoordinator,
                             fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                             mainScope = lifecycleScope,
                         ),
@@ -762,53 +756,58 @@ class TabManagementFragment : Fragment() {
         settings: Settings,
     ): TabsTrayState {
         val appState = requireComponents.appStore.state
-        val coreState = requireComponents.core.store.state
+        val currentTabsSnapshot = requireComponents.tabDataCoordinator.tabsSnapshot.value
+        val tabsSnapshot = currentTabsSnapshot ?: TabsSnapshot()
+        val tabStorageUpdate = tabsSnapshot.toTabStorageUpdate()
+        val baseState =
+            TabsTrayState(
+                selectedPage = args.page,
+                mode = if (args.enterMultiselect) TabsTrayState.Mode.Select(emptySet()) else TabsTrayState.Mode.Normal,
+                inactiveTabs =
+                    TabsTrayState.InactiveTabsState(
+                        isExpanded = appState.inactiveTabsExpanded,
+                        showCFR =
+                            settings.shouldShowInactiveTabsOnboardingPopup &&
+                                settings.canShowCfr &&
+                                settings.cfrPopupsEnabled,
+                        showAutoCloseDialog =
+                            settings.shouldShowInactiveTabsAutoCloseDialog(tabsSnapshot.inactiveTabs.size),
+                    ),
+                privateBrowsing =
+                    TabsTrayState.PrivateBrowsingState(
+                        isLocked = appState.isPrivateScreenLocked,
+                        showLockBanner =
+                            shouldShowLockPbmBanner(
+                                isPrivateMode = appState.mode.isPrivate,
+                                hasPrivateTabs = tabsSnapshot.privateTabs.isNotEmpty(),
+                                biometricAvailable = BiometricManager.from(requireContext()).isDeviceLockCapable(),
+                                privateLockEnabled = settings.privateBrowsingModeLocked,
+                                shouldShowBanner = shouldShowBanner(settings),
+                            ),
+                    ),
+                tabGroupState =
+                    TabsTrayState.TabGroupState(
+                        showCollectionsMigrationCard =
+                            requireComponents.collectionsMigrationRepository.shouldShowCollectionsMigrationCard()
+                    ),
+                sync = TabsTrayState.SyncState(isSignedIn = settings.signedInFxaAccount),
+                config =
+                    TabsTrayState.TabsTrayConfig(
+                        tabGroupsEnabled = settings.tabGroupsEnabled,
+                        tabGroupsDragAndDropEnabled = settings.tabGroupsDragAndDropEnabled,
+                        tabGroupsLiveReorderEnabled = settings.tabGroupsLiveReorderEnabled,
+                        tabGroupsOnboardingEnabled = settings.tabGroupsOnboardingEnabled,
+                        homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
+                        displayTabsInGrid = settings.gridTabView,
+                        isInDebugMode =
+                            Config.channel.isDebug || requireComponents.settings.showSecretDebugMenuThisSession,
+                        showTabAutoCloseBanner =
+                            settings.shouldShowAutoCloseTabsBanner && settings.canShowCfr && settings.cfrPopupsEnabled,
+                        collectionsEnabled = settings.collections,
+                    ),
+            )
 
-        return TabsTrayState(
-            selectedPage = args.page,
-            mode = if (args.enterMultiselect) TabsTrayState.Mode.Select(emptySet()) else TabsTrayState.Mode.Normal,
-            inactiveTabs =
-                TabsTrayState.InactiveTabsState(
-                    isExpanded = appState.inactiveTabsExpanded,
-                    showCFR =
-                        settings.shouldShowInactiveTabsOnboardingPopup &&
-                            settings.canShowCfr &&
-                            settings.cfrPopupsEnabled,
-                    showAutoCloseDialog =
-                        settings.shouldShowInactiveTabsAutoCloseDialog(coreState.actualInactiveTabs(settings).size),
-                ),
-            privateBrowsing =
-                TabsTrayState.PrivateBrowsingState(
-                    isLocked = appState.isPrivateScreenLocked,
-                    showLockBanner =
-                        shouldShowLockPbmBanner(
-                            isPrivateMode = appState.mode.isPrivate,
-                            hasPrivateTabs = coreState.privateTabs.isNotEmpty(),
-                            biometricAvailable = BiometricManager.from(requireContext()).isDeviceLockCapable(),
-                            privateLockEnabled = settings.privateBrowsingModeLocked,
-                            shouldShowBanner = shouldShowBanner(settings),
-                        ),
-                ),
-            tabGroupState =
-                TabsTrayState.TabGroupState(
-                    showCollectionsMigrationCard =
-                        requireComponents.collectionsMigrationRepository.shouldShowCollectionsMigrationCard()
-                ),
-            sync = TabsTrayState.SyncState(isSignedIn = settings.signedInFxaAccount),
-            config =
-                TabsTrayState.TabsTrayConfig(
-                    tabGroupsEnabled = settings.tabGroupsEnabled,
-                    tabGroupsDragAndDropEnabled = settings.tabGroupsDragAndDropEnabled,
-                    tabGroupsLiveReorderEnabled = settings.tabGroupsLiveReorderEnabled,
-                    tabGroupsOnboardingEnabled = settings.tabGroupsOnboardingEnabled,
-                    homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
-                    displayTabsInGrid = settings.gridTabView,
-                    isInDebugMode = Config.channel.isDebug || requireComponents.settings.showSecretDebugMenuThisSession,
-                    showTabAutoCloseBanner =
-                        settings.shouldShowAutoCloseTabsBanner && settings.canShowCfr && settings.cfrPopupsEnabled,
-                    collectionsEnabled = settings.collections,
-                ),
-        )
+        return baseState.withStorageUpdate(storageUpdate = tabStorageUpdate)
     }
 
     /**

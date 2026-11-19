@@ -97,8 +97,8 @@ gboolean WorkSourceCheck(GSource* source) {
   return static_cast<WorkSource*>(source)->pump->HandleCheck();
 }
 
-gboolean WorkSourceDispatch(GSource* source, GSourceFunc unused_func,
-                            gpointer unused_data) {
+gboolean WorkSourceDispatch(GSource* source, GSourceFunc /*unused_func*/,
+                            gpointer /*unused_data*/) {
   static_cast<WorkSource*>(source)->pump->HandleDispatch();
   // Always return TRUE so our source stays registered.
   return TRUE;

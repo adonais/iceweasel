@@ -16,6 +16,8 @@
 #include "nsIPermissionManager.h"
 #include "nsIUDPSocket.h"
 #include "nsNetCID.h"
+#include "nsProxyRelease.h"
+#include "nsThreadUtils.h"
 #include "transport/runnable_utils.h"
 
 namespace mozilla {
@@ -216,10 +218,16 @@ static void CheckSTSThread() {
 mozilla::ipc::IPCResult UDPSocketParent::RecvConnect(
     const UDPAddressInfo& aAddressInfo) {
   nsCOMPtr<nsIEventTarget> target = GetCurrentSerialEventTarget();
-  (void)NS_WARN_IF(NS_FAILED(GetSTSThread()->Dispatch(
-      WrapRunnable(RefPtr<UDPSocketParent>(this), &UDPSocketParent::DoConnect,
-                   mSocket, target, aAddressInfo),
-      NS_DISPATCH_NORMAL)));
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "UDPSocketParent::DoConnect",
+      [self = RefPtr{this}, socket = mSocket, target,
+       addressInfo = aAddressInfo]() mutable {
+        self->DoConnect(socket, target, addressInfo);
+        // The actor must not be destroyed off its owning thread.
+        NS_ProxyRelease("UDPSocketParent::RecvConnect", target, self.forget());
+      });
+  (void)NS_WARN_IF(NS_FAILED(
+      GetSTSThread()->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL)));
   return IPC_OK();
 }
 
@@ -331,7 +339,7 @@ mozilla::ipc::IPCResult UDPSocketParent::RecvOutgoingData(
                                data.Length(), nsISocketFilter::SF_OUTGOING,
                                &allowed);
 
-    // Sending unallowed data, kill content or socket process at the other end.
+    // Sending unallowed data, kill content process at the other end.
     if (NS_WARN_IF(NS_FAILED(rv)) || !allowed) {
       return IPC_FAIL(this, "Content tried to send non STUN packet");
     }

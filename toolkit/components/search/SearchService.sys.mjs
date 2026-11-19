@@ -96,6 +96,9 @@ const ENGINES_SEEN_FOR_PROMPT = 1;
  */
 export const SearchService = new (class SearchService {
   constructor() {
+    if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
+      throw new Error("Search Service should only run in the main process.");
+    }
     this._settings = new lazy.SearchSettings(this);
   }
 

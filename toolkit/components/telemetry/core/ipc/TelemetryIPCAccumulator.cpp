@@ -9,7 +9,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/RDDParent.h"
-#include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticMutex.h"
@@ -310,9 +309,6 @@ void TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure) {
       break;
     case GeckoProcessType_RDD:
       SendAccumulatedData(mozilla::RDDParent::GetSingleton());
-      break;
-    case GeckoProcessType_Socket:
-      SendAccumulatedData(mozilla::net::SocketProcessChild::GetSingleton());
       break;
     case GeckoProcessType_Utility:
       SendAccumulatedData(

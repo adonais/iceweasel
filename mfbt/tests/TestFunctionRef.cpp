@@ -119,7 +119,7 @@ static void TestImplicitFunctionPointerTypeConversion() {
 
 static void TestMoveOnlyArguments() {
   CHECK(CallFunctionRef<int(mozilla::UniquePtr<int>)>(
-            &incrementUnique, mozilla::MakeUnique<int>(5)) == 6);
+            &incrementUnique, std::make_unique<int>(5)) == 6);
 }
 
 int main() {

@@ -7,6 +7,7 @@ import {
   isWidgetEnabled,
   isWidgetInSidebar,
   isWidgetsContainerVisible,
+  parsePinnedWidgetIds,
   WIDGET_REGISTRY,
 } from "./WidgetsRegistry.mjs";
 
@@ -319,8 +320,8 @@ function rejectSpacesConfig(raw) {
  * spaces, or nothing left after dropping kills the layout.
  *
  * @param {object} raw - a spaces config from trainhopConfig or the pref
- * @returns {object|null} { order, default, widgetCatchAll, arrows, preview,
- *   spaces } or null
+ * @returns {object|null} { order, default, widgetLibrary, widgetCatchAll,
+ *   arrows, preview, spaces } or null
  */
 export function normalizeSpacesConfig(raw) {
   const order = asStringArray(raw?.order);
@@ -370,13 +371,20 @@ export function normalizeSpacesConfig(raw) {
   // The named default has to have survived; otherwise the leftmost space takes
   // both roles, including the sections catch-all.
   const defaultId = kept.includes(raw.default) ? raw.default : kept[0];
+  // Shows every widget, and turns the default space's widgets into the user's
+  // own Home list. Unset leaves widgets placed by config alone.
+  const widgetLibrary =
+    kept.includes(raw.widgetLibrary) && raw.widgetLibrary !== defaultId
+      ? raw.widgetLibrary
+      : null;
   return {
     order: kept,
     default: defaultId,
+    widgetLibrary,
     // Takes the widgets no space names. The default space unless one is named.
     widgetCatchAll: kept.includes(raw.widgetCatchAll)
       ? raw.widgetCatchAll
-      : defaultId,
+      : (widgetLibrary ?? defaultId),
     // Edge arrows alongside the tablist.
     arrows: raw.arrows === true,
     preview: raw.preview === true,
@@ -829,11 +837,117 @@ export function resolveFirstSlotWidgetsBySection(prefs, sectionKeys) {
   return bySection;
 }
 
+export const WIDGET_PLACEMENTS = {
+  HOME: "home",
+  LIBRARY: "library",
+};
+
+/**
+ * The thematic config when it names a widget library, else null. Only then can
+ * the user move widgets on and off Home.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {object|null}
+ */
+function resolveWidgetPlacementConfig(prefs) {
+  if (!isSpacesThematicAssigned(prefs)) {
+    return null;
+  }
+  const config = resolveThematicSpacesConfig(prefs);
+  return config?.widgetLibrary ? config : null;
+}
+
+/**
+ * Whether the user places widgets on Home themselves, which changes what hiding
+ * a widget and the Manage widgets toggles do.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isWidgetPlacementActive(prefs) {
+  return !!resolveWidgetPlacementConfig(prefs);
+}
+
+/**
+ * Which placement role a space plays: Home, the widget library, or neither.
+ *
+ * @param {object} config - from resolveThematicSpacesConfig
+ * @param {string} spaceId - a config space id
+ * @returns {string|null} a WIDGET_PLACEMENTS value
+ */
+export function resolveWidgetPlacement(config, spaceId) {
+  if (!config?.widgetLibrary) {
+    return null;
+  }
+  if (spaceId === config.default) {
+    return WIDGET_PLACEMENTS.HOME;
+  }
+  return spaceId === config.widgetLibrary ? WIDGET_PLACEMENTS.LIBRARY : null;
+}
+
+/**
+ * The ids the user has pinned to Home, in pin order (newest first), else the
+ * config's widgets for the default space until they first change it.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {object} [config] - from resolveThematicSpacesConfig
+ * @returns {string[]}
+ */
+export function resolveHomeWidgetIds(
+  prefs,
+  config = resolveThematicSpacesConfig(prefs)
+) {
+  return (
+    parsePinnedWidgetIds(prefs) ??
+    config?.spaces?.[config.default]?.widgets ??
+    []
+  );
+}
+
+/**
+ * Whether a widget can render in a space's widget column at all: enabled, and
+ * not in the sidebar or a first story card instead.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function canShowInSpaceColumn(widget, prefs) {
+  const widgetsEnabled =
+    prefs?.["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs);
+  return (
+    !selectFirstSlotWidgetIds(prefs).has(widget.id) &&
+    !isWidgetInSidebar(widget, prefs, widgetsEnabled) &&
+    isWidgetEnabled(widget, prefs, widgetsEnabled)
+  );
+}
+
+/**
+ * The pinned widgets Home actually shows: those in the Home list that can
+ * render. How many start there is up to the spaces config.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {object} [config] - from resolveThematicSpacesConfig
+ * @returns {string[]} widget ids, in pin order
+ */
+export function resolvePinnedWidgetIds(
+  prefs,
+  config = resolveThematicSpacesConfig(prefs)
+) {
+  return resolveHomeWidgetIds(prefs, config)
+    .map(id => WIDGET_REGISTRY.find(w => w.id === id))
+    .filter(w => w && canShowInSpaceColumn(w, prefs))
+    .map(w => w.id);
+}
+
 /**
  * The widgets a space should show, in registry order, filtered to the ones
  * actually enabled. The config's widgetCatchAll space also takes every widget no
  * space names, so one is never invisible everywhere. Empty means the space shows
  * its feed alone, which is all of them while the widgets container is hidden.
+ *
+ * When the config names a widgetLibrary, each widget is in exactly one place:
+ * pinned to Home (the default space), or in the library.
  *
  * Some widgets are in no space's column: Weather at its small size, which
  * renders in the page's inline-end sidebar as it does in the side-by-side
@@ -845,24 +959,27 @@ export function resolveFirstSlotWidgetsBySection(prefs, sectionKeys) {
  * @returns {string[]} widget ids
  */
 export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
+  if (!isWidgetsContainerVisible(prefs)) {
+    return [];
+  }
+  const placement = resolveWidgetPlacement(config, spaceId);
+  if (placement) {
+    const pinned = resolvePinnedWidgetIds(prefs, config);
+    const onHome = placement === WIDGET_PLACEMENTS.HOME;
+    return WIDGET_REGISTRY.filter(
+      w => pinned.includes(w.id) === onHome && canShowInSpaceColumn(w, prefs)
+    ).map(w => w.id);
+  }
+
   const assigned = new Set(config?.spaces?.[spaceId]?.widgets ?? []);
   const isCatchAll = spaceId === (config?.widgetCatchAll ?? config?.default);
   const claimed = new Set(
     Object.values(config?.spaces ?? {}).flatMap(space => space.widgets)
   );
-  const widgetsEnabled =
-    prefs?.["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs);
-  if (!isWidgetsContainerVisible(prefs)) {
-    return [];
-  }
-  const firstSlotWidgets = selectFirstSlotWidgetIds(prefs);
-
   return WIDGET_REGISTRY.filter(
     w =>
       (assigned.has(w.id) || (isCatchAll && !claimed.has(w.id))) &&
-      !firstSlotWidgets.has(w.id) &&
-      !isWidgetInSidebar(w, prefs) &&
-      isWidgetEnabled(w, prefs, widgetsEnabled)
+      canShowInSpaceColumn(w, prefs)
   ).map(w => w.id);
 }
 
@@ -969,7 +1086,7 @@ export function resolvePopulatedSpaces(prefs = {}, sectionKeys = null) {
  * @param {object} discoveryStream - state.DiscoveryStream
  * @returns {object|null} { order, defaultId, activityId, preview, spaces }
  *   where each space carries its label, icon, iconFamily, previewImage,
- *   sectionKeys and widgetIds
+ *   sectionKeys, widgetIds and widgetPlacement
  */
 export function resolveThematicSpaces(prefs, discoveryStream) {
   if (!isSpacesThematicAssigned(prefs)) {
@@ -993,6 +1110,7 @@ export function resolveThematicSpaces(prefs, discoveryStream) {
           ...config.spaces[id],
           sectionKeys: resolveThematicSpaceSections(config, id, sectionKeys),
           widgetIds: resolveThematicSpaceWidgets(config, id, prefs),
+          widgetPlacement: resolveWidgetPlacement(config, id),
         },
       ])
     ),

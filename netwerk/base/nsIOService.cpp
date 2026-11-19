@@ -33,8 +33,6 @@
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/NetworkConnectivityService.h"
 #include "mozilla/net/SSLTokensCache.h"
-#include "mozilla/net/SocketProcessHost.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "netCore.h"
 #include "nsAsyncRedirectVerifyHelper.h"
 #include "nsCRT.h"
@@ -95,8 +93,6 @@ using mozilla::dom::ServiceWorkerDescriptor;
 #define NECKO_BUFFER_CACHE_COUNT_PREF "network.buffer.cache.count"
 #define NECKO_BUFFER_CACHE_SIZE_PREF "network.buffer.cache.size"
 #define NETWORK_CAPTIVE_PORTAL_PREF "network.captive-portal-service.enabled"
-#define WEBRTC_PREF_PREFIX "media.peerconnection."
-#define NETWORK_DNS_PREF "network.dns."
 #define FORCE_EXTERNAL_PREF_PREFIX "network.protocol-handler.external."
 // prefs for overriding IPAddress->IpAddressSpace mapping
 #define PREF_LNA_IP_ADDR_SPACE_PUBLIC \
@@ -211,8 +207,6 @@ static const char kProfileDoChange[] = "profile-do-change";
 uint32_t nsIOService::gDefaultSegmentSize = 4096;
 uint32_t nsIOService::gDefaultSegmentCount = 24;
 
-uint32_t nsIOService::sSocketProcessCrashedCount = 0;
-
 ////////////////////////////////////////////////////////////////////////////////
 
 nsIOService::nsIOService()
@@ -239,53 +233,10 @@ static const char* gCallbackPrefs[] = {
     nullptr,
 };
 
-static const char* gCallbackPrefsForSocketProcess[] = {
-    WEBRTC_PREF_PREFIX,
-    NETWORK_DNS_PREF,
-    "media.webrtc.enable_pq_hybrid_kex",
-    "media.webrtc.send_mlkem_keyshare",
-    "network.send_ODA_to_content_directly",
-    "network.trr.",
-    "doh-rollout.",
-    "network.dns.disableIPv6",
-    "network.offline-mirrors-connectivity",
-    "network.disable-localhost-when-offline",
-    "network.proxy.parse_pac_on_socket_process",
-    "network.proxy.allow_hijacking_localhost",
-    "network.proxy.testing_localhost_is_secure_when_hijacked",
-    "network.connectivity-service.",
-    "network.captive-portal-service.testMode",
-    "network.socket.ip_addr_any.disabled",
-    "network.socket.attach_mock_network_layer",
-    "network.lna.enabled",
-    "network.lna.blocking",
-    "network.lna.address_space.private.override",
-    "network.lna.address_space.public.override",
-    "network.lna.websocket.enabled",
-    "network.lna.local-network-to-localhost.skip-checks",
-    "network.socket.forcePort",
-    nullptr,
-};
-
-static const char* gCallbackSecurityPrefs[] = {
-    // Note the prefs listed below should be in sync with the code in
-    // HandleTLSPrefChange().
-    "security.tls.version.min",
-    "security.tls.version.max",
-    "security.tls.version.enable-deprecated",
-    "security.tls.hello_downgrade_check",
-    "security.ssl.require_safe_negotiation",
-    "security.ssl.enable_false_start",
-    "security.ssl.enable_alpn",
-    "security.tls.enable_0rtt_data",
-    "security.ssl.disable_session_identifiers",
-    "security.tls.enable_post_handshake_auth",
-    "security.tls.enable_delegated_credentials",
-    nullptr,
-};
-
 nsresult nsIOService::Init() {
-  SSLTokensCache::Init();
+  if (XRE_IsParentProcess()) {
+    SSLTokensCache::Init();
+  }
 
   InitializeCaptivePortalService();
 
@@ -302,32 +253,28 @@ nsresult nsIOService::Init() {
                                        gCallbackPrefs, this);
   PrefsChanged();
 
-  mSocketProcessTopicBlockedList.Insert(
-      nsLiteralCString(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID));
-  mSocketProcessTopicBlockedList.Insert(
-      nsLiteralCString(NS_XPCOM_SHUTDOWN_OBSERVER_ID));
-  mSocketProcessTopicBlockedList.Insert("xpcom-shutdown-threads"_ns);
-  mSocketProcessTopicBlockedList.Insert("profile-do-change"_ns);
-  mSocketProcessTopicBlockedList.Insert("network:socket-process-crashed"_ns);
-
   // Register for profile change notifications
   mObserverService = services::GetObserverService();
-  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileChangeNetTeardownTopic, true));
-  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileDoChange, true));
-  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, true));
-  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_NETWORK_LINK_TOPIC, true));
-  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_NETWORK_ID_CHANGED_TOPIC, true));
-  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, true));
+  if (mObserverService) {
+    MOZ_ALWAYS_SUCCEEDS(mObserverService->AddObserver(
+        this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, true));
 
-  // Register observers for sending notifications to nsSocketTransportService
-  if (XRE_IsParentProcess()) {
-    AddObserver(this, "profile-initial-state", true);
-    AddObserver(this, NS_WIDGET_SLEEP_OBSERVER_TOPIC, true);
-  }
+    MOZ_ALWAYS_SUCCEEDS(mObserverService->AddObserver(
+        this, kProfileChangeNetTeardownTopic, true));
+    MOZ_ALWAYS_SUCCEEDS(
+        mObserverService->AddObserver(this, kProfileDoChange, true));
+    MOZ_ALWAYS_SUCCEEDS(
+        mObserverService->AddObserver(this, NS_NETWORK_LINK_TOPIC, true));
+    MOZ_ALWAYS_SUCCEEDS(
+        mObserverService->AddObserver(this, NS_NETWORK_ID_CHANGED_TOPIC, true));
+    MOZ_ALWAYS_SUCCEEDS(mObserverService->AddObserver(
+        this, NS_WIDGET_WAKE_OBSERVER_TOPIC, true));
 
-  if (IsSocketProcessChild()) {
-    Preferences::RegisterCallbacks(nsIOService::OnTLSPrefChange,
-                                   gCallbackSecurityPrefs, this);
+    // Register observers for sending notifications to nsSocketTransportService
+    if (XRE_IsParentProcess()) {
+      mObserverService->AddObserver(this, "profile-initial-state", true);
+      mObserverService->AddObserver(this, NS_WIDGET_SLEEP_OBSERVER_TOPIC, true);
+    }
   }
 
   gIOService = this;
@@ -343,71 +290,6 @@ nsresult nsIOService::Init() {
       __func__, []() { RefPtr<nsIDNSService> dns = GetOrInitDNSService(); }));
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsIOService::AddObserver(nsIObserver* aObserver, const char* aTopic,
-                         bool aOwnsWeak) {
-  if (!mObserverService) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // Register for the origional observer.
-  nsresult rv = mObserverService->AddObserver(aObserver, aTopic, aOwnsWeak);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (!XRE_IsParentProcess()) {
-    return NS_OK;
-  }
-
-  nsAutoCString topic(aTopic);
-  // This happens when AddObserver() is called by nsIOService::Init(). We don't
-  // want to add nsIOService again.
-  if (SameCOMIdentity(aObserver, static_cast<nsIObserver*>(this))) {
-    mIOServiceTopicList.Insert(topic);
-    return NS_OK;
-  }
-
-  if (!UseSocketProcess()) {
-    return NS_OK;
-  }
-
-  if (mSocketProcessTopicBlockedList.Contains(topic)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // Avoid registering  duplicate topics.
-  if (mObserverTopicForSocketProcess.Contains(topic)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mObserverTopicForSocketProcess.Insert(topic);
-
-  // Avoid registering duplicate topics.
-  if (mIOServiceTopicList.Contains(topic)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return mObserverService->AddObserver(this, aTopic, true);
-}
-
-NS_IMETHODIMP
-nsIOService::RemoveObserver(nsIObserver* aObserver, const char* aTopic) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsIOService::EnumerateObservers(const char* aTopic,
-                                nsISimpleEnumerator** anEnumerator) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP nsIOService::NotifyObservers(nsISupports* aSubject,
-                                           const char* aTopic,
-                                           const char16_t* aSomeData) {
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 nsIOService::~nsIOService() {
@@ -449,23 +331,6 @@ bool nsIOService::ShouldAddAdditionalSearchHeaders(nsIURI* aURI,
   return false;
 }
 #endif
-
-// static
-void nsIOService::OnTLSPrefChange(const char* aPref, void* aSelf) {
-  MOZ_ASSERT(IsSocketProcessChild());
-
-  if (!EnsureNSSInitializedChromeOrContent()) {
-    LOG(("NSS not initialized."));
-    return;
-  }
-
-  nsAutoCString pref(aPref);
-  // The preferences listed in gCallbackSecurityPrefs need to be in sync with
-  // the code in HandleTLSPrefChange().
-  if (HandleTLSPrefChange(pref)) {
-    LOG(("HandleTLSPrefChange done"));
-  }
-}
 
 nsresult nsIOService::InitializeCaptivePortalService() {
   if (XRE_GetProcessType() != GeckoProcessType_Default) {
@@ -562,265 +427,8 @@ already_AddRefed<nsIOService> nsIOService::GetInstance() {
   return do_AddRef(gIOService);
 }
 
-class SocketProcessListenerProxy : public SocketProcessHost::Listener {
- public:
-  SocketProcessListenerProxy() = default;
-  void OnProcessLaunchComplete(SocketProcessHost* aHost, bool aSucceeded) {
-    if (!gIOService) {
-      return;
-    }
-
-    gIOService->OnProcessLaunchComplete(aHost, aSucceeded);
-  }
-
-  void OnProcessUnexpectedShutdown(SocketProcessHost* aHost) {
-    if (!gIOService) {
-      return;
-    }
-
-    gIOService->OnProcessUnexpectedShutdown(aHost);
-  }
-};
-
-// static
-bool nsIOService::TooManySocketProcessCrash() {
-  return sSocketProcessCrashedCount >=
-         StaticPrefs::network_max_socket_process_failed_count();
-}
-
-// static
-void nsIOService::IncreaseSocketProcessCrashCount() {
-  MOZ_ASSERT(IsNeckoChild());
-  sSocketProcessCrashedCount++;
-}
-
-nsresult nsIOService::LaunchSocketProcess() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (XRE_GetProcessType() != GeckoProcessType_Default) {
-    return NS_OK;
-  }
-
-  // We shouldn't launch socket prcess when shutdown begins.
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-    return NS_OK;
-  }
-
-  if (mSocketProcess) {
-    return NS_OK;
-  }
-
-  if (PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS")) {
-    LOG(("nsIOService skipping LaunchSocketProcess because of the env"));
-    return NS_OK;
-  }
-
-  if (!StaticPrefs::network_process_enabled()) {
-    LOG(("nsIOService skipping LaunchSocketProcess because of the pref"));
-    return NS_OK;
-  }
-
-  Preferences::RegisterPrefixCallbacks(
-      nsIOService::NotifySocketProcessPrefsChanged,
-      gCallbackPrefsForSocketProcess, this);
-
-  // The subprocess is launched asynchronously, so we wait for a callback to
-  // acquire the IPDL actor.
-  mSocketProcess = new SocketProcessHost(new SocketProcessListenerProxy());
-  LOG(("nsIOService::LaunchSocketProcess"));
-  if (!mSocketProcess->Launch()) {
-    NS_WARNING("Failed to launch socket process!!");
-    DestroySocketProcess();
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-void nsIOService::DestroySocketProcess() {
-  LOG(("nsIOService::DestroySocketProcess"));
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (XRE_GetProcessType() != GeckoProcessType_Default || !mSocketProcess) {
-    return;
-  }
-
-  Preferences::UnregisterPrefixCallbacks(
-      nsIOService::NotifySocketProcessPrefsChanged,
-      gCallbackPrefsForSocketProcess, this);
-
-  mSocketProcess->Shutdown();
-  mSocketProcess = nullptr;
-}
-
-bool nsIOService::SocketProcessReady() {
-  return mSocketProcess && mSocketProcess->IsConnected();
-}
-
-static bool sUseSocketProcess = false;
-static bool sUseSocketProcessChecked = false;
-
-// static
-bool nsIOService::UseSocketProcess(bool aCheckAgain) {
-  if (sUseSocketProcessChecked && !aCheckAgain) {
-    return sUseSocketProcess;
-  }
-
-  sUseSocketProcessChecked = true;
-  sUseSocketProcess = false;
-
-  if (PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS")) {
-    return sUseSocketProcess;
-  }
-
-  if (TooManySocketProcessCrash()) {
-    LOG(("TooManySocketProcessCrash"));
-    return sUseSocketProcess;
-  }
-
-  if (PR_GetEnv("MOZ_FORCE_USE_SOCKET_PROCESS")) {
-    sUseSocketProcess = true;
-    return sUseSocketProcess;
-  }
-
-  if (StaticPrefs::network_process_enabled()) {
-    sUseSocketProcess =
-        StaticPrefs::network_http_network_access_on_socket_process_enabled();
-  }
-  return sUseSocketProcess;
-}
-
-// static
-void nsIOService::NotifySocketProcessPrefsChanged(const char* aName,
-                                                  void* aSelf) {
-  static_cast<nsIOService*>(aSelf)->NotifySocketProcessPrefsChanged(aName);
-}
-
-void nsIOService::NotifySocketProcessPrefsChanged(const char* aName) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  if (!StaticPrefs::network_process_enabled()) {
-    return;
-  }
-
-  dom::Pref pref(nsCString(aName), /* isLocked */ false,
-                 /* isSanitized */ false, Nothing(), Nothing());
-
-  Preferences::GetPreference(&pref, GeckoProcessType_Socket,
-                             /* remoteType */ {});
-  auto sendPrefUpdate = [pref = std::move(pref)]() mutable {
-    (void)gIOService->mSocketProcess->GetActor()->SendPreferenceUpdate(
-        std::move(pref));
-  };
-  CallOrWaitForSocketProcess(std::move(sendPrefUpdate));
-}
-
-void nsIOService::OnProcessLaunchComplete(SocketProcessHost* aHost,
-                                          bool aSucceeded) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  LOG(("nsIOService::OnProcessLaunchComplete aSucceeded=%d\n", aSucceeded));
-
-  mSocketProcessLaunchComplete = aSucceeded;
-
-  if (mShutdown || !SocketProcessReady() || !aSucceeded) {
-    mPendingEvents.Clear();
-    return;
-  }
-
-  if (!mPendingEvents.IsEmpty()) {
-    nsTArray<std::function<void()>> pendingEvents = std::move(mPendingEvents);
-    for (auto& func : pendingEvents) {
-      func();
-    }
-  }
-}
-
-void nsIOService::CallOrWaitForSocketProcess(
-    const std::function<void()>& aFunc) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (IsSocketProcessLaunchComplete() && SocketProcessReady()) {
-    aFunc();
-  } else {
-    mPendingEvents.AppendElement(aFunc);  // infallible
-    LaunchSocketProcess();
-  }
-}
-
-int32_t nsIOService::SocketProcessPid() {
-  if (!mSocketProcess) {
-    return 0;
-  }
-  if (SocketProcessParent* actor = mSocketProcess->GetActor()) {
-    return (int32_t)actor->OtherPid();
-  }
-  return 0;
-}
-
-bool nsIOService::IsSocketProcessLaunchComplete() {
-  MOZ_ASSERT(NS_IsMainThread());
-  return mSocketProcessLaunchComplete;
-}
-
-void nsIOService::OnProcessUnexpectedShutdown(SocketProcessHost* aHost) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  LOG(("nsIOService::OnProcessUnexpectedShutdown\n"));
-  DestroySocketProcess();
-  mPendingEvents.Clear();
-
-  // Nothing to do if socket process was not used before.
-  if (!UseSocketProcess()) {
-    return;
-  }
-
-  sSocketProcessCrashedCount++;
-  if (TooManySocketProcessCrash()) {
-    sUseSocketProcessChecked = false;
-    DNSServiceWrapper::SwitchToBackupDNSService();
-  }
-
-  nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
-  if (observerService) {
-    (void)observerService->NotifyObservers(
-        nullptr, "network:socket-process-crashed", nullptr);
-  }
-
-  // UseSocketProcess() could return false if we have too many crashes, so we
-  // should call it again.
-  if (UseSocketProcess()) {
-    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
-        NewRunnableMethod("nsIOService::LaunchSocketProcess", this,
-                          &nsIOService::LaunchSocketProcess)));
-  }
-}
-
-RefPtr<MemoryReportingProcess> nsIOService::GetSocketProcessMemoryReporter() {
-  // Check the prefs here again, since we don't want to create
-  // SocketProcessMemoryReporter for some tests.
-  if (!StaticPrefs::network_process_enabled() || !SocketProcessReady()) {
-    return nullptr;
-  }
-
-  return new SocketProcessMemoryReporter();
-}
-
-NS_IMETHODIMP
-nsIOService::SocketProcessTelemetryPing() {
-  CallOrWaitForSocketProcess([]() {
-    (void)gIOService->mSocketProcess->GetActor()
-        ->SendSocketProcessTelemetryPing();
-  });
-  return NS_OK;
-}
-
 NS_IMPL_ISUPPORTS(nsIOService, nsIIOService, nsINetUtil, nsISpeculativeConnect,
-                  nsIObserver, nsIIOServiceInternal, nsISupportsWeakReference,
-                  nsIObserverService)
+                  nsIObserver, nsIIOServiceInternal, nsISupportsWeakReference)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1366,8 +974,7 @@ nsIOService::GetOffline(bool* offline) {
 NS_IMETHODIMP
 nsIOService::SetOffline(bool offline) { return SetOfflineInternal(offline); }
 
-nsresult nsIOService::SetOfflineInternal(bool offline,
-                                         bool notifySocketProcess) {
+nsresult nsIOService::SetOfflineInternal(bool offline) {
   LOG(("nsIOService::SetOffline offline=%d\n", offline));
   // When someone wants to go online (!offline) after we got XPCOM shutdown
   // throw ERROR_NOT_AVAILABLE to prevent return to online state.
@@ -1390,15 +997,10 @@ nsresult nsIOService::SetOfflineInternal(bool offline,
 
   NS_ASSERTION(observerService, "The observer service should not be null");
 
-  if (XRE_IsParentProcess()) {
-    if (observerService) {
-      (void)observerService->NotifyObservers(nullptr,
-                                             NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC,
-                                             offline ? u"true" : u"false");
-    }
-    if (SocketProcessReady() && notifySocketProcess) {
-      (void)mSocketProcess->GetActor()->SendSetOffline(offline);
-    }
+  if (XRE_IsParentProcess() && observerService) {
+    (void)observerService->NotifyObservers(nullptr,
+                                           NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC,
+                                           offline ? u"true" : u"false");
   }
 
   nsIIOService* subject = static_cast<nsIIOService*>(this);
@@ -1508,9 +1110,6 @@ nsresult nsIOService::SetConnectivityInternal(bool aConnectivity) {
     observerService->NotifyObservers(nullptr,
                                      NS_IPC_IOSERVICE_SET_CONNECTIVITY_TOPIC,
                                      aConnectivity ? u"true" : u"false");
-    if (SocketProcessReady()) {
-      (void)mSocketProcess->GetActor()->SendSetConnectivity(aConnectivity);
-    }
   }
 
   if (mOffline) {
@@ -1881,13 +1480,6 @@ void nsIOService::SetHttpHandlerAlreadyShutingDown() {
 NS_IMETHODIMP
 nsIOService::Observe(nsISupports* subject, const char* topic,
                      const char16_t* data) {
-  if (UseSocketProcess() && SocketProcessReady() &&
-      mObserverTopicForSocketProcess.Contains(nsDependentCString(topic))) {
-    nsCString topicStr(topic);
-    nsString dataStr(data);
-    (void)mSocketProcess->GetActor()->SendNotifyObserver(topicStr, dataStr);
-  }
-
   if (!strcmp(topic, kProfileChangeNetTeardownTopic)) {
     if (!mHttpHandlerAlreadyShutingDown) {
       mNetTearingDownStarted = PR_IntervalNow();
@@ -1895,7 +1487,7 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
     mHttpHandlerAlreadyShutingDown = false;
     if (!mOffline) {
       mOfflineForProfileChange = true;
-      SetOfflineInternal(true, false);
+      SetOfflineInternal(true);
     }
   } else if (!strcmp(topic, kProfileDoChange)) {
     if (data && u"startup"_ns.Equals(data)) {
@@ -1925,21 +1517,15 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
     }
     mHttpHandlerAlreadyShutingDown = false;
 
-    SetOfflineInternal(true, false);
+    SetOfflineInternal(true);
 
     if (mCaptivePortalService) {
       static_cast<CaptivePortalService*>(mCaptivePortalService.get())->Stop();
       mCaptivePortalService = nullptr;
     }
 
-    SSLTokensCache::Shutdown();
-
-    DestroySocketProcess();
-
-    if (IsSocketProcessChild()) {
-      Preferences::UnregisterCallbacks(nsIOService::OnTLSPrefChange,
-                                       gCallbackSecurityPrefs, this);
-      PrepareForShutdownInSocketProcess();
+    if (XRE_IsParentProcess()) {
+      SSLTokensCache::Shutdown();
     }
 
     // We're in XPCOM shutdown now. Unregister any dynamic protocol handlers
@@ -2064,7 +1650,7 @@ nsIOService::GetManageOfflineStatus(bool* aManage) {
 
 // input argument 'data' is already UTF8'ed
 nsresult nsIOService::OnNetworkLinkEvent(const char* data) {
-  if (IsNeckoChild() || IsSocketProcessChild()) {
+  if (IsNeckoChild()) {
     // There is nothing IO service could do on the child process
     // with this at the moment.  Feel free to add functionality
     // here at will, though.
@@ -2385,35 +1971,6 @@ NS_IMETHODIMP
 nsIOService::NotImplemented() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-nsIOService::GetSocketProcessLaunched(bool* aResult) {
-  NS_ENSURE_ARG_POINTER(aResult);
-
-  *aResult = SocketProcessReady();
-  return NS_OK;
-}
-
-bool nsIOService::HasObservers(const char* aTopic) {
-  MOZ_ASSERT(false, "Calling this method is unexpected");
-  return false;
-}
-
-NS_IMETHODIMP
-nsIOService::GetSocketProcessId(uint64_t* aPid) {
-  NS_ENSURE_ARG_POINTER(aPid);
-
-  *aPid = 0;
-  if (!mSocketProcess) {
-    return NS_OK;
-  }
-
-  if (SocketProcessParent* actor = mSocketProcess->GetActor()) {
-    *aPid = (uint64_t)actor->OtherPid();
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsIOService::RegisterProtocolHandler(const nsACString& aScheme,
                                      nsIProtocolHandler* aHandler,
                                      uint32_t aProtocolFlags,
@@ -2475,10 +2032,9 @@ nsIOService::SetSimpleURIUnknownRemoteSchemes(
   mSimpleURIUnknownSchemes.SetAndMergeRemoteSchemes(aRemoteSchemes);
 
   if (XRE_IsParentProcess()) {
-    // since we only expect socket, parent and content processes to create URLs
+    // since we only expect parent and content processes to create URLs
     // that need to check the bypass list
     // we only broadcast the list to content processes
-    // (and leave socket process broadcast as todo if necessary)
     //
     // sending only the remote-settings schemes to the content,
     // which already has the pref list

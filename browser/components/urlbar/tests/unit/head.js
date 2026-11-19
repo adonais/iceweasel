@@ -1192,6 +1192,25 @@ async function check_results({
     exposureTelemetry: { optional: true },
     isRichSuggestion: { optional: true },
     richSuggestionIconVariation: { optional: true },
+    bestMatchType: {
+      validate(resultIndex, actualResult, key) {
+        let expectedValue;
+        if (matches[resultIndex].hasOwnProperty(key)) {
+          expectedValue = matches[resultIndex][key];
+        } else if (matches[resultIndex].isBestMatch) {
+          // The default type is `LARGE`.
+          expectedValue = UrlbarShared.BEST_MATCH_TYPE.LARGE;
+        } else {
+          expectedValue = UrlbarShared.BEST_MATCH_TYPE.NONE;
+        }
+        Assert.equal(
+          actualResult[key],
+          expectedValue,
+          "bestMatchType should be as expected and also be appropriate to isBestMatch"
+        );
+        return true;
+      },
+    },
   };
 
   // A validator object to check optional date payload properties. If the
@@ -1237,6 +1256,7 @@ async function check_results({
     bookmarkDateMs: optionalDateValidator,
     frecency: { optional: true },
     lastVisit: optionalDateValidator,
+    semanticDistance: { optional: true },
     // `suggestionObject` is only used for dismissing Suggest Rust results, and
     // important properties in this object are reflected in the top-level
     // payload object, so ignore it. There are Suggest tests specifically for
@@ -1276,7 +1296,14 @@ async function check_results({
         JSON.stringify(expected)
     );
 
-    for (let [key, { optional, map }] of Object.entries(propertiesToCheck)) {
+    for (let [key, { optional, map, validate }] of Object.entries(
+      propertiesToCheck
+    )) {
+      if (validate?.(i, actual, key)) {
+        // The validator consumed this property.
+        continue;
+      }
+
       if (!optional || expected[key] !== undefined) {
         map ??= v => v;
         Assert.equal(

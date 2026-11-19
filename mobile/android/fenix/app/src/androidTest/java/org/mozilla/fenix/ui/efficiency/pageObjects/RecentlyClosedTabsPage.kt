@@ -29,6 +29,12 @@ class RecentlyClosedTabsPage(composeRule: AndroidComposeTestRule<HomeActivityInt
                     NavigationStep.Click(HistorySelectors.RECENTLY_CLOSED_TABS_BUTTON),
                 ),
         )
+
+        builder.register(
+            from = pageName,
+            to = "HistoryPage",
+            steps = listOf(NavigationStep.Click(RecentlyClosedTabsSelectors.NAVIGATE_UP_BUTTON)),
+        )
     }
 
     override val selectorCatalog = RecentlyClosedTabsSelectors

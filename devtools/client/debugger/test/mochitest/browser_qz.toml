@@ -56,8 +56,6 @@ skip-if = [
 
 ["browser_dbg-settings-disable-javascript.js"]
 
-["browser_dbg-slow-script.js"]
-
 ["browser_dbg-source-pragma.js"]
 
 ["browser_dbg-sourceURL-breakpoint.js"]

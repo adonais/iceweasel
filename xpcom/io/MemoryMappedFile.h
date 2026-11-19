@@ -8,6 +8,7 @@
 #include <prio.h>
 #include <stdint.h>  // For SIZE_MAX
 
+#include "mozilla/Span.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 namespace mozilla {
@@ -108,6 +109,11 @@ class MemoryMappedFile final {
    * This can be zero for a file that does exist, if the file is empty.
    */
   size_t Size() const { return mSize; }
+
+  Span<const uint8_t> AsSpan() const {
+    MOZ_ASSERT(IsValid());
+    return Span{static_cast<const uint8_t*>(mData), mSize};
+  }
 
   /**
    * Frees the memory associated with this file.

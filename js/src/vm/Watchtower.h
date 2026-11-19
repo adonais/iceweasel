@@ -29,6 +29,9 @@ enum class SetSlotOptimizable { Yes, No, NotYet };
 // - Invalidating the MegamorphicCache, a property lookup cache for megamorphic
 //   property accesses. See the SMDOC comment in vm/Caches.h.
 //
+// - Popping realm fuses and object fuses. See the SMDOC comments in
+//   vm/GuardFuse.h and vm/ObjectFuse.h.
+//
 // There's also a testing mechanism that lets us write tests for Watchtower
 // hooks. See setWatchtowerCallback and addWatchtowerTarget defined in
 // TestingFunctions.cpp.
@@ -52,6 +55,8 @@ class Watchtower {
   static bool watchFreezeOrSealSlow(JSContext* cx, Handle<NativeObject*> obj,
                                     IntegrityLevel level);
   static bool watchProtoChangeSlow(JSContext* cx, HandleObject obj);
+  static bool watchesFirstDenseElementAddSlow(NativeObject* obj);
+  static void watchFirstDenseElementAddSlow(JSContext* cx, NativeObject* obj);
   static SetSlotOptimizable canOptimizeSetSlotSlow(JSContext* cx,
                                                    NativeObject* obj,
                                                    PropertyKey key,
@@ -87,6 +92,9 @@ class Watchtower {
     return obj->hasAnyFlag({ObjectFlag::IsUsedAsPrototype,
                             ObjectFlag::UseWatchtowerTestingLog,
                             ObjectFlag::HasRealmFuseProperty});
+  }
+  static bool watchesFirstDenseElementAdd(NativeObject* obj) {
+    return obj->hasRealmFuseProperty() && watchesFirstDenseElementAddSlow(obj);
   }
   static SetSlotOptimizable canOptimizeSetSlot(JSContext* cx, NativeObject* obj,
                                                PropertyKey key,
@@ -155,6 +163,16 @@ class Watchtower {
       return true;
     }
     return watchProtoChangeSlow(cx, obj);
+  }
+
+  // Called when a dense element is added to an object with a dense elements
+  // capacity of zero, before allocating the elements.
+  static void watchFirstDenseElementAdd(JSContext* cx, NativeObject* obj) {
+    MOZ_ASSERT(obj->getDenseCapacity() == 0);
+    if (MOZ_LIKELY(!watchesFirstDenseElementAdd(obj))) {
+      return;
+    }
+    watchFirstDenseElementAddSlow(cx, obj);
   }
 
   // Invalidating Ion scripts that bake in values from the global lexical

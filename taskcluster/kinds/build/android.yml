@@ -11,11 +11,11 @@ task-defaults:
     index:
         product: mobile
     worker-type: b-linux-docker-amd
+    use-gradle: offline
+    use-gradle-cache: true
     worker:
         docker-image: {in-tree: android-build}
         max-run-time: 7200
-        env:
-            GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
         artifacts:
             - name: public/build/maven
               path: /builds/worker/workspace/obj-build/gradle/maven/
@@ -44,9 +44,7 @@ task-defaults:
             - name: public/reports
               path: /builds/worker/workspace/obj-build/gradle/build/reports
               type: directory
-    run-on-repo-type: [hg]
     run:
-        clone-with: hg
         using: mozharness
         script: "mozharness/scripts/fx_desktop_build.py"
         config: ["builds/releng_base_android_64_builds.py"]
@@ -184,7 +182,8 @@ android-arm-shippable/opt:
         enable-full-crashsymbols: true
         shippable: true
     shipping-phase: build
-    shipping-product: fennec
+    use-gradle-cache: false
+    shipping-product: firefox-android
     index:
         job-name: android-arm-opt
         type: android-shippable-with-multi-l10n
@@ -209,6 +208,35 @@ android-arm-shippable/opt:
             - linux64-rust-android
             - android-gradle-dependencies
 
+android-arm-reproduced/opt:
+    description: "Android Arm Reproduced"
+    use-pgo: android-arm-shippable/opt
+    shipping-phase: build
+    use-gradle-cache: false
+    shipping-product: firefox-android
+    index:
+        job-name: android-arm-reproduced-opt
+    treeherder:
+        platform: android-5-0-armv7-shippable/opt
+        symbol: Bpgo(repr)
+    run-on-projects: ['mozilla-central', 'comm-central']
+    worker-type: b-linux-docker-xlarge-amd
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+            PERFHERDER_EXTRA_OPTIONS: repr
+            MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
+    run:
+        actions: [get-secrets, build, multi-l10n]
+        config: [taskcluster_nightly.py]
+        custom-build-variant-cfg: arm
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - android-gradle-dependencies
+
 android-arm-shippable-lite/opt:
     description: "Android Arm Shippable Lite"
     use-pgo: android-arm-shippable/opt
@@ -216,7 +244,8 @@ android-arm-shippable-lite/opt:
         enable-full-crashsymbols: true
         shippable: true
     shipping-phase: build
-    shipping-product: fennec
+    use-gradle-cache: false
+    shipping-product: firefox-android
     index:
         job-name: android-arm-lite-opt
         type: android-shippable-with-multi-l10n
@@ -389,7 +418,8 @@ android-aarch64-shippable/opt:
         enable-full-crashsymbols: true
         shippable: true
     shipping-phase: build
-    shipping-product: fennec
+    use-gradle-cache: false
+    shipping-product: firefox-android
     index:
         job-name: android-aarch64-opt
         type: android-shippable
@@ -414,6 +444,35 @@ android-aarch64-shippable/opt:
             - linux64-rust-android
             - android-gradle-dependencies
 
+android-aarch64-reproduced/opt:
+    description: "Android AArch64 Reproduced"
+    use-pgo: android-aarch64-shippable/opt
+    shipping-phase: build
+    use-gradle-cache: false
+    shipping-product: firefox-android
+    index:
+        job-name: android-aarch64-reproduced-opt
+    treeherder:
+        platform: android-5-0-aarch64-shippable/opt
+        symbol: Bpgo(repr)
+    run-on-projects: ['mozilla-central', 'comm-central']
+    worker-type: b-linux-docker-xlarge-amd
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+            PERFHERDER_EXTRA_OPTIONS: repr
+            MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
+    run:
+        actions: [get-secrets, build, multi-l10n]
+        config: [taskcluster_nightly.py]
+        custom-build-variant-cfg: aarch64
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - android-gradle-dependencies
+
 android-aarch64-shippable-lite/opt:
     description: "Android AArch64 Shippable Lite"
     use-pgo: android-aarch64-shippable/opt
@@ -421,7 +480,8 @@ android-aarch64-shippable-lite/opt:
         enable-full-crashsymbols: true
         shippable: true
     shipping-phase: build
-    shipping-product: fennec
+    use-gradle-cache: false
+    shipping-product: firefox-android
     index:
         job-name: android-aarch64-lite-opt
         type: android-shippable
@@ -623,7 +683,8 @@ android-x86_64-shippable/opt:
         enable-full-crashsymbols: true
         shippable: true
     shipping-phase: build
-    shipping-product: fennec
+    use-gradle-cache: false
+    shipping-product: firefox-android
     index:
         job-name: android-x86_64-opt
         type: android-shippable
@@ -648,6 +709,35 @@ android-x86_64-shippable/opt:
             - linux64-rust-android
             - android-gradle-dependencies
 
+android-x86_64-reproduced/opt:
+    description: "Android x86-64 Reproduced"
+    use-pgo: android-x86_64-shippable/opt
+    shipping-phase: build
+    use-gradle-cache: false
+    shipping-product: firefox-android
+    index:
+        job-name: android-x86_64-reproduced-opt
+    treeherder:
+        platform: android-5-0-x86_64-shippable/opt
+        symbol: Bpgo(repr)
+    run-on-projects: ['mozilla-central', 'comm-central']
+    worker-type: b-linux-docker-xlarge-amd
+    worker:
+        env:
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
+            PERFHERDER_EXTRA_OPTIONS: repr
+            MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
+    run:
+        actions: [get-secrets, build, multi-l10n]
+        config: [taskcluster_nightly.py]
+        custom-build-variant-cfg: x86_64
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust-android
+            - android-gradle-dependencies
+
 android-x86_64-shippable-lite/opt:
     description: "Android x86-64 Shippable Lite"
     use-pgo: android-x86_64-shippable/opt
@@ -655,7 +745,8 @@ android-x86_64-shippable-lite/opt:
         enable-full-crashsymbols: true
         shippable: true
     shipping-phase: build
-    shipping-product: fennec
+    use-gradle-cache: false
+    shipping-product: firefox-android
     index:
         job-name: android-x86_64-lite-opt
         type: android-shippable

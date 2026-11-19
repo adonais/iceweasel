@@ -29,7 +29,7 @@ static mozilla::LauncherResult<bool> IsHighIntegrity(
     }
   }
 
-  auto buf = mozilla::MakeUnique<char[]>(reqdLen);
+  auto buf = std::make_unique<char[]>(reqdLen);
 
   if (!::GetTokenInformation(aToken.get(), TokenIntegrityLevel, buf.get(),
                              reqdLen, &reqdLen)) {
@@ -89,7 +89,7 @@ static mozilla::LauncherResult<bool> IsAdminByAppCompat(
     return LAUNCHER_ERROR_FROM_WIN32(status);
   }
 
-  auto valueData = mozilla::MakeUnique<wchar_t[]>(dataLength);
+  auto valueData = std::make_unique<wchar_t[]>(dataLength);
   if (!valueData) {
     return LAUNCHER_ERROR_FROM_WIN32(ERROR_OUTOFMEMORY);
   }
@@ -151,7 +151,7 @@ LauncherVoidResult LaunchUnelevated(int aArgc, wchar_t* aArgv[]) {
       // code in the browser which behaves differently in the presence of an
       // `-osint` tag, but which will not have had a chance to react to this.
       // See, _e.g._, bug 1243603.)
-      auto const aArgvCopy = MakeUnique<wchar_t const*[]>(aArgc + 1);
+      auto const aArgvCopy = std::make_unique<wchar_t const*[]>(aArgc + 1);
       aArgvCopy[0] = aArgv[1];
       aArgvCopy[1] = kTagArg;
       for (int i = 2; i < aArgc; ++i) {

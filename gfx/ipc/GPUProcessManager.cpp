@@ -814,11 +814,31 @@ void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
     gfxVars::SetUseWebRenderDCompositionTextureOverlayWin(false);
     return;
   }
+  if (aError == wr::WebRenderError::SOFTWARE_D3D11) {
+    if (!gfxVars::AllowSoftwareWebRenderD3D11()) {
+      return;
+    }
+    gfxVars::SetAllowSoftwareWebRenderD3D11(false);
+    // Recreate the compositors for all windows so that none remain using D3D11
+    // compositing with SWGL, otherwise they would disagree on what textures
+    // they can draw.
+    if (mProcess) {
+      if (mGPUChild) {
+        mGPUChild->EnsureGPUReady(/* aForceSync */ true);
+      }
+      DestroyRemoteCompositorSessions();
+    } else {
+      DestroyInProcessCompositorSessions();
+    }
+    NotifyListenersOnCompositeDeviceReset();
+    return;
+  }
 #else
   if (aError == wr::WebRenderError::VIDEO_OVERLAY ||
       aError == wr::WebRenderError::VIDEO_HW_OVERLAY ||
       aError == wr::WebRenderError::VIDEO_SW_OVERLAY ||
-      aError == wr::WebRenderError::DCOMP_TEXTURE_OVERLAY) {
+      aError == wr::WebRenderError::DCOMP_TEXTURE_OVERLAY ||
+      aError == wr::WebRenderError::SOFTWARE_D3D11) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return;
   }
@@ -982,6 +1002,15 @@ void GPUProcessManager::NotifyListenersOnCompositeDeviceReset() {
 void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
   MOZ_ASSERT(mProcess && mProcess == aHost);
 
+  if (aHost->WasKilledForTesting()) {
+    GPUPROCESS_LOG("GPU process {} killed for testing",
+                   aHost->GetProcessToken());
+    CompositorManagerChild::OnGPUProcessLost(aHost->GetProcessToken());
+    DestroyProcess(/* aUnexpectedShutdown */ true);
+    HandleProcessLost();
+    return;
+  }
+
   if (StaticPrefs::layers_gpu_process_crash_also_crashes_browser()) {
     MOZ_CRASH("GPU process crashed and pref is set to crash the browser.");
   }
@@ -1024,10 +1053,14 @@ void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
     } else {
       MOZ_DIAGNOSTIC_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
     }
-  } else if (mUnstableProcessAttempts >
-                 uint32_t(StaticPrefs::
-                              layers_gpu_process_max_restarts_with_decoder()) &&
-             mDecodeVideoOnGpuProcess) {
+  } else if (
+      // On Android, we only stop decoding in the GPU process if it is disabled,
+      // since we only fallback to platform decoding in the RDD process then.
+      !kIsAndroid &&
+      mUnstableProcessAttempts >
+          uint32_t(
+              StaticPrefs::layers_gpu_process_max_restarts_with_decoder()) &&
+      mDecodeVideoOnGpuProcess) {
     mDecodeVideoOnGpuProcess = false;
     mozilla::glean::gpu_process::crash_fallbacks.Get("decoding_disabled"_ns)
         .Add(1);
@@ -1249,6 +1282,16 @@ void GPUProcessManager::KillProcess(bool aGenerateMinidump) {
   }
 
   mProcess->KillProcess(aGenerateMinidump);
+}
+
+void GPUProcessManager::KillProcessForTesting() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mProcess) {
+    return;
+  }
+
+  mProcess->KillProcessForTesting();
 }
 
 void GPUProcessManager::CrashProcess() {
@@ -1575,7 +1618,10 @@ void GPUProcessManager::CreateContentRemoteMediaManager(
     ipc::Endpoint<PRemoteMediaManagerChild>* aOutEndpoint) {
   MOZ_DIAGNOSTIC_ASSERT(IsGPUReady());
 
-  if (!mGPUChild || !StaticPrefs::media_gpu_process_decoder() ||
+  // The same endpoint is used for both decoding and encoding.
+  if (!mGPUChild ||
+      !(StaticPrefs::media_gpu_process_decoder() ||
+        StaticPrefs::media_gpu_process_encoder()) ||
       !mDecodeVideoOnGpuProcess) {
     return;
   }

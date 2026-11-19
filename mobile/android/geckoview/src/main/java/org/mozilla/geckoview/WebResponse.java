@@ -166,6 +166,8 @@ public class WebResponse extends WebMessage {
     }
 
     /**
+     * Set whether or not this response is secure.
+     *
      * @param isSecure Whether or not this response is secure.
      * @return This Builder instance.
      */
@@ -175,6 +177,8 @@ public class WebResponse extends WebMessage {
     }
 
     /**
+     * Set the server certificate used with this response.
+     *
      * @param certificate The certificate used.
      * @return This Builder instance.
      */
@@ -220,9 +224,7 @@ public class WebResponse extends WebMessage {
       return this;
     }
 
-    /**
-     * @return A {@link WebResponse} constructed with the values from this Builder instance.
-     */
+    /** {@return a {@link WebResponse} constructed with the values from this Builder instance} */
     public @NonNull WebResponse build() {
       return new WebResponse(this);
     }

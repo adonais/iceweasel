@@ -22,6 +22,9 @@ Each filter is a simple function, but it also have attached a special
   # data is filtered
 """
 
+import math
+import statistics
+
 _FILTERS = {}
 
 
@@ -175,10 +178,13 @@ def geometric_mean(series):
     """
     geometric_mean: http://en.wikipedia.org/wiki/Geometric_mean
     """
-
-    from scipy.stats.mstats import gmean
-
-    return gmean(series)
+    # Same results as scipy's gmean: nan for empty or negative input, and 0
+    # when any value is 0 (which statistics only accepts from Python 3.13).
+    if len(series) == 0 or any(value < 0 for value in series):
+        return math.nan
+    if any(value == 0 for value in series):
+        return 0.0
+    return statistics.geometric_mean(series)
 
 
 # filters that return a list

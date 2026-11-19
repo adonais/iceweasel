@@ -54,7 +54,7 @@ nsICOEncoder::InitFromData(const uint8_t* aData, uint32_t aLength,
                            uint32_t aWidth, uint32_t aHeight, uint32_t aStride,
                            uint32_t aInputFormat,
                            const nsAString& aOutputOptions,
-                           const nsACString& aRandomizationKey) {
+                           const nsACString& /*aRandomizationKey*/) {
   // validate input format
   if (aInputFormat != INPUT_FORMAT_RGB && aInputFormat != INPUT_FORMAT_RGBA &&
       aInputFormat != INPUT_FORMAT_HOSTARGB) {
@@ -103,7 +103,7 @@ NS_IMETHODIMP
 nsICOEncoder::AddImageFrame(const uint8_t* aData, uint32_t aLength,
                             uint32_t aWidth, uint32_t aHeight, uint32_t aStride,
                             uint32_t aInputFormat,
-                            const nsAString& aFrameOptions) {
+                            const nsAString& /*aFrameOptions*/) {
   if (mUsePNG) {
     mContainedEncoder = new nsPNGEncoder();
     nsresult rv;
@@ -409,7 +409,7 @@ nsICOEncoder::AsyncWait(nsIInputStreamCallback* aCallback, uint32_t aFlags,
 }
 
 NS_IMETHODIMP
-nsICOEncoder::CloseWithStatus(nsresult aStatus) { return Close(); }
+nsICOEncoder::CloseWithStatus(nsresult /*aStatus*/) { return Close(); }
 
 void nsICOEncoder::NotifyListener() {
   if (mCallback && (GetCurrentImageBufferOffset() - mImageBufferReadPoint >=

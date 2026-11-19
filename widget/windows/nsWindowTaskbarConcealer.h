@@ -6,7 +6,10 @@
 #define WIDGET_WINDOWS_NSWINDOWTASKBARCONCEALER_H_
 
 #include "mozilla/Maybe.h"
+#include "nsTArray.h"
 #include "nsWindow.h"
+
+class TaskbarConcealerTest;
 
 /**
  * nsWindow::TaskbarConcealer
@@ -53,6 +56,8 @@ class nsWindow::TaskbarConcealer {
   static void OnAsyncStateUpdateRequest(HWND);
 
  private:
+  friend class ::TaskbarConcealerTest;
+
   static void UpdateAllState(HWND destroyedHwnd = nullptr);
 
   struct WindowState {
@@ -60,6 +65,20 @@ class nsWindow::TaskbarConcealer {
     bool isGkFullscreen;
   };
   static mozilla::Maybe<WindowState> GetWindowState(HWND);
+
+  struct WindowInfo {
+    HWND hwnd;
+    HMONITOR monitor;
+    bool isGkFullscreen;
+    bool isAlwaysOnTop;
+  };
+
+  // Given all relevant windows in Z-order (topmost first), returns the windows
+  // that should be marked as hiding the taskbar: on each monitor, the uppermost
+  // window that is not a non-fullscreen always-on-top window, if that window is
+  // fullscreen.
+  static nsTArray<HWND> GetWindowsHidingTaskbar(
+      const nsTArray<WindowInfo>& aWindows);
 
   static nsTHashMap<HWND, HMONITOR> sKnownWindows;
 };

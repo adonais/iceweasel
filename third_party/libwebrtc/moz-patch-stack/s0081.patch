@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/2185cab977988fd4a
  3 files changed, 16 insertions(+)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 86ac73d3c7..b7a7fae5e4 100644
+index 16d84a3509..dbbee875a9 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -635,6 +635,7 @@ if (!build_with_chromium) {
@@ -50,7 +50,7 @@ index 53773dc79f..72a0fdbbd3 100644
      Set(std::make_unique<RtcEventLogNull>());
    }
 diff --git a/api/task_queue/BUILD.gn b/api/task_queue/BUILD.gn
-index 01ce954625..ad1dc3c5a0 100644
+index 24ab1fbaee..f3cb41b679 100644
 --- a/api/task_queue/BUILD.gn
 +++ b/api/task_queue/BUILD.gn
 @@ -81,6 +81,10 @@ rtc_library("task_queue_test") {

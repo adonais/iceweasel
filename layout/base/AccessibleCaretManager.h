@@ -95,7 +95,7 @@ class AccessibleCaretManager {
   MOZ_CAN_RUN_SCRIPT
   virtual void OnScrollPositionChanged();
 
-  // Handle reflow event from nsIReflowObserver.
+  // Handle reflow event.
   MOZ_CAN_RUN_SCRIPT
   virtual void OnReflow();
 

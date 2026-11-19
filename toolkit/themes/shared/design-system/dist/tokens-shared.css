@@ -148,10 +148,10 @@
     --button-text-color-destructive-active: var(--button-text-color-destructive);
     --button-text-color-destructive-disabled: var(--button-text-color-destructive);
     --button-text-color-destructive-selected: var(--button-text-color-destructive-active);
-    --button-text-color-ghost: inherit;
-    --button-text-color-ghost-hover: inherit;
-    --button-text-color-ghost-active: inherit;
-    --button-text-color-ghost-disabled: inherit;
+    --button-text-color-ghost: currentColor;
+    --button-text-color-ghost-hover: currentColor;
+    --button-text-color-ghost-active: currentColor;
+    --button-text-color-ghost-disabled: currentColor;
     --button-text-color-ghost-selected: var(--button-text-color-ghost-active);
     --button-text-color-menu: var(--button-text-color-ghost);
     --button-text-color-menu-hover: var(--button-text-color-ghost-hover);
@@ -432,6 +432,10 @@
     /* Not using --force-outline-offset for links because that's intended for elements with a background, and we only want a slight offset here while not overlapping adjacent text */
     --link-focus-outline-offset: 1px;
 
+    /** motion **/
+    --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --motion-easing-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
     /** opacity **/
     --opacity-deemphasized: 0.8;
     --opacity-deemphasized-strong: 0.6;
@@ -451,6 +455,12 @@
     --panel-menuitem-padding: var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline);
     --panel-menuitem-padding-block: 8px;
     --panel-menuitem-padding-inline: 8px;
+    --panel-motion-duration-enter: 150ms;
+    --panel-motion-duration-exit: 120ms;
+    --panel-motion-duration-fade: 120ms;
+    --panel-motion-easing: var(--motion-easing-emphasized);
+    --panel-motion-scale: 0.96;
+    --panel-motion-translate-y: -4px;
     --panel-padding: 16px;
     --panel-padding-block: 4px;
     --panel-separator-color: color-mix(in srgb, currentColor 25%, transparent);
@@ -469,6 +479,13 @@
     /** sidebar **/
     --sidebar-background-color: light-dark(white, rgb(28, 27, 34));
     --sidebar-border-color: var(--card-border-color);
+    --sidebar-motion-duration-enter: 200ms;
+    --sidebar-motion-duration-exit: 160ms;
+    --sidebar-motion-easing: var(--motion-easing-emphasized);
+    --sidebar-panel-content-motion-duration-fade: 130ms;
+    --sidebar-panel-content-motion-easing-fade: var(--motion-easing-standard);
+    --sidebar-panel-motion-duration-enter: 230ms;
+    --sidebar-panel-motion-duration-exit: 190ms;
     --sidebar-text-color: light-dark(rgb(21, 20, 26), rgb(249, 249, 250));
 
     /** size **/
@@ -536,7 +553,7 @@
     --toolbarbutton-badge-padding-inline: 2px;
     --toolbarbutton-badge-size: 14px;
     --toolbarbutton-border-radius: var(--button-border-radius);
-    --toolbarbutton-icon-fill: light-dark(var(--color-gray-70), var(--color-gray-0));
+    --toolbarbutton-icon-fill: light-dark(color-mix(in srgb, currentColor 69%, transparent), currentColor);
     --toolbarbutton-icon-fill-hover: var(--toolbarbutton-icon-fill);
     --toolbarbutton-icon-fill-active: var(--toolbarbutton-icon-fill);
     --toolbarbutton-icon-fill-disabled: var(--toolbarbutton-icon-fill);
@@ -595,6 +612,8 @@
       --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-hover: var(--button-text-color-hover);
       --button-text-color-ghost-active: var(--button-text-color-active);
+      --button-text-color-ghost-disabled: currentColor;
+      --button-text-color-menu: currentColor;
 
       /** card **/
       --card-border-color: color-mix(in srgb, currentColor 41%, transparent);
@@ -622,7 +641,7 @@
 
       /** text-color **/
       --text-color: CanvasText;
-      --text-color-deemphasized: inherit;
+      --text-color-deemphasized: currentColor;
       --text-color-error: inherit;
       --text-color-list-item-hover: SelectedItemText;
 
@@ -691,6 +710,7 @@
       --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-hover: var(--button-text-color-hover);
       --button-text-color-ghost-active: var(--button-text-color-active);
+      --button-text-color-ghost-disabled: var(--button-text-color-disabled);
       --button-text-color-menu: MenuText;
       --button-text-color-menu-hover: -moz-menuhovertext;
       --button-text-color-menu-active: var(--button-text-color-menu-hover);
@@ -835,10 +855,11 @@
       --button-text-color-ghost-hover: var(--button-text-color-ghost);
       --button-text-color-ghost-active: var(--button-text-color-ghost);
       --button-text-color-ghost-selected: var(--button-text-color-ghost-active);
-      --button-text-color-menu-hover: light-dark(var(--button-text-color-ghost-hover), var(--button-text-color-hover));
-      --button-text-color-menu-active: light-dark(var(--button-text-color-ghost-active), var(--button-text-color-active));
-      --button-text-color-menu-disabled: light-dark(var(--button-text-color-ghost-disabled), var(--button-text-color-disabled));
-      --button-text-color-menu-selected: light-dark(var(--button-text-color-ghost-selected), var(--button-text-color-selected));
+      --button-text-color-menu: var(--button-text-color-ghost);
+      --button-text-color-menu-hover: var(--button-text-color-ghost-hover);
+      --button-text-color-menu-active: var(--button-text-color-ghost-active);
+      --button-text-color-menu-disabled: var(--button-text-color-ghost-disabled);
+      --button-text-color-menu-selected: var(--button-text-color-ghost-selected);
       --button-text-color-muted: var(--button-text-color);
       --button-text-color-muted-hover: var(--button-text-color-muted);
       --button-text-color-muted-active: var(--button-text-color-muted);
@@ -1125,7 +1146,9 @@
         --button-text-color-destructive-selected: var(--button-text-color-destructive-active);
         --button-text-color-ghost-hover: var(--button-text-color-ghost-active);
         --button-text-color-ghost-selected: var(--button-text-color-selected);
+        --button-text-color-menu: MenuText;
         --button-text-color-menu-hover: -moz-menuhovertext;
+        --button-text-color-menu-active: var(--button-text-color-menu-hover);
         --button-text-color-menu-disabled: var(--button-text-color-disabled);
         --button-text-color-menu-selected: var(--button-text-color-primary-selected);
         --button-text-color-muted: ButtonText;

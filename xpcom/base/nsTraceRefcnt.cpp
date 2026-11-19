@@ -186,7 +186,7 @@ struct SerialNumberRecord {
                                              /*showLocals=*/false,
                                              /*showThisProps=*/false);
     size_t len = strlen(chars.get());
-    jsStack = mozilla::MakeUnique<char[]>(len + 1);
+    jsStack = std::make_unique<char[]>(len + 1);
     memcpy(jsStack.get(), chars.get(), len + 1);
   }
 };
@@ -324,7 +324,7 @@ static BloatEntry* GetBloatEntry(const char* aTypeName,
   BloatEntry* entry = gBloatView->Get(aTypeName);
   if (!entry && aInstanceSize > 0) {
     entry = gBloatView
-                ->InsertOrUpdate(aTypeName, mozilla::MakeUnique<BloatEntry>(
+                ->InsertOrUpdate(aTypeName, std::make_unique<BloatEntry>(
                                                 aTypeName, aInstanceSize))
                 .get();
   } else {
@@ -483,7 +483,7 @@ static intptr_t GetSerialNumber(void* aPtr, bool aCreate, void* aFirstFramePC) {
           "it.");
     }
 
-    auto& record = entry.Insert(mozilla::MakeUnique<SerialNumberRecord>());
+    auto& record = entry.Insert(std::make_unique<SerialNumberRecord>());
     WalkTheStackSavingLocations(record->allocationStack, aFirstFramePC);
     if (gLogJSStacks) {
       record->SaveJSStack();

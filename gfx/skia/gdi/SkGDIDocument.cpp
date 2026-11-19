@@ -942,6 +942,9 @@ private:
     // that the output keeps the stroke semantics (e.g. minimum line widths). Returns false if
     // nothing was emitted and the path needs to be drawn some other way.
     bool emitStroke(const SkPath& path, const SkPaint& paint, bool flatten) {
+        // NOTE(emilio): Beware of some bugs in the XPS driver if you relax this
+        // check to let dashed path effects through, see
+        // https://bugzil.la/2066036
         if (paint.getStyle() == SkPaint::kFill_Style || paint.getStrokeWidth() <= 0 ||
             paint.getShader() || paint.getPathEffect() || path.isInverseFillType()) {
             return false;

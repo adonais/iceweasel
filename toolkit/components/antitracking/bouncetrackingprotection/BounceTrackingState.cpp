@@ -601,6 +601,42 @@ BounceTrackingState::OnStateChange(nsIWebProgress* aWebProgress,
       "BTP: committed document OriginAttributes (userContextId/PBM) diverged "
       "from the cached BounceTrackingState OriginAttributes (Bug 2054941).");
 
+  // OnBFCacheRestored already handled the restore synchronously with the swap.
+  // This notification arrives later, possibly after the restored page started
+  // another navigation, whose record it must not overwrite the final host of.
+  if (aStateFlags & nsIWebProgressListener::STATE_RESTORING) {
+    return NS_OK;
+  }
+
+  return OnDocumentLoaded(documentPrincipal);
+}
+
+nsresult BounceTrackingState::OnBFCacheRestored() {
+  RefPtr<dom::BrowsingContext> browsingContext = CurrentBrowsingContext();
+  NS_ENSURE_TRUE(browsingContext, NS_ERROR_FAILURE);
+
+  dom::WindowGlobalParent* windowGlobalParent =
+      browsingContext->Canonical()->GetCurrentWindowGlobal();
+  NS_ENSURE_TRUE(windowGlobalParent, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsIPrincipal> documentPrincipal =
+      windowGlobalParent->DocumentPrincipal();
+  NS_ENSURE_TRUE(documentPrincipal, NS_ERROR_FAILURE);
+
+  MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug, "{}: this: {}",
+              __FUNCTION__, *this);
+
+  if (ShouldTrackPrincipal(documentPrincipal)) {
+    nsAutoCString siteHost;
+    nsresult rv = documentPrincipal->GetBaseDomain(siteHost);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!siteHost.IsEmpty()) {
+      rv = OnResponseReceived(AutoTArray<nsCString, 1>{std::move(siteHost)});
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
+
   return OnDocumentLoaded(documentPrincipal);
 }
 

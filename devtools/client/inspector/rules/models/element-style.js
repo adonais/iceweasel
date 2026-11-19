@@ -432,7 +432,7 @@ class ElementStyle {
     // Find the CSS variables that have been updated.
     const previousVariablesMap = new Map(this.#variablesMap.get(pseudo));
     const changedVariableNamesSet = new Set(
-      [...variables.keys(), ...previousVariablesMap.keys()].filter(
+      Iterator.concat(variables.keys(), previousVariablesMap.keys()).filter(
         k => variables.get(k) !== previousVariablesMap.get(k)
       )
     );
@@ -440,7 +440,10 @@ class ElementStyle {
       this.#startingStyleVariablesMap.get(pseudo)
     );
     const changedStartingStyleVariableNamesSet = new Set(
-      [...variables.keys(), ...previousStartingStyleVariablesMap.keys()].filter(
+      Iterator.concat(
+        variables.keys(),
+        previousStartingStyleVariablesMap.keys()
+      ).filter(
         k => variables.get(k) !== previousStartingStyleVariablesMap.get(k)
       )
     );

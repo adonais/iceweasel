@@ -8,6 +8,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Optional
@@ -237,13 +238,13 @@ def lint(paths, config, log, **lintargs) -> list[Any]:
     return results
 
 
-def get_audit_version() -> str:
+def get_audit_version(binary: str = "cargo-audit") -> str:
     """Get the version number of the cargo-audit installation.
 
     Returns:
         str: A string representing the cargo-audit version.
     """
-    return run_process(["cargo-audit", "--version"]).strip().split()[1]
+    return run_process([binary, "--version"]).strip().split()[1]
 
 
 def get_rust_version() -> Optional[str]:
@@ -269,16 +270,25 @@ def get_rust_version() -> Optional[str]:
     return version
 
 
-def setup(root, log, **lintargs) -> int:
-    min_rust_version = "1.85.0"
-    rust_version = get_rust_version()
-    if not rust_version or Version(rust_version) < Version(min_rust_version):
-        version_was = f"{rust_version} was" if rust_version else "was not"
-        log.error(
-            f"cargo-audit requires at least Rust {min_rust_version}, but Rust {version_was} detected!"
-        )
-        return 1
+def bootstrap_audit(log, desired_version: str) -> bool:
+    exe = ".exe" if sys.platform == "win32" else ""
+    try:
+        from mozbuild.bootstrap import bootstrap_toolchain
 
+        binary = bootstrap_toolchain(f"cargo-audit/cargo-audit{exe}")
+    except (Exception, SystemExit) as e:
+        log.warning(f"Failed to fetch prebuilt cargo-audit: {e}")
+        return False
+    if not binary or get_audit_version(binary) != desired_version:
+        return False
+    os.environ["PATH"] = os.pathsep.join([
+        os.path.dirname(binary),
+        os.environ.get("PATH", ""),
+    ])
+    return True
+
+
+def setup(root, log, **lintargs) -> int:
     binary = which("cargo-audit")
 
     with Path(__file__).parent.joinpath("cargo-audit_version.txt").open() as f:
@@ -290,6 +300,24 @@ def setup(root, log, **lintargs) -> int:
             installed_version = get_audit_version()
 
         if not installed_version or installed_version != desired_version:
+            fetches_dir = os.environ.get("MOZ_FETCHES_DIR")
+            if fetches_dir and os.path.isdir(os.path.join(fetches_dir, "cargo-audit")):
+                log.error(
+                    f"cargo-audit_version.txt asks for cargo-audit {desired_version}, "
+                    f"but found {installed_version or 'none'}. Update the cargo-audit "
+                    "fetch in taskcluster/kinds/fetch/toolchains.yml to match."
+                )
+                return 1
+            if bootstrap_audit(log, desired_version):
+                return 0
+            min_rust_version = "1.85.0"
+            rust_version = get_rust_version()
+            if not rust_version or Version(rust_version) < Version(min_rust_version):
+                version_was = f"{rust_version} was" if rust_version else "was not"
+                log.error(
+                    f"cargo-audit requires at least Rust {min_rust_version}, but Rust {version_was} detected!"
+                )
+                return 1
             output = run_process([
                 "cargo",
                 "install",

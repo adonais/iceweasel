@@ -40,7 +40,6 @@
 - __Q__
     - [QUIC](#quic)
 - __S__
-    - [Socket Process](#socket-process)
     - [Socket Thread](#socket-thread)
     - [SOCKS Proxy](#socks-proxy)
 - __T__
@@ -194,9 +193,6 @@ There has been efforts in the past to move the processing of data to non-main th
 ## QUIC
 An IETF transport protocol [RFC9000](https://datatracker.ietf.org/doc/html/rfc9000) primarily designed to carry HTTP/3, but now also used as a general-purpose Internet transport protocol for other workloads.
 Implemented in RUST and maintained by [neqo](https://github.com/mozilla/neqo).
-
-## Socket Process
-WIP project to move the actions of the socket thread into its own process for the purposes of isolation for security and stability (during crashes).
 
 ## Socket Thread
 From the main process, a thread that handles opening and reading from the sockets for network communication. \

@@ -45,6 +45,30 @@
       }
     }
   },
+  "motion": {
+    "duration": {
+      "enter": {
+        "value": "150ms"
+      },
+      "exit": {
+        "value": "120ms"
+      },
+      "fade": {
+        "value": "120ms"
+      }
+    },
+    "easing": {
+      "value": "{motion.easing.emphasized}"
+    },
+    "scale": {
+      "value": "0.96"
+    },
+    "translate": {
+      "y": {
+        "value": "-4px"
+      }
+    }
+  },
   "padding": {
     "@base": {
       "value": "16px"

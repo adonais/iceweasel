@@ -262,18 +262,14 @@ public class GeckoResult<T> {
     }
   }
 
-  /**
-   * @return a {@link GeckoResult} that resolves to {@link AllowOrDeny#DENY}
-   */
+  /** {@return a {@link GeckoResult} that resolves to {@link AllowOrDeny#DENY}} */
   @AnyThread
   @NonNull
   public static GeckoResult<AllowOrDeny> deny() {
     return GeckoResult.fromValue(AllowOrDeny.DENY);
   }
 
-  /**
-   * @return a {@link GeckoResult} that resolves to {@link AllowOrDeny#ALLOW}
-   */
+  /** {@return a {@link GeckoResult} that resolves to {@link AllowOrDeny#ALLOW}} */
   @AnyThread
   @NonNull
   public static GeckoResult<AllowOrDeny> allow() {
@@ -650,8 +646,8 @@ public class GeckoResult<T> {
   }
 
   /**
-   * @return Get the {@link Looper} that will be used to schedule listeners registered via {@link
-   *     #then(OnValueListener, OnExceptionListener)}.
+   * {@return the {@link Looper} that will be used to schedule listeners registered via {@link
+   * #then(OnValueListener, OnExceptionListener)}}
    */
   public @Nullable Looper getLooper() {
     if (mDispatcher == null || !(mDispatcher instanceof HandlerDispatcher)) {

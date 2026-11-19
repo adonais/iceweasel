@@ -16,6 +16,10 @@ import pytest
 from mozunit import main
 
 from mozbuild.vendor.host_base import TagNotFound
+from mozbuild.vendor.rewrite_mozbuild import (
+    MozBuildFileNotListedException,
+    MozBuildRewriteException,
+)
 from mozbuild.vendor.vendor_manifest import VendorManifest, _replace_in_file
 
 
@@ -333,6 +337,31 @@ def test_update_moz_build_only_touches_tracked_file_types(add_file, remove_file)
         "third_party/foo/src/gone.cpp",
         "third_party/foo/src/gone.h",
     ]
+
+
+@pytest.mark.parametrize(
+    "exception,expectation",
+    [
+        (MozBuildFileNotListedException("unlisted"), does_not_raise()),
+        (MozBuildRewriteException("unparseable"), pytest.raises(SystemExit)),
+    ],
+)
+@mock.patch("mozbuild.vendor.vendor_manifest.remove_file_from_moz_build_file")
+def test_update_moz_build_removed_file_not_listed(remove_file, exception, expectation):
+    """A removed file that no moz.build mentions needs no moz.build change, so
+    the vendor must not abort over it. Any other failure to remove still
+    aborts."""
+    vm = VendorManifest.__new__(VendorManifest)
+    vm.log = mock.Mock()
+    vm.logInfo = mock.Mock()
+    vm.repository = mock.Mock()
+    vm.repository.get_changed_files.side_effect = lambda diff_filter: (
+        ["third_party/foo/src/gone.h"] if diff_filter == "D" else []
+    )
+    remove_file.side_effect = exception
+
+    with expectation:
+        vm.update_moz_build("third_party/foo", "third_party/foo", False)
 
 
 def test_update_yaml_asserts_when_a_field_is_missing(tmp_path):

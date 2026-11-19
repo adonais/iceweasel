@@ -1678,7 +1678,7 @@ class MainMenuTest {
         customTabScreen(composeTestRule) {}
             .openMainMenu {
                 verifySwitchToDesktopSiteButton()
-                verifyDesktopSiteButtonState(isEnabled = false)
+                verifyDesktopSiteButtonIsDisabled()
             }
     }
 

@@ -94,6 +94,11 @@ class WasmFrameIter {
   // this iteration (its only frame was torn down by a trapping return_call).
   // Exception unwinding must free it even though no iterated frame is on it.
   ContStack* unwoundContStack_ = nullptr;
+  // The initial function's instance, recovered from the continuation base
+  // frame's callee-instance slot when crossing it, so GC traces it even if a
+  // return_call collapsed the initial function's frame. Only set for the frame
+  // reached by crossing the base frame.
+  Instance* contBaseInstance_ = nullptr;
 #endif
 
   //
@@ -214,6 +219,9 @@ class WasmFrameIter {
   // See unwoundContStack_. Null in all cases except the trapping return_call
   // described there.
   ContStack* unwoundContStack() const { return unwoundContStack_; }
+
+  // See contBaseInstance_.
+  Instance* contBaseInstance() const { return contBaseInstance_; }
 #endif
 
   //
@@ -576,10 +584,13 @@ void GenerateJitEntryPrologue(jit::MacroAssembler& masm,
 void GenerateJitEntryEpilogue(jit::MacroAssembler& masm,
                               CallableOffsets* offsets);
 
+// If `badSigTrap` is non-null and a signature check is generated, the
+// location of the IndirectCallBadSig trap instruction is written there.
 void GenerateFunctionPrologue(jit::MacroAssembler& masm,
                               const CallIndirectId& callIndirectId,
                               const mozilla::Maybe<uint32_t>& tier1FuncIndex,
-                              FuncOffsets* offsets);
+                              FuncOffsets* offsets,
+                              FaultingCodeRange* badSigTrap = nullptr);
 void GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
                               FuncOffsets* offsets);
 

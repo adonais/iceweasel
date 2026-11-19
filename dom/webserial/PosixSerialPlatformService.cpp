@@ -1252,7 +1252,7 @@ nsresult PosixSerialPlatformService::InitializeMacOS() {
 
 #ifdef XP_LINUX
 nsresult PosixSerialPlatformService::InitializeUdev() {
-  mUdevLib = MakeUnique<udev_lib>();
+  mUdevLib = std::make_unique<udev_lib>();
   if (!*mUdevLib) {
     MOZ_LOG(gWebSerialLog, LogLevel::Error,
             ("PosixSerialPlatformService[%p]::InitializeUdev udev_lib "

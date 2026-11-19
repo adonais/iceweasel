@@ -8,35 +8,27 @@ ChromeUtils.defineESModuleGetters(this, {
   SiteDataTestUtils: "resource://testing-common/SiteDataTestUtils.sys.mjs",
 });
 
-const SRD_ENABLED = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-);
-
 async function checkPrivacyPreferences(expectedDisabled) {
   await BrowserTestUtils.withNewTab(
     "about:preferences#privacy",
     async browser => {
       await SpecialPowers.spawn(
         browser,
-        [{ expectedDisabled, srdEnabled: SRD_ENABLED }],
-        async ({ expectedDisabled: expected, srdEnabled }) => {
+        [{ expectedDisabled }],
+        async ({ expectedDisabled: expected }) => {
           let { historyMode, ...sub } = expected;
           is(
             content.document.getElementById("historyMode").disabled,
             historyMode,
             "#historyMode disabled state"
           );
-          if (srdEnabled) {
-            await content.gotoPref("paneHistory");
-            await new Promise(r => content.requestAnimationFrame(r));
-          }
+          await content.gotoPref("paneHistory");
+          await new Promise(r => content.requestAnimationFrame(r));
           for (let [id, exp] of Object.entries(sub)) {
-            let el = srdEnabled
-              ? content.document.querySelector(
-                  `setting-group[groupid='historyAdvanced'] #${id}`
-                )
-              : content.document.getElementById(id);
+            let el = content.document.querySelector(
+              `setting-group[groupid='historyAdvanced'] #${id}`
+            );
+
             is(el.disabled, exp, `#${id} disabled state`);
           }
         }

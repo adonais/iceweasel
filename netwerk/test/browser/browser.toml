@@ -160,9 +160,6 @@ run-if = [
 ]
 
 ["browser_clientAuth_he.js"]
-skip-if = [
-  "socketprocess_networking",
-]
 
 ["browser_cookie_filtering_basic.js"]
 
@@ -204,7 +201,6 @@ support-files = ["file_link_hover.sjs"]
 skip-if = [
   "http2",
   "http3",
-  "socketprocess_networking",
 ]
 
 ["browser_necko_l10n.js"]
@@ -215,9 +211,6 @@ skip-if = [
 ]
 
 ["browser_post_auth.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1772209
-]
 
 ["browser_post_file.js"]
 

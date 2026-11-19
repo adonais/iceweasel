@@ -225,6 +225,23 @@ export class MigrationWizardChild extends JSWindowActorChild {
   }
 
   /**
+   * Returns where the <migration-wizard> was opened from, as set by its host
+   * page in the entrypoint attribute. The parent validates this against
+   * MigrationUtils.MIGRATION_ENTRYPOINTS.
+   *
+   * @returns {string|null}
+   */
+  #getEntrypoint() {
+    if (this.#wizardEl.hasAttribute("entrypoint")) {
+      return this.#wizardEl.getAttribute("entrypoint");
+    }
+    if (this.#wizardEl.hasAttribute("in-aboutwelcome-bundle")) {
+      return "aboutwelcome";
+    }
+    return null;
+  }
+
+  /**
    * Constructs extra arguments to pass to some Event Telemetry based
    * on the MigrationDetails passed up from the MigrationWizard.
    *
@@ -373,6 +390,7 @@ export class MigrationWizardChild extends JSWindowActorChild {
     extraArgs = await this.sendQuery("Migrate", {
       migrationDetails,
       extraArgs,
+      entrypoint: this.#getEntrypoint(),
     });
     this.#sendTelemetryEvent("migrationFinished", extraArgs);
 

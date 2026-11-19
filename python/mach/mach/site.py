@@ -8,6 +8,7 @@
 import ast
 import enum
 import functools
+import glob
 import os
 import platform
 import shutil
@@ -31,6 +32,7 @@ from mach.requirements import (
     MachEnvRequirements,
     UnexpectedFlexibleRequirementException,
 )
+from mach.util import resource_marker
 
 
 class SiteLockTimeout(Exception):
@@ -685,13 +687,14 @@ class CommandSiteManager:
                     self._log(
                         f"Creating the '{self._site_name}' site at {self.virtualenv_root}"
                     )
-                    _create_venv_with_pthfile(
-                        self._virtualenv,
-                        self._pthfile_lines(),
-                        self._populate_virtualenv,
-                        self._requirements,
-                        self._metadata,
-                    )
+                    with resource_marker("Mach", f"create {self._site_name} site"):
+                        _create_venv_with_pthfile(
+                            self._virtualenv,
+                            self._pthfile_lines(),
+                            self._populate_virtualenv,
+                            self._requirements,
+                            self._metadata,
+                        )
         except Timeout:
             raise SiteLockTimeout(lock_file, self._site_name, timeout)
 
@@ -1093,15 +1096,19 @@ class PythonVirtualenv:
         # self.python_path. However, this seems more risk than it's worth.
 
         try:
-            install_result = subprocess.run(  # noqa PLW1510
-                pip_command(
-                    python_executable=self.python_path,
-                    subcommand="install",
-                    args=pip_install_args,
-                ),
-                check=kwargs.pop("check", True),
-                **kwargs,
-            )
+            with resource_marker(
+                "uv pip install" if use_uv() else "pip install",
+                " ".join(pip_install_args),
+            ):
+                install_result = subprocess.run(  # noqa PLW1510
+                    pip_command(
+                        python_executable=self.python_path,
+                        subcommand="install",
+                        args=pip_install_args,
+                    ),
+                    check=kwargs.pop("check", True),
+                    **kwargs,
+                )
         except subprocess.CalledProcessError as cpe:
             if not self._quiet:
                 # We print the stdout/stderr on a failed install here so that we don't
@@ -1505,6 +1512,20 @@ def _deprioritize_venv_packages(virtualenv, populate_virtualenv):
     ]
 
 
+def _remove_virtualenv(virtualenv_root):
+    if os.path.exists(virtualenv_root):
+        # Moving first keeps the venv intact on failure. On Windows, loaded DLLs
+        # block deleting the moved copy, but not moving it.
+        old_dir = tempfile.mkdtemp(
+            prefix=f"{os.path.basename(virtualenv_root)}.old-",
+            dir=os.path.dirname(virtualenv_root),
+        )
+        os.rename(virtualenv_root, os.path.join(old_dir, "venv"))
+
+    for old_dir in glob.glob(f"{glob.escape(virtualenv_root)}.old-*"):
+        shutil.rmtree(old_dir, ignore_errors=True)
+
+
 def _create_venv_with_pthfile(
     target_venv,
     pthfile_lines,
@@ -1513,8 +1534,7 @@ def _create_venv_with_pthfile(
     metadata,
 ):
     virtualenv_root = target_venv.prefix
-    if os.path.exists(virtualenv_root):
-        shutil.rmtree(virtualenv_root)
+    _remove_virtualenv(virtualenv_root)
 
     os.makedirs(virtualenv_root)
     metadata.write(is_finalized=False)

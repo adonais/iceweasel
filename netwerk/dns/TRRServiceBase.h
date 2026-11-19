@@ -36,7 +36,6 @@ class TRRServiceBase : public nsIProxyConfigChangedCallback {
   // created first time, mTRRConnectionInfoInited will be set to true.
   // When aForceReinit is true, we always create the conncetion info again.
   virtual void InitTRRConnectionInfo(bool aForceReinit = false);
-  bool TRRConnectionInfoInited() const { return mTRRConnectionInfoInited; }
 
   void SetHttp3FirstForServer(const nsACString& aServer, bool aEnabled);
   bool GetHttp3FirstForServer(const nsACString& aServer);

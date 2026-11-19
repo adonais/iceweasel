@@ -22,6 +22,12 @@ content-blocking-cookies-view-allowed-label =
 content-blocking-cookies-view-blocked-label =
     .value = Blocked
 
+# This label is shown next to a tracker origin in the list of blocked trackers
+# when the same tracker was blocked on more than one page of the same site.
+# Variables:
+#   $count (Number): the number of pages the tracker was blocked on.
+content-blocking-tracker-count = (×{ $count })
+
 # Variables:
 #   $domain (String): the domain of the site.
 content-blocking-cookies-view-remove-button =

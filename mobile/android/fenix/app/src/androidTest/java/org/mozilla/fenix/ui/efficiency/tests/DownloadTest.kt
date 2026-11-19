@@ -96,6 +96,33 @@ class DownloadTest : BaseTest() {
         on.downloads.navigateToPage().mozVerifyElementsByGroup(DownloadsSelectors.Group.EMPTY_DOWNLOADS)
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2298616
+    @Critical
+    @Test
+    fun verifyDownloadCompleteNotificationTest() {
+        val downloadTestPage = mockWebServer.downloadPageAsset.url.toString()
+        val downloadFile = "png_image.png"
+
+        on.browserPage
+            .navigateToPage(downloadTestPage)
+            .clickDownloadLink(downloadFile, downloadTestPage)
+            .verifyDownloadPrompt()
+            .clickDownloadPromptConfirmButton()
+            .verifyDownloadCompleteSnackbar(downloadFile)
+
+        on.notification
+            .openNotificationTray()
+            .verifyNotificationExists(NotificationSelectors.DOWNLOAD_COMPLETED_NOTIFICATION)
+            .clickNotification(NotificationSelectors.DOWNLOAD_COMPLETED_NOTIFICATION)
+            // UIAutomator check, not Espresso: the system fires the notification's intent, so Firefox is
+            // backgrounded and Espresso's intended() would throw NoActivityResumedException.
+            .mozVerifyNativeAppOpens(Constants.PackageName.GOOGLE_APPS_PHOTOS)
+        on.notification
+            .openNotificationTray()
+            .verifyNotificationDoesNotExist(NotificationSelectors.DOWNLOAD_COMPLETED_NOTIFICATION)
+            .closeNotificationTray()
+    }
+
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1114970
     @Critical
     @Test
@@ -182,5 +209,20 @@ class DownloadTest : BaseTest() {
             .mozVerify(DownloadsSelectors.DELETE_DOWNLOAD_SNACKBAR_MESSAGE(downloadFile))
             .mozVerifyElementsByGroup(DownloadsSelectors.Group.EMPTY_DOWNLOADS)
         on.downloads.verifyDownloadedFileStillExistsOnStorage(downloadFile)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2298617
+    @Critical
+    @Test
+    fun cancelTheDownloadFromPromptTest() {
+        val downloadTestPage = mockWebServer.downloadPageAsset.url.toString()
+        val downloadFile = "zip_small.zip"
+
+        on.browserPage
+            .navigateToPage(downloadTestPage)
+            .clickDownloadLink(downloadFile, downloadTestPage)
+            .verifyDownloadPrompt()
+            .mozClick(DownloadsSelectors.DOWNLOAD_DIALOG_CANCEL_BUTTON)
+        on.downloads.navigateToPage().mozVerifyElementsByGroup(DownloadsSelectors.Group.EMPTY_DOWNLOADS)
     }
 }

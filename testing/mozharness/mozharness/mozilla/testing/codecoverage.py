@@ -218,7 +218,9 @@ class CodeCoverageMixin(SingleTestMixin):
     def coverage_args(self):
         return []
 
-    def set_coverage_env(self, env, is_baseline_test=False):
+    def coverage_env(self, is_baseline_test=False):
+        env = {}
+
         # Set the GCOV directory.
         self.gcov_dir = tempfile.mkdtemp()
         env["GCOV_PREFIX"] = self.gcov_dir
@@ -232,6 +234,8 @@ class CodeCoverageMixin(SingleTestMixin):
         self.jsvm_dir = tempfile.mkdtemp()
         env["JS_CODE_COVERAGE_OUTPUT_DIR"] = self.jsvm_dir
 
+        return env
+
     @PreScriptAction("run-tests")
     def _set_gcov_prefix(self, action):
         if not self.code_coverage_enabled:
@@ -240,7 +244,10 @@ class CodeCoverageMixin(SingleTestMixin):
         if self.per_test_coverage:
             return
 
-        self.set_coverage_env(os.environ)
+        env_update = self.coverage_env()
+        os.environ.update(env_update)
+        if self.env is not None:
+            self.env.update(env_update)
 
     def parse_coverage_artifacts(
         self,

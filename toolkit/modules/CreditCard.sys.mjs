@@ -4,6 +4,13 @@
 
 import { DateNormalizationUtils } from "resource://gre/modules/DateNormalizationUtils.sys.mjs";
 
+const lazy = {};
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () => new Localization(["toolkit/formautofill/formAutofill.ftl"], true)
+);
+
 // The list of known and supported credit card network ids ("types")
 // This list mirrors the networks from dom/payments/BasicCardPayment.cpp
 // and is defined by https://www.w3.org/Payments/card-network-ids
@@ -17,6 +24,14 @@ const SUPPORTED_NETWORKS = Object.freeze([
   "mir",
   "unionpay",
   "visa",
+]);
+
+// The Fluent messages naming the security code of the networks that have their
+// own name for it. Any other network uses the general name.
+const SECURITY_CODE_L10N_IDS = new Map([
+  ["visa", "credit-card-security-code-name-visa"],
+  ["mastercard", "credit-card-security-code-name-mastercard"],
+  ["amex", "credit-card-security-code-name-amex"],
 ]);
 
 // This lists stores lower cased variations of popular credit card network
@@ -452,5 +467,35 @@ export class CreditCard {
     return this.isValidNetwork(network)
       ? `autofill-card-network-${network}`
       : null;
+  }
+
+  /**
+   * The Fluent message naming a card's security code the way its network does,
+   * such as "CVV" for Visa or "CVC" for Mastercard, with "Security code" for
+   * any other network.
+   *
+   * @param {string|null} network A network id, such as returned by `getType`.
+   * @returns {string}
+   */
+  static getSecurityCodeL10nId(network) {
+    return (
+      SECURITY_CODE_L10N_IDS.get(network) ??
+      "credit-card-security-code-name-other"
+    );
+  }
+
+  /**
+   * The localized name of a card's security code, see `getSecurityCodeL10nId`.
+   * The network is the record's `cc-type`, or else the one its number belongs
+   * to.
+   *
+   * @param {object} creditCard A credit card record.
+   * @returns {string}
+   */
+  static formatSecurityCodeName(creditCard) {
+    const network =
+      creditCard["cc-type"] ||
+      this.getType(this.normalizeCardNumber(creditCard["cc-number"]));
+    return lazy.l10n.formatValueSync(this.getSecurityCodeL10nId(network));
   }
 }

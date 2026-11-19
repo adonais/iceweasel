@@ -834,6 +834,10 @@ add_task(async function multipleMatchingEngines() {
 
 // Tests that UrlbarProviderTokenAliasEngines is disabled in search mode.
 add_task(async function doNotShowInSearchMode() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.unifiedSearchButton.historyInSearchMode", false]],
+  });
+
   // Do a search for "@" to show all the @ aliases.
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -889,6 +893,7 @@ add_task(async function doNotShowInSearchMode() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+  await SpecialPowers.popPrefEnv();
 });
 
 /**

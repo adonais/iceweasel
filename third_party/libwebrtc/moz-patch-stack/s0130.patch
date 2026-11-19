@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f1981bae2720ec808
  1 file changed, 8 insertions(+), 12 deletions(-)
 
 diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index f83385fd2b..920e454bd9 100644
+index 5eceb29d7c..438b74a8d0 100644
 --- a/video/video_stream_encoder.cc
 +++ b/video/video_stream_encoder.cc
-@@ -845,13 +845,11 @@ void VideoStreamEncoder::AddAdaptationResource(
+@@ -844,13 +844,11 @@ void VideoStreamEncoder::AddAdaptationResource(
    // Map any externally added resources as kCpu for the sake of stats reporting.
    // TODO(hbos): Make the manager map any unknown resources to kCpu and get rid
    // of this MapResourceToReason() call.
@@ -50,7 +50,7 @@ index f83385fd2b..920e454bd9 100644
    }
    encoder_paused_and_dropped_frame_ = false;
  }
-@@ -2156,8 +2152,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
+@@ -2158,8 +2154,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
    }
    accumulated_update_rect_is_valid_ = true;
  

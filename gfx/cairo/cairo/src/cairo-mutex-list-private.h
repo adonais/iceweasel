@@ -53,7 +53,6 @@ CAIRO_MUTEX_DECLARE (_cairo_ft_unscaled_font_map_mutex)
 
 #if CAIRO_HAS_WIN32_FONT
 CAIRO_MUTEX_DECLARE (_cairo_win32_font_face_mutex)
-CAIRO_MUTEX_DECLARE (_cairo_win32_font_dc_mutex)
 #endif
 
 #if CAIRO_HAS_XLIB_SURFACE

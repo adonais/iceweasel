@@ -45,6 +45,18 @@ play-store-attribution:
   notification_emails:
     - android-probes@mozilla.com
 
+installation:
+  description: |
+    This ping captures the reinstall data.
+  include_client_id: true
+  send_if_empty: false
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2084346
+  data_reviews:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2084346
+  notification_emails:
+    - android-probes@mozilla.com
+
 adjust-attribution:
   description: |
     This ping captures the Adjust attribution data.

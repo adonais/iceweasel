@@ -693,7 +693,7 @@ EventSourceImpl::OnStartRequest(nsIRequest* aRequest) {
   {
     auto lock = mSharedData.Lock();
     lock->mOrigin = origin;
-    lock->mServiceNotifier = MakeUnique<EventSourceServiceNotifier>(
+    lock->mServiceNotifier = std::make_unique<EventSourceServiceNotifier>(
         this, mHttpChannel->ChannelId(), mInnerWindowID);
   }
   rv = Dispatch(NewRunnableMethod("dom::EventSourceImpl::AnnounceConnection",
@@ -1584,7 +1584,7 @@ nsresult EventSourceImpl::SetFieldAndClear() {
     return NS_OK;
   }
   if (!mCurrentMessage) {
-    mCurrentMessage = MakeUnique<Message>();
+    mCurrentMessage = std::make_unique<Message>();
   }
   char16_t first_char;
   first_char = mLastFieldName.CharAt(0);

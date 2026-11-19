@@ -5,7 +5,6 @@
 
 // Verifies the aboutaddons-themes-mode component behaviour in about:addons.
 
-const PREF_NOVA_ENABLED = "browser.nova.enabled";
 const PREF_SYSTEM_USES_DARK = "ui.systemUsesDarkTheme";
 
 const getThemesMode = doc => doc.querySelector("aboutaddons-themes-mode");
@@ -14,20 +13,7 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref(PREF_SYSTEM_USES_DARK);
 });
 
-add_task(async function test_themes_mode_hidden_when_nova_disabled() {
-  await SpecialPowers.pushPrefEnv({ set: [[PREF_NOVA_ENABLED, false]] });
-  const win = await loadInitialView("theme");
-  Assert.ok(
-    !BrowserTestUtils.isVisible(getThemesMode(win.document)),
-    "themes-mode should be hidden when nova is disabled"
-  );
-  await closeView(win);
-  await SpecialPowers.popPrefEnv();
-});
-
 add_task(async function test_themes_mode_visibility() {
-  await SpecialPowers.pushPrefEnv({ set: [[PREF_NOVA_ENABLED, true]] });
-
   for (const [type, expectedVisible] of [
     ["extension", false],
     ["locale", false],
@@ -45,8 +31,6 @@ add_task(async function test_themes_mode_visibility() {
     );
     await closeView(win);
   }
-
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_themes_mode_initial_value() {
@@ -57,7 +41,7 @@ add_task(async function test_themes_mode_initial_value() {
     [0, "light"],
     [1, "dark"],
   ]) {
-    const set = [[PREF_NOVA_ENABLED, true]];
+    const set = [];
     if (darkPrefValue !== null) {
       set.push([PREF_SYSTEM_USES_DARK, darkPrefValue]);
     }
@@ -77,10 +61,7 @@ add_task(async function test_themes_mode_initial_value() {
 
 add_task(async function test_themes_mode_pref_binding() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_SYSTEM_USES_DARK, 0 /* light */],
-    ],
+    set: [[PREF_SYSTEM_USES_DARK, 0 /* light */]],
   });
   const win = await loadInitialView("theme");
   const themesMode = getThemesMode(win.document);
@@ -146,10 +127,7 @@ add_task(async function test_themes_mode_pref_binding() {
 
 add_task(async function test_themes_mode_change_telemetry() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_SYSTEM_USES_DARK, 0 /* light */],
-    ],
+    set: [[PREF_SYSTEM_USES_DARK, 0 /* light */]],
   });
   const win = await loadInitialView("theme");
   const themesMode = getThemesMode(win.document);
@@ -200,10 +178,7 @@ add_task(async function test_themes_mode_change_telemetry() {
 
 add_task(async function test_themes_mode_a11y_label() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_SYSTEM_USES_DARK, 0 /* light */],
-    ],
+    set: [[PREF_SYSTEM_USES_DARK, 0 /* light */]],
   });
   const win = await loadInitialView("theme");
   const themesMode = getThemesMode(win.document);

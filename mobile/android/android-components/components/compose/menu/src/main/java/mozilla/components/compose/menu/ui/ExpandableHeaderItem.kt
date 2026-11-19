@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.R as composeBaseR
@@ -97,13 +98,9 @@ fun ExpandableHeaderItem(
     state: MenuItemState = DEFAULT,
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false) }
-    val contentDescriptionValue = contentDescription?.value ?: title.text.value
+    val contentDescriptionValue = contentDescription?.value
     val expandedDescription = stringResource(composeBaseR.string.mozac_compose_base_a11y_state_label_expanded)
     val collapsedDescription = stringResource(composeBaseR.string.mozac_compose_base_a11y_state_label_collapsed)
-    val statefulContentDescription =
-        remember(isExpanded) {
-            "$contentDescriptionValue. ${if (isExpanded) expandedDescription else collapsedDescription}"
-        }
     var headerHeight by remember { mutableIntStateOf(0) }
 
     if (!hideOnExpand || !isExpanded) {
@@ -120,7 +117,8 @@ fun ExpandableHeaderItem(
                             }
                     )
                     .semantics(mergeDescendants = true) {
-                        this.contentDescription = statefulContentDescription
+                        contentDescriptionValue?.let { this.contentDescription = it }
+                        this.stateDescription = if (isExpanded) expandedDescription else collapsedDescription
                         this.role = role
                     }
                     .clickable(

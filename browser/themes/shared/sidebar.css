@@ -283,15 +283,6 @@ menuseparator + #sidebar-extensions-separator {
 /* Sidebar animation */
 :root {
   view-transition-name: none;
-
-  /* Nova motion tokens, see https://nova-motion-spec.netlify.app/ */
-  --motion-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
-  --motion-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --motion-dur-sidebar-enter: 0.2s;
-  --motion-dur-sidebar-exit: 0.16s;
-  --motion-dur-sidebar-panel-enter: 0.23s;
-  --motion-dur-sidebar-panel-exit: 0.19s;
-  --motion-dur-sidebar-panel-content-fade: 0.13s;
 }
 
 /* Let clicks reach the live chrome underneath, instead of the root element. */
@@ -300,33 +291,40 @@ menuseparator + #sidebar-extensions-separator {
 }
 
 :root:active-view-transition-type(launcher-enter, launcher-exit, panel-open, panel-close)::view-transition-group(*) {
-  animation-timing-function: var(--motion-ease-emphasized);
+  animation-timing-function: var(--sidebar-motion-easing);
 }
 
 :root:active-view-transition-type(launcher-enter)::view-transition-group(*) {
-  animation-duration: var(--motion-dur-sidebar-enter);
+  animation-duration: var(--sidebar-motion-duration-enter);
 }
 
 :root:active-view-transition-type(launcher-exit)::view-transition-group(*) {
-  animation-duration: var(--motion-dur-sidebar-exit);
+  animation-duration: var(--sidebar-motion-duration-exit);
 }
 
 /* When the launcher and panel change together, the panel covers the most
  * distance, so its timing wins. */
 :root:active-view-transition-type(panel-open)::view-transition-group(*) {
-  animation-duration: var(--motion-dur-sidebar-panel-enter);
+  animation-duration: var(--sidebar-panel-motion-duration-enter);
 }
 
 :root:active-view-transition-type(panel-close)::view-transition-group(*) {
-  animation-duration: var(--motion-dur-sidebar-panel-exit);
+  animation-duration: var(--sidebar-panel-motion-duration-exit);
 }
 
 /* The panel's old and new snapshots inherit this timing for their default
  * cross-fade, whose plus-lighter blending keeps the shared panel chrome solid
  * while only the content fades. */
 :root:active-view-transition-type(panel-switch)::view-transition-group(*) {
-  animation-duration: var(--motion-dur-sidebar-panel-content-fade);
-  animation-timing-function: var(--motion-ease-standard);
+  animation-duration: var(--sidebar-panel-content-motion-duration-fade);
+  animation-timing-function: var(--sidebar-panel-content-motion-easing-fade);
+}
+
+/* Expand on hover takes its duration from the
+ * sidebar.animation.expand-on-hover.duration-ms pref, which defaults to
+ * --sidebar-motion-duration-enter. */
+:root[sidebar-expand-on-hover]:active-view-transition-type(launcher-enter, launcher-exit)::view-transition-group(*) {
+  animation-duration: var(--sidebar-expand-on-hover-duration);
 }
 
 #sidebar-container {
@@ -445,6 +443,110 @@ menuseparator + #sidebar-extensions-separator {
   inline-size: auto;
 }
 
+/* When the sidebar grows, the content area's new snapshot is narrower than its
+ * animating group, so the old snapshot would show past its edge with the page
+ * laid out differently. Only show the old one, which covers the whole group. */
+:root:active-view-transition-type(expand, panel-open, launcher-show)::view-transition-new(tabbrowser-tabbox) {
+  display: none;
+}
+
+/* When the content area's corner facing the sidebar switches between square and
+ * rounded, clip its snapshots to a corner that rounds or squares off as it
+ * moves, with the border along that edge fading in or out, rather than snapping
+ * once the transition ends. The image pair draws the border, so the snapshots
+ * are pulled under it to hide their own. The opposite corner stays rounded
+ * while the AI window sidebar is docked there. */
+@keyframes sidebar-content-corner-start-round {
+  from {
+    border-start-start-radius: 0;
+    border-inline-start-color: transparent;
+  }
+}
+
+@keyframes sidebar-content-corner-start-square {
+  to {
+    border-start-start-radius: 0;
+    border-inline-start-color: transparent;
+  }
+}
+
+@keyframes sidebar-content-corner-end-round {
+  from {
+    border-start-end-radius: 0;
+    border-inline-end-color: transparent;
+  }
+}
+
+@keyframes sidebar-content-corner-end-square {
+  to {
+    border-start-end-radius: 0;
+    border-inline-end-color: transparent;
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  :root:not([inDOMFullscreen], [fullscreenNavToolboxHidden]):active-view-transition-type(content-corner-round, content-corner-square) {
+    &::view-transition-image-pair(tabbrowser-tabbox) {
+      overflow: clip;
+      border-block-start: var(--border-width) solid var(--sidebar-content-separator-color);
+      animation-duration: inherit;
+      animation-timing-function: inherit;
+      animation-fill-mode: both;
+    }
+
+    &::view-transition-old(tabbrowser-tabbox),
+    &::view-transition-new(tabbrowser-tabbox) {
+      margin-block-start: calc(-1 * var(--border-width));
+    }
+
+    &:not([sidebar-positionend]),
+    &[sidebar-positionend]:active-view-transition-type(content-corner-opposite-round) {
+      &::view-transition-image-pair(tabbrowser-tabbox) {
+        border-inline-start: var(--border-width) solid var(--sidebar-content-separator-color);
+        border-start-start-radius: var(--border-radius-medium);
+      }
+
+      &::view-transition-old(tabbrowser-tabbox),
+      &::view-transition-new(tabbrowser-tabbox) {
+        margin-inline-start: calc(-1 * var(--border-width));
+      }
+    }
+
+    &[sidebar-positionend],
+    &:not([sidebar-positionend]):active-view-transition-type(content-corner-opposite-round) {
+      &::view-transition-image-pair(tabbrowser-tabbox) {
+        border-inline-end: var(--border-width) solid var(--sidebar-content-separator-color);
+        border-start-end-radius: var(--border-radius-medium);
+      }
+
+      &::view-transition-old(tabbrowser-tabbox),
+      &::view-transition-new(tabbrowser-tabbox) {
+        margin-inline-end: calc(-1 * var(--border-width));
+      }
+    }
+
+    &:not([sidebar-positionend]) {
+      &:active-view-transition-type(content-corner-round)::view-transition-image-pair(tabbrowser-tabbox) {
+        animation-name: sidebar-content-corner-start-round;
+      }
+
+      &:active-view-transition-type(content-corner-square)::view-transition-image-pair(tabbrowser-tabbox) {
+        animation-name: sidebar-content-corner-start-square;
+      }
+    }
+
+    &[sidebar-positionend] {
+      &:active-view-transition-type(content-corner-round)::view-transition-image-pair(tabbrowser-tabbox) {
+        animation-name: sidebar-content-corner-end-round;
+      }
+
+      &:active-view-transition-type(content-corner-square)::view-transition-image-pair(tabbrowser-tabbox) {
+        animation-name: sidebar-content-corner-end-square;
+      }
+    }
+  }
+}
+
 /* The panel stays put next to the launcher while the content area snapshot,
  * which paints above it, slides across to reveal or cover it. */
 :root:active-view-transition-type(panel-open)::view-transition-new(sidebar-box) {
@@ -485,8 +587,10 @@ menuseparator + #sidebar-extensions-separator {
   }
 
   &[uidensity="compact"] {
-    /* 32px icon button + 2 * 2px = 36px collapsed sidebar. */
-    --sidebar-launcher-button-padding-inline: 2px;
+    /* 28px icon button + 2 * 4px = 36px collapsed sidebar. */
+    --sidebar-launcher-button-padding-inline: 4px;
+    /* Match the size of compact toolbar buttons. */
+    --sidebar-launcher-button-size: calc(var(--icon-size-small) + 2 * var(--toolbarbutton-padding-inner-compact));
 
     --sidebar-expanded-launcher-width: 240px;
 

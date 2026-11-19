@@ -10,6 +10,9 @@
 
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 
+#include <algorithm>
+#include <bitset>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -21,6 +24,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/field_trials_view.h"
@@ -75,6 +79,11 @@ using PacketizationFormat = RtpPacketizer::PacketizationFormat;
 constexpr size_t kRedForFecHeaderLength = 1;
 constexpr TimeDelta kMaxUnretransmittableFrameInterval =
     TimeDelta::Millis(33 * 4);
+// Minimum interval between repeated warnings.
+constexpr TimeDelta kWarningLogInterval = TimeDelta::Seconds(10);
+// Largest chain diff that the dependency descriptor can represent, see
+// `frame_chain_fdiff` in the dependency descriptor specification.
+constexpr int kMaxChainDiff = (1 << 8) - 1;
 
 void BuildRedPayload(const RtpPacketToSend& media_packet,
                      RtpPacketToSend* red_packet) {
@@ -201,6 +210,8 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       post_encode_overhead_bitrate_(/*max_window_size=*/TimeDelta::Seconds(1)),
       frame_encryptor_(config.frame_encryptor),
       require_frame_encryption_(config.require_frame_encryption),
+      sframe_required_by_negotiation_(config.sframe_required_by_negotiation),
+      sframe_encryption_config_(config.sframe_encryption_config),
       generic_descriptor_auth_experiment_(
           !config.field_trials->IsDisabled("WebRTC-GenericDescriptorAuth")),
       raw_packetization_(config.raw_packetization),
@@ -475,6 +486,9 @@ void RTPSenderVideo::AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
         generic_descriptor.SetFrameId(
             static_cast<uint16_t>(video_header.generic->frame_id));
         for (int64_t dep : video_header.generic->dependencies) {
+          // A dependency that the descriptor can't represent is left out. That
+          // only matters to receivers that lost the referenced frame, whereas
+          // leaving out the descriptor would make the stream inconsistent.
           generic_descriptor.AddFrameDependencyDiff(
               video_header.generic->frame_id - dep);
         }
@@ -517,6 +531,39 @@ void RTPSenderVideo::AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
         CorruptionDetectionMessage::FromFrameInstrumentationData(
             *video_header.frame_instrumentation_data));
   }
+}
+
+bool RTPSenderVideo::HandleMissingDependencyDescriptor(
+    const RTPVideoHeader& video_header,
+    const RtpPacketToSend& packet) {
+  if (video_structure_ == nullptr ||
+      !packet.IsRegistered<RtpDependencyDescriptorExtension>()) {
+    // The dependency descriptor isn't used.
+    return true;
+  }
+  if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
+    // Disable attaching dependency descriptor to delta packets (including
+    // non-first packet of a key frame) when it wasn't attached to a key frame,
+    // as dependency descriptor can't be usable in such case.
+    // This can also happen when the descriptor is larger than 15 bytes and
+    // two-byte header extensions are not negotiated using extmap-allow-mixed.
+    RTC_LOG(LS_WARNING) << "Disable dependency descriptor because failed to "
+                           "attach it to a key frame.";
+    video_structure_ = nullptr;
+    return true;
+  }
+  // The dependency descriptor can't describe this delta frame, e.g. because it
+  // references a frame too far back. Drop the frame rather than send it
+  // without a description of its dependencies, which receivers and middleboxes
+  // rely on. Unlike for key frames, keep the dependency descriptor enabled for
+  // the frames that follow.
+  Timestamp now = clock_->CurrentTime();
+  if (now >= last_undescribable_frame_log_ + kWarningLogInterval) {
+    RTC_LOG(LS_WARNING) << "Failed to describe frame dependencies. Frame is "
+                           "dropped.";
+    last_undescribable_frame_log_ = now;
+  }
+  return false;
 }
 
 bool RTPSenderVideo::SendVideo(int payload_type,
@@ -592,15 +639,46 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
         video_header.generic->active_decode_targets,
         video_header.frame_type == VideoFrameType::kVideoFrameKey,
         video_header.generic->frame_id, video_header.generic->chain_diffs);
+    // Chain diffs of inactive chains aren't serialized, so they may be
+    // arbitrarily large, e.g. when a spatial layer isn't being produced.
+    const std::bitset<32> active_chains =
+        active_decode_targets_tracker_.ActiveChainsBitmask();
+    absl::InlinedVector<int, 4>& chain_diffs =
+        video_header.generic->chain_diffs;
+    for (size_t i = 0; i < chain_diffs.size() && i < active_chains.size();
+         ++i) {
+      int& chain_diff = chain_diffs[i];
+      if (!active_chains[i] || chain_diff <= kMaxChainDiff) {
+        continue;
+      }
+      // A chain diff that the dependency descriptor can't represent would
+      // make the frame undescribable. Instead, describe the chain as having
+      // no previous frame, like RtpPayloadParams does for VP9. That can lead
+      // to video corruption if a previous frame of the chain was lost.
+      Timestamp now = clock_->CurrentTime();
+      if (now >= last_chain_diff_log_ + kWarningLogInterval) {
+        RTC_LOG(LS_WARNING) << "Chain diff " << chain_diff
+                            << " is too large for the dependency descriptor. "
+                               "Sending 0 instead.";
+        last_chain_diff_log_ = now;
+      }
+      chain_diff = 0;
+    }
   }
 
   // No FEC protection for upper temporal layers, if used.
   const bool use_fec = fec_type_.has_value() &&
                        (temporal_id == 0 || temporal_id == kNoTemporalIdx);
 
-  // Maximum size of packet including rtp headers.
+  std::unique_ptr<RtpPacketToSend> single_packet =
+      rtp_sender_->AllocatePacket(csrcs);
+
+  // Maximum size of packet including rtp headers. Capped by the capacity of the
+  // allocated packet so that the packetizer never exceeds the buffer, even if
+  // the max packet size is changed concurrently.
   // Extra space left in case packet will be resent using fec or rtx.
-  int packet_capacity = rtp_sender_->MaxRtpPacketSize();
+  int packet_capacity =
+      std::min(single_packet->capacity(), rtp_sender_->MaxRtpPacketSize());
   if (use_fec) {
     packet_capacity -= FecPacketOverhead();
   }
@@ -608,9 +686,6 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
     packet_capacity -= rtp_sender_->RtxPacketOverhead();
   }
 
-  std::unique_ptr<RtpPacketToSend> single_packet =
-      rtp_sender_->AllocatePacket(csrcs);
-  RTC_DCHECK_LE(packet_capacity, single_packet->capacity());
   single_packet->SetPayloadType(payload_type);
   single_packet->SetTimestamp(rtp_timestamp);
   if (capture_time.IsFinite())
@@ -644,18 +719,9 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
   AddRtpHeaderExtensions(video_header,
                          /*first_packet=*/true, /*last_packet=*/true,
                          single_packet.get());
-  if (video_structure_ != nullptr &&
-      single_packet->IsRegistered<RtpDependencyDescriptorExtension>() &&
-      !single_packet->HasExtension<RtpDependencyDescriptorExtension>()) {
-    RTC_DCHECK_EQ(video_header.frame_type, VideoFrameType::kVideoFrameKey);
-    // Disable attaching dependency descriptor to delta packets (including
-    // non-first packet of a key frame) when it wasn't attached to a key frame,
-    // as dependency descriptor can't be usable in such case.
-    // This can also happen when the descriptor is larger than 15 bytes and
-    // two-byte header extensions are not negotiated using extmap-allow-mixed.
-    RTC_LOG(LS_WARNING) << "Disable dependency descriptor because failed to "
-                           "attach it to a key frame.";
-    video_structure_ = nullptr;
+  if (!single_packet->HasExtension<RtpDependencyDescriptorExtension>() &&
+      !HandleMissingDependencyDescriptor(video_header, *single_packet)) {
+    return false;
   }
 
   AddRtpHeaderExtensions(video_header,
@@ -740,7 +806,7 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
 
   if (num_packets == 0) {
     Timestamp now = clock_->CurrentTime();
-    if (now >= last_fail_packetize_log_ + TimeDelta::Seconds(10)) {
+    if (now >= last_fail_packetize_log_ + kWarningLogInterval) {
       RTC_LOG(LS_WARNING) << "Failed to packetize " << codec_type
                           << " video frame of size " << payload.size()
                           << ". Frame is dropped.";
@@ -852,6 +918,15 @@ bool RTPSenderVideo::SendEncodedImage(int payload_type,
                                       RTPVideoHeader video_header,
                                       TimeDelta expected_retransmission_time,
                                       const std::vector<uint32_t>& csrcs) {
+  if (sframe_required_by_negotiation_) {
+    // TODO(bugs.webrtc.org/479862368): Enable the encryptor check once frames
+    // are encrypted; until then dropping unconditionally keeps media off the
+    // wire.
+    RTC_LOG(LS_WARNING) << "Dropping video frame: Sframe is required but no "
+                           "Sframe encryptor is set up for this stream.";
+    return false;
+  }
+
   if (frame_transformer_delegate_) {
     // The frame will be sent async once transformed.
     return frame_transformer_delegate_->TransformFrame(

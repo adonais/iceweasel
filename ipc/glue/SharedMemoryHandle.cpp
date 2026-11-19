@@ -29,7 +29,7 @@ class AllocationReporter final : public nsIMemoryReporter {
 
   NS_IMETHOD
   CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
-                 bool aAnonymize) override {
+                 bool /*aAnonymize*/) override {
     MOZ_COLLECT_REPORT(
         "shmem-allocated", KIND_OTHER, UNITS_BYTES, allocated,
         "Memory shared with other processes that is accessible (but not "
@@ -43,11 +43,9 @@ Atomic<uint64_t> AllocationReporter::allocated;
 
 NS_IMPL_ISUPPORTS(AllocationReporter, nsIMemoryReporter)
 
-static void RegisterAllocationMemoryReporter() {
-  static Atomic<bool> registered;
-  if (registered.compareExchange(false, true)) {
-    RegisterStrongMemoryReporter(MakeAndAddRef<AllocationReporter>());
-  }
+// Used in IPCModule.cpp
+nsresult RegisterHandleMemoryReporter() {
+  return RegisterStrongMemoryReporter(MakeAndAddRef<AllocationReporter>());
 }
 
 HandleBase::HandleBase() = default;
@@ -63,7 +61,9 @@ HandleBase::~HandleBase() {
 
 HandleBase& HandleBase::operator=(HandleBase&& aOther) {
   mHandle = std::move(aOther.mHandle);
-  SetSize(std::exchange(aOther.mSize, 0));
+  const auto otherSize = aOther.mSize;
+  aOther.SetSize(0);
+  SetSize(otherSize);
   return *this;
 }
 
@@ -110,7 +110,6 @@ bool HandleBase::FromMessageReader(IPC::MessageReader* aReader) {
 }
 
 void HandleBase::SetSize(uint64_t aSize) {
-  RegisterAllocationMemoryReporter();
   mozilla::ipc::shared_memory::AllocationReporter::allocated -= mSize;
   mSize = aSize;
   mozilla::ipc::shared_memory::AllocationReporter::allocated += mSize;

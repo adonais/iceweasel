@@ -103,3 +103,7 @@ a:any-link {
   /* We don't want SVG link to be underlined */
   text-decoration: none;
 }
+
+text {
+  -x-text-scale: none;
+}

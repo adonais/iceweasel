@@ -656,10 +656,10 @@ int av1_get_refresh_frame_flags(
   if (ext_refresh_frame_flags->update_pending) {
     if (rtc_ref->set_ref_frame_config ||
         use_rtc_reference_structure_one_layer(cpi)) {
-      for (unsigned int i = 0; i < INTER_REFS_PER_FRAME; i++) {
-        int ref_frame_map_idx = rtc_ref->ref_idx[i];
-        refresh_mask |= rtc_ref->refresh[ref_frame_map_idx]
-                        << ref_frame_map_idx;
+      // refresh[] is indexed by buffer slot. A refreshed slot does not have to
+      // be pointed to by any of the ref_idx[] entries.
+      for (unsigned int i = 0; i < REF_FRAMES; i++) {
+        refresh_mask |= rtc_ref->refresh[i] << i;
       }
       return refresh_mask;
     }
@@ -902,7 +902,7 @@ static int denoise_and_encode(AV1_COMP *const cpi, uint8_t *const dest,
     if (allow_tpl) {
       if (!cpi->skip_tpl_setup_stats) {
         av1_tpl_preload_rc_estimate(cpi, frame_params);
-        av1_tpl_setup_stats(cpi, 0, frame_params);
+        av1_tpl_setup_stats(cpi, /*approx_gop_eval=*/false, frame_params);
 #if CONFIG_BITRATE_ACCURACY && !CONFIG_THREE_PASS
         assert(cpi->gf_frame_index == 0);
         av1_vbr_rc_update_q_index_list(&cpi->vbr_rc_info, &cpi->ppi->tpl_data,
@@ -1641,8 +1641,31 @@ int av1_encode_strategy(AV1_COMP *const cpi, size_t *const size,
                            cpi->gf_frame_index, 1, cm->remapped_ref_idx);
       } else if (cpi->ppi->rtc_ref.set_ref_frame_config ||
                  use_rtc_reference_structure_one_layer(cpi)) {
-        for (unsigned int i = 0; i < INTER_REFS_PER_FRAME; i++)
-          cm->remapped_ref_idx[i] = cpi->ppi->rtc_ref.ref_idx[i];
+        // With set_ref_frame_config, the ref_idx[] entries of references
+        // that are not in use are don't-cares, and may point to slots that
+        // are not valid references for this frame, e.g. a slot of another
+        // spatial layer. All seven references are signaled in the bitstream
+        // though, and decoders reject a frame with an invalid reference.
+        // Without order hints, unused references otherwise only affect how
+        // the frame size is signaled, so point them to the first reference in
+        // use. With order hints, they also affect the decoding process (e.g.
+        // temporal motion vector projection), so leave them as configured.
+        int first_ref_map_idx = INVALID_IDX;
+        if (cpi->ppi->rtc_ref.set_ref_frame_config &&
+            !cm->seq_params->order_hint_info.enable_order_hint) {
+          for (unsigned int i = 0; i < INTER_REFS_PER_FRAME; i++) {
+            if (cpi->ppi->rtc_ref.reference[i]) {
+              first_ref_map_idx = cpi->ppi->rtc_ref.ref_idx[i];
+              break;
+            }
+          }
+        }
+        for (unsigned int i = 0; i < INTER_REFS_PER_FRAME; i++) {
+          cm->remapped_ref_idx[i] = (first_ref_map_idx != INVALID_IDX &&
+                                     !cpi->ppi->rtc_ref.reference[i])
+                                        ? first_ref_map_idx
+                                        : cpi->ppi->rtc_ref.ref_idx[i];
+        }
       }
     }
 

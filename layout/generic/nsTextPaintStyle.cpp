@@ -127,7 +127,7 @@ void nsTextPaintStyle::GetHighlightColors(nscolor* aForeColor,
 
   const nsFrameSelection* frameSelection = mFrame->GetConstFrameSelection();
   const Selection* selection =
-      frameSelection->GetSelection(SelectionType::eFind);
+      frameSelection->GetExistingSelection(SelectionType::eFind);
   const SelectionCustomColors* customColors = nullptr;
   if (selection) {
     customColors = selection->GetCustomColors();

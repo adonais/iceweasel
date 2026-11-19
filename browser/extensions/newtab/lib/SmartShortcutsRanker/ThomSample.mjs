@@ -82,7 +82,7 @@ export function sampleGamma(
  *
  * @param {number[]} scores The vector to with values we sort by
  * @param {object[]} keys Array of keys to be sorted
- * @returns {[number[], object[] ]} Sorted keys and sorted scores
+ * @returns {[object[], number[]]} Sorted keys and sorted scores
  */
 export function sortKeysValues(scores, keys) {
   // Pair the values

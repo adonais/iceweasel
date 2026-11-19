@@ -7,15 +7,15 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { getErrorL10nId } from "chrome://browser/content/backup/backup-errors.mjs";
 import { ERRORS } from "chrome://browser/content/backup/backup-constants.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/backup/turn-on-scheduled-backups.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/backup/turn-off-scheduled-backups.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/backup/restore-from-backup.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/backup/enable-backup-encryption.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/backup/disable-backup-encryption.mjs";
 
 /**

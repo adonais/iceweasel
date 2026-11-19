@@ -88,6 +88,12 @@ class BounceTrackingState : public nsIWebProgressListener,
       nsIPrincipal* aTriggeringPrincipal,
       const bool aHasValidUserGestureActivation, uint64_t aLoadId);
 
+  // A top level history load was served from the bfcache and the restored
+  // document is now current. Such a load has no DocumentLoadListener, so the
+  // caller must have called OnStartNavigation for it before the swap. This
+  // stands in for the response and the document load.
+  [[nodiscard]] nsresult OnBFCacheRestored();
+
   // Whether the given principal should be tracked for bounce tracking.
   static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
 

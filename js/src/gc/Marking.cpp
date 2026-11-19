@@ -932,7 +932,8 @@ bool MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
 }
 
 template <uint32_t opts>
-bool MarkingTracerT<opts>::onBufferEdge(void** bufferp, const char* name) {
+JSTracer::TraceBufferResult MarkingTracerT<opts>::onBufferEdge(
+    void** bufferp, const char* name) {
   return BufferAllocator::MarkBuffer(this, bufferp, name);
 }
 

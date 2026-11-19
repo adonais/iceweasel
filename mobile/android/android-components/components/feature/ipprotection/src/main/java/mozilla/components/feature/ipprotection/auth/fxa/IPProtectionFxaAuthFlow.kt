@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import mozilla.components.concept.sync.FxAEntryPoint
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
-import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.helpers.AbstractBinding
@@ -61,7 +61,7 @@ class IPProtectionFxaAuthFlow(
                     val notifyOnComplete = true
 
                     onAuthRequested(url, notifyOnComplete)
-                    store.dispatch(InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthorization))
+                    store.dispatch(IPProtectionAction.AccountAction.AwaitingAuth(AccountStatus.AwaitingAuthorization))
                 } else if (status == AccountStatus.RequestingAuthentication) {
                     // If we're the first service that needs to authenticate the account, we need to
                     // request all the scopes needed for the device, which includes sync and session.
@@ -85,7 +85,7 @@ class IPProtectionFxaAuthFlow(
                     val notifyOnComplete = true
 
                     onAuthRequested(url, notifyOnComplete)
-                    store.dispatch(InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthentication))
+                    store.dispatch(IPProtectionAction.AccountAction.AwaitingAuth(AccountStatus.AwaitingAuthentication))
                 }
             }
     }

@@ -112,12 +112,16 @@ export class MigrationWizardParent extends JSWindowActorParent {
       }
 
       case "Migrate": {
-        let { migrationDetails, extraArgs } = message.data;
+        let { migrationDetails, extraArgs, entrypoint } = message.data;
         if (
           migrationDetails.type ==
           lazy.MigrationWizardConstants.MIGRATOR_TYPES.BROWSER
         ) {
-          return this.#doBrowserMigration(migrationDetails, extraArgs);
+          return this.#doBrowserMigration(
+            migrationDetails,
+            extraArgs,
+            entrypoint
+          );
         } else if (
           migrationDetails.type ==
           lazy.MigrationWizardConstants.MIGRATOR_TYPES.FILE
@@ -346,13 +350,22 @@ export class MigrationWizardParent extends JSWindowActorParent {
    *   finishing the migration. This was initialized in the child actor, and
    *   will be sent back down to it to write to Telemetry once migration
    *   completes.
+   * @param {string} [entrypoint]
+   *   The MigrationUtils.MIGRATION_ENTRYPOINTS value for where the wizard was
+   *   opened from.
    *
    * @returns {Promise<object>}
    *   Resolves once the Migration:Ended observer notification has fired,
    *   passing the extraArgs for Telemetry back with any relevant properties
    *   updated.
    */
-  async #doBrowserMigration(migrationDetails, extraArgs) {
+  async #doBrowserMigration(migrationDetails, extraArgs, entrypoint) {
+    if (
+      !Object.values(MigrationUtils.MIGRATION_ENTRYPOINTS).includes(entrypoint)
+    ) {
+      entrypoint = MigrationUtils.MIGRATION_ENTRYPOINTS.UNKNOWN;
+    }
+
     Glean.browserMigration.sourceBrowser.accumulateSingleSample(
       MigrationUtils.getSourceIdForTelemetry(migrationDetails.key)
     );
@@ -405,6 +418,13 @@ export class MigrationWizardParent extends JSWindowActorParent {
         let quantity = summary.filter(entry => entry.result == "added").length;
 
         MigrationUtils.notifyLoginsManuallyImported(quantity);
+        this.#recordResourceMigrated(
+          migrator,
+          entrypoint,
+          lazy.MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
+          summary.length,
+          quantity
+        );
 
         progress[
           lazy.MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS
@@ -418,6 +438,13 @@ export class MigrationWizardParent extends JSWindowActorParent {
           ),
         };
       } catch (e) {
+        this.#recordResourceMigrated(
+          migrator,
+          entrypoint,
+          lazy.MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
+          undefined,
+          0
+        );
         progress[
           lazy.MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS
         ] = {
@@ -448,7 +475,7 @@ export class MigrationWizardParent extends JSWindowActorParent {
         resourceTypesToMigrate,
         false,
         migrationDetails.profile,
-        async (resourceTypeNum, success, details) => {
+        async (resourceTypeNum, success, details, availableQuantity) => {
           // Unfortunately, MigratorBase hands us the the numeric value of the
           // MigrationUtils.resourceType for this callback. For now, we'll just
           // do a look-up to map it to the right constant.
@@ -468,6 +495,13 @@ export class MigrationWizardParent extends JSWindowActorParent {
               resourceTypeNum
             );
           } else {
+            this.#recordResourceMigrated(
+              migrator,
+              entrypoint,
+              foundResourceTypeName,
+              availableQuantity,
+              this.#getImportedCount(foundResourceTypeName)
+            );
             if (!success) {
               Glean.browserMigration.errors[
                 migrationDetails.key
@@ -556,6 +590,76 @@ export class MigrationWizardParent extends JSWindowActorParent {
     }
 
     return extraArgs;
+  }
+
+  /**
+   * Returns the number of items of a resource type that were migrated during
+   * the most recent migration.
+   *
+   * @param {string} resourceTypeStr
+   *   A string mapping to one of the key values of
+   *   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.
+   * @returns {number|undefined}
+   *   The number of migrated items, or undefined if they aren't counted for
+   *   this resource type.
+   */
+  #getImportedCount(resourceTypeStr) {
+    let importedCountKey = {
+      HISTORY: "history",
+      FORMDATA: "formdata",
+      PASSWORDS: "logins",
+      BOOKMARKS: "bookmarks",
+      PAYMENT_METHODS: "cards",
+      EXTENSIONS: "extensions",
+    }[resourceTypeStr];
+    return importedCountKey
+      ? MigrationUtils.getImportedCount(importedCountKey)
+      : undefined;
+  }
+
+  /**
+   * Records the browser_migration.resource_migrated event for a single
+   * resource type. Nothing is recorded when copying another Firefox profile,
+   * such as for profile refreshes.
+   *
+   * @param {MigratorBase} migrator
+   *   The migrator being used.
+   * @param {string} entrypoint
+   *   The MigrationUtils.MIGRATION_ENTRYPOINTS value for where the wizard was
+   *   opened from.
+   * @param {string} resourceTypeStr
+   *   A string mapping to one of the key values of
+   *   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.
+   * @param {number|undefined} available
+   *   The number of items the other browser had available to migrate, or
+   *   undefined if that is not known.
+   * @param {number|undefined} migrated
+   *   The number of items that were migrated, or undefined if that is not
+   *   known.
+   */
+  #recordResourceMigrated(
+    migrator,
+    entrypoint,
+    resourceTypeStr,
+    available,
+    migrated
+  ) {
+    if (migrator instanceof lazy.FirefoxProfileMigrator) {
+      return;
+    }
+
+    let extra = {
+      migrator_key: migrator.constructor.key,
+      entrypoint,
+      resource_type: resourceTypeStr.toLowerCase(),
+    };
+    if (Number.isInteger(available)) {
+      extra.available = available;
+    }
+    if (Number.isInteger(migrated)) {
+      extra.migrated = migrated;
+    }
+    Glean.browserMigration.resourceMigrated.record(extra);
   }
 
   /**

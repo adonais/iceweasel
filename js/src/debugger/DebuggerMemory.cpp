@@ -153,10 +153,7 @@ bool DebuggerMemory::CallData::setTrackingAllocationSites() {
   dbg->trackingAllocationSites = enabling;
 
   if (enabling) {
-    if (!dbg->addAllocationsTrackingForAllDebuggees(cx)) {
-      dbg->trackingAllocationSites = false;
-      return false;
-    }
+    dbg->addAllocationsTrackingForAllDebuggees(cx);
   } else {
     dbg->removeAllocationsTrackingForAllDebuggees();
   }

@@ -73,6 +73,7 @@ import mozilla.components.support.remotesettings.DefaultRemoteSettingsSyncSchedu
 import mozilla.components.support.remotesettings.RemoteSettingsServer
 import mozilla.components.support.remotesettings.RemoteSettingsService
 import mozilla.components.support.remotesettings.into
+import mozilla.components.support.utils.BuildMetadata
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.DefaultDownloadFileUtils
@@ -283,6 +284,8 @@ class Components(
 
     val customTabsUseCases: CustomTabsUseCases by lazy { CustomTabsUseCases(store, sessionUseCases.loadUrl) }
 
+    val buildMetadata: BuildMetadata by lazy { BuildMetadata.fromAssets(context.assets) }
+
     val crashReporter: CrashReporter by lazy { createCrashReporter(context) }
 
     val metrics: GleanMetricsService by lazy { GleanMetricsService(context) }
@@ -320,7 +323,7 @@ class Components(
     val appLinksInterceptor by lazy {
         AppLinksInterceptor(
             context,
-            launchInApp = {
+            launchInApp = { _ ->
                 context.settings.openLinksInExternalApp
             },
         )
@@ -420,7 +423,7 @@ private fun getLocaleTag(context: Context): String {
 
 /** Gets a [SearchEngineSelectorConfig] for the app and device. */
 private fun getSearchEngineSelectorConfig(context: Context): SearchEngineSelectorConfig? {
-    if (!context.settings.useRemoteSearchConfiguration) {
+    if (!context.settings.useRemoteSearchConfiguration && !context.settings.useSearchConfigV3) {
         return null
     }
 
@@ -450,6 +453,7 @@ private fun getSearchEngineSelectorConfig(context: Context): SearchEngineSelecto
         experiment = "",
         updateChannel = updateChannel,
         service = context.components.remoteSettingsService,
+        useSearchConfigV3 = context.settings.useSearchConfigV3,
     )
 }
 

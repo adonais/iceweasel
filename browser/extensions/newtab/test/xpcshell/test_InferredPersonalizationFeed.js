@@ -254,6 +254,73 @@ add_task(async function test_locationInitializationPrefGate() {
   sandbox.restore();
 });
 
+add_task(async function test_locationInitializationSticky() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(GeolocationUtils, "geolocation").resolves(null);
+  const prefs = {
+    trainhopConfig: { locationInitInferred: { enabled: true, sticky: true } },
+  };
+  const model = {
+    transformLocationTopicsToInterestVector: sinon
+      .stub()
+      .returns({ arts: 0, clicks: 3 }),
+    supportsCoarsePrivateInterests: sinon.stub().returns(true),
+    computePrivateLocationInterestVector: sinon
+      .stub()
+      .returns({ arts: "100", clicks: "0001" }),
+  };
+  const engaged = {
+    model,
+    modelId: "test-model",
+    clickDataPerInterval: [[["click", 0, 1]]],
+    indexSchema: { feature: 0, feature_value: 2 },
+    coarseInferredInterests: { arts: 1 },
+  };
+  const noClicks = { ...engaged, clickDataPerInterval: [[]] };
+
+  const makeFeed = () => {
+    const feed = Object.create(InferredPersonalizationFeed.prototype);
+    const data = {};
+    feed.cache = {
+      get: async key => data[key],
+      set: async (key, value) => {
+        data[key] = value;
+      },
+    };
+    feed.store = { getState: () => ({ Prefs: { values: prefs } }) };
+    sandbox.stub(feed, "getLocationInterestTopics").resolves({ arts: 0 });
+    return feed;
+  };
+
+  const startedOnLocation = makeFeed();
+  await startedOnLocation.updateLocationInterestVectors(noClicks);
+  ok(startedOnLocation.shouldUseLocationVector, "Starts on location");
+  await startedOnLocation.updateLocationInterestVectors(engaged);
+  ok(
+    startedOnLocation.shouldUseLocationVector,
+    "Sticky keeps location after the client clicks"
+  );
+  deepEqual(startedOnLocation.locationPrivateInferredInterests, {
+    values: ["100", "0001"],
+    model_id: "test-model",
+  });
+
+  const alreadyEngaged = makeFeed();
+  await alreadyEngaged.updateLocationInterestVectors(engaged);
+  ok(
+    !alreadyEngaged.shouldUseLocationVector,
+    "Clients with clicks before enrollment never start on location"
+  );
+
+  prefs.trainhopConfig.locationInitInferred.sticky = false;
+  await startedOnLocation.updateLocationInterestVectors(engaged);
+  ok(
+    !startedOnLocation.shouldUseLocationVector,
+    "Without sticky, clicks end the location fallback"
+  );
+  sandbox.restore();
+});
+
 add_task(async function test_locationVectorPreservesModelLayout() {
   const sandbox = sinon.createSandbox();
   sandbox.stub(GeolocationUtils, "geolocation").resolves(null);

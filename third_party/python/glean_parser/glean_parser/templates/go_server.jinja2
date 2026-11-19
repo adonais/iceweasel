@@ -21,6 +21,9 @@ import (
 {% endif %}
     "fmt"
     "io"
+{% if has_labeled_quantity %}
+    "sort"
+{% endif %}
 {% if include_logging %}
     "strconv"
 {% endif %}
@@ -185,6 +188,39 @@ func createPingInfo() pingInfo {
     }
 }
 
+{% if has_labeled_quantity %}
+// maxLabelLength is the maximum label length, in bytes, accepted by the
+// Glean ingestion schema. Longer labels cause the entire ping to be rejected.
+const maxLabelLength = 111
+
+// otherLabel is the label Glean uses for values recorded under an invalid label.
+// Monitoring can be added for any recorded metrics with the label "__other__"
+const otherLabel = "__other__"
+
+// sanitizeLabeledQuantity returns a copy of m with any label longer than
+// maxLabelLength recorded under otherLabel, matching the Glean client SDKs.
+// Labels are processed in sorted order so the value kept under otherLabel is
+// deterministic when several labels are invalid. A nil map is returned as an
+// empty map so it serializes as {} rather than null.
+func sanitizeLabeledQuantity(m map[string]int64) map[string]int64 {
+    labels := make([]string, 0, len(m))
+    for label := range m {
+        labels = append(labels, label)
+    }
+    sort.Strings(labels)
+
+    out := make(map[string]int64, len(m))
+    for _, label := range labels {
+        value := m[label]
+        if len(label) > maxLabelLength {
+            label = otherLabel
+        }
+        out[label] = value
+    }
+    return out
+}
+
+{% endif %}
 // resolveDocumentID returns supplied if non-empty, otherwise a fresh UUID.
 // Set DocumentID on the ping params struct to share an ID across transports
 // (e.g., dual-write verification during a logging->pubsub migration).
@@ -346,6 +382,10 @@ func (p {{ ping|ping_type_name }}) buildPayload(appDisplayVersion, appChannel st
     }
     {% endfor %}
     {% endif %}
+    {% for metric in metrics_by_type['labeled_quantity'] %}
+    // Remap invalid labels to __other__ and ensure nil serializes as {}, not null
+    p.{{ metric|metric_argument_name }} = sanitizeLabeledQuantity(p.{{ metric|metric_argument_name }})
+    {% endfor %}
     metrics := metrics{
     {% for metric_type, metrics in metrics_by_type.items() %}
     {% if metric_type != 'event' %}

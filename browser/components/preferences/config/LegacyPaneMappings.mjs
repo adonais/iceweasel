@@ -40,6 +40,10 @@ export const LEGACY_PANE_MAPPINGS = new Map([
     "general-link-preview",
     { category: "tabsBrowsing", subcategory: "link-preview" },
   ],
+  [
+    "general-highlight-to-search",
+    { category: "tabsBrowsing", subcategory: "highlight-to-search" },
+  ],
 
   ["general-migrate", { category: "sync", subcategory: "migrate" }],
   [

@@ -35,6 +35,29 @@ impl From<IpPreference> for happy_eyeballs::IpPreference {
     }
 }
 
+/// How the origin host is turned into connection attempts. Mirrors
+/// `happy_eyeballs::ResolutionMode` across the FFI boundary.
+///
+/// `ByName` is what a SOCKS proxy with `TRANSPARENT_PROXY_RESOLVES_HOST`
+/// (`network.proxy.socks_remote_dns`) needs: the proxy resolves the origin, so
+/// the client must not emit a single DNS query for it.
+#[repr(C)]
+pub enum ResolutionMode {
+    ByIp = 0,
+    ByName = 1,
+    ByNameWithHttpsRr = 2,
+}
+
+impl From<ResolutionMode> for happy_eyeballs::ResolutionMode {
+    fn from(v: ResolutionMode) -> Self {
+        match v {
+            ResolutionMode::ByIp => Self::Ip,
+            ResolutionMode::ByName => Self::Name,
+            ResolutionMode::ByNameWithHttpsRr => Self::NameWithHttpsRr,
+        }
+    }
+}
+
 /// Which HTTP versions Firefox is willing to use, derived from prefs such as
 /// `network.http.http2.enabled` and `network.http.http3.enable`. Mirrors
 /// `happy_eyeballs::HttpVersions` across the FFI boundary.
@@ -64,6 +87,7 @@ pub unsafe extern "C" fn happy_eyeballs_create(
     alt_svc: *const ThinVec<AltSvc>,
     ip_preference: IpPreference,
     http_versions: HttpVersions,
+    resolution: ResolutionMode,
 ) -> nsresult {
     *result = ptr::null_mut();
 
@@ -92,7 +116,15 @@ pub unsafe extern "C" fn happy_eyeballs_create(
         })
         .collect();
 
-    let metrics = metrics::Metrics::new(&alt_svc_vec);
+    let preferred = match ip_preference {
+        IpPreference::DualStackPreferV6 | IpPreference::Ipv6Only => {
+            happy_eyeballs::DnsRecordType::Aaaa
+        }
+        IpPreference::DualStackPreferV4 | IpPreference::Ipv4Only => {
+            happy_eyeballs::DnsRecordType::A
+        }
+    };
+    let metrics = metrics::Metrics::new(&alt_svc_vec, preferred);
 
     // Clamp the delays to at least 10ms to avoid excessive connection attempts,
     // and the multiplier to at least 1 (it is a non-zero factor).
@@ -116,6 +148,7 @@ pub unsafe extern "C" fn happy_eyeballs_create(
         resolution_delay: Duration::from_millis(resolution_delay_ms as u64),
         connection_attempt_delay: Duration::from_millis(connection_attempt_delay_ms as u64),
         connection_attempt_delay_multiplier,
+        resolution: resolution.into(),
         ..Default::default()
     };
 
@@ -318,17 +351,22 @@ impl HappyEyeballs {
         let id: happy_eyeballs::Id = id.into();
         let mut addrs = Vec::with_capacity(ip_addrs.len());
         for ip in ip_addrs {
-            let IpAddr::V6(octets) = ip else {
+            let IpAddr::V6 { octets, scope_id } = ip else {
                 debug_assert!(false, "got IPv4 address in AAAA record");
                 return NS_ERROR_UNEXPECTED;
             };
-            addrs.push(Ipv6Addr::from(*octets));
+            addrs.push(happy_eyeballs::ScopedIpv6Addr::new(
+                Ipv6Addr::from(*octets),
+                NonZeroU32::new(*scope_id),
+            ));
         }
 
-        self.profiler.dns_response(id, &addrs, stale);
+        let ips: Vec<Ipv6Addr> = addrs.iter().map(|a| a.ip).collect();
+        self.profiler.dns_response(id, &ips, stale);
         self.metrics.dns_response(id, !addrs.is_empty(), is_trr);
 
-        let result = happy_eyeballs::DnsResult::Aaaa(Ok(addrs));
+        let result =
+            happy_eyeballs::DnsResult::Aaaa(Ok(addrs.into_iter().map(Into::into).collect()));
         let input = happy_eyeballs::Input::DnsResult { id, result, stale };
         self.inner.process_input(input, Instant::now());
 
@@ -375,7 +413,7 @@ impl HappyEyeballs {
 
             let mut ipv6_vec = Vec::new();
             for ip in &svc_info.ipv6_hints {
-                let IpAddr::V6(octets) = ip else {
+                let IpAddr::V6 { octets, .. } = ip else {
                     debug_assert!(false, "got IPv4 address in IPv6 hints");
                     return NS_ERROR_UNEXPECTED;
                 };
@@ -487,24 +525,33 @@ impl HappyEyeballs {
                 endpoint,
                 is_ech_retry,
             }) => {
-                if let Some(address) = endpoint.address() {
-                    self.profiler.connection_attempt_started(id, &endpoint);
-                    self.metrics.connection_attempt_started(id);
-                    if let Some(ref ech) = endpoint.ech_config {
-                        ech_config.extend_from_slice(ech.as_ref());
+                self.profiler.connection_attempt_started(id, &endpoint);
+                self.metrics.connection_attempt_started(id);
+                if let Some(ref ech) = endpoint.ech_config {
+                    ech_config.extend_from_slice(ech.as_ref());
+                }
+                match &endpoint.target {
+                    happy_eyeballs::EndpointTarget::Address(address) => {
+                        *ret_event = Output::AttemptConnection {
+                            id: id.into(),
+                            http_version: endpoint.http_version.into(),
+                            addr: (*address).into(),
+                            port: address.port(),
+                            is_ech_retry,
+                        };
                     }
-                    *ret_event = Output::AttemptConnection {
-                        id: id.into(),
-                        http_version: endpoint.http_version.into(),
-                        addr: address.ip().into(),
-                        port: address.port(),
-                        is_ech_retry,
-                    };
-                } else {
-                    // Only the by-name resolution modes lack an address, and we
-                    // use the default `ResolutionMode::ByIp`.
-                    debug_assert!(false, "connection attempt without an address");
-                    *ret_event = Output::None;
+                    happy_eyeballs::EndpointTarget::Name { host, port } => {
+                        // No client-side address: the host travels in the
+                        // dns_hostname out-param and resolution happens
+                        // downstream (a SOCKS proxy).
+                        dns_hostname.assign(host);
+                        *ret_event = Output::AttemptConnectionByName {
+                            id: id.into(),
+                            http_version: endpoint.http_version.into(),
+                            port: *port,
+                            is_ech_retry,
+                        };
+                    }
                 }
             }
             Some(happy_eyeballs::Output::CancelConnection { id }) => {
@@ -647,14 +694,18 @@ pub struct ServiceInfo {
 #[repr(C)]
 pub enum IpAddr {
     V4([u8; 4]),
-    V6([u8; 16]),
+    /// `scope_id` identifies the interface of a link-local address, 0 otherwise.
+    V6 { octets: [u8; 16], scope_id: u32 },
 }
 
-impl From<std::net::IpAddr> for IpAddr {
-    fn from(ip: std::net::IpAddr) -> Self {
-        match ip {
-            std::net::IpAddr::V4(ipv4) => IpAddr::V4(ipv4.octets()),
-            std::net::IpAddr::V6(ipv6) => IpAddr::V6(ipv6.octets()),
+impl From<std::net::SocketAddr> for IpAddr {
+    fn from(addr: std::net::SocketAddr) -> Self {
+        match addr {
+            std::net::SocketAddr::V4(v4) => IpAddr::V4(v4.ip().octets()),
+            std::net::SocketAddr::V6(v6) => IpAddr::V6 {
+                octets: v6.ip().octets(),
+                scope_id: v6.scope_id(),
+            },
         }
     }
 }
@@ -682,6 +733,16 @@ pub enum Output {
         id: u64,
         http_version: ConnectionAttemptHttpVersions,
         addr: IpAddr,
+        port: u16,
+        is_ech_retry: bool,
+    },
+    /// A by-name connection attempt (`EndpointTarget::Name`): there is no
+    /// client-side address because resolution is left to a downstream party
+    /// (e.g. a SOCKS proxy). The host is returned in the `dns_hostname`
+    /// out-param of `happy_eyeballs_process_output`.
+    AttemptConnectionByName {
+        id: u64,
+        http_version: ConnectionAttemptHttpVersions,
         port: u16,
         is_ech_retry: bool,
     },

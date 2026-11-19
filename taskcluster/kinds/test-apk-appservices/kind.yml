@@ -22,13 +22,15 @@ tasks:
         attributes:
             run_on_projects: []
         dependencies:
-            build-fat-aar: build-fat-aar-android-geckoview-fat-aar-appservices/opt
+            geckoview: build-fat-aar-android-geckoview-fat-aar-appservices/opt
             toolchain-linux64-android-gradle-dependencies:
                 toolchain-linux64-android-gradle-dependencies-appservices
         task:
             payload:
                 env:
                     MOZ_APPSERVICES_IN_TREE: "1"
+                    MOZCONFIG: /builds/worker/checkouts/gecko/mobile/android/config/mozconfigs/android-arm/nightly-android-lints
+                    MOZ_ANDROID_FAT_AAR_ARCHITECTURES: "armeabi-v7a,arm64-v8a,x86_64"
             extra:
                 treeherder:
                     tier: 3

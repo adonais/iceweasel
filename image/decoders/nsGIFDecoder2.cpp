@@ -206,7 +206,8 @@ bool nsGIFDecoder2::CheckForTransparency(const OrientedIntRect& aFrameRect) {
 
 //******************************************************************************
 nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
-                                        uint16_t aDepth, bool aIsInterlaced) {
+                                        uint16_t /*aDepth*/,
+                                        bool aIsInterlaced) {
   MOZ_ASSERT(HasSize());
 
   bool hasTransparency = CheckForTransparency(aFrameRect);

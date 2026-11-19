@@ -11,11 +11,11 @@ import org.junit.Test
 class IntTest {
 
     @Test
-    fun `WHEN the language is Arabic THEN translate the number to the proper symbol of that locale`() {
-        val expected = "٥"
+    fun `WHEN the language is Persian THEN translate the number to the proper symbol of that locale`() {
+        val expected = "۵"
         val numberUnderTest = 5
 
-        Locale.setDefault(Locale.forLanguageTag("ar"))
+        Locale.setDefault(Locale.forLanguageTag("fa"))
 
         Assert.assertEquals(expected, numberUnderTest.toLocaleString())
     }

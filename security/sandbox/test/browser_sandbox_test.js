@@ -16,7 +16,7 @@ function test() {
   // and the sandbox variant we want to test, e.g.,
   // utility:0 for GENERIC_UTILITY
   // utility:1 for AppleMedia/WMF on macOS/Windows
-  var processTypes = ["tab", "socket", "rdd", "gmplugin", "utility:0", "gpu"];
+  var processTypes = ["tab", "rdd", "gmplugin", "utility:0", "gpu"];
 
   const platform = SpecialPowers.Services.appinfo.OS;
   if (platform === "WINNT" || platform === "Darwin") {

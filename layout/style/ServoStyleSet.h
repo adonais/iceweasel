@@ -429,7 +429,7 @@ class ServoStyleSet {
     // mutex is locked.  If we need to use them in other situations during
     // a traversal, we should assert that we've taken appropriate
     // synchronization measures.
-    AssertIsMainThreadOrServoFontMetricsLocked();
+    AssertIsMainThreadOrServoFFILocked();
 
     mPostTraversalTasks.AppendElement(std::move(aTask));
   }
@@ -725,6 +725,9 @@ class ServoStyleSet {
   EnumeratedArray<NonInheritingAnonBox, RefPtr<ComputedStyle>,
                   size_t(NonInheritingAnonBox::_Count)>
       mNonInheritingComputedStyles;
+
+  // The default cache for @page.
+  RefPtr<ComputedStyle> mDefaultPageStyleCache;
 
  public:
   void PutCachedAnonymousContentStyles(

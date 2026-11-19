@@ -337,12 +337,13 @@ tasks:
             job-name: android-aarch64-searchfox-debug
         treeherder:
             platform: android-5-0-aarch64/debug
+        use-gradle: offline
+        use-gradle-cache: true
         worker:
             docker-image: {in-tree: android-build}
             max-run-time: 14400
             env:
                 MOZSEARCH_PLATFORM: "android-aarch64"
-                GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
                 TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
         mozconfig:
             variant: debug-searchfox

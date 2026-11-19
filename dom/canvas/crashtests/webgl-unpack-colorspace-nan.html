@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<script>
+const gl = document.createElement("canvas").getContext("webgl2");
+if (gl) {
+  gl.unpackColorSpace = "display-p3";
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+
+  gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+
+  const f32 = new Float32Array(4 * 4 * 4);
+  new Uint32Array(f32.buffer).fill(0x7fc00001); // NaN
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, 4, 4, 0, gl.RGBA, gl.FLOAT, f32);
+
+  const f16 = new Uint16Array(4 * 4 * 4).fill(0x7e01); // NaN
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, 4, 4, 0, gl.RGBA, gl.HALF_FLOAT, f16);
+
+  gl.finish();
+}
+</script>

@@ -351,7 +351,6 @@ private fun ButtonsRow(
 }
 
 @Composable
-@Suppress("Deprecation")
 private fun ExpirationDateDropdown(
     label: String,
     selectedIndex: Int,

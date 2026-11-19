@@ -11,9 +11,3 @@ prefs = [
 ]
 
 ["browser_handle_command_timeout.js"]
-skip-if = [
-  "!opt", # This test exercises timeouts and could fail on slow platforms.
-  "asan", # See above
-  "ccov", # See above
-  "tsan", # See above
-]

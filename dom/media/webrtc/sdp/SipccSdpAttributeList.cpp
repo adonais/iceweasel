@@ -36,7 +36,7 @@ void SipccSdpAttributeList::LoadSimpleString(sdp_t* sdp, const uint16_t level,
       WarnAboutMisplacedAttribute(targetType, lineNumber, results);
     } else {
       SetAttribute(
-          MakeUnique<SdpStringAttribute>(targetType, std::string(value)));
+          std::make_unique<SdpStringAttribute>(targetType, std::string(value)));
     }
   }
 }
@@ -59,7 +59,7 @@ void SipccSdpAttributeList::LoadSimpleNumber(sdp_t* sdp, const uint16_t level,
       WarnAboutMisplacedAttribute(targetType, lineNumber, results);
     } else {
       uint32_t value = sdp_attr_get_simple_u32(sdp, attr, level, 0, 1);
-      SetAttribute(MakeUnique<SdpNumberAttribute>(targetType, value));
+      SetAttribute(std::make_unique<SdpNumberAttribute>(targetType, value));
     }
   }
 }
@@ -79,30 +79,30 @@ void SipccSdpAttributeList::LoadSimpleNumbers(sdp_t* sdp, const uint16_t level,
 void SipccSdpAttributeList::LoadFlags(sdp_t* sdp, const uint16_t level) {
   // any-level
   if (sdp_attr_valid(sdp, SDP_ATTR_EXTMAP_ALLOW_MIXED, level, 0, 1)) {
-    SetAttribute(
-        MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
+    SetAttribute(std::make_unique<SdpFlagAttribute>(
+        SdpAttribute::kExtmapAllowMixedAttribute));
   }
   if (AtSessionLevel()) {  // session-level only
     if (sdp_attr_valid(sdp, SDP_ATTR_ICE_LITE, level, 0, 1)) {
       SetAttribute(
-          MakeUnique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
+          std::make_unique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
     }
   } else {  // media-level
     if (sdp_attr_valid(sdp, SDP_ATTR_RTCP_MUX, level, 0, 1)) {
       SetAttribute(
-          MakeUnique<SdpFlagAttribute>(SdpAttribute::kRtcpMuxAttribute));
+          std::make_unique<SdpFlagAttribute>(SdpAttribute::kRtcpMuxAttribute));
     }
     if (sdp_attr_valid(sdp, SDP_ATTR_END_OF_CANDIDATES, level, 0, 1)) {
-      SetAttribute(MakeUnique<SdpFlagAttribute>(
+      SetAttribute(std::make_unique<SdpFlagAttribute>(
           SdpAttribute::kEndOfCandidatesAttribute));
     }
     if (sdp_attr_valid(sdp, SDP_ATTR_BUNDLE_ONLY, level, 0, 1)) {
-      SetAttribute(
-          MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
+      SetAttribute(std::make_unique<SdpFlagAttribute>(
+          SdpAttribute::kBundleOnlyAttribute));
     }
     if (sdp_attr_valid(sdp, SDP_ATTR_RTCP_RSIZE, level, 0, 1)) {
-      SetAttribute(
-          MakeUnique<SdpFlagAttribute>(SdpAttribute::kRtcpRsizeAttribute));
+      SetAttribute(std::make_unique<SdpFlagAttribute>(
+          SdpAttribute::kRtcpRsizeAttribute));
     }
   }
 }
@@ -136,7 +136,7 @@ void SipccSdpAttributeList::LoadDirection(sdp_t* sdp, const uint16_t level,
                                           InternalResults& results) {
   SdpDirectionAttribute::Direction dir;
   ConvertDirection(sdp_get_media_direction(sdp, level, 0), &dir);
-  SetAttribute(MakeUnique<SdpDirectionAttribute>(dir));
+  SetAttribute(std::make_unique<SdpDirectionAttribute>(dir));
 }
 
 void SipccSdpAttributeList::LoadIceAttributes(sdp_t* sdp,
@@ -145,21 +145,21 @@ void SipccSdpAttributeList::LoadIceAttributes(sdp_t* sdp,
   sdp_result_e sdpres =
       sdp_attr_get_ice_attribute(sdp, level, 0, SDP_ATTR_ICE_UFRAG, 1, &value);
   if (sdpres == SDP_SUCCESS) {
-    SetAttribute(MakeUnique<SdpStringAttribute>(
+    SetAttribute(std::make_unique<SdpStringAttribute>(
         SdpAttribute::kIceUfragAttribute, std::string(value)));
   }
   sdpres =
       sdp_attr_get_ice_attribute(sdp, level, 0, SDP_ATTR_ICE_PWD, 1, &value);
   if (sdpres == SDP_SUCCESS) {
-    SetAttribute(MakeUnique<SdpStringAttribute>(SdpAttribute::kIcePwdAttribute,
-                                                std::string(value)));
+    SetAttribute(std::make_unique<SdpStringAttribute>(
+        SdpAttribute::kIcePwdAttribute, std::string(value)));
   }
 
   const char* iceOptVal =
       sdp_attr_get_simple_string(sdp, SDP_ATTR_ICE_OPTIONS, level, 0, 1);
   if (iceOptVal) {
-    auto iceOptions =
-        MakeUnique<SdpOptionsAttribute>(SdpAttribute::kIceOptionsAttribute);
+    auto iceOptions = std::make_unique<SdpOptionsAttribute>(
+        SdpAttribute::kIceOptionsAttribute);
     iceOptions->Load(iceOptVal);
     SetAttribute(std::move(iceOptions));
   }
@@ -217,7 +217,7 @@ bool SipccSdpAttributeList::LoadFingerprint(sdp_t* sdp, const uint16_t level,
     }
 
     if (!fingerprintAttrs) {
-      fingerprintAttrs = MakeUnique<SdpFingerprintAttributeList>();
+      fingerprintAttrs = std::make_unique<SdpFingerprintAttributeList>();
     }
 
     // Don't assert on unknown algorithm, just skip
@@ -233,8 +233,8 @@ bool SipccSdpAttributeList::LoadFingerprint(sdp_t* sdp, const uint16_t level,
 
 void SipccSdpAttributeList::LoadCandidate(sdp_t* sdp, const uint16_t level) {
   char* value;
-  auto candidates =
-      MakeUnique<SdpMultiStringAttribute>(SdpAttribute::kCandidateAttribute);
+  auto candidates = std::make_unique<SdpMultiStringAttribute>(
+      SdpAttribute::kCandidateAttribute);
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     sdp_result_e result = sdp_attr_get_ice_attribute(
@@ -254,7 +254,7 @@ void SipccSdpAttributeList::LoadCandidate(sdp_t* sdp, const uint16_t level) {
 
 bool SipccSdpAttributeList::LoadSctpmap(sdp_t* sdp, const uint16_t level,
                                         InternalResults& results) {
-  auto sctpmap = MakeUnique<SdpSctpmapAttributeList>();
+  auto sctpmap = std::make_unique<SdpSctpmapAttributeList>();
   for (uint16_t i = 0; i < UINT16_MAX; ++i) {
     sdp_attr_t* attr = sdp_find_attr(sdp, level, 0, SDP_ATTR_SCTPMAP, i + 1);
 
@@ -333,7 +333,7 @@ SdpRtpmapAttributeList::CodecType SipccSdpAttributeList::GetCodecType(
 
 bool SipccSdpAttributeList::LoadRtpmap(sdp_t* sdp, const uint16_t level,
                                        InternalResults& results) {
-  auto rtpmap = MakeUnique<SdpRtpmapAttributeList>();
+  auto rtpmap = std::make_unique<SdpRtpmapAttributeList>();
   uint16_t count;
   sdp_result_e result =
       sdp_attr_num_instances(sdp, level, 0, SDP_ATTR_RTPMAP, &count);
@@ -389,16 +389,20 @@ void SipccSdpAttributeList::LoadSetup(sdp_t* sdp, const uint16_t level) {
 
   switch (setupType) {
     case SDP_SETUP_ACTIVE:
-      SetAttribute(MakeUnique<SdpSetupAttribute>(SdpSetupAttribute::kActive));
+      SetAttribute(
+          std::make_unique<SdpSetupAttribute>(SdpSetupAttribute::kActive));
       return;
     case SDP_SETUP_PASSIVE:
-      SetAttribute(MakeUnique<SdpSetupAttribute>(SdpSetupAttribute::kPassive));
+      SetAttribute(
+          std::make_unique<SdpSetupAttribute>(SdpSetupAttribute::kPassive));
       return;
     case SDP_SETUP_ACTPASS:
-      SetAttribute(MakeUnique<SdpSetupAttribute>(SdpSetupAttribute::kActpass));
+      SetAttribute(
+          std::make_unique<SdpSetupAttribute>(SdpSetupAttribute::kActpass));
       return;
     case SDP_SETUP_HOLDCONN:
-      SetAttribute(MakeUnique<SdpSetupAttribute>(SdpSetupAttribute::kHoldconn));
+      SetAttribute(
+          std::make_unique<SdpSetupAttribute>(SdpSetupAttribute::kHoldconn));
       return;
     case SDP_SETUP_UNKNOWN:
       return;
@@ -414,7 +418,7 @@ void SipccSdpAttributeList::LoadSetup(sdp_t* sdp, const uint16_t level) {
 }
 
 void SipccSdpAttributeList::LoadSsrc(sdp_t* sdp, const uint16_t level) {
-  auto ssrcs = MakeUnique<SdpSsrcAttributeList>();
+  auto ssrcs = std::make_unique<SdpSsrcAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     sdp_attr_t* attr = sdp_find_attr(sdp, level, 0, SDP_ATTR_SSRC, i);
@@ -433,7 +437,7 @@ void SipccSdpAttributeList::LoadSsrc(sdp_t* sdp, const uint16_t level) {
 }
 
 void SipccSdpAttributeList::LoadSsrcGroup(sdp_t* sdp, const uint16_t level) {
-  auto ssrcGroups = MakeUnique<SdpSsrcGroupAttributeList>();
+  auto ssrcGroups = std::make_unique<SdpSsrcGroupAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     sdp_attr_t* attr = sdp_find_attr(sdp, level, 0, SDP_ATTR_SSRC_GROUP, i);
@@ -483,7 +487,7 @@ void SipccSdpAttributeList::LoadSsrcGroup(sdp_t* sdp, const uint16_t level) {
 
 bool SipccSdpAttributeList::LoadImageattr(sdp_t* sdp, const uint16_t level,
                                           InternalResults& results) {
-  auto imageattrs = MakeUnique<SdpImageattrAttributeList>();
+  auto imageattrs = std::make_unique<SdpImageattrAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     const char* imageattrRaw =
@@ -518,7 +522,7 @@ bool SipccSdpAttributeList::LoadSimulcast(sdp_t* sdp, const uint16_t level,
     return true;
   }
 
-  auto simulcast = MakeUnique<SdpSimulcastAttribute>();
+  auto simulcast = std::make_unique<SdpSimulcastAttribute>();
 
   std::istringstream is(simulcastRaw);
   std::string error;
@@ -545,7 +549,7 @@ bool SipccSdpAttributeList::LoadGroups(sdp_t* sdp, const uint16_t level,
     return false;
   }
 
-  auto groups = MakeUnique<SdpGroupAttributeList>();
+  auto groups = std::make_unique<SdpGroupAttributeList>();
   for (uint16_t attr = 1; attr <= attrCount; ++attr) {
     SdpGroupAttributeList::Semantics semantics;
     std::vector<std::string> tags;
@@ -590,7 +594,7 @@ bool SipccSdpAttributeList::LoadGroups(sdp_t* sdp, const uint16_t level,
 
 bool SipccSdpAttributeList::LoadMsidSemantics(sdp_t* sdp, const uint16_t level,
                                               InternalResults& results) {
-  auto msidSemantics = MakeUnique<SdpMsidSemanticAttributeList>();
+  auto msidSemantics = std::make_unique<SdpMsidSemanticAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     sdp_attr_t* attr = sdp_find_attr(sdp, level, 0, SDP_ATTR_MSID_SEMANTIC, i);
@@ -622,7 +626,7 @@ void SipccSdpAttributeList::LoadIdentity(sdp_t* sdp, const uint16_t level) {
   const char* val =
       sdp_attr_get_long_string(sdp, SDP_ATTR_IDENTITY, level, 0, 1);
   if (val) {
-    SetAttribute(MakeUnique<SdpStringAttribute>(
+    SetAttribute(std::make_unique<SdpStringAttribute>(
         SdpAttribute::kIdentityAttribute, std::string(val)));
   }
 }
@@ -634,12 +638,12 @@ void SipccSdpAttributeList::LoadDtlsMessage(sdp_t* sdp, const uint16_t level) {
     // sipcc does not expose parse code for this, so we use a SDParta-provided
     // parser
     std::string strval(val);
-    SetAttribute(MakeUnique<SdpDtlsMessageAttribute>(strval));
+    SetAttribute(std::make_unique<SdpDtlsMessageAttribute>(strval));
   }
 }
 
 void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
-  auto fmtps = MakeUnique<SdpFmtpAttributeList>();
+  auto fmtps = std::make_unique<SdpFmtpAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     sdp_attr_t* attr = sdp_find_attr(sdp, level, 0, SDP_ATTR_FMTP, i);
@@ -664,7 +668,7 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
       case RTP_H264_P0:
       case RTP_H264_P1: {
         auto h264Parameters =
-            MakeUnique<SdpFmtpAttributeList::H264Parameters>();
+            std::make_unique<SdpFmtpAttributeList::H264Parameters>();
 
         sstrncpy(h264Parameters->sprop_parameter_sets, fmtp->parameter_sets,
                  sizeof(h264Parameters->sprop_parameter_sets));
@@ -688,7 +692,7 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         // sipcc does for other out-of-range fmtp parameters, values outside
         // them are ignored rather than made to fail the parse.
         using Av1Parameters = SdpFmtpAttributeList::Av1Parameters;
-        auto av1Parameters = MakeUnique<Av1Parameters>();
+        auto av1Parameters = std::make_unique<Av1Parameters>();
         if (fmtp->av1_has_profile &&
             fmtp->av1_profile <= Av1Parameters::kMaxProfile) {
           av1Parameters->profile = Some(fmtp->av1_profile);
@@ -703,8 +707,9 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         parameters = std::move(av1Parameters);
       } break;
       case RTP_VP9: {
-        auto vp9Parameters = MakeUnique<SdpFmtpAttributeList::VP8Parameters>(
-            SdpRtpmapAttributeList::kVP9);
+        auto vp9Parameters =
+            std::make_unique<SdpFmtpAttributeList::VP8Parameters>(
+                SdpRtpmapAttributeList::kVP9);
 
         vp9Parameters->max_fs = fmtp->max_fs;
         vp9Parameters->max_fr = fmtp->max_fr;
@@ -712,8 +717,9 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         parameters = std::move(vp9Parameters);
       } break;
       case RTP_VP8: {
-        auto vp8Parameters = MakeUnique<SdpFmtpAttributeList::VP8Parameters>(
-            SdpRtpmapAttributeList::kVP8);
+        auto vp8Parameters =
+            std::make_unique<SdpFmtpAttributeList::VP8Parameters>(
+                SdpRtpmapAttributeList::kVP8);
 
         vp8Parameters->max_fs = fmtp->max_fs;
         vp8Parameters->max_fr = fmtp->max_fr;
@@ -721,7 +727,8 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         parameters = std::move(vp8Parameters);
       } break;
       case RTP_RED: {
-        auto redParameters = MakeUnique<SdpFmtpAttributeList::RedParameters>();
+        auto redParameters =
+            std::make_unique<SdpFmtpAttributeList::RedParameters>();
         for (int i = 0; i < SDP_FMTP_MAX_REDUNDANT_ENCODINGS &&
                         fmtp->redundant_encodings[i];
              ++i) {
@@ -732,7 +739,7 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
       } break;
       case RTP_OPUS: {
         auto opusParameters =
-            MakeUnique<SdpFmtpAttributeList::OpusParameters>();
+            std::make_unique<SdpFmtpAttributeList::OpusParameters>();
         opusParameters->maxplaybackrate = fmtp->maxplaybackrate;
         opusParameters->stereo = fmtp->stereo;
         opusParameters->useInBandFec = fmtp->useinbandfec;
@@ -745,14 +752,15 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
       } break;
       case RTP_TELEPHONE_EVENT: {
         auto teParameters =
-            MakeUnique<SdpFmtpAttributeList::TelephoneEventParameters>();
+            std::make_unique<SdpFmtpAttributeList::TelephoneEventParameters>();
         if (strlen(fmtp->dtmf_tones) > 0) {
           teParameters->dtmfTones = fmtp->dtmf_tones;
         }
         parameters = std::move(teParameters);
       } break;
       case RTP_RTX: {
-        auto rtxParameters = MakeUnique<SdpFmtpAttributeList::RtxParameters>();
+        auto rtxParameters =
+            std::make_unique<SdpFmtpAttributeList::RtxParameters>();
         rtxParameters->apt = fmtp->apt;
         if (fmtp->has_rtx_time == TRUE) {
           rtxParameters->rtx_time = Some(fmtp->rtx_time);
@@ -782,7 +790,7 @@ void SipccSdpAttributeList::LoadMsids(sdp_t* sdp, const uint16_t level,
     results.AddParseError(0, "Unable to get count of msid attributes");
     return;
   }
-  auto msids = MakeUnique<SdpMsidAttributeList>();
+  auto msids = std::make_unique<SdpMsidAttributeList>();
   for (uint16_t i = 1; i <= attrCount; ++i) {
     uint32_t lineNumber = sdp_attr_line_number(sdp, SDP_ATTR_MSID, level, 0, i);
 
@@ -808,7 +816,7 @@ void SipccSdpAttributeList::LoadMsids(sdp_t* sdp, const uint16_t level,
 
 bool SipccSdpAttributeList::LoadRid(sdp_t* sdp, const uint16_t level,
                                     InternalResults& results) {
-  auto rids = MakeUnique<SdpRidAttributeList>();
+  auto rids = std::make_unique<SdpRidAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     const char* ridRaw =
@@ -837,7 +845,7 @@ bool SipccSdpAttributeList::LoadRid(sdp_t* sdp, const uint16_t level,
 
 void SipccSdpAttributeList::LoadExtmap(sdp_t* sdp, const uint16_t level,
                                        InternalResults& results) {
-  auto extmaps = MakeUnique<SdpExtmapAttributeList>();
+  auto extmaps = std::make_unique<SdpExtmapAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     sdp_attr_t* attr = sdp_find_attr(sdp, level, 0, SDP_ATTR_EXTMAP, i);
@@ -873,7 +881,7 @@ void SipccSdpAttributeList::LoadExtmap(sdp_t* sdp, const uint16_t level,
 
 void SipccSdpAttributeList::LoadRtcpFb(sdp_t* sdp, const uint16_t level,
                                        InternalResults& results) {
-  auto rtcpfbs = MakeUnique<SdpRtcpFbAttributeList>();
+  auto rtcpfbs = std::make_unique<SdpRtcpFbAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     sdp_attr_t* attr = sdp_find_attr(sdp, level, 0, SDP_ATTR_RTCP_FB, i);
@@ -1001,9 +1009,9 @@ void SipccSdpAttributeList::LoadRtcp(sdp_t* sdp, const uint16_t level,
   }
 
   if (!strlen(rtcp->addr)) {
-    SetAttribute(MakeUnique<SdpRtcpAttribute>(rtcp->port));
+    SetAttribute(std::make_unique<SdpRtcpAttribute>(rtcp->port));
   } else {
-    SetAttribute(MakeUnique<SdpRtcpAttribute>(
+    SetAttribute(std::make_unique<SdpRtcpAttribute>(
         rtcp->port, sdp::kInternet,
         rtcp->addrtype == SDP_AT_IP4 ? sdp::kIPv4 : sdp::kIPv6, rtcp->addr));
   }

@@ -77,29 +77,17 @@ class SSLTokensCache : public nsIMemoryReporter,
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
   // Clears the NSS in-memory client session cache (if NSS is initialized)
-  // and all resumption tokens, and (in the parent process) forwards the
-  // clear to the socket process via IPC. This is the entry point for
-  // "clear the TLS session cache" from anywhere in the tree; PSM no longer
-  // has its own copy of this logic.
+  // and all resumption tokens. This is the entry point for "clear the TLS
+  // session cache" from anywhere in the tree; PSM no longer has its own copy
+  // of this logic.
   static void ClearSessionCacheAndTokens();
-  // Forwards the IPC clear request to the socket process; no-op in non-parent
-  // processes.
-  static void ForwardClearToSocketProcess();
-  // Forwards a PBM-scoped cache-clear request to the socket process (parent
-  // only). The socket process clears only PBM SSLTokensCache entries and the
-  // NSS session cache; normal-browsing tokens are preserved.
-  static void ForwardClearPrivateBrowsingToSocketProcess();
   // Remove only private-browsing entries (privateBrowsingId != 0).
   static void ClearPrivateBrowsing();
-  // Socket-process only: clears the NSS in-memory client session cache (if
-  // NSS is initialized) and private-browsing resumption tokens. Invoked by
-  // the socket process in response to a PBM-scoped clear request.
-  static void ClearSessionCacheAndPBMTokens();
   static void RemoveByHostAndOAPattern(
       const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
-  // Removes aHost's matching resumption tokens, clears the NSS in-memory
-  // client session cache, and forwards the clear to the socket process.
+  // Removes aHost's matching resumption tokens and clears the NSS in-memory
+  // client session cache.
   static void ClearSessionCacheAndTokensForHost(
       const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
@@ -107,24 +95,8 @@ class SSLTokensCache : public nsIMemoryReporter,
       const nsACString& aSite, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
 
-  // Snapshot the cache as records for IPC transport.
-  static nsTArray<SSLTokensCacheRecordInfo> SerializeForIPC();
-
-  // Replace the cache with records from IPC; aRestored is their provenance.
-  static void DeserializeFromIPC(nsTArray<SSLTokensCacheRecordInfo>&& aRecords,
-                                 bool aRestored);
-  // Dispatches DeserializeFromIPC to a background thread.
-  static void DeserializeFromIPCAsync(
-      nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored);
-
   // Non-consuming snapshot of all current records, for about:networking.
   static void GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut);
-
-  // Replaces the cache with aRecords, received directly via IPC from the
-  // socket process. Each record's own restored field is preserved, unlike
-  // DeserializeFromIPC which always records the same provenance for the
-  // whole batch.
-  static void ReplaceAllRecords(nsTArray<SSLTokensCacheRecordInfo>&& aRecords);
 
   // aDecompressedLength, if non-null, receives the size of the decompressed
   // payload (token + serialized SessionCacheInfo combined), for reporting
@@ -141,6 +113,8 @@ class SSLTokensCache : public nsIMemoryReporter,
   static uint32_t CountForTest();
   static void PutForTest(const nsACString& aKey);
   static uint32_t CacheSizeForTest();
+  static void ReplaceAllRecordsForTest(
+      nsTArray<SSLTokensCacheRecordInfo>&& aRecords);
 #endif
 
  private:
@@ -214,7 +188,7 @@ class SSLTokensCache : public nsIMemoryReporter,
   // Dispatches open+migrate+load to mDBQueue.
   static void DispatchOpenAndLoad(uint32_t aLoadGen);
   static void OnLoadCompleteNotify(uint32_t aCount);
-  // Builds a TokenCacheRecord from its raw persisted/IPC fields.
+  // Builds a TokenCacheRecord from its raw persisted fields.
   static UniquePtr<TokenCacheRecord> MakeRecord(
       const nsACString& aKey, PRTime aExpirationTime, uint8_t aOverridableError,
       bool aRestored, nsTArray<uint8_t>&& aCompressedPayload);
@@ -299,7 +273,7 @@ class SSLTokensCache : public nsIMemoryReporter,
     // decompressing the payload.
     uint8_t mOverridableError = 0;
     uint64_t mId = 0;
-    // Not part of the on-storage/IPC format; in-memory only, for
+    // Not part of the on-storage format; in-memory only, for
     // about:networking.
     bool mRestored = false;
   };

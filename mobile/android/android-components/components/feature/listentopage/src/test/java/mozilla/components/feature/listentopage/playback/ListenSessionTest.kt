@@ -121,13 +121,6 @@ class ListenSessionTest {
     }
 
     @Test
-    fun `test that an article can be started part of the way into its opening`() {
-        listen.run { startArticle(chunk(0, 10_000), ArticleDisplayData(), TAB_ID, positionMs = 3_000) }
-
-        assertEquals(3_000L, listen.player.startPositions.last())
-    }
-
-    @Test
     fun `test that audio queued after the playback ran out is played without being asked`() {
         listen.run { startArticle(chunk(0, 10_000), ArticleDisplayData(), TAB_ID) }
         listen.player.play(10_000)

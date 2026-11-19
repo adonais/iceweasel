@@ -207,6 +207,12 @@ class PerformanceMainThread final : public Performance,
 
   void FinalizeLCPEntriesForText();
 
+  void SetPendingLCPCandidate(LargestContentfulPaint* aEntry) {
+    mPendingLCPCandidate = aEntry;
+  }
+
+  void QueuePendingLCPCandidate();
+
   void ClearGeneratedTempDataForLCP();
 
   void ClearContainerTimingData();
@@ -266,6 +272,10 @@ class PerformanceMainThread final : public Performance,
   // Keeps track of the rendered size of the largest contentful paint that
   // we have processed so far.
   double mLargestContentfulPaintSize = 0.0;
+
+  // The largest candidate found in the current paint. Only one entry is queued
+  // per paint, at the end of it.
+  RefPtr<LargestContentfulPaint> mPendingLCPCandidate;
 
   // When a text frame is painted, its area (relative to the
   // containing block) is unioned with other text frames that

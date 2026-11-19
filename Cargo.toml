@@ -157,7 +157,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.90.0"
+rust-version = "1.95.0"
 
 [workspace.dependencies]
 # Shared across multiple UniFFI consumers.
@@ -167,7 +167,7 @@ uniffi_pipeline = "0.32"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.
-glean = "=70.3.0"
+glean = "=71.0.0"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -286,8 +286,6 @@ icu_collator_data = { path = "third_party/rust/icu_collator_data" }
 icu_normalizer = { path = "third_party/rust/icu_normalizer" }
 icu_normalizer_data = { path = "third_party/rust/icu_normalizer_data" }
 icu_collections = { path = "third_party/rust/icu_collections" }
-utf8_iter = { path = "third_party/rust/utf8_iter" }
-utf16_iter = { path = "third_party/rust/utf16_iter" }
 icu_properties = { path = "third_party/rust/icu_properties" }
 icu_properties_data = { path = "third_party/rust/icu_properties_data" }
 

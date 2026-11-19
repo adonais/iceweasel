@@ -225,7 +225,7 @@ const LangGroupFontPrefs* StaticPresData::GetFontPrefsForLang(
     }
     tail = p;
   }
-  auto newPrefs = MakeUnique<LangGroupFontPrefs>(langGroupAtom);
+  auto newPrefs = std::make_unique<LangGroupFontPrefs>(langGroupAtom);
   if (tail) {
     tail->mNext = std::move(newPrefs);
     return tail->mNext.get();

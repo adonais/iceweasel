@@ -649,11 +649,13 @@ class Talos(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
         webextension_dest = os.path.join(self.talos_path, "talos", "webextensions")
 
         if self.query_pagesets_name():
-            tooltool_artifacts.append({
-                "name": self.pagesets_name,
-                "manifest": self.pagesets_name_manifest,
-                "dest": src_talos_pageset_dest,
-            })
+            # DAMP only loads pages from the fis/ copy.
+            if self.talos_json_config["suites"][self.suite]["tests"] != ["damp"]:
+                tooltool_artifacts.append({
+                    "name": self.pagesets_name,
+                    "manifest": self.pagesets_name_manifest,
+                    "dest": src_talos_pageset_dest,
+                })
             tooltool_artifacts.append({
                 "name": self.pagesets_name,
                 "manifest": self.pagesets_name_manifest,
@@ -844,9 +846,7 @@ class Talos(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
         # get talos options
         options = self.talos_options(args=args, **kw)
 
-        # XXX temporary python version check
         python = self.query_python_path()
-        self.run_command([python, "--version"])
         parser = TalosOutputParser(
             config=self.config, log_obj=self.log_obj, error_list=TalosErrorList
         )

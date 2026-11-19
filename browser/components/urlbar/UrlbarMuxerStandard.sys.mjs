@@ -131,6 +131,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       hasUnitConversionResult: false,
       maxHeuristicResultSpan: 0,
       maxTabToSearchResultSpan: 0,
+      hasTemporalSuggestions: false,
       // When you add state, update _copyState() as necessary.
     };
 
@@ -202,9 +203,22 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       this._updateStatePreAdd(result, state);
     }
 
-    // Now that the first pass is done, adjust the available result span. More
-    // than one tab-to-search result may be present but only one will be shown;
-    // add the max TTS span to the total span of global suggestedIndex results.
+    // Now that the first pass is done, set the context's actual max results and
+    // adjust the muxer state's available result span.
+    context.maxResultsActual = context.maxResults;
+    if (
+      state.hasTemporalSuggestions &&
+      !lazy.UrlbarPrefs.hasUserValue("maxRichResults")
+    ) {
+      context.maxResultsActual = lazy.UrlbarPrefs.get(
+        "temporal.zeroPrefixMaxRichResults"
+      );
+    }
+    state.availableResultSpan = context.maxResultsActual;
+
+    // More than one tab-to-search result may be present but only one will be
+    // shown; add the max TTS span to the total span of global suggestedIndex
+    // results.
     state.globalSuggestedIndexResultSpan += state.maxTabToSearchResultSpan;
 
     // Leave room for global suggestedIndex results at the end of the sort, by
@@ -232,6 +246,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         );
       }
     }
+
+    let showSearchSuggestionsFirst =
+      context.showSearchSuggestionsFirst && !state.hasTemporalSuggestions;
+    rootGroup = lazy.UrlbarPrefs.getResultGroups({
+      context,
+      showSearchSuggestionsFirst,
+      showTemporalSuggestions: state.hasTemporalSuggestions,
+    });
 
     // Fill the root group.
     let [sortedResults] = this._fillGroup(
@@ -820,8 +842,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       }
       if (result.payload.suggestionObject?.suggestionType == "temporal") {
         // Temporal search suggestions are shown as several rows in the zero
-        // prefix view.
-        return true;
+        // prefix view, but they shouldn't dupe recent searches or other
+        // suggestions.
+        let suggestion = result.payload.lowerCaseSuggestion;
+        return !state.suggestions.has(suggestion);
       }
 
       if (state.quickSuggestResult && state.quickSuggestResult != result) {
@@ -1222,6 +1246,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         state.maxHeuristicResultSpan,
         lazy.UrlbarShared.getSpanForResult(result)
       );
+    }
+
+    if (result.group == lazy.UrlbarShared.RESULT_GROUP.TEMPORAL_SUGGESTION) {
+      state.hasTemporalSuggestions = true;
     }
 
     // The search result UrlbarProviderHeuristicFallback adds alongside a visit

@@ -290,12 +290,12 @@ rust-size:
         revision: ab659d93b1faba95307df952aefe3fbed3583669
 
 rust-analyzer-linux64:
-    description: rust-analyzer 2026-10-12
+    description: rust-analyzer 2026-10-26
     fetch:
         type: static-url
-        url: https://github.com/rust-lang/rust-analyzer/releases/download/2026-10-12/rust-analyzer-x86_64-unknown-linux-gnu.gz
-        sha256: 040cab4e2abc490fadd95c3f6cbc60b941a78761dbc3acf0ec66fd7a97f31db3
-        size: 14939384
+        url: https://github.com/rust-lang/rust-analyzer/releases/download/2026-10-26/rust-analyzer-x86_64-unknown-linux-gnu.gz
+        sha256: 4c83773525f93b636ed79761389568b4d2a89c05fa7ecc440245032d49ad80ce
+        size: 15084499
         artifact-name: rust-analyzer.gz
 
 gn:
@@ -333,7 +333,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: 85c7dd4cce5ab74b679f9ca74efa49a7f5e4bd5a
+        revision: ae5227f620699c8d532609ae30dc66432b903dab
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -372,11 +372,11 @@ clang-22:
         revision: ca7933e47d3a3451d81e72ac174dcb5aa28b59d1
 
 clang-23:
-    description: clang 23.1.1 source code
+    description: clang 23.1.5 source code
     fetch:
         type: git
         repo: https://github.com/llvm/llvm-project
-        revision: 6dfe1677ab8dffbc6ec13d53a1e0215d75147689
+        revision: 392dfff97d29b59d77e5cac6d4b6ef2585fe7117
 
 clang-trunk:
     description: clang main branch source code
@@ -491,12 +491,12 @@ upload-symbols-linux64:
         add-prefix: upload-symbols-cli/
 
 7zz:
-    description: 7-zip 26.03 source code
+    description: 7-zip 26.05 source code
     fetch:
         type: static-url
-        url: https://github.com/ip7z/7zip/releases/download/26.03/7z2603-src.tar.xz
-        sha256: 9cbde5099c6deb73691b0579063da5827522ccbbcba3f0020fd04e8c8c16c0d4
-        size: 1552200
+        url: https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz
+        sha256: 0b6080b8c3e7a579161d2d495224c0e51c467576cb4c7048b0ab485ef44cc22e
+        size: 1565688
         artifact-name: 7z-src.tar.zst
         add-prefix: 7zz/
 
@@ -679,19 +679,31 @@ afl-plus-plus:
         repo: https://github.com/AFLplusplus/AFLplusplus
         revision: 011cd189801830253c66ecd3cd6919ec01b46c34
 
+cargo-audit:
+    # Keep the version in sync with tools/lint/cargo-audit/cargo-audit_version.txt
+    description: cargo-audit 0.22.0 source code
+    fetch:
+        type: static-url
+        url: https://crates.io/api/v1/crates/cargo-audit/0.22.0/download
+        sha256: 31a93efe072dade616d509087c6e0b3ad9a0a78b1a6978451988d15faade53a1
+        size: 57554
+        artifact-name: cargo-audit.tar.zst
+        strip-components: 1
+        add-prefix: cargo-audit/
+
 cargo-vet:
     description: cargo-vet source
     fetch:
         type: git
         repo: https://github.com/mozilla/cargo-vet
-        revision: 28f617ea97392d527799649db588a6dbb695da8d
+        revision: cef4dd43a0b9d2d37febf0e5ad42abc6d9ea5472
 
 symbol-scrapers:
     description: System symbols scraper source
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: 7d405538e2f687b37e62445ae177db8a95405665
+        revision: ff50ee2e950b59e29ca0483707c51ae361b5926c
 
 openssl-1.1.1w:
     description: openssl 1.1.1w source code
@@ -755,6 +767,17 @@ cpython-3.11.7.exe:
         size: 26009544
         artifact-name: python-3.11.7-amd64.exe
 
+cpython-3.12.15:
+    description: cpython 3.12.15 source code
+    fetch:
+        type: static-url
+        url: https://www.python.org/ftp/python/3.12.15/Python-3.12.15.tgz
+        sha256: de1a241a519e0a3374fea98988d0b52c886743f9d953f23be8269cc7b59c5fab
+        size: 27303440
+        artifact-name: cpython-source.tar.zst
+        strip-components: 1
+        add-prefix: cpython-source/
+
 windows-rs:
     description: Source of the windows rust crate
     attributes:
@@ -780,7 +803,18 @@ mozilla-pdf.js:
     fetch:
         type: git
         repo: https://github.com/mozilla/pdf.js
-        revision: 81cf42df470f85eb60150bdffca380e3eee79c08
+        revision: b9a3dfc3c2ff1fe7692b30da63a588d4890b4a72
+
+mozilla-pdf.js.pdfs:
+    description: Mozilla pdf.js PDF corpus (private Github repo)
+    artifact-prefix: project/gecko/pdf.js.pdfs
+    fetch:
+        type: git
+        repo: git@github.com:mozilla/pdf.js.pdfs.git
+        revision: 37b3f48ef90a73bd9a193a5007b0c10a04758efd
+        path-prefix: pdf.js.pdfs
+        artifact-name: pdf.js.pdfs.tar.zst
+        ssh-key: project/perftest/gecko/level-{level}/pdfjs-pdfs-github-deploy-key
 
 xmlstarlet-1.6.1:
     description: xmlstarlet for Android Performance Tests
@@ -874,7 +908,7 @@ firefox-profiler:
     fetch:
         type: git
         repo: https://github.com/firefox-devtools/profiler
-        revision: d019001a67a2d34ca2276ece14e9a60a29e671ef
+        revision: e93adc066f1f2c53f2e600bc17923f5f7007d639
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
 # We can't catch regressions from these updates in CI. Testing should focus on

@@ -688,9 +688,8 @@ TEST_P(SADx4Test, DISABLED_Speed) {
   for (int block = 0; block < 4; ++block) {
     EXPECT_EQ(reference_sad[block], exp_sad[block]) << "block " << block;
   }
-  const int elapsed_time =
-      static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
-  printf("sad%dx%dx4 (%2dbit) time: %5d ms\n", params_.width, params_.height,
+  const double elapsed_time = vpx_usec_timer_elapsed(&timer) / 1000.0;
+  printf("sad%dx%dx4 (%2dbit) time: %8.3f ms\n", params_.width, params_.height,
          bit_depth_, elapsed_time);
 
   reference_stride_ = tmp_stride;
@@ -787,9 +786,8 @@ TEST_P(SADSkipx4Test, DISABLED_Speed) {
   for (int block = 0; block < 4; ++block) {
     EXPECT_EQ(reference_sad[block], exp_sad[block]) << "block " << block;
   }
-  const int elapsed_time =
-      static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
-  printf("sad%dx%dx4 (%2dbit) time: %5d ms\n", params_.width, params_.height,
+  const double elapsed_time = vpx_usec_timer_elapsed(&timer) / 1000.0;
+  printf("sad%dx%dx4 (%2dbit) time: %8.3f ms\n", params_.width, params_.height,
          bit_depth_, elapsed_time);
 
   reference_stride_ = tmp_stride;
@@ -1417,7 +1415,7 @@ const SadSkipMxNx4Param skip_x4d_neon_tests[] = {
 INSTANTIATE_TEST_SUITE_P(NEON, SADSkipx4Test,
                          ::testing::ValuesIn(skip_x4d_neon_tests));
 
-#if HAVE_NEONE_DOTPROD
+#if HAVE_NEON_DOTPROD
 const SadSkipMxNx4Param skip_x4d_neon_dotprod_tests[] = {
   SadSkipMxNx4Param(64, 64, &vpx_sad_skip_64x64x4d_neon_dotprod),
   SadSkipMxNx4Param(64, 32, &vpx_sad_skip_64x32x4d_neon_dotprod),

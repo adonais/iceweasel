@@ -400,6 +400,8 @@ class VideoSessionConduit : public MediaSessionConduit {
   virtual void RequestKeyFrame(FrameTransformerProxy* aProxy) = 0;
   virtual void GenerateKeyFrame(const Maybe<std::string>& aRid,
                                 FrameTransformerProxy* aProxy) = 0;
+  // Empty aRids requests a key frame on all layers.
+  virtual void GenerateKeyFrames(std::vector<std::string> aRids) = 0;
 
  protected:
   /* RTCP feedback settings, for unit testing purposes */

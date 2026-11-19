@@ -18,6 +18,7 @@
 
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
+import { createDefaultBrowserConfig } from "chrome://browser/content/preferences/config/default-browser.mjs";
 
 const { SCOPE_APP_SYNC } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
@@ -840,7 +841,7 @@ let perDeviceSyncEnabled = Services.prefs.getBoolPref(
 );
 
 SettingGroupManager.registerGroups({
-  defaultBrowserSync: window.createDefaultBrowserConfig({
+  defaultBrowserSync: createDefaultBrowserConfig({
     includeIsDefaultPane: false,
     inProgress: true,
     hiddenFromSearch: true,
@@ -1168,10 +1169,16 @@ document.addEventListener(
       return;
     }
     let { subcategory } = event.detail;
+    let entrypoint = window.gMainPane.getMigrationEntrypoint();
     if (subcategory == "migrate") {
-      window.gMainPane.showMigrationWizardDialog();
+      window.gMainPane.showMigrationWizardDialog({
+        entrypoint,
+      });
     } else if (subcategory == "migrate-autoclose") {
-      window.gMainPane.showMigrationWizardDialog({ closeTabWhenDone: true });
+      window.gMainPane.showMigrationWizardDialog({
+        closeTabWhenDone: true,
+        entrypoint,
+      });
     }
   }
 );

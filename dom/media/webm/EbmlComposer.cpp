@@ -5,12 +5,12 @@
 #include "EbmlComposer.h"
 
 #include <limits>
+#include <memory>
 
 #include "libmkv/EbmlIDs.h"
 #include "libmkv/EbmlWriter.h"
 #include "libmkv/WebMElement.h"
 #include "mozilla/EndianUtils.h"
-#include "mozilla/UniquePtr.h"
 #include "prtime.h"
 
 namespace mozilla {
@@ -36,8 +36,8 @@ void EbmlComposer::GenerateHeader() {
   // Write the EBML header.
   EbmlGlobal ebml;
   // The WEbM header default size usually smaller than 1k.
-  auto buffer =
-      MakeUnique<uint8_t[]>(DEFAULT_HEADER_SIZE + mCodecPrivateData.Length());
+  auto buffer = std::make_unique<uint8_t[]>(DEFAULT_HEADER_SIZE +
+                                            mCodecPrivateData.Length());
   ebml.buf = buffer.get();
   ebml.offset = 0;
   writeHeader(&ebml);

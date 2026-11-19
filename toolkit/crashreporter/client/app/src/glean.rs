@@ -5,11 +5,9 @@
 //! Glean telemetry integration.
 
 use crate::config::{buildid, Config};
-use crate::prefs_parser::{find_bool_pref, find_string_pref};
+use crate::prefs::Prefs;
 
 const APP_DISPLAY_VERSION: &str = env!("CARGO_PKG_VERSION");
-const TELEMETRY_ENABLED_PREF_KEY: &str = "datareporting.healthreport.uploadEnabled";
-const TELEMETRY_SERVER_PREF_KEY: &str = "toolkit.telemetry.server";
 
 /// Glean initialization options.
 pub struct InitOptions {
@@ -17,35 +15,6 @@ pub struct InitOptions {
     pub locale: Option<String>,
     pub server_endpoint: Option<String>,
     pub upload_enabled: bool,
-}
-
-struct Prefs {
-    content: String,
-}
-
-impl Prefs {
-    pub fn new<P: AsRef<::std::path::Path>>(profile_dir: P) -> Option<Self> {
-        let prefs_file = profile_dir.as_ref().join("prefs.js");
-        let content = match crate::std::fs::read_to_string(&prefs_file) {
-            Ok(s) => s,
-            Err(e) => {
-                if e.kind() != crate::std::io::ErrorKind::NotFound {
-                    log::error!("failed to read prefs file: {e}");
-                }
-                return None;
-            }
-        };
-
-        Some(Prefs { content })
-    }
-
-    pub fn telemetry_enabled(&self) -> Option<bool> {
-        find_bool_pref(&self.content, TELEMETRY_ENABLED_PREF_KEY)
-    }
-
-    pub fn telemetry_server(&self) -> Option<&str> {
-        find_string_pref(&self.content, TELEMETRY_SERVER_PREF_KEY)
-    }
 }
 
 impl InitOptions {
@@ -60,8 +29,8 @@ impl InitOptions {
     ///    file, this might be the cause of some crash that we are trying to report. So disabling
     ///    telemetry in this case would make us blind to the issue.
     ///
-    /// Thus, `with_profile_dir` only sets this to `false` if we successfully read the pref (and it
-    /// was `false`).
+    /// Thus, `with_prefs` only sets this to `false` if we successfully read the pref and it was
+    /// `false`.
     pub fn new(data_dir: ::std::path::PathBuf) -> Self {
         InitOptions {
             data_dir,
@@ -79,19 +48,13 @@ impl InitOptions {
 
         let mut opts = Self::new(data_dir);
         opts.locale = cfg.strings.as_ref().map(|s| s.locale());
-        opts.with_profile_dir(cfg.profile_dir.as_deref())
+        opts.with_prefs(&cfg.prefs)
     }
 
-    /// Set `server_endpoint` and `upload_enabled` based on user preferences in the profile
-    /// directory.
-    pub fn with_profile_dir<P: AsRef<::std::path::Path>>(mut self, profile_dir: Option<P>) -> Self {
-        if let Some(prefs) = profile_dir.and_then(Prefs::new) {
-            self.server_endpoint = prefs.telemetry_server().map(Into::into);
-            self.upload_enabled = prefs.telemetry_enabled().unwrap_or(true);
-        } else {
-            self.server_endpoint = None;
-            self.upload_enabled = true;
-        }
+    /// Set `server_endpoint` and `upload_enabled` based on loaded preferences.
+    pub fn with_prefs(mut self, prefs: &Prefs) -> Self {
+        self.server_endpoint = prefs.telemetry_server().map(Into::into);
+        self.upload_enabled = prefs.telemetry_enabled().unwrap_or(true);
         self
     }
 
@@ -268,49 +231,6 @@ mod test {
                 true,
             );
         }
-    }
-
-    #[test]
-    fn test_telemetry_enable_pref() {
-        use crate::std::{
-            fs::{MockFS, MockFiles},
-            mock,
-            path::Path,
-        };
-
-        for pref_value in [false, true] {
-            let files = MockFiles::new();
-            files.add_dir("profile_dir").add_file(
-                "profile_dir/prefs.js",
-                format!(r#"user_pref("datareporting.healthreport.uploadEnabled", {pref_value});"#),
-            );
-            let result = mock::builder().set(MockFS, files).run(|| {
-                Prefs::new(Path::new("profile_dir"))
-                    .unwrap()
-                    .telemetry_enabled()
-                    .unwrap_or(true)
-            });
-            assert_eq!(result, pref_value);
-        }
-    }
-
-    #[test]
-    fn test_telemetry_server_pref() {
-        use crate::std::{
-            fs::{MockFS, MockFiles},
-            mock,
-            path::Path,
-        };
-
-        let files = MockFiles::new();
-        files.add_dir("profile_dir").add_file(
-            "profile_dir/prefs.js",
-            format!(r#"user_pref("toolkit.telemetry.server", "example.com");"#),
-        );
-        let result = mock::builder()
-            .set(MockFS, files)
-            .run(|| Prefs::new(Path::new("profile_dir")).unwrap());
-        assert_eq!(result.telemetry_server().unwrap(), "example.com");
     }
 }
 

@@ -1,3 +1,5 @@
 [DEFAULT]
 
+["test_rs_client_shutdown.js"]
+
 ["test_shutdown_blocker.js"]

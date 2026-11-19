@@ -46,6 +46,10 @@ class AndroidSurfaceTextureData : public TextureData {
 
   bool Serialize(SurfaceDescriptor& aOutDescriptor) override;
 
+  RemoteDecoderVideoType GetRemoteDecoderVideoType() override {
+    return RemoteDecoderVideoType::AndroidSurfaceTexture;
+  }
+
   // Useless functions.
   bool Lock(OpenMode) override { return true; }
 

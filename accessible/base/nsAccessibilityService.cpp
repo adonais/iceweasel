@@ -777,7 +777,7 @@ void nsAccessibilityService::NotifyOfEditContextAttachmentChange(
 void nsAccessibilityService::AriaNotify(
     nsINode* aNode, const nsAString& aAnnouncement,
     const mozilla::dom::AriaNotificationOptions& aOptions) {
-  Document* doc = aNode->GetUncomposedDoc();
+  Document* doc = aNode->GetComposedDoc();
   if (!doc) {
     return;
   }
@@ -1398,28 +1398,6 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       }
     }
   }
-
-  if (frame->GetContent() != content) {
-    // Not the main content for this frame. This happens because <area>
-    // elements return the image frame as their primary frame. The main content
-    // for the image frame is the image content. If the frame is not an image
-    // frame or the node is not an area element then null is returned.
-    // This setup will change when bug 135040 is fixed. Make sure we don't
-    // create area accessible here. Hopefully assertion below will handle that.
-
-#ifdef DEBUG
-    nsImageFrame* imageFrame = do_QueryFrame(frame);
-    NS_ASSERTION(imageFrame && content->IsHTMLElement(nsGkAtoms::area),
-                 "Unknown case of not main content for the frame!");
-#endif
-    return nullptr;
-  }
-
-#ifdef DEBUG
-  nsImageFrame* imageFrame = do_QueryFrame(frame);
-  NS_ASSERTION(!imageFrame || !content->IsHTMLElement(nsGkAtoms::area),
-               "Image map manages the area accessible creation!");
-#endif
 
   // Attempt to create an accessible based on what we know.
   RefPtr<LocalAccessible> newAcc;

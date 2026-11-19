@@ -1,0 +1,90 @@
+[DEFAULT]
+accept_zero_vismet = false
+alert_on = "SpeedIndex"
+alert_threshold = 5.0
+apps = "fenix"
+browser_cycles = 5
+cold = "true"
+verbose = true
+browsertime_visualmetrics = true
+gecko_profile_interval = 1
+interactive = true
+lower_is_better = false
+measure = "SpeedIndex"
+owner = "PerfTest Team"
+page_cycles = 1
+page_timeout = 600000
+playback = "mitmproxy-android"
+playback_mode = "direct"
+playback_version = "12.2.1"
+support_class = "nav_bench.py"
+custom_data = true
+expose_browser_profiler = true
+type = "pageload"
+unit = "score"
+use_live_sites = false
+preferences = """
+fission.bfcacheInParent=false
+browser.sessionhistory.max_total_viewers=0
+network.http.http3.enable=false
+network.http.altsvc.enabled=false
+"""
+
+# Composite test: one browser launch loads all sites in sequence.
+#   wait 30s        -> initial idle / browser warmup
+#   per site:
+#     measure "<site>-load"    -> initial navigation
+#     measure "<site>-subnav"  -> sub-navigation, where the site has one
+#
+# Score per sample =
+# 60000 / SpeedIndex_ms (LoadLine2-style), aggregated as geomean across all
+# (sites x cycles) for the overall score (see nav_bench.py).
+#
+# GVE recordings are replayed on fenix (matching tp6m).
+[nav-bench-m]
+playback_manifests_dir = "nav-bench"
+playback_pageset_manifest = "mitm12-android-gve-amazon-nav.manifest,mitm12-android-gve-wikipedia-nav.manifest,mitm12-android-gve-duckduckgo-nav.manifest,mitm12-android-gve-bbc-nav.manifest"
+test_url = "about:blank"
+test_cmds = [
+    ["wait.byTime", "30000"],
+
+    ["measure.start", "amazon-nav-load"],
+    ["navigate", "https://www.amazon.ca/s?k=laptop"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["measure.start", "amazon-nav-subnav"],
+    ["click.bySelectorAndWait", 'a[href*="/dp/"]'],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "wikipedia-nav-load"],
+    ["navigate", "https://en.m.wikipedia.org/wiki/Barack_Obama"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["measure.start", "wikipedia-nav-subnav"],
+    ["click.bySelectorAndWait", 'a[href*="/wiki/Honolulu"]'],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "duckduckgo-nav-load"],
+    ["navigate", "https://duckduckgo.com/?q=mandelbrot+set"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["measure.start", "duckduckgo-nav-subnav"],
+    ["click.bySelectorAndWait", 'a[href*="ia=images"]'],
+    ["wait.byTime", "3000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "bbc-nav-load"],
+    ["navigate", "https://www.bbc.com/news/"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+]

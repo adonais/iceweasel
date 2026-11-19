@@ -1579,11 +1579,12 @@ FaultingCodeRange MacroAssemblerMIPS64Compat::loadUnalignedFloat32(
   return fcr;
 }
 
-void MacroAssemblerMIPS64Compat::store8(Imm32 imm, const Address& address) {
+FaultingCodeRange MacroAssemblerMIPS64Compat::store8(Imm32 imm,
+                                                     const Address& address) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   ma_li(scratch2, imm);
-  ma_store(scratch2, address, SizeByte);
+  return ma_store(scratch2, address, SizeByte);
 }
 
 FaultingCodeRange MacroAssemblerMIPS64Compat::store8(Register src,
@@ -1600,11 +1601,12 @@ FaultingCodeRange MacroAssemblerMIPS64Compat::store8(Register src,
   return ma_store(src, dest, SizeByte);
 }
 
-void MacroAssemblerMIPS64Compat::store16(Imm32 imm, const Address& address) {
+FaultingCodeRange MacroAssemblerMIPS64Compat::store16(Imm32 imm,
+                                                      const Address& address) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   ma_li(scratch2, imm);
-  ma_store(scratch2, address, SizeHalfWord);
+  return ma_store(scratch2, address, SizeHalfWord);
 }
 
 FaultingCodeRange MacroAssemblerMIPS64Compat::store16(Register src,
@@ -1634,11 +1636,12 @@ FaultingCodeRange MacroAssemblerMIPS64Compat::store32(Register src,
   return ma_store(src, address, SizeWord);
 }
 
-void MacroAssemblerMIPS64Compat::store32(Imm32 src, const Address& address) {
+FaultingCodeRange MacroAssemblerMIPS64Compat::store32(Imm32 src,
+                                                      const Address& address) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   move32(src, scratch2);
-  ma_store(scratch2, address, SizeWord);
+  return ma_store(scratch2, address, SizeWord);
 }
 
 void MacroAssemblerMIPS64Compat::store32(Imm32 imm, const BaseIndex& dest) {

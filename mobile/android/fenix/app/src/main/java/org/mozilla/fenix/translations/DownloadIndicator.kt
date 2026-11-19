@@ -5,9 +5,9 @@
 package org.mozilla.fenix.translations
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -48,7 +48,7 @@ private const val ANIMATION_DURATION_MS = 2000
  * @param contentDescription Optional content description for the icon.
  */
 @Composable
-fun DownloadIconIndicator(
+internal fun DownloadIconIndicator(
     icon: Painter,
     modifier: Modifier = Modifier,
     tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -71,7 +71,7 @@ fun DownloadIconIndicator(
  * @param contentDescription Optional content description for the icon.
  */
 @Composable
-fun DownloadInProgressIndicator(
+internal fun DownloadInProgressIndicator(
     modifier: Modifier = Modifier,
     icon: Painter = painterResource(id = iconsR.drawable.mozac_ic_stop_8),
     tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -102,7 +102,7 @@ fun DownloadInProgressIndicator(
  * @param icon Optional [Painter] used to display an [Icon] before the button text.
  */
 @Composable
-fun DownloadIndicator(
+internal fun DownloadIndicator(
     text: String,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
@@ -116,7 +116,7 @@ fun DownloadIndicator(
                         role = Role.Button
                         contentDescription?.let { this.contentDescription = contentDescription }
                     }
-                    .wrapContentSize()
+                    .fillMaxWidth()
             ),
         icon = icon,
         iconModifier =

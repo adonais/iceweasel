@@ -120,6 +120,10 @@ add_task(async function checkDragFromURLBarHTMLEscaping() {
     await SpecialPowers.spawn(browser, [TITLE], title => {
       content.document.title = title;
     });
+    await TestUtils.waitForCondition(
+      () => window.gBrowser.contentTitle == TITLE,
+      "Waiting for title to change"
+    );
 
     gURLBar.focus();
     gURLBar.select();

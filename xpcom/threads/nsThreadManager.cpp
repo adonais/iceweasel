@@ -330,7 +330,7 @@ nsresult nsThreadManager::Init() {
 
   // Create main thread queue that forwards events to TaskController and
   // construct main thread.
-  UniquePtr<EventQueue> queue = MakeUnique<EventQueue>(true);
+  auto queue = std::make_unique<EventQueue>(true);
 
   RefPtr synchronizedQueue =
       MakeRefPtr<ThreadEventQueue>(std::move(queue), true);
@@ -608,7 +608,7 @@ nsThreadManager::NewNamedThread(
 
   TimeStamp startTime = TimeStamp::Now();
 
-  RefPtr queue = MakeRefPtr<ThreadEventQueue>(MakeUnique<EventQueue>());
+  RefPtr queue = MakeRefPtr<ThreadEventQueue>(std::make_unique<EventQueue>());
   RefPtr thr = MakeRefPtr<nsThread>(WrapNotNull(queue),
                                     nsThread::NOT_MAIN_THREAD, aOptions);
 

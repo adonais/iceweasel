@@ -11,27 +11,20 @@
 namespace mozilla {
 namespace net {
 
-class DNSRequestChild final : public DNSRequestActor, public PDNSRequestChild {
+class DNSRequestChild final : public PDNSRequestChild {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DNSRequestChild, override)
   friend class PDNSRequestChild;
 
-  explicit DNSRequestChild(DNSRequestBase* aRequest);
-
-  bool CanSend() const override { return PDNSRequestChild::CanSend(); }
-  DNSRequestChild* AsDNSRequestChild() override { return this; }
-  DNSRequestParent* AsDNSRequestParent() override { return nullptr; }
+  explicit DNSRequestChild(DNSRequestSender* aRequest);
 
  private:
   virtual ~DNSRequestChild() = default;
 
-  mozilla::ipc::IPCResult RecvCancelDNSRequest(
-      const nsCString& hostName, const nsCString& trrServer,
-      const int32_t& port, const uint16_t& type,
-      const OriginAttributes& originAttributes,
-      const nsIDNSService::DNSFlags& flags, const nsresult& reason);
   mozilla::ipc::IPCResult RecvLookupCompleted(const DNSRequestResponse& reply);
   virtual void ActorDestroy(ActorDestroyReason why) override;
+
+  RefPtr<DNSRequestSender> mDNSRequest;
 };
 
 }  // namespace net

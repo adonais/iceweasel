@@ -114,7 +114,7 @@ const BackgroundColor = {
     "--fxview-element-background-hover",
     "--fxviewtabrow-element-background-active",
     "--fxviewtabrow-element-background-hover",
-    "--identity-stroke-color",
+    "--identity-color",
     "--identity-tab-color",
     "--lwt-accent-color",
     "--newtab-background-card",
@@ -422,6 +422,7 @@ const Size = {
   tokenTypes: ["size", "icon-size"],
   allowUnits: true,
   allowedUnits: ["%", "ch", "em", "vh", "vw"],
+  allowedTokens: ["--downloads-item-height"],
   customFixes: {
     ...createRawValuesObject(["size", "icon-size"]),
     "0.75rem": "var(--size-item-xsmall)",

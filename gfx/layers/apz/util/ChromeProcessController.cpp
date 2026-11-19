@@ -35,7 +35,7 @@ ChromeProcessController::ChromeProcessController(
       mAPZCTreeManager(aAPZCTreeManager),
       mUIThread(NS_GetCurrentThread()) {
   // Otherwise we're initializing mUIThread incorrectly.
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aAPZEventState);
   MOZ_ASSERT(aAPZCTreeManager);
 
@@ -74,7 +74,7 @@ void ChromeProcessController::NotifyLayerTransforms(
 
 void ChromeProcessController::RequestContentRepaint(
     const RepaintRequest& aRequest) {
-  MOZ_ASSERT(IsRepaintThread());
+  MOZ_RELEASE_ASSERT(IsRepaintThread());
 
   if (aRequest.IsRootContent()) {
     APZCCallbackHelper::UpdateRootFrame(aRequest);
@@ -98,7 +98,7 @@ void ChromeProcessController::Destroy() {
     return;
   }
 
-  MOZ_ASSERT(mUIThread->IsOnCurrentThread());
+  MOZ_RELEASE_ASSERT(mUIThread->IsOnCurrentThread());
   mWidget = nullptr;
   if (mAPZEventState) {
     mAPZEventState->Destroy();
@@ -140,7 +140,7 @@ void ChromeProcessController::HandleDoubleTap(
     const ScrollableLayerGuid& aGuid,
     const DoubleTapToZoomMetrics& aDoubleTapToZoomMetrics) {
   MOZ_LOG(sApzChromeLog, LogLevel::Debug, ("HandleDoubleTap\n"));
-  MOZ_ASSERT(mUIThread->IsOnCurrentThread());
+  MOZ_RELEASE_ASSERT(mUIThread->IsOnCurrentThread());
 
   RefPtr<dom::Document> document = GetRootContentDocument(aGuid.mScrollId);
   if (!document) {
@@ -291,7 +291,7 @@ void ChromeProcessController::NotifyMozMouseScrollEvent(
 }
 
 void ChromeProcessController::NotifyFlushComplete() {
-  MOZ_ASSERT(IsRepaintThread());
+  MOZ_RELEASE_ASSERT(IsRepaintThread());
 
   APZCCallbackHelper::NotifyFlushComplete(GetPresShell());
 }

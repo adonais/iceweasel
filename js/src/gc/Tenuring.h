@@ -132,7 +132,7 @@ class TenuringTracer final : public JSTracer {
   bool on##name##Edge(type** thingp, const char* name) override;
   JS_FOR_EACH_TRACEKIND(DEFINE_ON_EDGE_METHOD)
 #undef DEFINE_ON_EDGE_METHOD
-  bool onBufferEdge(void** bufferp, const char* name) override;
+  TraceBufferResult onBufferEdge(void** bufferp, const char* name) override;
 
   inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
   inline void insertIntoStringFixupList(gc::StringRelocationOverlay* entry);

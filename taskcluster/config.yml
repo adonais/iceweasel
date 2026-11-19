@@ -430,6 +430,7 @@ treeherder:
         'feature-webcompat-reporte': 'feature-webcompat-reporter'
         'feature-protection-dashbo': 'feature-protection-dashboard'
         'feature-tabdata-coordinat': 'feature-tabdata-coordinator'
+        'lib-installation-blocksto': 'lib-installation-blockstore'
 
         # Groups aren't generated off buildconfig.yml:
         'samples-browser': 'samples-browser'
@@ -481,7 +482,6 @@ try:
 release-promotion:
     products:
         - 'devedition'
-        - 'fennec'
         - 'firefox'
         - 'firefox-android'
     rebuild-kinds:

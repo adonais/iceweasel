@@ -58,6 +58,17 @@ class DevToolsCompatTest(DesktopUnittest):
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
+    def download_and_extract(self):
+        # DesktopUnittest only downloads the packages of the suites it runs, but
+        # browser_backward_compat_xpcshell.js also needs the xpcshell harness.
+        super(DesktopUnittest, self).download_and_extract(
+            suite_categories=["mochitest", "xpcshell"]
+        )
+
+    def stage_files(self):
+        super().stage_files()
+        self._stage_xpcshell([])
+
     def _import_session(self):
         """Import the provisioning code from the tests archive."""
         dirs = self.query_abs_dirs()
@@ -76,8 +87,19 @@ class DevToolsCompatTest(DesktopUnittest):
         dirs = self.query_abs_dirs()
         session = self._import_session()
 
+        self.mkdir_p(dirs["abs_blob_upload_dir"])
+
         server = self.config["compat_server"]
         self.info(f"Provisioning the '{server}' DevTools server")
+
+        xpcshell_harness = session.XpcshellHarness(
+            script=os.path.join(dirs["abs_xpcshell_dir"], "runxpcshelltests.py"),
+            binary=os.path.join(self.query_abs_app_dir(), self.config["xpcshell_name"]),
+        )
+        # The xpcshell harness is started from this process, so it does not get
+        # the env that DesktopUnittest builds for the suites it runs.
+        if self.config["nodejs_path"]:
+            os.environ["MOZ_NODE_PATH"] = self.config["nodejs_path"]
 
         with session.provisioned_server(
             binary=self.binary_path,
@@ -85,6 +107,7 @@ class DevToolsCompatTest(DesktopUnittest):
             log_dir=dirs["abs_blob_upload_dir"],
             server=server,
             headless=True,
+            xpcshell_harness=xpcshell_harness,
         ) as compat_server_env:
             self.log(f"Server environment: {compat_server_env}", level=INFO)
             # _run_category_suites builds the test env from os.environ.

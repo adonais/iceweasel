@@ -72,6 +72,8 @@
 
 ["include:../../../../../toolkit/components/cleardata/tests/marionette/manifest.toml"]
 
+["include:../../../../../toolkit/components/downloads/test/marionette/manifest.toml"]
+
 ["include:../../../../../toolkit/components/extensions/test/marionette/manifest-serviceworker.toml"]
 
 ["include:../../../../../toolkit/modules/tests/marionette/manifest.toml"]

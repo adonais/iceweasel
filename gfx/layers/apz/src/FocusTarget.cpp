@@ -97,7 +97,7 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
       mFocusHasKeyEventListeners(false),
       mData(AsVariant(NoFocusTarget())) {
   MOZ_ASSERT(aRootPresShell);
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   // Key events can be retargeted to a child PresShell when there is an iframe
   RefPtr<PresShell> presShell = GetRetargetEventPresShell(aRootPresShell);

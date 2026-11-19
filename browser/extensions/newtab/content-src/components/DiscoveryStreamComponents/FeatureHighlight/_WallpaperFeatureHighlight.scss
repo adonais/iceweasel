@@ -162,43 +162,4 @@
       inset-block-start: var(--space-xsmall);
     }
   }
-
-  &.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal {
-    min-height: 355px;
-
-    .wallpaper-feature-highlight-content {
-      gap: var(--space-small);
-    }
-
-    .wallpaper-feature-highlight-image {
-      --wallpaper-highlight-image-background: transparent;
-
-      background-image: none;
-      height: auto;
-      padding-block: 0;
-    }
-
-    .wallpaper-feature-highlight-image img {
-      width: 100%;
-      height: auto;
-      max-width: 304px;
-      object-fit: contain;
-    }
-
-    .title {
-      color: var(--text-color);
-      font-size: var(--font-size-small);
-    }
-
-    .subtitle {
-      color: var(--text-color);
-      font-size: var(--font-size-small);
-      font-weight: var(--font-weight);
-    }
-
-    .button-wrapper {
-      margin-block-start: var(--space-medium);
-    }
-  }
-
 }

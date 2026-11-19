@@ -100,7 +100,7 @@ class nsAppShell : public nsBaseAppShell {
   bool ProcessNextNativeEvent(bool mayWait) override;
 
   // Post a subclass of Event.
-  // e.g. PostEvent(mozilla::MakeUnique<MyEvent>());
+  // e.g. PostEvent(std::make_unique<MyEvent>());
   template <typename T, typename D>
   static void PostEvent(mozilla::UniquePtr<T, D>&& event) {
     mozilla::MutexAutoLock lock(*sAppShellLock);
@@ -119,7 +119,7 @@ class nsAppShell : public nsBaseAppShell {
       return;
     }
     sAppShell->mEventQueue.Post(
-        mozilla::MakeUnique<LambdaEvent<T>>(std::move(lambda)));
+        std::make_unique<LambdaEvent<T>>(std::move(lambda)));
   }
 
   // Post a event and wait for it to finish running on the Gecko thread.
@@ -157,7 +157,7 @@ class nsAppShell : public nsBaseAppShell {
   };
 
   void ScheduleNativeEventCallback() override {
-    mEventQueue.Post(mozilla::MakeUnique<NativeCallbackEvent>(this));
+    mEventQueue.Post(std::make_unique<NativeCallbackEvent>(this));
   }
 
   class Queue {

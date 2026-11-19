@@ -18,22 +18,33 @@ import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.store.MenuAction
 
-/** [MenuItemProvider] for the menu item allowing to open the bookmarks screen. */
-class BookmarksScreenMenuItemProvider : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        MutableStateFlow(
-            StandardMenuItem(
-                title = MenuItemTitle(Text.Resource(R.string.library_bookmarks)),
-                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_bookmark_tray_fill_24),
-                onClickEvent = MenuAction.Navigate.Bookmarks,
-            )
-        )
+/**
+ * [MenuItemProvider] for the menu item allowing to open the bookmarks screen.
+ *
+ * @param target [MenuTarget] for which this menu item would be shown for.
+ */
+class BookmarksScreenMenuItemProvider(private val target: MenuTarget) : MenuItemProvider {
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.Navigate.Bookmarks)))
+        }
 
     override fun handles(event: MenuEvent) = event == MenuAction.Navigate.Bookmarks
 
     override fun onEvent(event: MenuEvent, menu: MenuHost) {
         menu.navigate(NavGraphDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id))
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.library_bookmarks)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_bookmark_tray_fill_24),
+            )
     }
 }

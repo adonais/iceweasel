@@ -11,9 +11,9 @@ import {
 import { MAX_TABS_FOR_RECENT_BROWSING } from "./helpers.mjs";
 import { searchTabList } from "./search-helpers.mjs";
 import { ViewPage } from "./viewpage.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/firefoxview/card-container.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/firefoxview/fxview-tab-list.mjs";
 
 const lazy = {};

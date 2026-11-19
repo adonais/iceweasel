@@ -76,7 +76,7 @@ SLACK_SUCCESS_MESSAGE_TEMPLATE = Template(
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": "*Testrail Release*: $TESTRAIL_PRODUCT_TYPE $RELEASE_TYPE $RELEASE_VERSION <https://mozilla.testrail.io/index.php?/projects/overview/$TESTRAIL_PROJECT_ID|Milestone> has been created:testrail:"
+            "text": "*Testrail Release*: $TESTRAIL_PRODUCT_TYPE $RELEASE_TYPE $RELEASE_VERSION ${BUILD_NUMBER_TEXT}<https://mozilla.testrail.io/index.php?/milestones/view/$MILESTONE_ID|Milestone> has been created:testrail:"
         }
     },
     {

@@ -258,7 +258,11 @@ MOZ_ALWAYS_INLINE gc::Heap CellAllocator::CheckedHeap(gc::Heap heap) {
   return heap;
 }
 
+template <typename T>
+concept IsBufferType = std::is_base_of_v<Buffer, T>;
+
 template <typename T, typename... Args>
+  requires IsBufferType<T>
 T* NewSizedBuffer(JS::Zone* zone, size_t bytes, bool nurseryOwned,
                   Args&&... args) {
   MOZ_ASSERT(sizeof(T) <= bytes);
@@ -270,6 +274,13 @@ T* NewSizedBuffer(JS::Zone* zone, size_t bytes, bool nurseryOwned,
   T* buffer = new (ptr) T(std::forward<Args>(args)...);
   MemoryReleaseFence(zone);  // See note above.
   return buffer;
+}
+
+template <typename T, typename... Args>
+  requires IsBufferType<T>
+T* NewBuffer(Cell* owner, Args&&... args) {
+  return NewSizedBuffer<T>(owner->zone(), sizeof(T), IsInsideNursery(owner),
+                           std::forward<Args>(args)...);
 }
 
 }  // namespace gc

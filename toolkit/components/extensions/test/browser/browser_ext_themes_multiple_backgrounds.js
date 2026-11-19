@@ -1,13 +1,5 @@
 "use strict";
 
-// Nova being enabled changes some of the styling that is being tested here.
-const novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true // If the pref isn't set to false, assume Nova styles are enabled by default.
-);
-
-info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
 async function waitForConsole(task, message) {
   let p = new Promise(resolve => {
     // Not necessary in browser-chrome tests, but monitorConsole gripes
@@ -76,7 +68,7 @@ add_task(async function test_support_backgrounds_position() {
   let bgImageElement = gNavToolbox;
   let bgImageCS = window.getComputedStyle(bgImageElement);
 
-  let defaultMainBgImage = novaEnabled ? bgImageCS.backgroundImage : "none";
+  let defaultMainBgImage = bgImageCS.backgroundImage;
   let defaultBackgroundPosition = bgImageCS.backgroundPosition;
   let defaultBackgroundRepeat = bgImageCS.backgroundRepeat;
 

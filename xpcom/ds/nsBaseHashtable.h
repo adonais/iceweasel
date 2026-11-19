@@ -39,7 +39,7 @@ struct SmartPtrTraits<UniquePtr<Pointee>> {
 
   template <typename U, typename... Args>
   static SmartPointerType NewObject(Args&&... aConstructionArgs) {
-    return mozilla::MakeUnique<U>(std::forward<Args>(aConstructionArgs)...);
+    return std::make_unique<U>(std::forward<Args>(aConstructionArgs)...);
   }
 };
 

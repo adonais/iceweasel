@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { PushDB } from "resource://gre/modules/PushDB.sys.mjs";
-import { PushRecord } from "resource://gre/modules/PushRecord.sys.mjs";
-import { PushCrypto } from "resource://gre/modules/PushCrypto.sys.mjs";
+import { PushDB } from "moz-src:///dom/push/PushDB.sys.mjs";
+import { PushRecord } from "moz-src:///dom/push/PushRecord.sys.mjs";
+import { PushCrypto } from "moz-src:///dom/push/PushCrypto.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
-  pushBroadcastService: "resource://gre/modules/PushBroadcastService.sys.mjs",
+  pushBroadcastService: "moz-src:///dom/push/PushBroadcastService.sys.mjs",
 });
 
 const kPUSHWSDB_DB_NAME = "pushapi";

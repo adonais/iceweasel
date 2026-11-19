@@ -8,7 +8,7 @@ import { addons, useGlobals, useStorybookApi } from "@storybook/manager-api";
 // eslint-disable-next-line no-unused-vars
 import { AddonPanel, Table, Form } from "@storybook/components";
 import { FLUENT_CHANGED, FLUENT_SET_STRINGS } from "./constants.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "./fluent-panel.css";
 
 export const FluentPanel = ({ active }) => {

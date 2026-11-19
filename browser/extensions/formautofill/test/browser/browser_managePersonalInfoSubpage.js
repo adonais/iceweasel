@@ -33,7 +33,6 @@ const TEST_PASSPORT_2 = {
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       ["extensions.formautofill.passports.supported", "on"],
       // Passport is the sole "personal info" member type today. Enabling it
       // ticks the "Save and autofill personal info" checkbox and enables the

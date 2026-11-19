@@ -127,7 +127,7 @@ bool WebRenderLayerManager::Initialize(
   WrBridge()->SetNamespace(idNamespace.ref());
   *aTextureFactoryIdentifier = textureFactoryIdentifier;
 
-  mDLBuilder = MakeUnique<wr::DisplayListBuilder>(
+  mDLBuilder = std::make_unique<wr::DisplayListBuilder>(
       WrBridge()->GetPipeline(), WrBridge()->GetWebRenderBackend());
 
   sHasInitialized = true;
@@ -137,7 +137,7 @@ bool WebRenderLayerManager::Initialize(
 void WebRenderLayerManager::Destroy() { DoDestroy(/* aIsSync */ false); }
 
 void WebRenderLayerManager::DoDestroy(bool aIsSync) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (IsDestroyed()) {
     return;
@@ -346,7 +346,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   if (aRenderOffscreen) {
     wr::PipelineId mainId = WrBridge()->GetPipeline();
     wr::PipelineId tmpPipeline = gfx::GetTemporaryWebRenderPipelineId(mainId);
-    offscreenBuilder = MakeUnique<wr::DisplayListBuilder>(
+    offscreenBuilder = std::make_unique<wr::DisplayListBuilder>(
         tmpPipeline, WrBridge()->GetWebRenderBackend());
     diplayListBuilder = offscreenBuilder.get();
   }
@@ -656,7 +656,7 @@ void WebRenderLayerManager::WrUpdated() {
   // The parent released our pipeline's interned items in the old WebRender
   // instance, so the next display list must start a fresh delta stream.
   // Display lists built before this are dropped by the id namespace check.
-  mDLBuilder = MakeUnique<wr::DisplayListBuilder>(
+  mDLBuilder = std::make_unique<wr::DisplayListBuilder>(
       WrBridge()->GetPipeline(), WrBridge()->GetWebRenderBackend());
   ClearAsyncAnimations();
   mStateManager.mAsyncResourceUpdates.reset();

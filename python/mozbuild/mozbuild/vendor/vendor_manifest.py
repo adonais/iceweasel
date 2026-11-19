@@ -23,6 +23,7 @@ import requests
 from mozbuild.base import MozbuildObject
 from mozbuild.vendor.host_base import TagNotFound
 from mozbuild.vendor.rewrite_mozbuild import (
+    MozBuildFileNotListedException,
     MozBuildRewriteException,
     add_file_to_moz_build_file,
     remove_file_from_moz_build_file,
@@ -920,6 +921,11 @@ class VendorManifest(MozbuildObject):
         for f in files_removed:
             try:
                 remove_file_from_moz_build_file(f, moz_yaml_dir, vendoring_dir)
+            except MozBuildFileNotListedException:
+                self.logInfo(
+                    {"f": f},
+                    "{f} is not listed in any moz.build file, nothing to remove",
+                )
             except MozBuildRewriteException:
                 self.log(
                     logging.ERROR,

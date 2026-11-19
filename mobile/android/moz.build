@@ -9,16 +9,20 @@ with Files("**"):
 with Files("geckoview_example/**"):
     BUG_COMPONENT = ("GeckoView", "General")
 
-with Files("fenix/**"):
-    BUG_COMPONENT = ("Firefox for Android", "General")
-    SCHEDULES.exclusive = ["android", "fenix"]
+with Files("geckoview/src/*/java/org/mozilla/gecko/media/**"):
+    BUG_COMPONENT = ("Core", "Audio/Video: Playback")
 
-with Files("focus-android/**"):
-    BUG_COMPONENT = ("Focus", "General")
-    SCHEDULES.exclusive = ["android", "focus-android"]
+with Files("geckoview/src/androidTest/assets/www/accessibility/**"):
+    BUG_COMPONENT = ("Core", "Disability Access APIs")
 
-with Files("android-components/**"):
-    BUG_COMPONENT = ("Firefox for Android", "General")
+with Files("gradle/**"):
+    BUG_COMPONENT = ("Firefox Build System", "Android Studio and Gradle Integration")
+
+with Files("gradle/plugins/apilint/**"):
+    BUG_COMPONENT = ("GeckoView", "General")
+
+with Files("test_infra/**"):
+    BUG_COMPONENT = ("Firefox for Android", "UI Tests")
 
 # The Android APKs are assembled in the `export` tier, which usually occurs
 # before the following files are generated. However, mechanisms in `recurse.mk`

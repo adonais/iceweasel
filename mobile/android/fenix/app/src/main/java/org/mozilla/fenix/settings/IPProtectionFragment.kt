@@ -63,7 +63,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
         super.onCreate(savedInstanceState)
 
         if (args.startAuthFlow) {
-            requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+            requireComponents.ipProtection.store.dispatch(IPProtectionAction.ActivationAction.Toggle)
         }
     }
 
@@ -87,8 +87,8 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
             }
 
         LaunchedEffect(Unit) {
-            requireComponents.ipProtection.store.dispatch(IPProtectionAction.CheckAccount)
-            requireComponents.ipProtection.store.dispatch(IPProtectionAction.CheckLocations)
+            requireComponents.ipProtection.store.dispatch(IPProtectionAction.AccountAction.CheckAccount)
+            requireComponents.ipProtection.store.dispatch(IPProtectionAction.LocationAction.CheckLocations)
         }
 
         FirefoxTheme {
@@ -102,7 +102,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                     } else {
                         Vpn.settingsTurnedOff.record(NoExtras())
                     }
-                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.ActivationAction.Toggle)
                 },
                 onLearnMoreClick = {
                     Vpn.settingsLearnMoreTapped.record(NoExtras())
@@ -117,7 +117,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                 },
                 onGetStartedClick = {
                     Vpn.getStartedTapped.record(Vpn.GetStartedTappedExtra(entrypoint = "Settings"))
-                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.ActivationAction.Toggle)
                 },
                 showDebugAction = requireComponents.settings.showSecretDebugMenuThisSession,
                 onDebugActionClick = { showDebugDialog = true },

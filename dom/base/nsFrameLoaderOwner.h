@@ -83,8 +83,10 @@ class nsFrameLoaderOwner : public nsISupports {
   // Replaces the frameloader with one restored from the bfcache and carries
   // the layer state over. Returns whether the browser's layers changed, which
   // the caller reports with DispatchLayerTreeEvent once the restored documents
-  // are active.
-  bool RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader);
+  // are active. aRetainPaint keeps the old frameloader's paint until
+  // ReadyToReplaceRetainedPaint.
+  bool RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader,
+                                     bool aRetainPaint);
 
   // Dispatches MozLayerTreeReady or MozLayerTreeCleared on the owner element
   // for the current frameloader's layers.

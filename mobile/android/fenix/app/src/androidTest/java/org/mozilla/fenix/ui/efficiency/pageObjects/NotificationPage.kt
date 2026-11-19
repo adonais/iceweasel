@@ -130,6 +130,17 @@ class NotificationPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
         return this
     }
 
+    /**
+     * Taps a notification's body by [selector], firing its content intent. For a completed-download notification this
+     * opens the file in its handler app; the app launch is asserted separately via mozVerifyNativeAppOpens (the handler
+     * is a native app brought to the foreground, not Fenix opening the file in-app). Mirrors the legacy
+     * NotificationRobot.clickNotification (By.text(...).clickAndWait).
+     */
+    fun clickNotification(selector: Selector): NotificationPage {
+        mozClick(selector)
+        return this
+    }
+
     fun verifyNotificationExists(selector: Selector): NotificationPage {
         mozVerify(selector)
         return this

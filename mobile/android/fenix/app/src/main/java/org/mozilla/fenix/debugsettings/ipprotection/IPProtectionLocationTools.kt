@@ -99,8 +99,8 @@ private data class LocationToolsState(
 /**
  * Debug tools for editing the IP protection country list without waiting for a server list change.
  *
- * Edits reach [IPProtectionStore] as [IPProtectionAction.CountryListChanged], the same action the engine delegate
- * dispatches in production, so the persistence and fallback paths behave the same way.
+ * Edits reach [IPProtectionStore] as [IPProtectionAction.LocationAction.CountryListChanged], the same action the engine
+ * delegate dispatches in production, so the persistence and fallback paths behave the same way.
  *
  * @param store The [IPProtectionStore] to read from and dispatch edits to.
  */
@@ -138,7 +138,7 @@ fun IPProtectionLocationTools(store: IPProtectionStore) {
             }
 
             store.dispatch(
-                IPProtectionAction.CountryListChanged(
+                IPProtectionAction.LocationAction.CountryListChanged(
                     countries =
                         options
                             .filterNot { it.shouldHide }

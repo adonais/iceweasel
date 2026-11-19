@@ -107,3 +107,87 @@ shippable-first-frame-startup:
             --perfherder
             --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
             --output $MOZ_FETCHES_DIR/../artifacts
+
+shippable-background-resource-fenix:
+    worker-type: t-osx-1500-m4
+    worker:
+        max-run-time: 1800
+        env:
+            ANDROID_EMULATOR_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/emulator'
+            ANDROID_AVD_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/avd'
+            ANDROID_SDK_ROOT: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            ANDROID_SDK_HOME: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            MOZBUILD_STATE_PATH: '/opt/worker/tasks/cltbld/fetches'
+    description: Run background resource test with Fenix on an emulator
+    treeherder:
+        symbol: perftest-fenix(background-rsrc-em)
+        tier: 3
+    platform: perftest-android-em-arm64/opt
+    attributes:
+        cron: false
+    run-on-projects: [autoland]
+    fetches:
+        toolchain:
+            - android-sdk-macos
+            - android-system-image-arm64-macos
+            - android-avd-arm64-macos
+            - macosx64-aarch64-jdk-repack
+        build:
+            - artifact: target.arm64-v8a.apk
+              extract: false
+    require-build:
+        perftest-android-em-arm64/opt: signing-apk-fenix-nightly-simulation
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            testing/performance/android-resource/main-background.sh
+            --app fenix
+            --android
+            --android-use-emulator
+            --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --hooks testing/performance/android-resource/hooks_android_resource.py
+
+shippable-foreground-resource-fenix:
+    worker-type: t-osx-1500-m4
+    worker:
+        max-run-time: 1800
+        env:
+            ANDROID_EMULATOR_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/emulator'
+            ANDROID_AVD_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/avd'
+            ANDROID_SDK_ROOT: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            ANDROID_SDK_HOME: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            MOZBUILD_STATE_PATH: '/opt/worker/tasks/cltbld/fetches'
+    description: Run foreground resource test with Fenix on an emulator
+    treeherder:
+        symbol: perftest-fenix(foreground-rsrc-em)
+        tier: 3
+    platform: perftest-android-em-arm64/opt
+    attributes:
+        cron: false
+    run-on-projects: [autoland]
+    fetches:
+        toolchain:
+            - android-sdk-macos
+            - android-system-image-arm64-macos
+            - android-avd-arm64-macos
+            - macosx64-aarch64-jdk-repack
+        build:
+            - artifact: target.arm64-v8a.apk
+              extract: false
+    require-build:
+        perftest-android-em-arm64/opt: signing-apk-fenix-nightly-simulation
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            testing/performance/android-resource/main-foreground.sh
+            --app fenix
+            --android
+            --android-use-emulator
+            --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --hooks testing/performance/android-resource/hooks_android_resource.py

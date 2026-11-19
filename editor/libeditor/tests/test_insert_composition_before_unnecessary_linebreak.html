@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Extant line break after visible content shouldn't be deleted automatically at least after composing text</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<script>
+"use strict";
+
+// <br> before a block boundary is not required if preceding content is visible
+// and making the line. However, some apps may add it intentionally as a private
+// marker. Therefore, they shouldn't be removed when inserting text for the
+// backward compatibility.
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(() => {
+  const editingHost = document.querySelector("div[contenteditable]");
+  function synthesizeCompositionAndCommit(
+    aFirstCompositionString,
+    aSecondCompositionString,
+    aCommitString
+  ) {
+    synthesizeComposition({ type: "compositionstart" });
+    synthesizeCompositionChange({
+      composition: {
+        string: aFirstCompositionString,
+        clauses: [
+          { length: aFirstCompositionString.length, attr: COMPOSITION_ATTR_RAW_CLAUSE },
+        ],
+      },
+      caret: { start: aFirstCompositionString.length, length: 0 },
+    });
+    synthesizeCompositionChange({
+      composition: {
+        string: aSecondCompositionString,
+        clauses: [
+          { length: aSecondCompositionString.length, attr: COMPOSITION_ATTR_RAW_CLAUSE },
+        ],
+      },
+      caret: { start: aSecondCompositionString.length, length: 0 },
+    });
+    synthesizeComposition({ type: "compositioncommit", data: aCommitString });
+  }
+
+  editingHost.addEventListener("input", () => {
+    info(editingHost.innerHTML.replaceAll("\n", "\\n"));
+  });
+
+  editingHost.innerHTML = "<p><br></p>";
+  getSelection().collapse(editingHost.querySelector("p"), 0);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>X</p>",
+    `Inserting text into empty paragraph should remove the padding <br>`
+  );
+
+  editingHost.innerHTML = "<p>abc<br></p>";
+  getSelection().collapse(editingHost.querySelector("p").firstChild, "abc".length);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>abcX<br></p>",
+    `Inserting text before unnecessary line break shouldn't cause removing the <br>`
+  );
+
+  editingHost.innerHTML = "<p>abc<br></p>";
+  getSelection().setBaseAndExtent(
+    editingHost.querySelector("p").firstChild,
+    0,
+    editingHost.querySelector("p").firstChild,
+    "abc".length
+  );
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>X<br></p>",
+    `Replacing all text before unnecessary line break shouldn't cause removing the <br>`
+  );
+
+  editingHost.innerHTML = "<p>abc<br><br></p>";
+  getSelection().collapse(editingHost.querySelector("p"), 2);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>abc<br>X</p>",
+    `Inserting text before a line break for making an empty line should remove the <br>`
+  );
+
+  editingHost.setAttribute("style", "white-space: pre-wrap");
+
+  editingHost.innerHTML = "<p>\n</p>";
+  getSelection().collapse(editingHost.querySelector("p"), 0);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>X</p>",
+    `Inserting text into empty paragraph should remove the padding linefeed`
+  );
+
+  editingHost.innerHTML = "<p>abc\n</p>";
+  getSelection().collapse(editingHost.querySelector("p").firstChild, "abc".length);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>abcX\n</p>",
+    `Inserting text before unnecessary linefeed shouldn't cause removing the linefeed`
+  );
+
+  editingHost.innerHTML = "<p>abc\n</p>";
+  getSelection().setBaseAndExtent(
+    editingHost.querySelector("p").firstChild,
+    0,
+    editingHost.querySelector("p").firstChild,
+    "abc".length
+  );
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>X\n</p>",
+    `Replacing all text before unnecessary linefeed shouldn't cause removing the linefeed`
+  );
+
+  editingHost.innerHTML = "<p>abc\n\n</p>";
+  getSelection().collapse(editingHost.querySelector("p").firstChild, "abc\n".length);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<p>abc\nX</p>",
+    `Inserting text before a linefeed for making an empty line should remove the linefeed`
+  );
+
+  editingHost.removeAttribute("style");
+
+  editingHost.innerHTML = "<div><br><p>p</p></div>";
+  getSelection().collapse(editingHost.querySelector("div"), 0);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<div>X<p>p</p></div>",
+    `Inserting text into empty line before a child block should cause remove the <br> made an empty line`
+  );
+
+  editingHost.innerHTML = "<div>abc<br><p>p</p></div>";
+  getSelection().collapse(editingHost.querySelector("div").firstChild, "abc".length);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<div>abcX<br><p>p</p></div>",
+    `Inserting text before unnecessary line break before a child block shouldn't cause removing the <br>`
+  );
+
+  editingHost.innerHTML = "<div>abc<br><p>p</p></div>";
+  getSelection().setBaseAndExtent(
+    editingHost.querySelector("div").firstChild,
+    0,
+    editingHost.querySelector("div").firstChild,
+    "abc".length
+  );
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<div>X<br><p>p</p></div>",
+    `Replacing all text before unnecessary line break before a child block shouldn't cause removing the <br>`
+  );
+
+  editingHost.setAttribute("style", "white-space: pre-wrap");
+
+  editingHost.innerHTML = "<div>\n<p>p</p></div>";
+  getSelection().collapse(editingHost.querySelector("div"), 0);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<div>X<p>p</p></div>",
+    `Inserting text into empty line before a child block should remove the linefeed made an empty line`
+  );
+
+  editingHost.innerHTML = "<div>abc\n<p>p</p></div>";
+  getSelection().collapse(editingHost.querySelector("div").firstChild, "abc".length);
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<div>abcX\n<p>p</p></div>",
+    `Inserting text before unnecessary linefeed before a child block shouldn't cause removing the linefeed`
+  );
+
+  editingHost.innerHTML = "<div>abc\n<p>p</p></div>";
+  getSelection().setBaseAndExtent(
+    editingHost.querySelector("div").firstChild,
+    0,
+    editingHost.querySelector("div").firstChild,
+    "abc".length
+  );
+  synthesizeCompositionAndCommit("x", "X", "X");
+  is(
+    editingHost.innerHTML,
+    "<div>X\n<p>p</p></div>",
+    `Replacing all text before unnecessary linefeed before a child block shouldn't cause removing the linefeed`
+  );
+
+  SimpleTest.finish();
+});
+</script>
+</head>
+<body>
+  <div contenteditable></div>
+</body>
+</html>

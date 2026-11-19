@@ -63,7 +63,7 @@ This tests the login manager in a insecure setting using http. A similar test fi
     is(popupState.selectedIndex, -1, "Check no entries are selected upon opening");
 
     const expectedMenuItems = [
-      "This connection is not secure. Logins entered here could be compromised. Learn More",
+      "This connection is not secure. Logins entered here could be compromised.",
       "user-1",
       "user-2",
       "user-3"
@@ -502,7 +502,7 @@ This tests the login manager in a insecure setting using http. A similar test fi
     const autocompleteItems = await popupByArrowDown();
     checkAutoCompleteResults(autocompleteItems,
                              [
-                               "This connection is not secure. Logins entered here could be compromised. Learn More",
+                               "This connection is not secure. Logins entered here could be compromised.",
                                "user"
                              ],
                              window.location.host,
@@ -574,7 +574,7 @@ This tests the login manager in a insecure setting using http. A similar test fi
     const results = await popupBy(() => form.uname.focus());
     checkAutoCompleteResults(results,
                              [
-                               "This connection is not secure. Logins entered here could be compromised. Learn More",
+                               "This connection is not secure. Logins entered here could be compromised.",
                                "form9userAAB",
                                "form9userAB"
                              ],
@@ -585,7 +585,7 @@ This tests the login manager in a insecure setting using http. A similar test fi
     const results2 = await popupBy(() => sendString("form9userAB"));
     checkAutoCompleteResults(results2,
                              [
-                               "This connection is not secure. Logins entered here could be compromised. Learn More",
+                               "This connection is not secure. Logins entered here could be compromised.",
                                "form9userAB"
                              ],
                              window.location.host,
@@ -601,7 +601,7 @@ This tests the login manager in a insecure setting using http. A similar test fi
     is(form.pword.value, "", "password is empty");
     checkAutoCompleteResults(results3,
                              [
-                               "This connection is not secure. Logins entered here could be compromised. Learn More",
+                               "This connection is not secure. Logins entered here could be compromised.",
                                "form9userAAB"
                              ],
                              window.location.host, "Check dropdown is updated after inserting 'A'");
@@ -634,7 +634,7 @@ This tests the login manager in a insecure setting using http. A similar test fi
     sendString("z");
     const results1 = await promise1;
     checkAutoCompleteResults(results1.labels, [
-                               "This connection is not secure. Logins entered here could be compromised. Learn More",
+                               "This connection is not secure. Logins entered here could be compromised.",
     ], window.location.host,
                              "Check popup does not have any login items");
 
@@ -643,7 +643,7 @@ This tests the login manager in a insecure setting using http. A similar test fi
     sendString("z");
     const results2 = await promise2;
     checkAutoCompleteResults(results2.labels, [
-                               "This connection is not secure. Logins entered here could be compromised. Learn More",
+                               "This connection is not secure. Logins entered here could be compromised.",
     ], window.location.host,
                              "Check popup only has the footer when it opens");
   });

@@ -33,15 +33,5 @@ dpkg-reconfigure locales
 su -c 'git config --global user.email "worker@mozilla.test"' worker
 su -c 'git config --global user.name "worker"' worker
 
-cd /build
-
-###
-# ESLint Setup
-###
-
-# install node
-# shellcheck disable=SC1091
-. install-node.sh
-
 cd /
 rm -rf /setup

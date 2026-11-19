@@ -324,6 +324,10 @@ static bool CanUseInt32OrInt64Constant(MDefinition* value) {
   return true;
 }
 
+bool LIRGeneratorX64::canStoreConstantWithoutRegister(MDefinition* value) {
+  return IsIntType(value->type()) && CanUseInt32OrInt64Constant(value);
+}
+
 void LIRGenerator::visitWasmStore(MWasmStore* ins) {
   MDefinition* base = ins->base();
   // See comment in visitWasmLoad re the type of 'base'.

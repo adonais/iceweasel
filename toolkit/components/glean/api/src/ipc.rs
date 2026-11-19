@@ -135,9 +135,6 @@ fn register_process_shutdown(process_type: u32) {
         nsIXULRuntime::PROCESS_TYPE_RDD => {
             // RDD process shutdown is handled in RDDParent::ActorDestroy.
         }
-        nsIXULRuntime::PROCESS_TYPE_SOCKET => {
-            // Socket process shutdown is handled in SocketProcessChild::ActorDestroy.
-        }
         nsIXULRuntime::PROCESS_TYPE_UTILITY => {
             // Utility process shutdown is handled in UtilityProcessChild::ActorDestroy.
         }

@@ -675,7 +675,7 @@ nsIncrementalDownload::OnStartRequest(nsIRequest* aRequest) {
   mChunk = mozilla::MakeUniqueFallible<char[]>(mChunkSize);
   if (!mChunk) rv = NS_ERROR_OUT_OF_MEMORY;
 
-  if (nsIOService::UseSocketProcess() || NS_FAILED(rv)) {
+  if (NS_FAILED(rv)) {
     return rv;
   }
 

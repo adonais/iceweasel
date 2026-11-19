@@ -255,6 +255,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
   void RequestKeyFrame(FrameTransformerProxy* aProxy) override;
   void GenerateKeyFrame(const Maybe<std::string>& aRid,
                         FrameTransformerProxy* aProxy) override;
+  void GenerateKeyFrames(std::vector<std::string> aRids) override;
 
  private:
   // Utility function to dump recv codec database

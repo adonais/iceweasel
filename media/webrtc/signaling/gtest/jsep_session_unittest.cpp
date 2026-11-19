@@ -49,7 +49,7 @@ class FakeUuidGenerator : public mozilla::JsepUuidGenerator {
   }
 
   mozilla::UniquePtr<mozilla::JsepUuidGenerator> Clone() const {
-    return mozilla::MakeUnique<FakeUuidGenerator>(*this);
+    return std::make_unique<FakeUuidGenerator>(*this);
   }
 
  private:
@@ -72,10 +72,10 @@ class JsepSessionTest : public JsepSessionTestBase,
     Preferences::SetBool("media.webrtc.codec.video.av1.enabled", true);
     Preferences::SetBool("media.navigator.audio.use_fec", false);
 
-    mSessionOff =
-        MakeUnique<JsepSessionImpl>("Offerer", MakeUnique<FakeUuidGenerator>());
-    mSessionAns = MakeUnique<JsepSessionImpl>("Answerer",
-                                              MakeUnique<FakeUuidGenerator>());
+    mSessionOff = std::make_unique<JsepSessionImpl>(
+        "Offerer", std::make_unique<FakeUuidGenerator>());
+    mSessionAns = std::make_unique<JsepSessionImpl>(
+        "Answerer", std::make_unique<FakeUuidGenerator>());
 
     EXPECT_EQ(NS_OK, mSessionOff->Init());
     EXPECT_EQ(NS_OK, mSessionAns->Init());
@@ -108,14 +108,14 @@ class JsepSessionTest : public JsepSessionTestBase,
                                    header.direction);
     }
 
-    mOffererTransport = MakeUnique<TransportData>();
-    mAnswererTransport = MakeUnique<TransportData>();
+    mOffererTransport = std::make_unique<TransportData>();
+    mAnswererTransport = std::make_unique<TransportData>();
 
     AddTransportData(*mSessionOff, *mOffererTransport);
     AddTransportData(*mSessionAns, *mAnswererTransport);
 
-    mOffCandidates = MakeUnique<CandidateSet>();
-    mAnsCandidates = MakeUnique<CandidateSet>();
+    mOffCandidates = std::make_unique<CandidateSet>();
+    mAnsCandidates = std::make_unique<CandidateSet>();
   }
 
   static std::vector<JsepTransceiver>& GetTransceivers(JsepSession& aSession) {
@@ -2842,7 +2842,7 @@ TEST_P(JsepSessionTest, SetLocalOfferRejectsChangedFingerprint) {
   UniquePtr<Sdp> munge(Parse(offer));
   SdpMediaSection& mediaSection = munge->GetMediaSection(0);
 
-  auto fingerprints = MakeUnique<SdpFingerprintAttributeList>();
+  auto fingerprints = std::make_unique<SdpFingerprintAttributeList>();
   fingerprints->PushEntry("sha-256", std::vector<uint8_t>(32, 0));
   mediaSection.GetAttributeList().SetAttribute(std::move(fingerprints));
 
@@ -4365,6 +4365,94 @@ TEST_F(JsepSessionTest, TestH264NegotiationOffererNoFmtp) {
   ASSERT_EQ((uint32_t)0x42000A, answererVideoRecvCodec->mProfileLevelId);
 }
 
+TEST_F(JsepSessionTest, TestH264NegotiationRemoteMaxFsMbpsRaiseLevel) {
+  ForceH264(*mSessionOff, 0x42e01f);
+  ForceH264(*mSessionAns, 0x42e01f);
+
+  AddTracks(*mSessionOff, "video");
+  AddTracks(*mSessionAns, "video");
+
+  std::string offer(CreateOffer());
+  SetLocalOffer(offer, CHECK_SUCCESS);
+  SetRemoteOffer(offer, CHECK_SUCCESS);
+  std::string answer(CreateAnswer());
+
+  // Low profile-level-id (level 2.0) extended by max-fs/max-mbps (RFC 6184
+  // section 8.1), as signaled by some real-world receivers.
+  Replace("profile-level-id=42e01f",
+          "profile-level-id=42c014;max-fs=8192;max-mbps=245760", &answer);
+
+  SetRemoteAnswer(answer, CHECK_SUCCESS);
+  SetLocalAnswer(answer, CHECK_SUCCESS);
+
+  UniquePtr<JsepCodecDescription> offererSendCodec;
+  GetCodec(*mSessionOff, 0, sdp::kSend, 0, 0, &offererSendCodec);
+  ASSERT_TRUE(offererSendCodec);
+  ASSERT_EQ("H264", offererSendCodec->mName);
+  const JsepVideoCodecDescription* offererVideoSendCodec(
+      static_cast<const JsepVideoCodecDescription*>(offererSendCodec.get()));
+  ASSERT_EQ((uint32_t)0x42e014, offererVideoSendCodec->mProfileLevelId);
+  ASSERT_EQ(8192U, offererVideoSendCodec->mConstraints.maxFs);
+  ASSERT_EQ(245760U, offererVideoSendCodec->mConstraints.maxMbps);
+}
+
+class JsepSessionH264FmtpTest : public JsepSessionTest {
+ protected:
+  void NegotiateWithAnswerFmtp(const std::string& aAnswerFmtp,
+                               UniquePtr<JsepCodecDescription>* aOut) {
+    ForceH264(*mSessionOff, 0x42e01f);
+    ForceH264(*mSessionAns, 0x42e01f);
+    AddTracks(*mSessionOff, "video");
+    AddTracks(*mSessionAns, "video");
+    std::string offer(CreateOffer());
+    SetLocalOffer(offer, CHECK_SUCCESS);
+    SetRemoteOffer(offer, CHECK_SUCCESS);
+    std::string answer(CreateAnswer());
+    Replace("profile-level-id=42e01f", aAnswerFmtp, &answer);
+    SetRemoteAnswer(answer, CHECK_SUCCESS);
+    SetLocalAnswer(answer, CHECK_SUCCESS);
+    GetCodec(*mSessionOff, 0, sdp::kSend, 0, 0, aOut);
+  }
+};
+
+TEST_F(JsepSessionH264FmtpTest, RemoteMaxFsMbpsClamped) {
+  UniquePtr<JsepCodecDescription> codec;
+  NegotiateWithAnswerFmtp(
+      "profile-level-id=42e014;max-fs=4294967295;max-mbps=4294967295", &codec);
+  ASSERT_TRUE(codec);
+  const auto* video =
+      static_cast<const JsepVideoCodecDescription*>(codec.get());
+  Maybe<H264MacroblockLimits> hard =
+      H264MacroblockLimitsForLevel(H264_LEVEL::H264_LEVEL_5_2);
+  ASSERT_TRUE(hard);
+  ASSERT_EQ(hard->mMaxMacroblocksPerFrame, video->mConstraints.maxFs);
+  ASSERT_EQ(hard->mMaxMacroblocksPerSecond, video->mConstraints.maxMbps);
+}
+
+TEST_F(JsepSessionH264FmtpTest, RemoteMaxFsMbpsLowerThanLevel) {
+  UniquePtr<JsepCodecDescription> codec;
+  NegotiateWithAnswerFmtp("profile-level-id=42e01f;max-fs=100;max-mbps=3000",
+                          &codec);
+  ASSERT_TRUE(codec);
+  const auto* video =
+      static_cast<const JsepVideoCodecDescription*>(codec.get());
+  ASSERT_EQ(100U, video->mConstraints.maxFs);
+  ASSERT_EQ(3000U, video->mConstraints.maxMbps);
+}
+
+TEST_F(JsepSessionH264FmtpTest, RemoteMaxFsOnlyKeepsLevelMbps) {
+  UniquePtr<JsepCodecDescription> codec;
+  NegotiateWithAnswerFmtp("profile-level-id=42e014;max-fs=8192", &codec);
+  ASSERT_TRUE(codec);
+  const auto* video =
+      static_cast<const JsepVideoCodecDescription*>(codec.get());
+  Maybe<H264MacroblockLimits> level2 =
+      H264MacroblockLimitsForLevel(H264_LEVEL::H264_LEVEL_2);
+  ASSERT_TRUE(level2);
+  ASSERT_EQ(8192U, video->mConstraints.maxFs);
+  ASSERT_EQ(level2->mMaxMacroblocksPerSecond, video->mConstraints.maxMbps);
+}
+
 TEST_F(JsepSessionTest, TestAV1NegotiationDefault) {
   ForceAv1Only(*mSessionOff);
   ForceAv1Only(*mSessionAns);
@@ -4712,7 +4800,7 @@ TEST_F(JsepSessionTest, TestIceLite) {
 
   UniquePtr<Sdp> parsedOffer(Parse(offer));
   parsedOffer->GetAttributeList().SetAttribute(
-      MakeUnique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
+      std::make_unique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
 
   std::ostringstream os;
   parsedOffer->Serialize(os);
@@ -4875,7 +4963,7 @@ TEST_F(JsepSessionTest, TestAnswererIsControllingWhenRemoteIsIceLite) {
 
   UniquePtr<Sdp> parsedOffer(Parse(offer));
   parsedOffer->GetAttributeList().SetAttribute(
-      MakeUnique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
+      std::make_unique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
   std::ostringstream os;
   parsedOffer->Serialize(os);
   std::string iceLiteOffer = os.str();
@@ -4911,7 +4999,7 @@ TEST_F(JsepSessionTest, TestIceRoleUpdatedWhenRemoteSwitchesToIceLite) {
 
   UniquePtr<Sdp> parsedReoffer(Parse(reoffer));
   parsedReoffer->GetAttributeList().SetAttribute(
-      MakeUnique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
+      std::make_unique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
   std::ostringstream os;
   parsedReoffer->Serialize(os);
   std::string iceLiteReoffer = os.str();
@@ -5719,7 +5807,7 @@ TEST_F(JsepSessionTest, TestRtcpFbStar) {
   std::string offer = CreateOffer();
 
   UniquePtr<Sdp> parsedOffer(Parse(offer));
-  auto rtcpfbs = MakeUnique<SdpRtcpFbAttributeList>();
+  auto rtcpfbs = std::make_unique<SdpRtcpFbAttributeList>();
   rtcpfbs->PushEntry("*", SdpRtcpFbAttributeList::kNack);
   parsedOffer->GetMediaSection(0).GetAttributeList().SetAttribute(
       std::move(rtcpfbs));
@@ -8524,7 +8612,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
   {
     UniquePtr<Sdp> parsed = Parse(sdpTemplate);
     parsed->GetMediaSection(0).GetAttributeList().SetAttribute(
-        MakeUnique<SdpSetupAttribute>(SdpSetupAttribute::kHoldconn));
+        std::make_unique<SdpSetupAttribute>(SdpSetupAttribute::kHoldconn));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_TRUE(result.mError.isSome());
@@ -8586,7 +8674,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
     parsed->GetMediaSection(1).GetAttributeList().RemoveAttribute(
         SdpAttribute::kIceUfragAttribute);
     parsed->GetMediaSection(1).GetAttributeList().SetAttribute(
-        MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
+        std::make_unique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_FALSE(result.mError.isSome());
@@ -8598,7 +8686,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
     parsed->GetMediaSection(1).GetAttributeList().RemoveAttribute(
         SdpAttribute::kIcePwdAttribute);
     parsed->GetMediaSection(1).GetAttributeList().SetAttribute(
-        MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
+        std::make_unique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_FALSE(result.mError.isSome());
@@ -8610,7 +8698,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
     parsed->GetMediaSection(1).GetAttributeList().RemoveAttribute(
         SdpAttribute::kFingerprintAttribute);
     parsed->GetMediaSection(1).GetAttributeList().SetAttribute(
-        MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
+        std::make_unique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_FALSE(result.mError.isSome());
@@ -8642,7 +8730,8 @@ TEST_F(JsepSessionTest, TestBundleSupportWithZeroPort) {
     if (!attrs.HasAttribute(SdpAttribute::kBundleOnlyAttribute) &&
         i < num_m_sections - 1) {
       sdp->GetMediaSection(i).GetAttributeList().SetAttribute(
-          MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
+          std::make_unique<SdpFlagAttribute>(
+              SdpAttribute::kBundleOnlyAttribute));
       sdp->GetMediaSection(i).SetPort(0);
     } else {
       // For the last msection setting port to non 0 and removing bundle only if

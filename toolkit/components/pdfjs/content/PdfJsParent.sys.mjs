@@ -28,7 +28,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PdfJsFeaturesNotification:
     "resource://pdf.js/PdfJsFeaturesNotification.sys.mjs",
   PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
-  PdfJsPrint: "resource://pdf.js/PdfJsPrint.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -182,9 +181,9 @@ export class PdfJsParent extends JSWindowActorParent {
   #nextTextRequestId = 0;
 
   /**
-   * Holds the Promise resolves for getTextContent requests.
+   * Pending getTextContent() promises and their resolvers.
    *
-   * @type {Map<number, (text: string) => void>}
+   * @type {Map<number, PromiseWithResolvers<string>>}
    */
   #textRequests = new Map();
 
@@ -206,6 +205,14 @@ export class PdfJsParent extends JSWindowActorParent {
   }
 
   didDestroy() {
+    const error = new DOMException(
+      "PdfJs actor destroyed with a pending text request",
+      "AbortError"
+    );
+    for (const { reject } of this.#textRequests.values()) {
+      reject(error);
+    }
+    this.#textRequests.clear();
     this._removeEventListener();
     if (this.#signatureStorageChangedObserver) {
       Services.obs.removeObserver(
@@ -248,14 +255,6 @@ export class PdfJsParent extends JSWindowActorParent {
         return this._verifyPdfSignature(aMsg);
       case "PDFJS:Parent:viewPdfCertificate":
         return this._viewPdfCertificate(aMsg);
-      case "PDFJS:Parent:printToPDF": {
-        return lazy.PdfJsPrint.printToPDF(
-          this.browsingContext,
-          BrowsingContext.get(aMsg.data.id),
-          aMsg.data.width,
-          aMsg.data.height
-        );
-      }
       case "PDFJS:Parent:openAboutPdfFeatures":
         return this._openAboutPdfFeatures();
       case "PDFJS:Parent:claimFeaturesNotification":
@@ -410,14 +409,14 @@ export class PdfJsParent extends JSWindowActorParent {
    * @returns {Promise<string>}
    */
   getTextContent() {
-    const { promise, resolve } = Promise.withResolvers();
+    const capability = Promise.withResolvers();
     const requestId = this.#nextTextRequestId++;
-    this.#textRequests.set(requestId, resolve);
+    this.#textRequests.set(requestId, capability);
     this.sendAsyncMessage("PDFJS:Child:handleEvent", {
       type: "requestTextContent",
       detail: { requestId },
     });
-    return promise;
+    return capability.promise;
   }
 
   async #openDatabase() {
@@ -867,9 +866,9 @@ export class PdfJsParent extends JSWindowActorParent {
    * @param {{ data: { text: string, requestId: number } }}
    */
   _reportText({ data }) {
-    const resolve = this.#textRequests.get(data.requestId);
+    const capability = this.#textRequests.get(data.requestId);
     this.#textRequests.delete(data.requestId);
-    if (!resolve) {
+    if (!capability) {
       console.error(
         "Unable to find the text content request",
         data.requestId,
@@ -877,7 +876,7 @@ export class PdfJsParent extends JSWindowActorParent {
       );
       return;
     }
-    resolve(data.text);
+    capability.resolve(data.text);
   }
 
   _updateMatchesCount(aMsg) {

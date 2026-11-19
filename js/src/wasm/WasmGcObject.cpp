@@ -247,7 +247,7 @@ size_t js::WasmArrayObject::sizeOfExcludingThis() const {
     return 0;
   }
   OOLDataHeader* oolHeader = oolDataHeaderFromDataPointer(data_);
-  if (!gc::IsBufferAlloc(oolHeader)) {
+  if (!gc::IsGCPointerBufferAlloc(oolHeader)) {
     return 0;
   }
 
@@ -417,7 +417,7 @@ size_t js::WasmStructObject::sizeOfExcludingThis() const {
     return 0;
   }
   const uint8_t* oolPointer = getOOLPointer();
-  if (!gc::IsBufferAlloc((void*)oolPointer)) {
+  if (!gc::IsGCPointerBufferAlloc((void*)oolPointer)) {
     return 0;
   }
 

@@ -40,7 +40,7 @@ ipc::EndpointProcInfo CompositorManagerChild::GetCompositorProcInfo() {
 
 /* static */
 bool CompositorManagerChild::IsInitialized(uint64_t aProcessToken) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   return sInstance && sInstance->CanSend() &&
          sInstance->mProcessToken == aProcessToken;
 }
@@ -48,7 +48,7 @@ bool CompositorManagerChild::IsInitialized(uint64_t aProcessToken) {
 /* static */
 void CompositorManagerChild::InitSameProcess(uint32_t aNamespace,
                                              uint64_t aProcessToken) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (NS_WARN_IF(IsInitialized(aProcessToken))) {
     MOZ_ASSERT_UNREACHABLE("Already initialized same process");
     return;
@@ -75,9 +75,9 @@ void CompositorManagerChild::InitSameProcess(uint32_t aNamespace,
 bool CompositorManagerChild::Init(Endpoint<PCompositorManagerChild>&& aEndpoint,
                                   uint32_t aNamespace,
                                   uint64_t aProcessToken /* = 0 */) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (sInstance) {
-    MOZ_ASSERT(sInstance->mNamespace != aNamespace);
+    MOZ_RELEASE_ASSERT(sInstance->mNamespace != aNamespace);
   }
 
   RefPtr<CompositorManagerChild> child =
@@ -101,7 +101,7 @@ bool CompositorManagerChild::Init(Endpoint<PCompositorManagerChild>&& aEndpoint,
 
 /* static */
 void CompositorManagerChild::Shutdown() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   CompositorBridgeChild::ShutDown();
 
   if (!sInstance) {
@@ -115,7 +115,7 @@ void CompositorManagerChild::Shutdown() {
 
 /* static */
 void CompositorManagerChild::OnGPUProcessLost(uint64_t aProcessToken) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   // Since GPUChild and CompositorManagerChild will race on ActorDestroy, we
   // cannot know if the CompositorManagerChild is about to be released but has
@@ -129,7 +129,7 @@ void CompositorManagerChild::OnGPUProcessLost(uint64_t aProcessToken) {
 /* static */
 bool CompositorManagerChild::CreateContentCompositorBridge(
     uint32_t aNamespace) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (NS_WARN_IF(!sInstance || !sInstance->CanSend())) {
     return false;
   }
@@ -152,8 +152,8 @@ CompositorManagerChild::CreateWidgetCompositorBridge(
     uint64_t aProcessToken, uint32_t aNamespace, CSSToLayoutDeviceScale aScale,
     const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
     const gfx::IntSize& aSurfaceSize, uint64_t aInnerWindowId) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (NS_WARN_IF(!sInstance || !sInstance->CanSend())) {
     return nullptr;
   }
@@ -179,8 +179,8 @@ CompositorManagerChild::CreateWidgetCompositorBridge(
 already_AddRefed<CompositorBridgeChild>
 CompositorManagerChild::CreateSameProcessWidgetCompositorBridge(
     uint32_t aNamespace) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (NS_WARN_IF(!sInstance || !sInstance->CanSend())) {
     return nullptr;
   }
@@ -264,14 +264,14 @@ bool CompositorManagerChild::ShouldContinueFromReplyTimeout() {
 
 mozilla::ipc::IPCResult CompositorManagerChild::RecvNotifyWebRenderError(
     const WebRenderError&& aError) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   GPUProcessManager::Get()->NotifyWebRenderError(aError);
   return IPC_OK();
 }
 
 void CompositorManagerChild::SetSyncIPCStartTimeStamp() {
-  MOZ_ASSERT(mSyncIPCStartTimeStamp.isNothing());
+  MOZ_RELEASE_ASSERT(mSyncIPCStartTimeStamp.isNothing());
 
   mSyncIPCStartTimeStamp = Some(TimeStamp::Now());
 }

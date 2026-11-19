@@ -362,6 +362,8 @@ class XPCJSContext final : public mozilla::CycleCollectedJSContext,
     IDX_LOCKS,
     IDX_SUPPRESSED,
     IDX_ERROR,
+    // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+    IDX_REACT_DEVTOOLS_GLOBAL_HOOK,
     IDX_TOTAL_COUNT  // just a count of the above
   };
 
@@ -1279,7 +1281,7 @@ class XPCWrappedNativeTearOff final {
 
   XPCWrappedNativeTearOff* AddTearOff() {
     MOZ_ASSERT(!mNextTearOff);
-    mNextTearOff = mozilla::MakeUnique<XPCWrappedNativeTearOff>();
+    mNextTearOff = std::make_unique<XPCWrappedNativeTearOff>();
     return mNextTearOff.get();
   }
 

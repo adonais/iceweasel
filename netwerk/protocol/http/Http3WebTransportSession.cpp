@@ -756,6 +756,20 @@ void Http3WebTransportSession::OnOutgoingDatagramOutCome(
   listener->OnOutgoingDatagramOutCome(aId, aOutCome);
 }
 
+void Http3WebTransportSession::
+    SetAnticipatedConcurrentIncomingUnidirectionalStreams(uint16_t aValue) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  mSession->SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+      mStreamId, aValue);
+}
+
+void Http3WebTransportSession::
+    SetAnticipatedConcurrentIncomingBidirectionalStreams(uint16_t aValue) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  mSession->SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(
+      mStreamId, aValue);
+}
+
 void Http3WebTransportSession::OnStreamStopSending(uint64_t aId,
                                                    uint64_t aErrorCode) {
   LOG(("OnStreamStopSending id:%" PRId64 " errorCode:%" PRIu64, aId,

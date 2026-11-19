@@ -23,6 +23,10 @@ with `cargo test`), you can add the crate's name to `RUST_TESTS` in
 Rust tests are run with `./mach rusttests`. They run on automation in a couple
 of `rusttests` jobs, but not on all platforms.
 
+To run the tests of only some crates, name them, for example
+`./mach rusttests l10nregistry crashreporter`. Each crate must be listed in
+`RUST_TESTS`.
+
 Rust tests have one major restriction: they cannot link against Gecko symbols.
 Therefore, Rust tests cannot be used for crates that use Gecko crates like
 `nsstring` and `xpcom`.

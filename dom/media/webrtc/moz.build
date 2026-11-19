@@ -101,10 +101,6 @@ if CONFIG["MOZ_WEBRTC_SIGNALING"]:
         CXXFLAGS += ["-Wno-invalid-source-encoding"]
 
 
-PREPROCESSED_IPDL_SOURCES += [
-    "PMediaTransport.ipdl",
-]
-
 UNIFIED_SOURCES += [
     "MediaEngineFake.cpp",
     "MediaEngineSource.cpp",
@@ -141,8 +137,6 @@ FINAL_LIBRARY = "xul"
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 SOURCE_HEADERS += [
-    "MediaTransportChild.h",
-    "MediaTransportParent.h",
     "WebrtcGlobal.h",
     "WebrtcIPCTraits.h",
 ]

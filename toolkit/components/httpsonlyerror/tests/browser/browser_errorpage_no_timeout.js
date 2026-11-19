@@ -9,6 +9,10 @@
 // actual load gets cancelled.
 requestLongerTimeout(2);
 
+const { HttpServer } = ChromeUtils.importESModule(
+  "resource://testing-common/httpd.sys.mjs"
+);
+
 const TEST_PATH_HTTP = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   // This needs to be insecure so it can be upgraded
@@ -104,4 +108,41 @@ add_task(async function wait_longer_for_hsts_page() {
     Ci.nsISiteSecurityService
   );
   sss.clearAll();
+});
+
+// *.localhost hosts are potentially trustworthy and never upgraded, so a slow
+// server there must not get the background request or be cancelled by it.
+add_task(async function no_timeout_for_slow_localhost_subdomain() {
+  let requestCount = 0;
+  const server = new HttpServer();
+  server.registerPathHandler("/slow", (request, response) => {
+    requestCount++;
+    response.processAsync();
+    // Respond only after the background request timer has fired.
+    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+    setTimeout(() => {
+      response.setHeader("Content-Type", "text/html", false);
+      response.write("<html><body>slow</body></html>");
+      response.finish();
+    }, 2500);
+  });
+  server.start(-1);
+  const port = server.identity.primaryPort;
+  server.identity.add("http", "foobar.localhost", port);
+
+  // eslint-disable-next-line sdl/no-insecure-url
+  const url = `http://foobar.localhost:${port}/slow`;
+  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
+    const loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
+    BrowserTestUtils.startLoadingURIString(browser, url);
+    await loaded;
+
+    await SpecialPowers.spawn(browser, [url], async function (aURL) {
+      is(content.document.documentURI, aURL, "Page was not upgraded");
+      is(content.document.body.textContent, "slow", "Page loaded");
+    });
+  });
+  is(requestCount, 1, "No HTTPS-Only background request was sent");
+
+  await new Promise(resolve => server.stop(resolve));
 });

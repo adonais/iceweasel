@@ -573,7 +573,12 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function (
         // `adoptedBy` will refer to the new Tab. Otherwise this attribute will be null.
         // Ignore TabClose in this condition.
         const { adoptedBy } = event.detail;
-        if (adoptedBy) {
+        if (
+          adoptedBy &&
+          !adoptedBy.documentGlobal.document.documentElement.hasAttribute(
+            "mini-window"
+          )
+        ) {
           actor.swapBrowser(adoptedBy.linkedBrowser);
           // Also swap the browsers the our internal Map
           this._actorByBrowser.delete(browser);

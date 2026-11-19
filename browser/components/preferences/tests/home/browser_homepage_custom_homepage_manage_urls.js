@@ -13,6 +13,22 @@ add_setup(async function () {
   });
 });
 
+add_task(async function test_custom_urls_listbox_accessible_name() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[HOMEPAGE_PREF, FIVE_URLS]],
+  });
+
+  let { win, tab } = await openCustomHomepageSubpage();
+
+  let boxGroupControl = await settingControlRenders(
+    "customHomepageBoxGroup",
+    win
+  );
+  await assertBoxGroupHasListboxAccessibleName(boxGroupControl.controlEl);
+
+  await BrowserTestUtils.removeTab(tab);
+});
+
 add_task(async function test_deleting_custom_url() {
   await SpecialPowers.pushPrefEnv({
     set: [

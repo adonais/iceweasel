@@ -12,6 +12,7 @@ import io.mockk.spyk
 import io.mockk.verify
 import java.io.File
 import java.util.Calendar
+import kotlin.test.assertNull
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode.DISABLED
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode.ENABLED
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode.ENABLED_PRIVATE_ONLY
@@ -28,12 +29,13 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
+import org.mozilla.fenix.nimbus.AutomotiveSensitiveData
 import org.mozilla.fenix.nimbus.DefaultBrowserPrompt
 import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.nimbus.FxNimbus
-import org.mozilla.fenix.nimbus.HomescreenEdgeToEdgeBackground
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
@@ -153,23 +155,11 @@ class SettingsTest {
     }
 
     @Test
-    fun defaultWallpaperIsEdgeToEdgeWhenEdgeToEdgeFeatureEnabled() {
-        FxNimbus.features.homescreenEdgeToEdgeBackground.withCachedValue(HomescreenEdgeToEdgeBackground(enabled = true))
+    fun defaultWallpaperIsEdgeToEdge() {
         val settings = Settings(testContext)
 
         // Then
         assertEquals(Wallpaper.EdgeToEdge.name, settings.currentWallpaperName)
-    }
-
-    @Test
-    fun defaultWallpaperIsDefaultWhenEdgeToEdgeDisabled() {
-        FxNimbus.features.homescreenEdgeToEdgeBackground.withCachedValue(
-            HomescreenEdgeToEdgeBackground(enabled = false)
-        )
-        val settings = Settings(testContext)
-
-        // Then
-        assertEquals(Wallpaper.Default.name, settings.currentWallpaperName)
     }
 
     @Test
@@ -343,6 +333,21 @@ class SettingsTest {
         assertFalse(automotiveSettings.shouldAutofillLogins)
         assertFalse(automotiveSettings.shouldAutofillCreditCardDetails)
         assertFalse(automotiveSettings.shouldAutofillAddressDetails)
+    }
+
+    @Test
+    fun `GIVEN Android Automotive and the sensitive data feature is enabled WHEN reading the autofill settings THEN they are all enabled by default`() {
+        shadowOf(testContext.packageManager).setSystemFeature(PackageManager.FEATURE_AUTOMOTIVE, true)
+        FxNimbus.features.automotiveSensitiveData.withCachedValue(AutomotiveSensitiveData(enabled = true))
+        val automotiveSettings = Settings(testContext)
+
+        assertTrue(automotiveSettings.isAutofillSupported)
+        assertTrue(automotiveSettings.shouldPromptToSaveLogins)
+        assertTrue(automotiveSettings.shouldAutofillLogins)
+        assertTrue(automotiveSettings.shouldAutofillCreditCardDetails)
+        assertTrue(automotiveSettings.shouldAutofillAddressDetails)
+
+        FxNimbus.features.automotiveSensitiveData.withCachedValue(null)
     }
 
     @Test
@@ -1578,20 +1583,46 @@ class SettingsTest {
 
     @Test
     fun `WHEN reading menu customization preferences THEN default values are false`() {
-        assertFalse(settings.isMenuCustomizationEnabled)
         assertFalse(settings.isMenuCustomizationScreenEnabled)
     }
 
     @Test
     fun `GIVEN menu customization preferences WHEN modified THEN reflect stored values`() {
-        settings.isMenuCustomizationEnabled = true
         settings.isMenuCustomizationScreenEnabled = true
 
-        assertTrue(settings.isMenuCustomizationEnabled)
         assertTrue(settings.isMenuCustomizationScreenEnabled)
 
         settings.isMenuCustomizationScreenEnabled = false
 
         assertFalse(settings.isMenuCustomizationScreenEnabled)
+    }
+
+    @Test
+    fun `GIVEN no value has been set WHEN reading openLinksInYoutube THEN it defaults to never`() {
+        assertEquals(
+            testContext.getString(R.string.pref_key_open_links_in_youtube_never),
+            settings.openLinksInYoutube,
+        )
+    }
+
+    @Test
+    fun `GIVEN openLinksInYoutube is written WHEN reading it back THEN the stored value is returned`() {
+        val never = testContext.getString(R.string.pref_key_open_links_in_youtube_never)
+
+        settings.openLinksInYoutube = never
+
+        assertEquals(never, settings.openLinksInYoutube)
+    }
+
+    @Test
+    fun `GIVEN no data limit notice has been shown WHEN reading the reset time THEN it is null`() {
+        assertNull(settings.ipProtectionLastDataLimitNoticeCycleResetTime)
+    }
+
+    @Test
+    fun `GIVEN a data limit notice has been shown WHEN setting the reset time THEN it is persisted and returned`() {
+        settings.ipProtectionLastDataLimitNoticeCycleResetTime = "2026-11-01T00:00:00Z"
+
+        assertEquals("2026-11-01T00:00:00Z", settings.ipProtectionLastDataLimitNoticeCycleResetTime)
     }
 }

@@ -3,14 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <iterator>
+#include <memory>
 
 #include "ImageContainer.h"
 #include "ImageConversion.h"
 #include "SourceSurfaceRawData.h"
+#include "YUVBufferGenerator.h"
 #include "gtest/gtest.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/MemoryChecking.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 
@@ -20,7 +22,6 @@ using mozilla::ConvertToNV12;
 using mozilla::ConvertToRGBA;
 using mozilla::MakeAndAddRef;
 using mozilla::MakeRefPtr;
-using mozilla::MakeUnique;
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
@@ -294,6 +295,279 @@ TEST(MediaImageConversion, ConvertToRGBASourceSurfaceExtent)
       ConvertToRGBA(undersized, SurfaceFormat::R8G8B8A8, dest, destStride)));
 }
 
+// As CreateRedSurfaceImage2x2 above, parameterised by size. Restricted to BGR*
+// because ConvertToNV12 only accepts B8G8R8A8/B8G8R8X8 surfaces.
+static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage(
+    const IntSize& aSize, SurfaceFormat aFormat) {
+  uint8_t redPixel[4] = {};
+
+  switch (aFormat) {
+    case SurfaceFormat::B8G8R8A8:
+    case SurfaceFormat::B8G8R8X8:
+      redPixel[2] = 0xFF;
+      redPixel[3] = 0xFF;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("ConvertToNV12 only accepts BGR* surfaces!");
+      return nullptr;
+  }
+
+  auto surface = MakeRefPtr<SourceSurfaceAlignedRawData>();
+  if (NS_WARN_IF(!surface->Init(aSize, aFormat, /* aClearMem */ false, 0, 0))) {
+    return nullptr;
+  }
+
+  {
+    DataSourceSurface::ScopedMap map(surface, DataSourceSurface::WRITE);
+    if (NS_WARN_IF(!map.IsMapped())) {
+      return nullptr;
+    }
+
+    const uint32_t bpp = BytesPerPixel(aFormat);
+    MOZ_ASSERT(bpp <= sizeof(redPixel));
+
+    uint8_t* rowPtr = map.GetData();
+    for (int32_t row = 0; row < aSize.height; ++row) {
+      for (int32_t col = 0; col < aSize.width; ++col) {
+        for (uint32_t i = 0; i < bpp; ++i) {
+          rowPtr[col * bpp + i] = redPixel[i];
+        }
+      }
+      rowPtr += map.GetStride();
+    }
+  }
+
+  return MakeAndAddRef<SourceSurfaceImage>(aSize, surface);
+}
+
+// Distinct from every byte the source images can produce.
+static constexpr uint8_t kNV12TrailingPattern = 0xA5;
+static constexpr size_t kNV12TrailingBytes = 64;
+
+// Strides of the frame width, and a length covering the luma plane plus the
+// interleaved chroma plane, followed by a trailing region of a known pattern so
+// the test can tell whether anything was stored outside the declared length.
+class NV12DestBuffer {
+ public:
+  explicit NV12DestBuffer(const IntSize& aSize)
+      : mYStride(aSize.width),
+        mUVStride(aSize.width),
+        mYLength(static_cast<size_t>(aSize.width) * aSize.height),
+        mUVLength(static_cast<size_t>(aSize.width) *
+                  (aSize.height / 2 + aSize.height % 2)),
+        mBufferLength(mYLength + mUVLength) {
+    mBuffer.SetLength(mBufferLength + kNV12TrailingBytes);
+    memset(mBuffer.Elements(), 0, mBufferLength);
+    memset(mBuffer.Elements() + mBufferLength, kNV12TrailingPattern,
+           kNV12TrailingBytes);
+  }
+
+  ~NV12DestBuffer() { MarkTrailingAccessible(); }
+
+  uint8_t* DestY() { return mBuffer.Elements(); }
+  uint8_t* DestUV() { return mBuffer.Elements() + mYLength; }
+
+  // Under ASan or MSan this reports at the point of the store; elsewhere it is
+  // a no-op, so DescribeModifiedTrailingBytes stays the portable check.
+  void MarkTrailingInaccessible() {
+    MOZ_MAKE_MEM_NOACCESS(mBuffer.Elements() + mBufferLength,
+                          kNV12TrailingBytes);
+    mTrailingMarked = true;
+  }
+
+  void MarkTrailingAccessible() {
+    if (mTrailingMarked) {
+      MOZ_MAKE_MEM_DEFINED(mBuffer.Elements() + mBufferLength,
+                           kNV12TrailingBytes);
+      mTrailingMarked = false;
+    }
+  }
+
+  static const char* DetectorDescription() {
+#ifdef MOZ_HAVE_MEM_CHECKS
+    return "trailing pattern + sanitizer marking";
+#else
+    return "trailing pattern only (no sanitizer in this build)";
+#endif
+  }
+
+  nsCString DescribeModifiedTrailingBytes(size_t* aCount) const {
+    nsCString description;
+    *aCount = 0;
+    for (size_t i = 0; i < kNV12TrailingBytes; ++i) {
+      const uint8_t actual = mBuffer[mBufferLength + i];
+      if (actual != kNV12TrailingPattern) {
+        ++*aCount;
+        description.AppendPrintf(" mBufferLength+%zu=0x%02X", i, actual);
+      }
+    }
+    return description;
+  }
+
+  const int32_t mYStride;
+  const int32_t mUVStride;
+  const size_t mYLength;
+  const size_t mUVLength;
+  const size_t mBufferLength;
+
+ private:
+  nsTArray<uint8_t> mBuffer;
+  bool mTrailingMarked = false;
+};
+
+// ConvertToNV12 must decline a uvStride that cannot hold an interleaved chroma
+// row, and must convert when it can.
+TEST(MediaImageConversion, ConvertToNV12RejectsShortDestStride)
+{
+  enum class Source { I420, BGRA };
+  enum class Expect { Converts, Refuses };
+
+  struct Case {
+    const char* mName;
+    Source mSource;
+    IntSize mImageSize;
+    IntSize mDestSize;
+    Expect mExpected;
+  };
+
+  static const Case kCases[] = {
+      {"I420 65x64 -> 65x64 (odd width)",
+       Source::I420,
+       {65, 64},
+       {65, 64},
+       Expect::Refuses},
+      {"I420 65x65 -> 65x65 (odd width and height)",
+       Source::I420,
+       {65, 65},
+       {65, 65},
+       Expect::Refuses},
+      {"I420 641x480 -> 641x480 (odd width above the 128px HW floor)",
+       Source::I420,
+       {641, 480},
+       {641, 480},
+       Expect::Refuses},
+      {"BGRA 65x64 -> 65x64 (odd width)",
+       Source::BGRA,
+       {65, 64},
+       {65, 64},
+       Expect::Refuses},
+      {"BGRA 641x480 -> 641x480 (odd width above the 128px HW floor)",
+       Source::BGRA,
+       {641, 480},
+       {641, 480},
+       Expect::Refuses},
+
+      // Odd width with a rescale, so the I420Scale / ARGBScale prologues run.
+      {"I420 130x128 -> 65x64 (odd width, rescaled)",
+       Source::I420,
+       {130, 128},
+       {65, 64},
+       Expect::Refuses},
+      {"BGRA 130x128 -> 65x64 (odd width, rescaled)",
+       Source::BGRA,
+       {130, 128},
+       {65, 64},
+       Expect::Refuses},
+
+      // Even widths: these must convert.
+      {"I420 64x64 -> 64x64 (even control)",
+       Source::I420,
+       {64, 64},
+       {64, 64},
+       Expect::Converts},
+      {"I420 64x65 -> 64x65 (odd height only, even width)",
+       Source::I420,
+       {64, 65},
+       {64, 65},
+       Expect::Converts},
+      {"I420 128x128 -> 64x64 (even control, rescaled)",
+       Source::I420,
+       {128, 128},
+       {64, 64},
+       Expect::Converts},
+      {"BGRA 64x64 -> 64x64 (even control)",
+       Source::BGRA,
+       {64, 64},
+       {64, 64},
+       Expect::Converts},
+      {"BGRA 128x128 -> 64x64 (even control, rescaled)",
+       Source::BGRA,
+       {128, 128},
+       {64, 64},
+       Expect::Converts},
+  };
+
+  GTEST_LOG_(INFO) << "excess detector in this build: "
+                   << NV12DestBuffer::DetectorDescription();
+
+  for (const Case& testCase : kCases) {
+    RefPtr<mozilla::layers::Image> image;
+    YUVBufferGenerator generator;
+    switch (testCase.mSource) {
+      case Source::I420:
+        generator.Init(testCase.mImageSize);
+        image = generator.GenerateI420Image();
+        break;
+      case Source::BGRA:
+        image =
+            CreateRedSurfaceImage(testCase.mImageSize, SurfaceFormat::B8G8R8A8);
+        break;
+    }
+    ASSERT_TRUE(!!image)
+    << testCase.mName << ": failed to build source image";
+
+    NV12DestBuffer dest(testCase.mDestSize);
+
+    // If this stops holding, the odd cases would convert and pass vacuously.
+    const int32_t chromaRowBytes = 2 * ((testCase.mDestSize.width + 1) / 2);
+    const int32_t expectedExcess = testCase.mDestSize.width % 2 ? 1 : 0;
+    ASSERT_EQ(chromaRowBytes - dest.mUVStride, expectedExcess)
+        << testCase.mName << ": premise broken. An NV12 chroma row is "
+        << chromaRowBytes << " bytes against a stride of " << dest.mUVStride
+        << ", i.e. an excess of " << (chromaRowBytes - dest.mUVStride)
+        << " rather than the expected " << expectedExcess
+        << ". Either the NV12 row length or this test's model of it changed; "
+        << "correct the model before trusting any result below.";
+
+    // Must be intact going in, or the check afterwards proves nothing.
+    size_t before = 0;
+    dest.DescribeModifiedTrailingBytes(&before);
+    ASSERT_EQ(before, size_t(0))
+        << testCase.mName
+        << ": trailing region was already disturbed before the conversion";
+
+    dest.MarkTrailingInaccessible();
+
+    const nsresult rv =
+        ConvertToNV12(image, dest.DestY(), dest.mYStride, dest.DestUV(),
+                      dest.mUVStride, testCase.mDestSize);
+
+    dest.MarkTrailingAccessible();
+
+    if (testCase.mExpected == Expect::Refuses) {
+      EXPECT_EQ(rv, NS_ERROR_INVALID_ARG)
+          << testCase.mName << ": a uvStride of " << dest.mUVStride
+          << " cannot hold a " << chromaRowBytes
+          << "-byte NV12 chroma row, so ConvertToNV12 must refuse it rather "
+             "than convert";
+    } else {
+      EXPECT_TRUE(NS_SUCCEEDED(rv))
+          << testCase.mName << ": ConvertToNV12 unexpectedly failed";
+    }
+
+    size_t modified = 0;
+    const nsCString detail = dest.DescribeModifiedTrailingBytes(&modified);
+    EXPECT_EQ(modified, size_t(0))
+        << testCase.mName << ": ConvertToNV12 wrote " << modified
+        << " byte(s) outside the declared length of a " << dest.mBufferLength
+        << "-byte NV12 buffer (yLength=" << dest.mYLength
+        << ", uvLength=" << dest.mUVLength << ", yStride=" << dest.mYStride
+        << ", uvStride=" << dest.mUVStride
+        << "); all trailing bytes should still be 0xA5, modified:"
+        << detail.get();
+  }
+}
+
 TEST(MediaImageConversion, ConvertToI420)
 {
   uint8_t y[20] = {};
@@ -477,10 +751,10 @@ TEST(MediaImageConversion, UndersizedSourceSurface)
       static_cast<size_t>(reportedSize.width) * reportedSize.height;
 
   // Destination buffers, reused across both cases.
-  auto destY = MakeUnique<uint8_t[]>(planeSize);
-  auto destUV = MakeUnique<uint8_t[]>(planeSize);
-  auto destU = MakeUnique<uint8_t[]>(planeSize);
-  auto destV = MakeUnique<uint8_t[]>(planeSize);
+  auto destY = std::make_unique<uint8_t[]>(planeSize);
+  auto destUV = std::make_unique<uint8_t[]>(planeSize);
+  auto destU = std::make_unique<uint8_t[]>(planeSize);
+  auto destV = std::make_unique<uint8_t[]>(planeSize);
 
   {
     // Undersized surface: it does not cover the reported image size, so every

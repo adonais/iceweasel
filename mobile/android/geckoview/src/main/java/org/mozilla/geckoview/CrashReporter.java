@@ -38,6 +38,9 @@ import org.mozilla.gecko.util.ProxySelector;
  * report server.
  */
 public class CrashReporter {
+  /** Public constructor for CrashReporter. */
+  public CrashReporter() {}
+
   private static final String LOGTAG = "GeckoCrashReporter";
   private static final String MINI_DUMP_PATH_KEY = "upload_file_minidump";
   private static final String PRODUCT_ID = "{eeb82917-e434-4870-8148-5c03d4caa81b}";

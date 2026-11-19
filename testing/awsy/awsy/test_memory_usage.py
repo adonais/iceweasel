@@ -14,7 +14,7 @@ AWSY_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if AWSY_PATH not in sys.path:
     sys.path.append(AWSY_PATH)
 
-from awsy import process_perf_data, webservers
+from awsy import process_perf_data
 from awsy.awsy_test_case import AwsyTestCase
 
 
@@ -42,32 +42,7 @@ class TestMemoryUsage(AwsyTestCase):
     def perf_extra_opts(self):
         return self._extra_opts
 
-    def setupTp5(self):
-        urls = None
-        default_tp5n_manifest = os.path.join(
-            self._webroot_dir, "page_load_test", "tp5n", "tp5n.manifest"
-        )
-        tp5n_manifest = self.testvars.get("pageManifest", default_tp5n_manifest)
-        with open(tp5n_manifest) as fp:
-            urls = fp.readlines()
-        # pylint --py3k: W1636
-        urls = list(map(lambda x: x.replace("localhost", "localhost:{}"), urls))
-
-        # We haven't set self._urls yet, so this value might be zero if
-        # 'entities' wasn't specified.
-        to_load = self.pages_to_load()
-        if not to_load:
-            to_load = len(urls)
-        self._webservers = webservers.WebServers(
-            "localhost", 8001, self._webroot_dir, to_load
-        )
-        self._webservers.start()
-        for url, server in zip(urls, self._webservers.servers):
-            self._urls.append(url.strip().format(server.port))
-
     def setupTp6(self):
-        # tp5n stores its manifest in the zip file that gets extracted, tp6
-        # doesn't so we just keep one in our project dir for now.
         default_tp6_pages_manifest = os.path.join(AWSY_PATH, "conf", "tp6-pages.yml")
         tp6_pages_manifest = self.testvars.get(
             "pageManifest", default_tp6_pages_manifest
@@ -126,10 +101,7 @@ class TestMemoryUsage(AwsyTestCase):
         self._urls = []
         self._extra_opts = None
 
-        if self.testvars.get("tp5", False):
-            self.setupTp5()
-        else:
-            self.setupTp6()
+        self.setupTp6()
 
         self.logger.info(
             f"areweslimyet run by {self._pages_to_load} pages, "
@@ -142,12 +114,7 @@ class TestMemoryUsage(AwsyTestCase):
     def tearDown(self):
         self.logger.info("tearing down!")
 
-        self.logger.info("tearing down webservers!")
-
-        if self.testvars.get("tp5", False):
-            self._webservers.stop()
-        else:
-            self._playback.stop()
+        self._playback.stop()
 
         AwsyTestCase.tearDown(self)
 
@@ -229,6 +196,5 @@ class TestMemoryUsage(AwsyTestCase):
             create_checkpoint("TabsClosedSettled", itr)
             create_checkpoint("TabsClosedForceGC", itr, minimize=True)
 
-        # TODO(ER): Temporary hack until bug 1121139 lands
         self.logger.info("setting results")
         self.testvars["results"] = results

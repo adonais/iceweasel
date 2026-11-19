@@ -2724,6 +2724,17 @@ nsresult UpgradeSchemaFrom25_0To26_0(mozIStorageConnection& aConnection) {
   return NS_OK;
 }
 
+nsresult UpgradeSchemaFrom26_0To27_0(mozIStorageConnection& aConnection) {
+  // The only change between 26 and 27 was a different structured clone format,
+  // but it's backwards-compatible.
+  nsresult rv = aConnection.SetSchemaVersion(MakeSchemaVersion(27, 0));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
 NS_IMPL_ISUPPORTS(CompressDataBlobsFunction, mozIStorageFunction)
 NS_IMPL_ISUPPORTS(EncodeKeysFunction, mozIStorageFunction)
 NS_IMPL_ISUPPORTS(StripObsoleteOriginAttributesFunction, mozIStorageFunction);
@@ -2810,7 +2821,7 @@ class DeserializeUpgradeValueHelper final : public Runnable {
         nullptr};
 
     if (!JS_ReadStructuredClone(
-            aCx, mCloneReadInfo.Data(), JS_STRUCTURED_CLONE_VERSION,
+            aCx, mCloneReadInfo.Data(),
             JS::StructuredCloneScope::DifferentProcessForIndexedDB, aValue,
             JS::CloneDataPolicy(), &callbacks, &mCloneReadInfo)) {
       return NS_ERROR_DOM_DATA_CLONE_ERR;
@@ -2927,7 +2938,7 @@ Result<bool, nsresult> MaybeUpgradeSchema(mozIStorageConnection& aConnection,
   int32_t schemaVersion = aSchemaVersion;
 
   // This logic needs to change next time we change the schema!
-  static_assert(kSQLiteSchemaVersion == int32_t((26 << 4) + 0),
+  static_assert(kSQLiteSchemaVersion == int32_t((27 << 4) + 0),
                 "Upgrade function needed due to schema version increase.");
 
   while (schemaVersion != kSQLiteSchemaVersion) {
@@ -3003,6 +3014,9 @@ Result<bool, nsresult> MaybeUpgradeSchema(mozIStorageConnection& aConnection,
         break;
       case MakeSchemaVersion(25, 0):
         QM_TRY(MOZ_TO_RESULT(UpgradeSchemaFrom25_0To26_0(aConnection)));
+        break;
+      case MakeSchemaVersion(26, 0):
+        QM_TRY(MOZ_TO_RESULT(UpgradeSchemaFrom26_0To27_0(aConnection)));
         break;
       default:
         QM_FAIL(Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR), []() {

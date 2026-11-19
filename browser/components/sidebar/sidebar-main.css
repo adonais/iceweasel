@@ -9,6 +9,16 @@
   }
 }
 
+@media not -moz-pref("sidebar.verticalTabs") {
+  :host {
+    /* --sidebar-launcher-button-size is set in the parent doc
+     * (browser/themes/shared/sidebar.css) so it can react to the document's
+     * uidensity attribute. */
+    --button-size-icon: var(--sidebar-launcher-button-size, var(--size-item-large));
+    --button-min-height: var(--button-size-icon);
+  }
+}
+
 [hidden] {
   display: none !important;
 }
@@ -55,7 +65,6 @@
   border: none;
   /* Overrides the default background-color for Win/Linux in splitter.css */
   background-color: transparent;
-  background-image: var(--sidebar-divider-image);
   background-size: var(--sidebar-divider-size);
   background-position: var(--sidebar-divider-position);
   background-repeat: no-repeat;
@@ -66,20 +75,17 @@
     min-height: 4px;
   }
 
+  :host(:not([expanded])) & {
+    margin-inline-end: calc(var(--tab-margin-inline-inner) + var(--tab-collapsed-scrollbar-extra, 0px));
+  }
+
   &:hover {
     background-color: var(--focus-outline-color);
-    background-image: none;
     border-radius: var(--border-radius-medium);
   }
 
-  @media not -moz-pref("sidebar.visibility", "expand-on-hover") {
-    /* We need these rules to apply at all times when the sidebar.visibility
-    pref is not set to "expand-on-hover" as opposed to when the "sidebar-expand-on-hover" attribute
-    has not been added to root. There are certain scenarios when that attribute is temporarily
-    removed from root such as when toggling the sidebar to expand with the toolbar button. */
-    :host([expanded]) & {
-      background-image: none;
-    }
+  :host([tabs-overflow]:not([expanded])) &:not(:hover) {
+    background-image: var(--sidebar-divider-image);
   }
 }
 
@@ -111,6 +117,7 @@
      * visibly shrink in compact mode to keep the trigger stable. */
     --button-outer-padding-inline: var(--sidebar-launcher-button-padding-inline, var(--space-medium));
     --button-outer-padding-block: var(--space-xxsmall);
+    --button-outer-padding-inline-end: calc(var(--button-outer-padding-inline) + var(--tab-collapsed-scrollbar-extra, 0px));
 
     &:first-of-type {
       --button-outer-padding-block-start: var(--space-small);

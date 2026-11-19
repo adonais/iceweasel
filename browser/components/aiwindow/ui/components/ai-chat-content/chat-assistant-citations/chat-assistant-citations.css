@@ -12,7 +12,7 @@
   --citations-background-color-hover: light-dark(color-mix(in srgb, var(--color-violet-50) 15%, transparent), var(--color-violet-110));
 
   @media -moz-pref("browser.nova.enabled") {
-    --citations-background-color: light-dark(color-mix(in srgb, var(--color-violet-desaturated-10) 70%, transparent), var(--color-violet-desaturated-60));
+    --citations-background-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
     --citations-background-color-hover: var(--citations-background-color);
   }
 
@@ -25,20 +25,7 @@
 .citations {
   gap: var(--space-xsmall);
 
-  ai-website-chip::part(chip):hover {
-    background-color: var(--citations-background-color-hover);
-  }
-
-  ai-website-chip::part(chip):focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-offset);
-
-    @media (not (forced-colors)) {
-      border-color: transparent;
-    }
-  }
-
-  /* Make moz-button match the chip styling. */
+  /* Make moz-button match the smartwindow-chip type source styling. */
   moz-button {
     --button-background-color-ghost: var(--citations-background-color);
     --button-background-color-ghost-hover: var(--citations-background-color-hover);

@@ -77,6 +77,7 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
   _(WebRenderBatchingLookback, int32_t, 10)                        \
   _(WebRenderBlobTileSize, int32_t, 256)                           \
   _(WebRenderBatchedUploadThreshold, int32_t, 512 * 512)           \
+  _(WebRenderPathAaSamples, int32_t, 8)                            \
   _(WebRenderSlowCpuFrameThreshold, float, 10.0)                   \
   _(UseSoftwareWebRender, bool, false)                             \
   _(AllowSoftwareWebRenderD3D11, bool, false)                      \
@@ -97,7 +98,6 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
   _(UseDoubleBufferingWithCompositor, bool, false)                 \
   _(UseGLSwizzle, bool, true)                                      \
   _(ForceSubpixelAAWherePossible, bool, false)                     \
-  _(FxREmbedded, bool, false)                                      \
   _(UseAHardwareBufferSharedSurfaceWebglOop, bool, false)          \
   _(UseEGL, bool, false)                                           \
   _(DrmRenderDevice, nsCString, nsCString())                       \

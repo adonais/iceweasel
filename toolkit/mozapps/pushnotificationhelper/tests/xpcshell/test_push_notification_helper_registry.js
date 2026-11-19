@@ -3,34 +3,20 @@
 
 "use strict";
 
-const { PushNotificationHelperRegistry } = ChromeUtils.importESModule(
+const {
+  PushNotificationHelperRegistry,
+  buildRegistryKeyPath,
+  buildRegistryValueName,
+  withRegistryKey,
+} = ChromeUtils.importESModule(
   "resource://gre/modules/PushNotificationHelperRegistry.sys.mjs"
 );
 const { updateAppInfo } = ChromeUtils.importESModule(
   "resource://testing-common/AppInfo.sys.mjs"
 );
-
-const SEPARATOR = "|";
-
-function vendorName() {
-  return Services.appinfo.vendor || "Mozilla";
-}
-
-function helperKeyPath() {
-  return `Software\\${vendorName()}\\${Services.appinfo.name}\\Notification Helper`;
-}
-
-function openHelperKey() {
-  const key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
-    Ci.nsIWindowsRegKey
-  );
-  key.create(
-    key.ROOT_KEY_CURRENT_USER,
-    helperKeyPath(),
-    key.ACCESS_READ | key.ACCESS_WRITE | key.WOW64_64
-  );
-  return key;
-}
+const { WindowsPushNotificationHelper } = ChromeUtils.importESModule(
+  "resource://gre/modules/WindowsPushNotificationHelper.sys.mjs"
+);
 
 function valueNames(key) {
   const names = [];
@@ -44,6 +30,10 @@ function installDir() {
   return Services.dirsvc.get("GreBinD", Ci.nsIFile).path;
 }
 
+function profileDir() {
+  return Services.dirsvc.get("ProfD", Ci.nsIFile).path;
+}
+
 add_setup(() => {
   // Gives Services.appinfo a name and a vendor, so the key lands under an
   // xpcshell-specific path rather than the real application's one
@@ -52,6 +42,9 @@ add_setup(() => {
   // Makes ProfD available
   do_get_profile();
 
+  // Creates the key, so the tasks can open it
+  withRegistryKey(() => {}, { create: true });
+
   registerCleanupFunction(() => {
     try {
       const parent = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
@@ -59,7 +52,7 @@ add_setup(() => {
       );
       parent.open(
         parent.ROOT_KEY_CURRENT_USER,
-        `Software\\${vendorName()}\\${Services.appinfo.name}`,
+        buildRegistryKeyPath().replace(/\\Notification Helper$/, ""),
         parent.ACCESS_ALL | parent.WOW64_64
       );
       try {
@@ -74,80 +67,82 @@ add_setup(() => {
 });
 
 add_task(function test_value_name_shape() {
-  const profD = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
+  PushNotificationHelperRegistry.add(installDir(), profileDir());
 
-  Assert.equal(
-    PushNotificationHelperRegistry.valueName,
-    installDir() + SEPARATOR + profD,
-    "the value name is the install directory and the profile directory"
-  );
+  withRegistryKey(key => {
+    Assert.deepEqual(
+      valueNames(key),
+      [buildRegistryValueName(installDir(), profileDir())],
+      "the value name is the install directory and the profile directory"
+    );
+  });
+
+  PushNotificationHelperRegistry.remove(installDir(), profileDir());
 });
 
 add_task(function test_add_then_remove() {
   Assert.ok(
-    !PushNotificationHelperRegistry.has(),
+    !PushNotificationHelperRegistry.has(installDir(), profileDir()),
     "no entry before anything is recorded"
   );
 
-  PushNotificationHelperRegistry.add();
+  PushNotificationHelperRegistry.add(installDir(), profileDir());
 
   Assert.ok(
-    PushNotificationHelperRegistry.has(),
+    PushNotificationHelperRegistry.has(installDir(), profileDir()),
     "the entry exists after recording"
   );
 
-  const key = openHelperKey();
-  try {
+  withRegistryKey(key => {
     Assert.equal(
-      key.readIntValue(PushNotificationHelperRegistry.valueName),
+      key.readIntValue(buildRegistryValueName(installDir(), profileDir())),
       1,
       "the entry holds a marker value"
     );
-  } finally {
-    key.close();
-  }
+  });
 
-  PushNotificationHelperRegistry.remove();
+  PushNotificationHelperRegistry.remove(installDir(), profileDir());
 
   Assert.ok(
-    !PushNotificationHelperRegistry.has(),
+    !PushNotificationHelperRegistry.has(installDir(), profileDir()),
     "the entry is gone after removal"
   );
 
   // Removing an absent entry is fine
-  PushNotificationHelperRegistry.remove();
+  PushNotificationHelperRegistry.remove(installDir(), profileDir());
 });
 
 add_task(function test_add_twice_keeps_one_entry() {
-  PushNotificationHelperRegistry.add();
-  PushNotificationHelperRegistry.add();
+  PushNotificationHelperRegistry.add(installDir(), profileDir());
+  PushNotificationHelperRegistry.add(installDir(), profileDir());
 
-  const key = openHelperKey();
-  try {
+  withRegistryKey(key => {
     const mine = valueNames(key).filter(
-      name => name == PushNotificationHelperRegistry.valueName
+      name => name == buildRegistryValueName(installDir(), profileDir())
     );
     Assert.equal(mine.length, 1, "recording twice keeps a single entry");
-  } finally {
-    key.close();
-  }
+  });
 
-  PushNotificationHelperRegistry.remove();
+  PushNotificationHelperRegistry.remove(installDir(), profileDir());
 });
 
 add_task(function test_prune_removes_dead_profiles_of_this_install() {
   const existingDir = do_get_tempdir().path;
   const missingDir = existingDir + "\\no such dir with spaces and ünïcode";
 
-  const liveEntry = installDir() + SEPARATOR + existingDir;
-  const deadEntry = installDir() + SEPARATOR + missingDir;
-  const deadEntryUpperCase =
-    installDir().toUpperCase() + SEPARATOR + missingDir;
-  const foreignEntry = "C:\\No Such Install" + SEPARATOR + missingDir;
+  const liveEntry = buildRegistryValueName(installDir(), existingDir);
+  const deadEntry = buildRegistryValueName(installDir(), missingDir);
+  const deadEntryUpperCase = buildRegistryValueName(
+    installDir().toUpperCase(),
+    missingDir
+  );
+  const foreignEntry = buildRegistryValueName(
+    "C:\\No Such Install",
+    missingDir
+  );
   const unrelatedValue = "InitialNotificationShown";
 
-  let key = openHelperKey();
-  try {
+  withRegistryKey(key => {
     for (const name of [
       liveEntry,
       deadEntry,
@@ -157,14 +152,11 @@ add_task(function test_prune_removes_dead_profiles_of_this_install() {
     ]) {
       key.writeIntValue(name, 1);
     }
-  } finally {
-    key.close();
-  }
+  });
 
-  PushNotificationHelperRegistry.prune();
+  PushNotificationHelperRegistry.prune(installDir());
 
-  key = openHelperKey();
-  try {
+  withRegistryKey(key => {
     const names = valueNames(key);
     Assert.ok(names.includes(liveEntry), "an existing profile is kept");
     Assert.ok(!names.includes(deadEntry), "a missing profile is pruned");
@@ -184,7 +176,64 @@ add_task(function test_prune_removes_dead_profiles_of_this_install() {
     for (const name of [liveEntry, foreignEntry, unrelatedValue]) {
       key.removeValue(name);
     }
-  } finally {
-    key.close();
-  }
+  });
+});
+
+add_task(function test_entries_for_profile() {
+  const profile = "C:\\Profiles\\Removed";
+  const otherInstall = "C:\\Other Install";
+  const mine = buildRegistryValueName(installDir(), profile);
+  const theirs = buildRegistryValueName(otherInstall, profile.toUpperCase());
+  const otherProfile = buildRegistryValueName(
+    installDir(),
+    "C:\\Profiles\\Kept"
+  );
+  const unrelatedValue = "InitialNotificationShown";
+
+  withRegistryKey(key => {
+    for (const name of [mine, theirs, otherProfile, unrelatedValue]) {
+      key.writeIntValue(name, 1);
+    }
+  });
+
+  Assert.deepEqual(
+    PushNotificationHelperRegistry.getInstallDirsForProfile(profile).sort(),
+    [installDir(), otherInstall].sort(),
+    "the helpers of every install are found, whatever the case"
+  );
+
+  PushNotificationHelperRegistry.remove(installDir(), profile);
+  PushNotificationHelperRegistry.remove(installDir(), profile);
+
+  withRegistryKey(key => {
+    const names = valueNames(key);
+    Assert.ok(!names.includes(mine), "the value is removed");
+    Assert.ok(names.includes(theirs), "other values are left alone");
+
+    for (const name of [theirs, otherProfile, unrelatedValue]) {
+      key.removeValue(name);
+    }
+  });
+});
+
+add_task(async function test_stop_for_profile_removes_the_entries() {
+  const profile = "C:\\Profiles\\Removed";
+  // A directory without a helper in it, so nothing is launched
+  const noHelperInstall = do_get_tempdir().path;
+  const mine = buildRegistryValueName(noHelperInstall, profile);
+  const other = buildRegistryValueName(noHelperInstall, "C:\\Profiles\\Kept");
+
+  withRegistryKey(key => {
+    key.writeIntValue(mine, 1);
+    key.writeIntValue(other, 1);
+  });
+
+  await WindowsPushNotificationHelper.stopForProfile(profile);
+
+  withRegistryKey(key => {
+    const names = valueNames(key);
+    Assert.ok(!names.includes(mine), "the profile's entry is removed");
+    Assert.ok(names.includes(other), "another profile's entry is kept");
+    key.removeValue(other);
+  });
 });

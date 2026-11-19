@@ -22,8 +22,6 @@
 #include "mozilla/widget/CompositorWidget.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#  include "GLContextEGL.h"
-#  include "ScopedGLHelpers.h"
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
 #endif
 
@@ -209,7 +207,7 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
     fullRender = mCompositor->RequestFullRender();
     // When we're rendering to an external target, we want to render everything.
-    if (mCompositor->UsePartialPresent() &&
+    if (mCompositor->UseWindowPartialPresent() &&
         (aReadbackBuffer.isSome() ||
          layers::ProfilerScreenshots::IsEnabled())) {
       fullRender = true;
@@ -433,7 +431,7 @@ void RendererOGL::BeginRecording(const TimeStamp& aRecordingStart,
 
   mRootPipelineId = aRootPipelineId;
   mCompositionRecorder =
-      MakeUnique<layers::CompositionRecorder>(aRecordingStart);
+      std::make_unique<layers::CompositionRecorder>(aRecordingStart);
   mCompositor->MaybeRequestAllowFrameRecording(true);
 }
 
@@ -541,48 +539,12 @@ void RendererOGL::MaybeCaptureScreenPixels() {
   }
 
   auto request = mPendingScreenPixelsRequest.extract();
-
-  if (mCompositor->MaybeCaptureScreenPixels(request.mSourceRect,
-                                            request.mHardwareBuffer)) {
+  if (mCompositor->CaptureScreenPixels(request.mSourceRect,
+                                       request.mHardwareBuffer)) {
     request.mPromise->Resolve(Ok{}, __func__);
-    return;
+  } else {
+    request.mPromise->Reject(NS_ERROR_FAILURE, __func__);
   }
-
-  auto* const gle = gl::GLContextEGL::Cast(gl());
-  const auto& egl = gle->mEgl;
-  gl::ScopedEGLImageForAndroidHardwareBuffer eglImage(gle,
-                                                      request.mHardwareBuffer);
-  gl::ScopedBindFramebuffer scopedBind(gl());
-  gl::ScopedRenderbuffer rb(gl());
-  gl()->fBindRenderbuffer(LOCAL_GL_RENDERBUFFER, rb);
-  gl()->fEGLImageTargetRenderbufferStorage(LOCAL_GL_RENDERBUFFER, eglImage);
-  gl::ScopedFramebufferForRenderbuffer fb(gl(), rb);
-
-  const auto srcRect =
-      mCompositor->SurfaceOriginIsTopLeft()
-          ? request.mSourceRect
-          : gfx::IntRect(
-                request.mSourceRect.x,
-                mCompositor->GetBufferSize().height - request.mSourceRect.y,
-                request.mSourceRect.width, -request.mSourceRect.height);
-  const auto destRect = gfx::IntRect({}, request.mHardwareBuffer->mSize);
-  gl()->BindReadFB(0);
-  gl()->BindDrawFB(fb.FB());
-  gl()->fBlitFramebuffer(srcRect.x, srcRect.y, srcRect.XMost(), srcRect.YMost(),
-                         destRect.x, destRect.y, destRect.XMost(),
-                         destRect.YMost(), LOCAL_GL_COLOR_BUFFER_BIT,
-                         LOCAL_GL_LINEAR);
-
-  if (EGLSync sync =
-          egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr)) {
-    auto fence = UniqueFileHandle(egl->fDupNativeFenceFDANDROID(sync));
-    if (fence) {
-      request.mHardwareBuffer->SetAcquireFence(std::move(fence));
-    }
-    egl->fDestroySync(sync);
-  }
-
-  request.mPromise->Resolve(Ok{}, __func__);
 }
 #endif
 

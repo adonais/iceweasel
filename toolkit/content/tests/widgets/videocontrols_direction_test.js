@@ -14,6 +14,30 @@ RemoteCanvas.prototype.compare = function (otherCanvas, expected) {
   return compareSnapshots(this.snapshot, otherCanvas.snapshot, expected)[0];
 };
 
+// The controls' icons are CSS background images that aren't tracked by the
+// load event, and the snapshot draws them blank until they are ready. Hidden
+// icons may point at images that aren't packaged on every platform.
+function decodeBackgroundImages(win, mediaElement) {
+  let shadowRoot = SpecialPowers.wrap(mediaElement).openOrClosedShadowRoot;
+  let urls = new Set();
+  for (let element of shadowRoot.querySelectorAll("*")) {
+    if (!element.checkVisibility()) {
+      continue;
+    }
+    let { backgroundImage } = SpecialPowers.wrap(win).getComputedStyle(element);
+    for (let [, url] of backgroundImage.matchAll(/url\("([^"]*)"\)/g)) {
+      urls.add(url);
+    }
+  }
+  return Promise.all(
+    [...urls].map(url => {
+      let img = SpecialPowers.wrap(win.document).createElement("img");
+      img.src = url;
+      return img.decode();
+    })
+  );
+}
+
 RemoteCanvas.prototype.load = function (callback) {
   var iframe = document.createElement("iframe");
   iframe.id = this.id + "-iframe";
@@ -33,7 +57,10 @@ RemoteCanvas.prototype.load = function (callback) {
           const { widget } = SpecialPowers.wrap(iframe.contentWindow)
             .windowGlobalChild.getActor("UAWidgets")
             .widgets.get(mediaElement);
-          widget.impl.Utils.l10n.translateRoots().then(() => {
+          Promise.all([
+            widget.impl.Utils.l10n.translateRoots(),
+            decodeBackgroundImages(iframe.contentWindow, mediaElement),
+          ]).then(() => {
             me.remotePageLoaded(callback);
           });
         }, 0);

@@ -18,7 +18,7 @@ class GkSkWStream;
 class PrintTargetSkPDF final : public PrintTarget {
  public:
   static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
-      nsIOutputStream* aStream, const IntSize& aSizeInPoints);
+      nsIOutputStream* aStream);
 
   nsresult BeginPrinting(const nsAString& aTitle,
                          const nsAString& aPrintToFileName,
@@ -36,7 +36,7 @@ class PrintTargetSkPDF final : public PrintTarget {
   already_AddRefed<DrawTarget> GetReferenceDrawTarget() final;
 
  private:
-  PrintTargetSkPDF(const IntSize& aSize, UniquePtr<GkSkWStream> aStream);
+  explicit PrintTargetSkPDF(UniquePtr<GkSkWStream> aStream);
   virtual ~PrintTargetSkPDF();
 
   struct SkPDFDocState;

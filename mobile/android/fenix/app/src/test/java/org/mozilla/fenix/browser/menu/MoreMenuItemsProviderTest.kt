@@ -79,7 +79,7 @@ class MoreMenuItemsProviderTest {
     @Test
     fun `WHEN adding submenu items to More THEN use the highlight status from the passed More item`() = runTest {
         val provider = provider(highlight = false)
-        val captured = provider.itemFlow.value.copy(icon = MenuItemIconRes(123, isHighlighted = true))
+        val captured = provider.itemsFlow.value.single().copy(icon = MenuItemIconRes(123, isHighlighted = true))
 
         val shown = provider.updateWithSubMenuItems(captured, listOf(summarizeItem))
 
@@ -88,7 +88,7 @@ class MoreMenuItemsProviderTest {
     }
 
     private fun MoreMenuItemsProvider.resolve(children: List<StandardMenuItem>) =
-        updateWithSubMenuItems(itemFlow.value, children)
+        updateWithSubMenuItems(itemsFlow.value.single(), children)
 
     @Test
     fun `GIVEN it draws attention to summarizing WHEN expanding it THEN count summarizing as noticed`() = runTest {
@@ -150,7 +150,7 @@ class MoreMenuItemsProviderTest {
     fun `WHEN building the item THEN handle only the events it dispatches itself`() = runTest {
         val provider = provider()
 
-        val events = provider.itemFlow.value.reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.Navigate.Summarizer))

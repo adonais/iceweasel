@@ -241,7 +241,8 @@ int TestNrSocket::create(nr_transport_addr* addr) {
 
   r_log(LOG_GENERIC, LOG_DEBUG, "TestNrSocket %p create %s", this,
         addr->as_string);
-  return NrSocketBase::CreateSocket(addr, &internal_socket_, nullptr);
+  return NrSocketBase::CreateSocket(addr, &internal_socket_,
+                                    nat_->proxy_config_);
 }
 
 int TestNrSocket::getaddr(nr_transport_addr* addrp) {

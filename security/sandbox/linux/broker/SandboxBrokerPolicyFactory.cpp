@@ -847,8 +847,7 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
 
   std::call_once(mContentInited, [this] { InitContentPolicy(); });
   MOZ_ASSERT(mCommonContentPolicy);
-  UniquePtr<SandboxBroker::Policy> policy =
-      std::make_unique<SandboxBroker::Policy>(*mCommonContentPolicy);
+  auto policy = std::make_unique<SandboxBroker::Policy>(*mCommonContentPolicy);
 
   // No read blocking at level 2 and below.
   // file:// processes also get global read permissions
@@ -1002,7 +1001,7 @@ static void AddVulkanDependencies(SandboxBroker::Policy* policy, int aPid) {
 
 /* static */ UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
-  auto policy = MakeUnique<SandboxBroker::Policy>();
+  auto policy = std::make_unique<SandboxBroker::Policy>();
 
   AddSharedMemoryPaths(policy.get(), aPid);
 
@@ -1119,67 +1118,8 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
 }
 
 /* static */ UniquePtr<SandboxBroker::Policy>
-SandboxBrokerPolicyFactory::GetSocketProcessPolicy(int aPid) {
-  auto policy = MakeUnique<SandboxBroker::Policy>();
-
-  policy->AddPath(rdonly, "/dev/urandom");
-  policy->AddPath(rdonly, "/dev/random");
-  policy->AddPath(rdonly, "/proc/sys/crypto/fips_enabled");
-  policy->AddPath(rdonly, "/proc/cpuinfo");
-  policy->AddPath(rdonly, "/proc/meminfo");
-  policy->AddTree(rdonly, "/sys/devices/cpu");
-  policy->AddTree(rdonly, "/sys/devices/system/cpu");
-  policy->AddTree(rdonly, "/lib");
-  policy->AddTree(rdonly, "/lib64");
-  policy->AddTree(rdonly, "/usr/lib");
-  policy->AddTree(rdonly, "/usr/lib32");
-  policy->AddTree(rdonly, "/usr/lib64");
-  policy->AddTree(rdonly, "/usr/share");
-  policy->AddTree(rdonly, "/usr/local/share");
-  policy->AddTree(rdonly, "/etc");
-
-  // glibc will try to stat64("/") while populating nsswitch database
-  // https://sourceware.org/git/?p=glibc.git;a=blob;f=nss/nss_database.c;h=cf0306adc47f12d9bc761ab1b013629f4482b7e6;hb=9826b03b747b841f5fc6de2054bf1ef3f5c4bdf3#l396
-  // denying will make getaddrinfo() return ENONAME
-  policy->AddPath(access, "/");
-
-  AddLdconfigPaths(policy.get());
-
-  // Socket process sandbox needs to allow shmem in order to support
-  // profiling.  See Bug 1626385.
-  AddSharedMemoryPaths(policy.get(), aPid);
-
-  // Bug 1647957: memory reporting.
-  AddMemoryReporting(policy.get(), aPid);
-
-  // Firefox binary dir.
-  // Note that unlike the previous cases, we use NS_GetSpecialDirectory
-  // instead of GetSpecialSystemDirectory. The former requires a working XPCOM
-  // system, which may not be the case for some tests. For querying for the
-  // location of XPCOM things, we can use it anyway.
-  nsCOMPtr<nsIFile> ffDir;
-  nsresult rv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(ffDir));
-  if (NS_SUCCEEDED(rv)) {
-    nsAutoCString tmpPath;
-    rv = ffDir->GetNativePath(tmpPath);
-    if (NS_SUCCEEDED(rv)) {
-      policy->AddTree(rdonly, tmpPath.get());
-    }
-  }
-
-#if defined(MOZ_PROFILE_GENERATE)
-  AddLLVMProfilePathDirectory(policy.get());
-#endif
-
-  if (policy->IsEmpty()) {
-    policy = nullptr;
-  }
-  return policy;
-}
-
-/* static */ UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetUtilityProcessPolicy(int aPid) {
-  auto policy = MakeUnique<SandboxBroker::Policy>();
+  auto policy = std::make_unique<SandboxBroker::Policy>();
 
   policy->AddPath(rdonly, "/dev/urandom");
   policy->AddPath(rdonly, "/proc/cpuinfo");
@@ -1243,7 +1183,7 @@ SandboxBrokerPolicyFactory::GetUtilityProcessPolicy(int aPid) {
 /* static */
 UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetHWInferencePolicy(int aPid) {
-  auto policy = MakeUnique<SandboxBroker::Policy>();
+  auto policy = std::make_unique<SandboxBroker::Policy>();
 
   AddSharedMemoryPaths(policy.get(), aPid);
 

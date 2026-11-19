@@ -222,7 +222,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
     );
     actor.ask({
       contextMentions: controller.input.getResolvedContextWebsites?.() ?? [],
-      contextPageUrl: controller.input.getContextPageUrl?.() ?? null,
+      contextPageUrl: controller.input.getContextPageUrl?.()?.href ?? null,
       detectedIntent: this.#lastIntentEvaluation.intent ?? "chat",
       location: controller.input.sapLocation ?? "urlbar",
       submitType: isCtaButtonClick ? "button" : "enter",

@@ -945,14 +945,14 @@ ICUResult Locale::RemoveLikelySubtags() {
 
 UniqueChars Locale::DuplicateStringToUniqueChars(const char* aStr) {
   size_t length = strlen(aStr) + 1;
-  auto duplicate = MakeUnique<char[]>(length);
+  auto duplicate = std::make_unique<char[]>(length);
   memcpy(duplicate.get(), aStr, length);
   return duplicate;
 }
 
 UniqueChars Locale::DuplicateStringToUniqueChars(Span<const char> aStr) {
   size_t length = aStr.size();
-  auto duplicate = MakeUnique<char[]>(length + 1);
+  auto duplicate = std::make_unique<char[]>(length + 1);
   memcpy(duplicate.get(), aStr.data(), length);
   duplicate[length] = '\0';
   return duplicate;
@@ -1108,7 +1108,7 @@ LocaleParser::Token LocaleParser::NextToken() {
 
 UniqueChars LocaleParser::Chars(size_t aIndex, size_t aLength) const {
   // Add +1 to null-terminate the string.
-  auto chars = MakeUnique<char[]>(aLength + 1);
+  auto chars = std::make_unique<char[]>(aLength + 1);
   char* dest = chars.get();
   std::copy_n(mLocale + aIndex, aLength, dest);
   dest[aLength] = '\0';

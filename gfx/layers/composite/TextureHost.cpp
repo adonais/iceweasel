@@ -850,7 +850,7 @@ ShmemTextureHost::ShmemTextureHost(const ipc::Shmem& aShmem,
   MOZ_ASSERT(!(mFlags & TextureFlags::DEALLOCATE_CLIENT));
 
   if (aShmem.IsReadable()) {
-    UniquePtr<mozilla::ipc::Shmem> shmem = MakeUnique<ipc::Shmem>(aShmem);
+    auto shmem = std::make_unique<ipc::Shmem>(aShmem);
     mShmemDeallocRunnable =
         MakeRefPtr<ShmemDeallocRunnable>(mDeallocator, std::move(shmem));
   } else {

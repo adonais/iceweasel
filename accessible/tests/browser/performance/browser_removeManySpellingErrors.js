@@ -316,9 +316,9 @@ addAccessibleTask(
   `<div id="editable" contenteditable></div>`,
   async function testRemoveManySpellingErrors(browser) {
     let changed = waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED);
-    await invokeContentTask(browser, [], () => {
+    await invokeContentTask(browser, [SMALL_NODE_COUNT], count => {
       const editable = content.document.getElementById("editable");
-      for (let i = 0; i < 500; ++i) {
+      for (let i = 0; i < count; ++i) {
         const p = content.document.createElement("p");
         p.textContent = "tset tset tset";
         editable.append(p);

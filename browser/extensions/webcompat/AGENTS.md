@@ -82,7 +82,7 @@ console.info(
 );
 ```
 
-## Version bump
+## Version bump - skip this step if you are a Firefox web-compatibility intervention agent.
 
 Whenever you create or modify an intervention JSON or script, bump the **middle** component of `"version"` in `browser/extensions/webcompat/manifest.json` (e.g. `159.1.0` → `159.2.0`). Do not change the first or last component.
 

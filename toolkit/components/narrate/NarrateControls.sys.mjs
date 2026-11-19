@@ -6,9 +6,11 @@ import { AsyncPrefs } from "resource://gre/modules/AsyncPrefs.sys.mjs";
 import { Narrator } from "resource://gre/modules/narrate/Narrator.sys.mjs";
 import { VoiceSelect } from "resource://gre/modules/narrate/VoiceSelect.sys.mjs";
 
-var gStrings = Services.strings.createBundle(
-  "chrome://global/locale/narrate.properties"
-);
+const NARRATE_SHORTCUT = "N";
+// Arrow direction also hardcoded for RTL in order to be
+// consistent with playback arrows in UI panel
+const SKIP_PREVIOUS_SHORTCUT = "←";
+const SKIP_NEXT_SHORTCUT = "→";
 
 export function NarrateControls(win, languagePromise) {
   this._winRef = Cu.getWeakReference(win);
@@ -22,13 +24,6 @@ export function NarrateControls(win, languagePromise) {
   style.href = "chrome://global/skin/narrate.css";
   win.document.head.appendChild(style);
 
-  let elemL10nMap = {
-    ".narrate-skip-previous": "previous-label",
-    ".narrate-start-stop": "start-label",
-    ".narrate-skip-next": "next-label",
-    ".narrate-rate-input": "speed",
-  };
-
   let dropdown = win.document.createElement("ul");
   dropdown.className = "dropdown narrate-dropdown";
 
@@ -36,15 +31,14 @@ export function NarrateControls(win, languagePromise) {
   let toggleButton = win.document.createElement("button");
   toggleButton.className = "dropdown-toggle toolbar-button narrate-toggle";
   toggleButton.dataset.telemetryId = "reader-listen";
+  toggleButton.setAttribute("aria-labelledby", "narrate-toggle-label");
   let tip = win.document.createElement("span");
-  let shortcutNarrateKey = gStrings.GetStringFromName("narrate-key-shortcut");
-  let labelText = gStrings.formatStringFromName("read-aloud-label", [
-    shortcutNarrateKey,
-  ]);
-  tip.textContent = labelText;
   tip.className = "hover-label";
+  tip.id = "narrate-toggle-label";
+  win.document.l10n.setAttributes(tip, "narrate-toggle-label", {
+    shortcut: NARRATE_SHORTCUT,
+  });
   toggleButton.append(tip);
-  toggleButton.setAttribute("aria-label", labelText);
   toggleButton.hidden = true;
   dropdown.appendChild(toggle);
   toggle.appendChild(toggleButton);
@@ -55,7 +49,7 @@ export function NarrateControls(win, languagePromise) {
 
   let narrateHeader = win.document.createElement("h2");
   narrateHeader.id = "narrate-header";
-  narrateHeader.textContent = gStrings.GetStringFromName("read-aloud-header");
+  win.document.l10n.setAttributes(narrateHeader, "narrate-header");
   dropdownList.appendChild(narrateHeader);
 
   let narrateControl = win.document.createElement("div");
@@ -69,7 +63,7 @@ export function NarrateControls(win, languagePromise) {
   let hr = win.document.createElement("hr");
   let voiceHeader = win.document.createElement("h2");
   voiceHeader.id = "voice-header";
-  voiceHeader.textContent = gStrings.GetStringFromName("select-voice-header");
+  win.document.l10n.setAttributes(voiceHeader, "narrate-voice-header");
   dropdownList.appendChild(hr);
   dropdownList.appendChild(voiceHeader);
 
@@ -81,17 +75,30 @@ export function NarrateControls(win, languagePromise) {
   narrateSkipPrevious.className = "narrate-skip-previous";
   narrateSkipPrevious.disabled = true;
   narrateSkipPrevious.ariaKeyShortcuts = "ArrowLeft";
+  win.document.l10n.setAttributes(
+    narrateSkipPrevious,
+    "narrate-skip-previous",
+    {
+      shortcut: SKIP_PREVIOUS_SHORTCUT,
+    }
+  );
   narrateControl.appendChild(narrateSkipPrevious);
 
   let narrateStartStop = win.document.createElement("button");
   narrateStartStop.className = "narrate-start-stop";
-  narrateStartStop.ariaKeyShortcuts = "N";
+  narrateStartStop.ariaKeyShortcuts = NARRATE_SHORTCUT;
+  win.document.l10n.setAttributes(narrateStartStop, "narrate-start", {
+    shortcut: NARRATE_SHORTCUT,
+  });
   narrateControl.appendChild(narrateStartStop);
 
   let narrateSkipNext = win.document.createElement("button");
   narrateSkipNext.className = "narrate-skip-next";
   narrateSkipNext.disabled = true;
   narrateSkipNext.ariaKeyShortcuts = "ArrowRight";
+  win.document.l10n.setAttributes(narrateSkipNext, "narrate-skip-next", {
+    shortcut: SKIP_NEXT_SHORTCUT,
+  });
   narrateControl.appendChild(narrateSkipNext);
 
   win.document.addEventListener("keydown", function (event) {
@@ -120,63 +127,19 @@ export function NarrateControls(win, languagePromise) {
   narrateRateInput.setAttribute("max", "100");
   narrateRateInput.setAttribute("min", "-100");
   narrateRateInput.setAttribute("type", "range");
-  narrateRateInput.setAttribute(
-    "aria-label",
-    "Choose a narration speed from -100 to 100, where 0 is the default speed."
-  );
+  win.document.l10n.setAttributes(narrateRateInput, "narrate-rate-input");
 
   let narrateRateSlowIcon = win.document.createElement("span");
   narrateRateSlowIcon.className = "narrate-rate-icon slow";
-  narrateRateSlowIcon.title = gStrings.GetStringFromName("slow-speed-label");
+  win.document.l10n.setAttributes(narrateRateSlowIcon, "narrate-rate-slow");
 
   let narrateRateFastIcon = win.document.createElement("span");
   narrateRateFastIcon.className = "narrate-rate-icon fast";
-  narrateRateFastIcon.title = gStrings.GetStringFromName("fast-speed-label");
+  win.document.l10n.setAttributes(narrateRateFastIcon, "narrate-rate-fast");
 
   narrateRate.appendChild(narrateRateSlowIcon);
   narrateRate.appendChild(narrateRateInput);
   narrateRate.appendChild(narrateRateFastIcon);
-
-  function setShortcutAttribute(
-    keyShortcut,
-    stringID,
-    selector,
-    isString = false
-  ) {
-    let shortcut;
-    if (isString) {
-      shortcut = keyShortcut;
-    } else {
-      shortcut = gStrings.GetStringFromName(keyShortcut);
-    }
-    let label = gStrings.formatStringFromName(stringID, [shortcut]);
-
-    dropdown.querySelector(selector).setAttribute("title", label);
-  }
-
-  for (const [selector, stringID] of Object.entries(elemL10nMap)) {
-    switch (selector) {
-      case ".narrate-start-stop":
-        setShortcutAttribute("narrate-key-shortcut", stringID, selector);
-        break;
-
-      // Arrow direction also hardcoded for RTL in order to be
-      // consistent with playback arrows in UI panel
-      case ".narrate-skip-previous":
-        setShortcutAttribute("←", stringID, selector, true);
-        break;
-
-      case ".narrate-skip-next":
-        setShortcutAttribute("→", stringID, selector, true);
-        break;
-
-      default:
-        dropdown
-          .querySelector(selector)
-          .setAttribute("title", gStrings.GetStringFromName(stringID));
-        break;
-    }
-  }
 
   this.narrator = new Narrator(win, languagePromise);
 
@@ -240,30 +203,33 @@ NarrateControls.prototype = {
    * Returns true if synth voices are available.
    */
   _setupVoices() {
-    return this._languagePromise.then(language => {
-      this.voiceSelect.clear();
+    return this._languagePromise.then(async language => {
       let win = this._win;
       let voicePrefs = this._getVoicePref();
       let selectedVoice = voicePrefs[language || "default"];
       let comparer = new Services.intl.Collator().compare;
       let filter = !Services.prefs.getBoolPref("narrate.filter-voices");
-      let options = win.speechSynthesis
-        .getVoices()
-        .filter(v => {
-          return filter || !language || v.lang.split("-")[0] == language;
-        })
-        .map(v => {
+      let voices = win.speechSynthesis.getVoices().filter(v => {
+        return filter || !language || v.lang.split("-")[0] == language;
+      });
+      let [defaultLabel, ...voiceLabels] = await Promise.all([
+        win.document.l10n.formatValue("narrate-voice-default"),
+        ...voices.map(v => this._createVoiceLabel(v)),
+      ]);
+      let options = voices
+        .map((v, i) => {
           return {
-            label: this._createVoiceLabel(v),
+            label: voiceLabels[i],
             value: v.voiceURI,
             selected: selectedVoice == v.voiceURI,
           };
         })
         .sort((a, b) => comparer(a.label, b.label));
 
+      this.voiceSelect.clear();
       if (options.length) {
         options.unshift({
-          label: gStrings.GetStringFromName("defaultvoice"),
+          label: defaultLabel,
           value: "automatic",
           selected: selectedVoice == "automatic",
         });
@@ -343,23 +309,14 @@ NarrateControls.prototype = {
     skipPreviousButton.disabled = !speaking;
     skipNextButton.disabled = !speaking;
 
-    let narrateShortcutId = gStrings.GetStringFromName("narrate-key-shortcut");
-    let skipPreviousShortcut = "←";
-    let skipNextShortcut = "→";
-
-    startStopButton.title = gStrings.formatStringFromName(
-      speaking ? "stop-label" : "start-label",
-      [narrateShortcutId]
+    this._doc.l10n.setAttributes(
+      startStopButton,
+      speaking ? "narrate-stop" : "narrate-start",
+      { shortcut: NARRATE_SHORTCUT }
     );
-    skipPreviousButton.title = gStrings.formatStringFromName("previous-label", [
-      skipPreviousShortcut,
-    ]);
-    skipNextButton.title = gStrings.formatStringFromName("next-label", [
-      skipNextShortcut,
-    ]);
   },
 
-  _createVoiceLabel(voice) {
+  async _createVoiceLabel(voice) {
     // This is a highly imperfect method of making human-readable labels
     // for system voices. Because each platform has a different naming scheme
     // for voices, we use a different method for each platform.
@@ -371,18 +328,18 @@ NarrateControls.prototype = {
         // On Linux, the name is usually the unlocalized language name.
         // Use a localized language name, and have the language tag in
         // parenthisis. This is to avoid six languages called "English".
-        return gStrings.formatStringFromName("voiceLabel", [
-          this._getLanguageName(voice.lang) || voice.name,
-          voice.lang,
-        ]);
+        return this._doc.l10n.formatValue("narrate-voice-label", {
+          name: this._getLanguageName(voice.lang) || voice.name,
+          language: voice.lang,
+        });
       default:
         // On Mac the language is not included in the name, find a localized
         // language name or show the tag if none exists.
         // This is the ideal naming scheme so it is also the "default".
-        return gStrings.formatStringFromName("voiceLabel", [
-          voice.name,
-          this._getLanguageName(voice.lang) || voice.lang,
-        ]);
+        return this._doc.l10n.formatValue("narrate-voice-label", {
+          name: voice.name,
+          language: this._getLanguageName(voice.lang) || voice.lang,
+        });
     }
   },
 

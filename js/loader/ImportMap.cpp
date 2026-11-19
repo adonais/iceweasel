@@ -24,7 +24,6 @@
 using JS::SourceText;
 using mozilla::Err;
 using mozilla::LazyLogModule;
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 using mozilla::WrapNotNull;
 
@@ -119,7 +118,7 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
     JSContext* aCx, HandleObject aOriginalMap, nsIURI* aBaseURL,
     const ReportWarningHelper& aWarning) {
   // Step 1. Let normalized be an empty ordered map.
-  UniquePtr<SpecifierMap> normalized = MakeUnique<SpecifierMap>();
+  auto normalized = std::make_unique<SpecifierMap>();
 
   Rooted<IdVector> specifierKeys(aCx, IdVector(aCx));
   if (!JS_Enumerate(aCx, aOriginalMap, &specifierKeys)) {
@@ -245,7 +244,7 @@ static UniquePtr<ScopeMap> SortAndNormalizeScopes(
   }
 
   // Step 1. Let normalized be an empty map.
-  UniquePtr<ScopeMap> normalized = MakeUnique<ScopeMap>();
+  auto normalized = std::make_unique<ScopeMap>();
 
   // Step 2. For each scopePrefix → potentialSpecifierMap of originalMap,
   for (size_t i = 0; i < scopeKeys.length(); i++) {
@@ -317,7 +316,7 @@ static UniquePtr<IntegrityMap> NormalizeIntegrity(
     JSContext* aCx, HandleObject aOriginalMap, nsIURI* aBaseURL,
     const ReportWarningHelper& aWarning) {
   // Step 1. Let normalized be an empty ordered map.
-  UniquePtr<IntegrityMap> normalized = MakeUnique<IntegrityMap>();
+  auto normalized = std::make_unique<IntegrityMap>();
 
   Rooted<IdVector> keys(aCx, IdVector(aCx));
   if (!JS_Enumerate(aCx, aOriginalMap, &keys)) {
@@ -571,9 +570,9 @@ UniquePtr<ImportMap> ImportMap::ParseString(
   // sortedAndNormalizedImports, whose scopes are
   // sortedAndNormalizedScopes, and whose integrity
   // are normalizedIntegrity.
-  return MakeUnique<ImportMap>(std::move(sortedAndNormalizedImports),
-                               std::move(sortedAndNormalizedScopes),
-                               std::move(normalizedIntegrity));
+  return std::make_unique<ImportMap>(std::move(sortedAndNormalizedImports),
+                                     std::move(sortedAndNormalizedScopes),
+                                     std::move(normalizedIntegrity));
 }
 
 // https://url.spec.whatwg.org/#is-special
@@ -590,7 +589,7 @@ static UniquePtr<SpecifierMap> MergeSpecifierMaps(
     SpecifierMap* newMap, SpecifierMap* oldMap,
     const ReportWarningHelper& aWarning) {
   // 1. Let mergedMap be a deep copy of oldMap.
-  UniquePtr<SpecifierMap> mergedMap = MakeUnique<SpecifierMap>();
+  auto mergedMap = std::make_unique<SpecifierMap>();
   for (auto&& [k, v] : *oldMap) {
     mergedMap->emplace(k, v);
   }
@@ -634,8 +633,9 @@ void ImportMap::Merge(ModuleLoaderBase* aModuleLoader,
   //
   // TODO: https://github.com/whatwg/html/issues/12006
   // Deep copy is redudant.
-  UniquePtr<ScopeMap> newScopes =
-      aNewMap->mScopes ? std::move(aNewMap->mScopes) : MakeUnique<ScopeMap>();
+  UniquePtr<ScopeMap> newScopes = aNewMap->mScopes
+                                      ? std::move(aNewMap->mScopes)
+                                      : std::make_unique<ScopeMap>();
   MOZ_ASSERT(newScopes);
 
   // 2. Let oldImportMap be global's import map.
@@ -648,7 +648,7 @@ void ImportMap::Merge(ModuleLoaderBase* aModuleLoader,
   // 3. Let newImportMapImports be a deep copy of newImportMap's imports.
   UniquePtr<SpecifierMap> newImports = aNewMap->mImports
                                            ? std::move(aNewMap->mImports)
-                                           : MakeUnique<SpecifierMap>();
+                                           : std::make_unique<SpecifierMap>();
   MOZ_ASSERT(newImports);
 
   // 4. For each scopePrefix → scopeImports of newImportMapScopes:
@@ -900,7 +900,7 @@ static UniquePtr<SpecifierResolutionRecord> CreateResolutionRecord(
   bool isURLLike = !!aAsURL;
   bool isSpecial = aAsURL ? IsSpecialScheme(aAsURL) : false;
 
-  return mozilla::MakeUnique<SpecifierResolutionRecord>(
+  return std::make_unique<SpecifierResolutionRecord>(
       aSerializedBaseURL, aNormalizedSpecifier, aResult, isURLLike, isSpecial);
 }
 

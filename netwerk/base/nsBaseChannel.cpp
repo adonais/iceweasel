@@ -591,7 +591,7 @@ NS_IMETHODIMP
 nsBaseChannel::SetContentDispositionFilename(
     const nsAString& aContentDispositionFilename) {
   mContentDispositionFilename =
-      MakeUnique<nsString>(aContentDispositionFilename);
+      std::make_unique<nsString>(aContentDispositionFilename);
 
   // For safety reasons ensure the filename doesn't contain null characters and
   // replace them with underscores. We may later pass the extension to system

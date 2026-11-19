@@ -1591,7 +1591,7 @@ static const CompilationStencil* DelazifyCanonicalScriptedFunctionImpl(
 
   const ScriptStencilExtra& extra = script.scriptExtra();
 
-#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
   MOZ_ASSERT(!script.isEagerlyCompiledInInitial(),
              "Script is already compiled in initial stencil!");
   const ScriptStencil& data = script.scriptDataFromEnclosing();

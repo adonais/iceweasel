@@ -1198,6 +1198,8 @@ public class Autocomplete {
   /**
    * Abstract base class for Autocomplete options. Extended by {@link Autocomplete.SaveOption} and
    * {@link Autocomplete.SelectOption}.
+   *
+   * @param <T> The type of the option value.
    */
   public abstract static class Option<T> {
     /* package */ static final String VALUE_KEY = "value";
@@ -1229,7 +1231,11 @@ public class Autocomplete {
     abstract @NonNull GeckoBundle toBundle();
   }
 
-  /** Abstract base class for saving options. Extended by {@link Autocomplete.LoginSaveOption}. */
+  /**
+   * Abstract base class for saving options. Extended by {@link Autocomplete.LoginSaveOption}.
+   *
+   * @param <T> The type of the option value.
+   */
   public abstract static class SaveOption<T> extends Option<T> {
     /** Save option hint definitions. */
     @Retention(RetentionPolicy.SOURCE)
@@ -1268,7 +1274,11 @@ public class Autocomplete {
     }
   }
 
-  /** Abstract base class for saving options. Extended by {@link Autocomplete.LoginSelectOption}. */
+  /**
+   * Abstract base class for selection options. Extended by {@link Autocomplete.LoginSelectOption}.
+   *
+   * @param <T> The type of the option value.
+   */
   public abstract static class SelectOption<T> extends Option<T> {
     /** Select option hint definitions. */
     @Retention(RetentionPolicy.SOURCE)
@@ -1287,6 +1297,9 @@ public class Autocomplete {
 
     /** Hint types for selection requests. */
     public static class Hint {
+      /** Public constructor for Hint. */
+      public Hint() {}
+
       /** No hint specified. */
       public static final int NONE = 0;
 
@@ -1509,6 +1522,9 @@ public class Autocomplete {
 
     /** Hint types for credit card selection requests. */
     public static class Hint {
+      /** Public constructor for Hint. */
+      public Hint() {}
+
       /** No hint specified. */
       public static final int NONE = 0;
 
@@ -1577,6 +1593,9 @@ public class Autocomplete {
 
     /** Hint types for credit card selection requests. */
     public static class Hint {
+      /** Public constructor for Hint. */
+      public Hint() {}
+
       /** No hint specified. */
       public static final int NONE = 0;
 

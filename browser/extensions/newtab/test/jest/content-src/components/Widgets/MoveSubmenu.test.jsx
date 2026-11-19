@@ -2,14 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { render } from "@testing-library/react";
-import { INITIAL_STATE } from "common/Reducers.sys.mjs";
+import { render, fireEvent } from "@testing-library/react";
+import { Provider } from "react-redux";
+import { createStore, combineReducers } from "redux";
+import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
 import {
   buildMoveProps,
   MoveSubmenu,
 } from "content-src/components/Widgets/MoveSubmenu";
-import { PREF_WIDGETS_ORDER } from "common/WidgetsRegistry.mjs";
+import {
+  PREF_HOME_WIDGETS,
+  PREF_WIDGETS_ORDER,
+} from "common/WidgetsRegistry.mjs";
+import { WIDGET_PLACEMENTS } from "common/PageLayoutVariants.mjs";
+import { WidgetPlacementContext } from "content-src/components/Widgets/WidgetPlacement";
 import { actionTypes as at } from "common/Actions.mjs";
 
 const FULL_ORDER = ["lists", "focusTimer", "weather", "privacy", "clocks"];
@@ -209,5 +216,111 @@ describe("<MoveSubmenu>", () => {
     );
     expect(left.hasAttribute("disabled")).toBe(true);
     expect(right.hasAttribute("disabled")).toBe(false);
+  });
+
+  describe("where the user pins widgets to Home", () => {
+    const PLACEMENT_PREFS = {
+      "nova.enabled": true,
+      "pageLayouts.variant": "spaces-thematic-v1",
+      trainhopConfig: {
+        spaces: {
+          order: ["home", "widgets"],
+          default: "home",
+          widgetLibrary: "widgets",
+          spaces: {
+            home: { label: "Home" },
+            widgets: { label: "Widgets" },
+          },
+        },
+      },
+      "widgets.system.enabled": true,
+      "widgets.enabled": true,
+      "widgets.system.lists.enabled": true,
+      "widgets.lists.enabled": true,
+      "widgets.system.clocks.enabled": true,
+      "widgets.clocks.enabled": true,
+      "widgets.system.focusTimer.enabled": true,
+      "widgets.focusTimer.enabled": true,
+    };
+
+    function renderInSpace(placement, homeList, widgetEnabledMap) {
+      const store = createStore(
+        combineReducers(reducers),
+        makeState({
+          ...PLACEMENT_PREFS,
+          [PREF_HOME_WIDGETS]: JSON.stringify(homeList),
+        })
+      );
+      jest.spyOn(store, "dispatch");
+      const { container } = render(
+        <Provider store={store}>
+          <WidgetPlacementContext.Provider value={placement}>
+            <MoveSubmenu
+              widgetId="lists"
+              widgetEnabledMap={widgetEnabledMap ?? { lists: true }}
+            />
+          </WidgetPlacementContext.Provider>
+        </Provider>
+      );
+      return { container, store };
+    }
+
+    const item = (container, dir) =>
+      container.querySelector(`panel-item[data-move-dir='${dir}']`);
+
+    it("offers Home in the library, even with no Left or Right move", () => {
+      const { container } = renderInSpace(WIDGET_PLACEMENTS.LIBRARY, []);
+      expect(item(container, "home").getAttribute("data-l10n-id")).toBe(
+        "newtab-widget-menu-move-to-home"
+      );
+      expect(item(container, "home").hasAttribute("disabled")).toBe(false);
+      expect(item(container, "widgets")).toBeNull();
+    });
+
+    it("never disables Home, however many widgets are pinned", () => {
+      const { container } = renderInSpace(WIDGET_PLACEMENTS.LIBRARY, [
+        "clocks",
+        "focusTimer",
+      ]);
+      expect(item(container, "home").hasAttribute("disabled")).toBe(false);
+    });
+
+    it("offers Widgets on Home", () => {
+      const { container } = renderInSpace(WIDGET_PLACEMENTS.HOME, ["lists"]);
+      expect(item(container, "widgets").getAttribute("data-l10n-id")).toBe(
+        "newtab-widget-menu-move-to-widgets"
+      );
+      expect(item(container, "home")).toBeNull();
+    });
+
+    it("pins the widget when Home is clicked", () => {
+      const { container, store } = renderInSpace(WIDGET_PLACEMENTS.LIBRARY, [
+        "clocks",
+      ]);
+      fireEvent.click(item(container, "home"));
+      const homeWrite = store.dispatch.mock.calls
+        .map(([action]) => action)
+        .find(action => action.data?.name === PREF_HOME_WIDGETS);
+      expect(homeWrite.data.value).toBe('["lists","clocks"]');
+    });
+
+    it("unpins the widget when Widgets is clicked", () => {
+      const { container, store } = renderInSpace(WIDGET_PLACEMENTS.HOME, [
+        "clocks",
+        "lists",
+      ]);
+      fireEvent.click(item(container, "widgets"));
+      const homeWrite = store.dispatch.mock.calls
+        .map(([action]) => action)
+        .find(action => action.data?.name === PREF_HOME_WIDGETS);
+      expect(homeWrite.data.value).toBe('["clocks"]');
+    });
+
+    it("offers no space move outside Home placement", () => {
+      const { container } = renderInSpace(null, []);
+      expect(
+        container.querySelector("span[data-l10n-id='newtab-widget-menu-move']")
+      ).not.toBeInTheDocument();
+    });
   });
 });

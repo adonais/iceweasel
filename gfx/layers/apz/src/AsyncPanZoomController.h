@@ -1162,6 +1162,17 @@ class AsyncPanZoomController {
   // on the controller thread.
   RecentEventsBuffer<MultiTouchInput> mTouchScrollEventBuffer;
 
+  struct PanGestureDisplacement {
+    TimeStamp mTimeStamp;
+    ScreenPoint mDisplacement;
+  };
+
+  // Stores the physical displacements of pan gesture events that occurred
+  // within a given timeframe. Used to determine whether STICKY axis locking
+  // should be broken, since individual pan gesture events can have small
+  // deltas. Should only be accessed on the controller thread.
+  RecentEventsBuffer<PanGestureDisplacement> mPanGestureEventBuffer;
+
   // Most up-to-date constraints on zooming. These should always be reasonable
   // values; for example, allowing a min zoom of 0.0 can cause very bad things
   // to happen. Hold mRecursiveMutex when accessing this.

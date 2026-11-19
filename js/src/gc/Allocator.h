@@ -7,6 +7,8 @@
 #ifndef gc_Allocator_h
 #define gc_Allocator_h
 
+#include "mozilla/Attributes.h"
+
 #include "gc/AllocKind.h"
 #include "gc/GCEnum.h"
 #include "js/HeapAPI.h"
@@ -123,13 +125,30 @@ void* ReallocBuffer(JS::Zone* zone, void* alloc, size_t bytes,
 void FreeBuffer(JS::Zone* zone, void* alloc);
 
 // Indicate whether |alloc| is a buffer allocation as opposed to a fixed size GC
-// cell. Does not work for malloced memory.
-bool IsBufferAlloc(void* alloc);
+// cell or direct nursery allocation. Not guaranteed to be correct for malloced
+// memory.
+bool IsGCPointerBufferAlloc(void* alloc);
+
+inline void AssertIsBufferAlloc(void* alloc) {
+  MOZ_ASSERT(IsGCPointerBufferAlloc(alloc));  // Safe if true.
+}
 
 #ifdef DEBUG
 // Check whether a buffer allocation is part of the specified zone.
 bool IsBufferAllocInZone(void* alloc, JS::Zone* zone);
 #endif
+
+class Buffer {
+#ifdef DEBUG
+ public:
+  Buffer() { AssertIsBufferAlloc(this); }
+#endif
+} JS_HAZ_GC_THING;
+
+template <typename T>
+class MOZ_EMPTY_BASES BufferAllocated : public T, public Buffer {
+  using T::T;
+};
 
 bool IsNurseryOwned(JS::Zone* zone, void* alloc);
 
@@ -139,7 +158,6 @@ size_t GetAllocSize(JS::Zone* zone, const void* alloc);
 
 void* AllocBufferInGC(JS::Zone* zone, size_t bytes, bool nurseryOwned);
 bool IsBufferAllocMarkedBlack(JS::Zone* zone, void* alloc);
-bool TraceBufferEdgeInternal(JSTracer* trc, void** bufferp, const char* name);
 void MarkTenuredBuffer(JS::Zone* zone, void* alloc);
 
 }  // namespace gc
@@ -151,14 +169,25 @@ class MutableHandleBuffer;
 
 template <typename T>
 class BufferHolder {
+#ifdef DEBUG
   JS::Zone* zone;
+#endif
   T* buffer;
 
   friend class MutableHandleBuffer<T>;
 
  public:
-  BufferHolder(JS::Zone* zone, T* buffer) : zone(zone), buffer(buffer) {
-    MOZ_ASSERT_IF(buffer, IsBufferAllocInZone(buffer, zone));
+  BufferHolder(JS::Zone* zone, T* buffer)
+      :
+#ifdef DEBUG
+        zone(zone),
+#endif
+        buffer(buffer) {
+    MOZ_ASSERT_IF(buffer, gc::IsBufferAllocInZone(buffer, zone));
+    // Nursery owned buffers are not allowed in roots because they might become
+    // tenured, and this state needs to be in sync with whatever GC thing will
+    // eventually own them.
+    MOZ_ASSERT_IF(buffer, !gc::IsNurseryOwned(zone, buffer));
   }
   inline BufferHolder(JSContext* cx, T* buffer);
 
@@ -168,6 +197,16 @@ class BufferHolder {
   operator T*() const { return get(); }
   T* operator->() const { return get(); }
   T& operator*() const { return *get(); }
+
+  void set(T* newBuffer) {
+    MOZ_ASSERT_IF(newBuffer, gc::IsBufferAllocInZone(newBuffer, zone));
+    MOZ_ASSERT_IF(newBuffer, !gc::IsNurseryOwned(zone, newBuffer));
+    buffer = newBuffer;
+  }
+  BufferHolder& operator=(T* newBuffer) {
+    set(newBuffer);
+    return *this;
+  }
 };
 
 template <typename T>
@@ -181,6 +220,12 @@ class RootedBuffer : public JS::Rooted<BufferHolder<T>> {
   operator T*() const { return get(); }
   T* operator->() const { return get(); }
   T& operator*() const { return *get(); }
+
+  void set(T* newBuffer) { Base::get().set(newBuffer); }
+  RootedBuffer& operator=(T* newBuffer) {
+    set(newBuffer);
+    return *this;
+  }
 };
 
 template <typename T>
@@ -209,8 +254,7 @@ class MutableHandleBuffer : public JS::MutableHandle<BufferHolder<T>> {
 
   void set(T* buffer) {
     BufferHolder<T>& holder = Base::get();
-    MOZ_ASSERT_IF(buffer, IsBufferAllocInZone(buffer, holder.zone));
-    holder.buffer = buffer;
+    holder.set(buffer);
   }
   T* get() const { return Base::get().get(); }
   operator T*() const { return get(); }

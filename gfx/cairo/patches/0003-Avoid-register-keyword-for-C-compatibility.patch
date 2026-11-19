@@ -11,9 +11,9 @@ diff --git a/src/cairoint.h b/src/cairoint.h
 index be1a4ba2a..0bb8b6f61 100644
 --- a/src/cairoint.h
 +++ b/src/cairoint.h
-@@ -177,8 +177,12 @@ _cairo_popcount (uint32_t mask)
+@@ -174,8 +174,12 @@ _cairo_popcount (uint32_t mask)
  {
- #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
+ #if defined (__GNUC__)
      return __builtin_popcount (mask);
 +#else
 +#ifdef __cplusplus

@@ -23,7 +23,7 @@ static void testBug2051664(const nsAString& archiveName, bool shouldSucceed) {
 
   uint32_t bufSize = item->RealSize();
   EXPECT_EQ(bufSize, 14u);
-  auto buffer = mozilla::MakeUnique<uint8_t[]>(bufSize);
+  auto buffer = std::make_unique<uint8_t[]>(bufSize);
   ASSERT_TRUE(buffer);
 
   nsZipCursor cursor(item, archive.get(), buffer.get(), bufSize, true);

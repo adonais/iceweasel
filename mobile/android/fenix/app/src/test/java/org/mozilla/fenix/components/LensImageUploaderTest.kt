@@ -171,7 +171,7 @@ class LensImageUploaderTest {
     }
 
     @Test
-    fun `GIVEN an image WHEN upload THEN posts to the upload endpoint with ep fntpubb`() = runTest {
+    fun `GIVEN an image WHEN uploadImage THEN posts to the upload endpoint with ep fntpubb`() = runTest {
         val requestSlot = slot<Request>()
         val client = mockk<Client>()
         every { client.fetch(capture(requestSlot)) } answers
@@ -183,45 +183,15 @@ class LensImageUploaderTest {
                     body = Response.Body(ByteArrayInputStream(ByteArray(0))),
                 )
             }
-        val uploader =
-            LensImageUploader(
-                context = metricsContext(jpegBytes = encodeJpeg(width = 80, height = 40)),
-                client = client,
-                userAgent = "test",
-            )
+        val uploader = LensImageUploader(context = metricsContext(), client = client, userAgent = "test")
 
-        uploader.upload(mockk(), isPrivate = false)
+        uploader.uploadImage(Bitmap.createBitmap(80, 40, Bitmap.Config.ARGB_8888), isPrivate = false)
 
         val request = requestSlot.captured
         assertTrue(request.url.startsWith("${LensImageUploader.UPLOAD_ENDPOINT}?"))
         assertTrue(request.url.contains("ep=${LensImageUploader.EP_BY_BYTES}"))
         assertEquals(Request.Method.POST, request.method)
         assertEquals(false, request.private)
-    }
-
-    @Test
-    fun `GIVEN a private upload WHEN upload THEN the request runs in the private context`() = runTest {
-        val requestSlot = slot<Request>()
-        val client = mockk<Client>()
-        every { client.fetch(capture(requestSlot)) } answers
-            {
-                Response(
-                    url = "https://lens.google.com/search?results",
-                    status = 200,
-                    headers = MutableHeaders(),
-                    body = Response.Body(ByteArrayInputStream(ByteArray(0))),
-                )
-            }
-        val uploader =
-            LensImageUploader(
-                context = metricsContext(jpegBytes = encodeJpeg(width = 80, height = 40)),
-                client = client,
-                userAgent = "test",
-            )
-
-        uploader.upload(mockk(), isPrivate = true)
-
-        assertEquals(true, requestSlot.captured.private)
     }
 
     @Test

@@ -304,6 +304,9 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   mFlags.mStaticPosIsCBOrigin = aFlags.contains(InitFlag::StaticPosIsCBOrigin);
   mFlags.mIOffsetsNeedCSSAlign = mFlags.mBOffsetsNeedCSSAlign = false;
 
+  mFlags.mTrimBStartMargin = aFlags.contains(InitFlag::TrimBStartMargin);
+  mFlags.mTrimBEndMargin = aFlags.contains(InitFlag::TrimBEndMargin);
+
   // We don't want the mOrthogonalCellFinalReflow flag to be inherited; it's up
   // to the table row frame to set it for its direct children as needed.
   mFlags.mOrthogonalCellFinalReflow = false;
@@ -2088,8 +2091,16 @@ void ReflowInput::InitConstraints(
     // For calculating positioning offsets, margins, borders and
     // padding, we use the writing mode of the containing block
     WritingMode cbwm = cbri->GetWritingMode();
+    EnumSet<LogicalSide> trimmedMarginSides;
+    if (mFlags.mTrimBStartMargin) {
+      trimmedMarginSides += LogicalSide::BStart;
+    }
+    if (mFlags.mTrimBEndMargin) {
+      trimmedMarginSides += LogicalSide::BEnd;
+    }
     InitOffsets(cbwm, cbSize.ConvertTo(cbwm, wm).ISize(cbwm), aFrameType,
-                mComputeSizeFlags, aBorder, aPadding, mStyleDisplay);
+                mComputeSizeFlags, aBorder, aPadding, mStyleDisplay,
+                trimmedMarginSides);
 
     // For calculating the size of this box, we use its own writing mode
     const auto blockSize =
@@ -2360,12 +2371,11 @@ static void UpdateProp(nsIFrame* aFrame,
   }
 }
 
-void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
-                                       LayoutFrameType aFrameType,
-                                       ComputeSizeFlags aFlags,
-                                       const Maybe<LogicalMargin>& aBorder,
-                                       const Maybe<LogicalMargin>& aPadding,
-                                       const nsStyleDisplay* aDisplay) {
+void SizeComputationInput::InitOffsets(
+    WritingMode aCBWM, nscoord aPercentBasis, LayoutFrameType aFrameType,
+    ComputeSizeFlags aFlags, const Maybe<LogicalMargin>& aBorder,
+    const Maybe<LogicalMargin>& aPadding, const nsStyleDisplay* aDisplay,
+    EnumSet<LogicalSide> aTrimmedMarginSides) {
   nsPresContext* presContext = mFrame->PresContext();
 
   // Compute margins from the specified margin style information. These
@@ -2373,6 +2383,25 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
   // XXX fix to provide 0,0 for the top&bottom margins for
   // inline-non-replaced elements
   bool needMarginProp = ComputeMargin(aCBWM, aPercentBasis, aFrameType);
+  if (!aTrimmedMarginSides.isEmpty()) {
+    // Overwrite the logical margin so `UpdateProp` keeps the trimmed margin on
+    // the frame.
+    // https://drafts.csswg.org/css-box-4/#margin-trim
+    LogicalMargin margin = ComputedLogicalMargin(aCBWM);
+    bool marginChanged = false;
+    for (const LogicalSide side : aTrimmedMarginSides) {
+      auto& value = margin.Side(side, aCBWM);
+      if (value == 0) {
+        continue;
+      }
+      value = 0;
+      marginChanged = true;
+    }
+    if (marginChanged) {
+      SetComputedLogicalMargin(aCBWM, margin);
+      needMarginProp = true;
+    }
+  }
   // Note that ComputeMargin() simplistically resolves 'auto' margins to 0.
   // In formatting contexts where this isn't correct, some later code will
   // need to update the UsedMargin() property with the actual resolved value.
@@ -2608,23 +2637,6 @@ void ReflowInput::CalculateBlockSideMargins() {
   }
 }
 
-// For "normal" we use the font's normal line height (em height + leading).
-// If both internal leading and  external leading specified by font itself are
-// zeros, we should compensate this by creating extra (external) leading.
-// This is necessary because without this compensation, normal line height might
-// look too tight.
-static nscoord GetNormalLineHeight(nsFontMetrics* aFontMetrics) {
-  MOZ_ASSERT(aFontMetrics, "no font metrics");
-  nscoord externalLeading = aFontMetrics->ExternalLeading();
-  nscoord internalLeading = aFontMetrics->InternalLeading();
-  nscoord emHeight = aFontMetrics->EmHeight();
-  if (!internalLeading && !externalLeading) {
-    return NSToCoordRound(static_cast<float>(emHeight) *
-                          ReflowInput::kNormalLineHeightFactor);
-  }
-  return emHeight + internalLeading + externalLeading;
-}
-
 static inline nscoord ComputeLineHeight(const StyleLineHeight& aLh,
                                         const nsFont& aFont, nsAtom* aLanguage,
                                         bool aExplicitLanguage,
@@ -2664,10 +2676,15 @@ static inline nscoord ComputeLineHeight(const StyleLineHeight& aLh,
     params.textPerf = aPresContext->GetTextPerfMetrics();
     params.featureValueLookup = aPresContext->GetFontFeatureValuesLookup();
     RefPtr<nsFontMetrics> fm = aPresContext->GetMetricsFor(font, params);
-    return GetNormalLineHeight(fm);
+    // For "normal" we use the font's normal line height (em height + leading).
+    // If both internal leading and  external leading specified by font itself
+    // are zeros, we compensate for this by creating extra (external) leading.
+    // This is necessary because without this compensation, normal line height
+    // might look too tight.
+    return fm->CalcNormalLineHeight();
   }
   // If we don't have a pres context, use a 1.2em fallback.
-  size.ScaleBy(ReflowInput::kNormalLineHeightFactor);
+  size.ScaleBy(nsFontMetrics::kNormalLineHeightFactor);
   return size.ToAppUnits();
 }
 

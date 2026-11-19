@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import React, { useCallback, useContext, useEffect, useRef } from "react";
-import { useSelector, batch } from "react-redux";
+import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { SpaceActiveContext } from "content-src/lib/SpaceActiveContext";
@@ -42,29 +42,27 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
 
   const handleChangeSize = useCallback(
     size => {
-      batch(() => {
-        dispatch(
-          ac.OnlyToMain({
-            type: at.SET_PREF,
-            data: {
-              name: PREF_WEATHER_SIZE,
-              value: size,
-            },
-          })
-        );
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_USER_EVENT,
-            data: {
-              widget_name: "weather",
-              widget_source: "context_menu",
-              user_action: USER_ACTION_TYPES.CHANGE_SIZE,
-              action_value: size,
-              widget_size: size,
-            },
-          })
-        );
-      });
+      dispatch(
+        ac.OnlyToMain({
+          type: at.SET_PREF,
+          data: {
+            name: PREF_WEATHER_SIZE,
+            value: size,
+          },
+        })
+      );
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "weather",
+            widget_source: "context_menu",
+            user_action: USER_ACTION_TYPES.CHANGE_SIZE,
+            action_value: size,
+            widget_size: size,
+          },
+        })
+      );
     },
     [dispatch]
   );
@@ -194,153 +192,141 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
   const { searchActive } = weatherData;
 
   function handleChangeLocation() {
-    batch(() => {
-      dispatch(
-        ac.BroadcastToContent({
-          type: at.WEATHER_SEARCH_ACTIVE,
-          data: true,
-        })
-      );
-      const telemetryData = {
-        widget_name: "weather",
-        widget_source: "context_menu",
-        user_action: USER_ACTION_TYPES.CHANGE_LOCATION,
-        widget_size: widgetSize,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
+    dispatch(
+      ac.BroadcastToContent({
+        type: at.WEATHER_SEARCH_ACTIVE,
+        data: true,
+      })
+    );
+    const telemetryData = {
+      widget_name: "weather",
+      widget_source: "context_menu",
+      user_action: USER_ACTION_TYPES.CHANGE_LOCATION,
+      widget_size: widgetSize,
+    };
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: telemetryData,
+      })
+    );
   }
 
   function handleDetectLocation() {
-    batch(() => {
-      dispatch(
-        ac.AlsoToMain({
-          type: at.WEATHER_USER_OPT_IN_LOCATION,
-        })
-      );
-      const telemetryData = {
-        widget_name: "weather",
-        widget_source: "context_menu",
-        user_action: USER_ACTION_TYPES.DETECT_LOCATION,
-        widget_size: widgetSize,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
+    dispatch(
+      ac.AlsoToMain({
+        type: at.WEATHER_USER_OPT_IN_LOCATION,
+      })
+    );
+    const telemetryData = {
+      widget_name: "weather",
+      widget_source: "context_menu",
+      user_action: USER_ACTION_TYPES.DETECT_LOCATION,
+      widget_size: widgetSize,
+    };
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: telemetryData,
+      })
+    );
   }
 
   function handleChangeTempUnit(unit) {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: {
-            name: "weather.temperatureUnits",
-            value: unit,
-          },
-        })
-      );
-      const telemetryData = {
-        widget_name: "weather",
-        widget_source: "context_menu",
-        user_action: USER_ACTION_TYPES.CHANGE_TEMP_UNIT,
-        widget_size: widgetSize,
-        action_value: unit,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "weather.temperatureUnits",
+          value: unit,
+        },
+      })
+    );
+    const telemetryData = {
+      widget_name: "weather",
+      widget_source: "context_menu",
+      user_action: USER_ACTION_TYPES.CHANGE_TEMP_UNIT,
+      widget_size: widgetSize,
+      action_value: unit,
+    };
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: telemetryData,
+      })
+    );
   }
 
   function handleChangeDisplay(display) {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: {
-            name: "weather.display",
-            value: display,
-          },
-        })
-      );
-      const telemetryData = {
-        widget_name: "weather",
-        widget_source: "context_menu",
-        user_action: USER_ACTION_TYPES.CHANGE_DISPLAY,
-        action_value: "switch_to_mini_widget",
-        widget_size: widgetSize,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "weather.display",
+          value: display,
+        },
+      })
+    );
+    const telemetryData = {
+      widget_name: "weather",
+      widget_source: "context_menu",
+      user_action: USER_ACTION_TYPES.CHANGE_DISPLAY,
+      action_value: "switch_to_mini_widget",
+      widget_size: widgetSize,
+    };
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: telemetryData,
+      })
+    );
   }
 
   function handleHideWeather() {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: {
-            name: "showWeather",
-            value: false,
-          },
-        })
-      );
-      const telemetryData = {
-        widget_name: "weather",
-        widget_source: "context_menu",
-        enabled: false,
-        widget_size: widgetSize,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_ENABLED,
-          data: telemetryData,
-        })
-      );
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "showWeather",
+          value: false,
+        },
+      })
+    );
+    const telemetryData = {
+      widget_name: "weather",
+      widget_source: "context_menu",
+      enabled: false,
+      widget_size: widgetSize,
+    };
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_ENABLED,
+        data: telemetryData,
+      })
+    );
   }
 
   function handleLearnMore() {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.OPEN_LINK,
-          data: {
-            url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
-          },
-        })
-      );
-      const telemetryData = {
-        widget_name: "weather",
-        widget_source: "context_menu",
-        user_action: USER_ACTION_TYPES.LEARN_MORE,
-        widget_size: widgetSize,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.OPEN_LINK,
+        data: {
+          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+        },
+      })
+    );
+    const telemetryData = {
+      widget_name: "weather",
+      widget_source: "context_menu",
+      user_action: USER_ACTION_TYPES.LEARN_MORE,
+      widget_size: widgetSize,
+    };
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: telemetryData,
+      })
+    );
   }
 
   function handleProviderLinkClick() {

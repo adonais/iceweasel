@@ -48,7 +48,7 @@ class BackMenuItemProviderTest {
     fun `GIVEN there is no selected tab WHEN building the back menu item THEN return a disabled menu item`() = runTest {
         val provider = createProvider(BrowserStore(), backgroundScope)
 
-        assertEquals(expectedItem(canGoBack = false), provider.itemFlow.value)
+        assertEquals(expectedItem(canGoBack = false), provider.itemsFlow.value.single())
     }
 
     @Test
@@ -56,7 +56,7 @@ class BackMenuItemProviderTest {
         runTest {
             val provider = createProvider(browserStore(canGoBack = false), backgroundScope)
 
-            assertEquals(expectedItem(canGoBack = false), provider.itemFlow.value)
+            assertEquals(expectedItem(canGoBack = false), provider.itemsFlow.value.single())
         }
 
     @Test
@@ -64,7 +64,23 @@ class BackMenuItemProviderTest {
         runTest {
             val provider = createProvider(browserStore(canGoBack = true), backgroundScope)
 
-            assertEquals(expectedItem(canGoBack = true), provider.itemFlow.value)
+            assertEquals(expectedItem(canGoBack = true), provider.itemsFlow.value.single())
+        }
+
+    @Test
+    fun `GIVEN target is CustomizeMenu WHEN building the back menu item THEN return an enabled menu item without click events`() =
+        runTest {
+            val provider = createProvider(BrowserStore(), backgroundScope, target = MenuTarget.CustomizeMenu)
+
+            val expected =
+                StandardMenuItem(
+                    title = MenuItemTitle(Text.Resource(R.string.browser_menu_back)),
+                    icon = MenuItemIconRes(iconsR.drawable.mozac_ic_back_24),
+                    onClickEvent = null,
+                    onLongClickEvent = null,
+                    state = MenuItemState.DEFAULT,
+                )
+            assertEquals(expected, provider.itemsFlow.value.single())
         }
 
     @Test
@@ -246,7 +262,7 @@ class BackMenuItemProviderTest {
         listOf(BrowserStore(), browserStore(canGoBack = false), browserStore(canGoBack = true)).forEach { store ->
             val provider = createProvider(store, backgroundScope)
 
-            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+            val events = provider.itemsFlow.value.single().reachableEvents()
 
             assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         }

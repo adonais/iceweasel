@@ -27,7 +27,6 @@ struct SandboxReport {
     FILE,
     MEDIA_PLUGIN,
     RDD,
-    SOCKET_PROCESS,
     UTILITY,
   };
 

@@ -44,7 +44,7 @@ void RTCStatsIdGenerator::RewriteIds(
 
   // Create a temporary to avoid double-rewriting any stats already in
   // aIntoReport.
-  auto stats = MakeUnique<dom::RTCStatsCollection>();
+  auto stats = std::make_unique<dom::RTCStatsCollection>();
   dom::FlattenStats(std::move(aFromStats), stats.get());
 
   using S = dom::RTCStats;

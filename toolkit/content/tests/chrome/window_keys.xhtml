@@ -82,6 +82,36 @@ function runTest()
   document.documentElement.appendChild(keyset);
   iterateKeys(true, "appended");
 
+  // Changing the attributes of a key element takes effect for the next key
+  // event, without the keyset having to leave the document.
+  var kv = $("k-v");
+  kv.setAttribute("key", "k");
+  checkChangedKey("K", { }, "k-v", "key changed to k");
+  checkChangedKey("V", { }, "", "old key v no longer handled");
+  kv.setAttribute("modifiers", "control");
+  checkChangedKey("K", { }, "", "k without control no longer handled");
+  checkChangedKey("K", { ctrlKey: true }, "k-v", "k with control handled");
+  kv.removeAttribute("modifiers");
+  kv.setAttribute("key", "v");
+  checkChangedKey("V", { }, "k-v", "key changed back to v");
+
+  // A key's own command can change the keyset while its handlers are walked.
+  kv.addEventListener("command", () => kv.setAttribute("key", "k"), { once: true });
+  checkChangedKey("V", { }, "k-v", "key changed by its own command");
+  checkChangedKey("K", { }, "k-v", "key changed by its own command handled");
+  kv.setAttribute("key", "v");
+
+  // Key elements added to or removed from a keyset take effect for the next
+  // key event.
+  var kb = document.createXULElement("key");
+  kb.id = "k-b";
+  kb.setAttribute("key", "b");
+  kb.setAttribute("oncommand", "checkKey(event)");
+  $("keyset").appendChild(kb);
+  checkChangedKey("B", { }, "k-b", "added key handled");
+  kb.remove();
+  checkChangedKey("B", { }, "", "removed key no longer handled");
+
   var accelText = menuitem => (menuitem.getAttribute("acceltext") || "").toLowerCase();
 
   $("menubutton").open = true;
@@ -128,6 +158,13 @@ function runTest()
 
   window.close();
   window.arguments[0].SimpleTest.finish();
+}
+
+function checkChangedKey(key, modifiers, expectedId, testid)
+{
+  gExpected = [expectedId, key, modifiers];
+  synthesizeKey(key, modifiers);
+  ok(expectedId ? !gExpected : gExpected, testid);
 }
 
 function iterateKeys(enabled, testid)

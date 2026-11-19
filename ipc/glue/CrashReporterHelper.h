@@ -45,8 +45,8 @@ class CrashReporterHelper {
   IPCResult RecvInitCrashReporter(
       const CrashReporter::CrashReporterInitArgs& aInitArgs) {
     GeckoChildID child_id = static_cast<Derived*>(this)->OtherChildID();
-    mCrashReporter = MakeUnique<ipc::CrashReporterHost>(Derived::PROCESS_TYPE,
-                                                        child_id, aInitArgs);
+    mCrashReporter = std::make_unique<ipc::CrashReporterHost>(
+        Derived::PROCESS_TYPE, child_id, aInitArgs);
     return IPC_OK();
   }
 

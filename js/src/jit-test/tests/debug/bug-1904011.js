@@ -1,4 +1,4 @@
-// |jit-test| --fuzzing-safe; --ion-offthread-compile=off
+// |jit-test| --ion-offthread-compile=off
 gczeal(0);
 
 let g = newGlobal({newCompartment: true});

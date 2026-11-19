@@ -18,6 +18,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
 import androidx.activity.compose.BackHandler
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -52,7 +53,6 @@ import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -79,6 +79,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.R
+import org.mozilla.fenix.addons.pendingExtensionUpdateNames
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.components
@@ -186,7 +187,11 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     event: KeyEvent,
                 ): Boolean {
                     if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_MENU) {
-                        dismiss()
+                        // Repeats from a held down hardware key would otherwise keep dismissing
+                        // and reopening the menu.
+                        if (event.repeatCount == 0) {
+                            dismiss()
+                        }
                         return true
                     }
                     return super.onKeyDown(keyCode, event)
@@ -331,6 +336,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 val translateLanguageCode =
                     selectedTab?.translationsState?.translationEngineState?.requestedTranslationPair?.toLanguage
                 val isExtensionsProcessDisabled = browserStore.state.extensionsProcessDisabled
+                val pendingExtensionUpdateNames = browserStore.state.pendingExtensionUpdateNames()
                 val isDesktopMode by remember {
                     menuStore.stateFlow.map { state -> state.isDesktopMode }
                 }
@@ -441,6 +447,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         availableAddons = availableAddons,
                         browserWebExtensionMenuItems = browserWebExtensionMenuItem,
                     )
+                val pendingExtensionUpdatesDescription =
+                    getPendingExtensionUpdatesDescription(
+                        accessPoint = args.accesspoint,
+                        isExtensionsProcessDisabled = isExtensionsProcessDisabled,
+                        pendingExtensionUpdateNames = pendingExtensionUpdateNames.values.toList(),
+                    )
 
                 val webExtensionMenuItems =
                     remember(availableAddons, browserWebExtensionMenuItem) {
@@ -548,6 +560,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 canGoBack = browserStore.state.canGoBackInHistoryOrToStories(),
                                 canGoForward = selectedTab?.content?.canGoForward ?: true,
                                 extensionsMenuItemDescription = extensionsMenuItemDescription,
+                                pendingExtensionUpdatesDescription = pendingExtensionUpdatesDescription,
                                 scrollState = scrollState,
                                 showBanner = shouldShowMenuBanner && !defaultBrowser,
                                 isDownloadHighlighted = isDownloadHighlighted,
@@ -726,6 +739,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 extensionSubmenu = {
                                     Addons(
                                         accessPoint = args.accesspoint,
+                                        pendingExtensionUpdateIds = pendingExtensionUpdateNames.keys,
                                         availableAddons = availableAddons,
                                         webExtensionMenuItems = webExtensionMenuItems,
                                         addonInstallationInProgress = addonInstallationInProgress,
@@ -977,8 +991,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
             removePinnedSitesUseCase = components.useCases.topSitesUseCase.removeTopSites,
             requestDesktopSiteUseCase = components.useCases.sessionUseCases.requestDesktopSite,
             migratePrivateTabUseCase = components.useCases.tabsUseCases.migratePrivateTabUseCase,
-            materialAlertDialogBuilder = MaterialAlertDialogBuilder(requireContext()),
-            topSitesMaxLimit = components.settings.topSitesMaxLimit,
             mainDispatcher = Dispatchers.Main,
         )
     }
@@ -1039,12 +1051,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         when (ipProtectionMenuState.status) {
             IPProtectionStatus.Disabled -> {
                 Vpn.menuTurnedOn.record()
-                components.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                components.ipProtection.store.dispatch(IPProtectionAction.ActivationAction.Toggle)
             }
 
             IPProtectionStatus.Enabled -> {
                 Vpn.menuTurnedOff.record()
-                components.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                components.ipProtection.store.dispatch(IPProtectionAction.ActivationAction.Toggle)
             }
 
             IPProtectionStatus.AuthRequired -> {
@@ -1056,11 +1068,11 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
             IPProtectionStatus.AwaitingService -> store.dispatch(MenuAction.Navigate.IPProtectionSettings)
 
             IPProtectionStatus.Activating,
-            IPProtectionStatus.DataLimitReached,
             IPProtectionStatus.ConnectionError -> {
-                components.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                components.ipProtection.store.dispatch(IPProtectionAction.ActivationAction.Toggle)
             }
 
+            IPProtectionStatus.DataLimitReached,
             IPProtectionStatus.Unavailable,
             IPProtectionStatus.Uninitialized -> Unit
         }
@@ -1096,6 +1108,27 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
             else -> null
         }
+    }
+
+    @VisibleForTesting
+    internal fun getPendingExtensionUpdatesDescription(
+        accessPoint: MenuAccessPoint,
+        isExtensionsProcessDisabled: Boolean,
+        pendingExtensionUpdateNames: List<String>,
+    ): String? {
+        // Only a disabled extensions process outranks a pending update. Custom tabs can't act on it.
+        if (
+            pendingExtensionUpdateNames.isEmpty() ||
+                isExtensionsProcessDisabled ||
+                accessPoint == MenuAccessPoint.External
+        ) {
+            return null
+        }
+        return requireContext()
+            .getString(
+                R.string.browser_menu_extensions_review_update_description,
+                pendingExtensionUpdateNames.joinToString(),
+            )
     }
 
     private fun openToBrowser(params: BrowserNavigationParams) = runIfFragmentIsAttached {

@@ -1071,7 +1071,7 @@ void nsLookAndFeel::EnsureInit() {
         HKEY_CURRENT_USER, u"Software\\Microsoft\\ColorFiltering"_ns,
         WinRegistry::KeyMode::QueryValue | WinRegistry::KeyMode::Notify);
     if (key) {
-      mColorFilterWatcher = MakeUnique<WinRegistry::KeyWatcher>(
+      mColorFilterWatcher = std::make_unique<WinRegistry::KeyWatcher>(
           std::move(key), GetCurrentSerialEventTarget(), [this] {
             MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
             if (mCurrentColorFilter != SystemColorFilter()) {

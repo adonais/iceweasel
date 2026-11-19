@@ -5,27 +5,31 @@
 package org.mozilla.fenix.settings
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.time.Instant
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.AccountState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
-import mozilla.components.feature.ipprotection.store.state.BYTES_PER_GB
+import mozilla.components.feature.ipprotection.store.state.DataVolume
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.UsageQuota
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -42,6 +46,44 @@ class IPProtectionScreenTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     @Test
+    fun `GIVEN all data remains WHEN rendering the screen THEN the data limit progress bar is full`() {
+        val state =
+            IPProtectionState(
+                eligibilityStatus = EligibilityStatus.Eligible,
+                proxyStatus = Authorized.Active,
+                serviceStatus = ServiceState.Ready,
+                usageQuota =
+                    UsageQuota.Metered(
+                        max = DataVolume.roundedGigabytes(50),
+                        remaining = DataVolume.roundedGigabytes(50),
+                    ),
+            )
+
+        setScreen(state = state)
+
+        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(1f, 0f..1f))).assertExists()
+    }
+
+    @Test
+    fun `GIVEN a portion of the quota is used WHEN rendering the screen THEN the progress bar shows the same percent as fraction`() {
+        val state =
+            IPProtectionState(
+                eligibilityStatus = EligibilityStatus.Eligible,
+                proxyStatus = Authorized.Active,
+                serviceStatus = ServiceState.Ready,
+                usageQuota =
+                    UsageQuota.Metered(
+                        max = DataVolume.roundedGigabytes(100),
+                        remaining = DataVolume.roundedGigabytes(80),
+                    ),
+            )
+
+        setScreen(state = state)
+
+        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(0.8f, 0f..1f))).assertExists()
+    }
+
+    @Test
     fun `GIVEN the data limit is reached WHEN rendering the screen THEN the data limit UI is shown`() {
         val maxDataGb = 50f
         val state =
@@ -49,11 +91,17 @@ class IPProtectionScreenTest {
                 eligibilityStatus = EligibilityStatus.Eligible,
                 proxyStatus = Authorized.DataLimitReached,
                 serviceStatus = ServiceState.Ready,
-                maxDataBytes = maxDataGb.toLong() * BYTES_PER_GB.toLong(),
-                remainingDataBytes = 0L,
+                usageQuota =
+                    UsageQuota.Metered(
+                        resetTime = null,
+                        max = DataVolume.roundedGigabytes(maxDataGb),
+                        remaining = DataVolume.Zero,
+                    ),
             )
 
         setScreen(state = state)
+
+        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(0f, 0f..1f))).assertExists()
 
         composeTestRule.onNodeWithText(testContext.getString(R.string.ip_protection_data_limit_label)).assertExists()
 
@@ -84,8 +132,12 @@ class IPProtectionScreenTest {
                 eligibilityStatus = EligibilityStatus.Eligible,
                 proxyStatus = Authorized.Active,
                 serviceStatus = ServiceState.Ready,
-                maxDataBytes = 50L * BYTES_PER_GB.toLong(),
-                remainingDataBytes = 40L * BYTES_PER_GB.toLong(),
+                usageQuota =
+                    UsageQuota.Metered(
+                        resetTime = Instant.parse("2026-06-01T00:00:00Z"),
+                        max = DataVolume.roundedGigabytes(50),
+                        remaining = DataVolume.roundedGigabytes(40),
+                    ),
             )
 
         setScreen(state = state)
@@ -103,8 +155,12 @@ class IPProtectionScreenTest {
                 eligibilityStatus = EligibilityStatus.Eligible,
                 proxyStatus = Authorized.Active,
                 serviceStatus = ServiceState.Ready,
-                maxDataBytes = 50L * BYTES_PER_GB.toLong(),
-                remainingDataBytes = 40L * BYTES_PER_GB.toLong(),
+                usageQuota =
+                    UsageQuota.Metered(
+                        resetTime = Instant.parse("2026-06-01T00:00:00Z"),
+                        max = DataVolume.roundedGigabytes(50),
+                        remaining = DataVolume.roundedGigabytes(40),
+                    ),
             )
 
         setScreen(state = state, onLearnMoreClick = { learnMoreClicks++ })
@@ -120,8 +176,7 @@ class IPProtectionScreenTest {
             IPProtectionState(
                 eligibilityStatus = EligibilityStatus.Eligible,
                 proxyStatus = Authorized.Active,
-                maxDataBytes = 0L,
-                remainingDataBytes = 0L,
+                usageQuota = UsageQuota.Unmetered(resetTime = null),
             )
 
         setScreen(state = state, promoDate = PROMO_DATE)
@@ -140,8 +195,12 @@ class IPProtectionScreenTest {
                 eligibilityStatus = EligibilityStatus.Eligible,
                 proxyStatus = Authorized.Active,
                 serviceStatus = ServiceState.Ready,
-                maxDataBytes = 50L * BYTES_PER_GB.toLong(),
-                remainingDataBytes = 40L * BYTES_PER_GB.toLong(),
+                usageQuota =
+                    UsageQuota.Metered(
+                        resetTime = Instant.parse("2026-06-01T00:00:00Z"),
+                        max = DataVolume.roundedGigabytes(50),
+                        remaining = DataVolume.roundedGigabytes(40),
+                    ),
             )
 
         setScreen(state = state, promoDate = PROMO_DATE)
@@ -157,8 +216,7 @@ class IPProtectionScreenTest {
             IPProtectionState(
                 eligibilityStatus = EligibilityStatus.Eligible,
                 proxyStatus = Authorized.Active,
-                maxDataBytes = 0L,
-                remainingDataBytes = 0L,
+                usageQuota = UsageQuota.Unmetered(resetTime = Instant.parse("2026-06-01T00:00:00Z")),
             )
 
         setScreen(state = state)
@@ -168,10 +226,9 @@ class IPProtectionScreenTest {
         composeTestRule.onNode(hasPromoCardTitle()).assertDoesNotExist()
     }
 
-    // maxDataBytes is -1 until the service reports usage, which must not be mistaken for the uncapped promo plan.
     @Test
     fun `GIVEN usage data has not arrived and no promo is running WHEN rendering the screen THEN the description is shown`() {
-        setScreen(state = IPProtectionState(eligibilityStatus = EligibilityStatus.Eligible))
+        setScreen(state = IPProtectionState(eligibilityStatus = EligibilityStatus.Eligible, usageQuota = null))
 
         composeTestRule.onNode(hasVpnDescription()).assertExists()
 
@@ -192,8 +249,11 @@ class IPProtectionScreenTest {
                 eligibilityStatus = EligibilityStatus.Eligible,
                 proxyStatus = Authorized.Activating,
                 serviceStatus = ServiceState.Ready,
-                maxDataBytes = 0L,
-                remainingDataBytes = 0L,
+                usageQuota =
+                    UsageQuota.Metered(
+                        max = DataVolume.roundedGigabytes(50),
+                        remaining = DataVolume.roundedGigabytes(40),
+                    ),
             )
 
         setScreen(state = state, isLocationSelectionEnabled = true)

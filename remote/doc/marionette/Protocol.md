@@ -1,50 +1,48 @@
 # Protocol
 
-Marionette provides an asynchronous, parallel pipelining user-facing
-interface.  Message sequencing limits chances of payload race
-conditions and provides a uniform way in which payloads are serialised.
+Marionette uses a simple JSON-based wire protocol over a TCP socket.
+Each `command` message carries a message ID, and the server includes
+that same ID in its `response`.
 
-Clients that deliver a blocking WebDriver interface are still
-expected to not send further command requests before the response
-from the last command has come back, but if they still happen to do
-so because of programming error, no harm will be done.  This guards
-against [mixing up responses].
+Clients **must** send commands one at a time. After sending a
+command, wait for its response before sending the next one.
+Firefox's WebDriver Classic implementation assumes commands are
+handled one after another. Sending a command while an earlier one is
+still running is not supported and can break things. For example,
+the response may never arrive, or an error may be reported for the
+wrong command. One such case is sending `WebDriver:SwitchToWindow`
+while `WebDriver:Navigate` is still running ([bug 2081191]).
+
+If you need to run commands in parallel, use [WebDriver BiDi]
+instead. Its protocol supports this by design.
 
 Schematic flow of messages:
 
 ```text
-        client      server
-          |            |
-msgid=1    |----------->|
-          |  command   |
-          |            |
-msgid=2    |<-----------|
-          |  command   |
-          |            |
-msgid=2    |----------->|
-          |  response  |
-          |            |
-msgid=1    |<-----------|
-          |  response  |
-          |            |
+          client      server
+            |            |
+msgid=1     |----------->|
+            |  command   |
+            |            |
+msgid=1     |<-----------|
+            |  response  |
+            |            |
+msgid=2     |----------->|
+            |  command   |
+            |            |
+msgid=2     |<-----------|
+            |  response  |
+            |            |
 ```
 
 The protocol consists of a `command` message and the corresponding
 `response` message.  A `response` message must always be sent in
-reply to a `command` message.
+reply to a `command` message.  Clients should still verify that
+the message ID of a received `response` matches that of the
+`command` they sent.
 
-This means that the server implementation does not need to send
-the reply precisely in the order of the received commands: if it
-receives multiple messages, the server may even reply in random order.
-It is therefore strongly advised that clients take this into account
-when imlpementing the client end of this wire protocol.
-
-This is required for pipelining messages.  On the server side,
-some functions are fast, and some less so.  If the server must
-reply in order, the slow functions delay the other replies even if
-its execution is already completed.
-
-[mixing up responses]: https://bugzil.la/1207125
+[bug 2081191]: https://bugzil.la/2081191
+[WebDriver BiDi]: /remote/index.md#webdriver-bidi
 
 ## Command
 
@@ -114,9 +112,8 @@ to be one of the JSON error codes as laid out by the [WebDriver standard].
 
 Clients may be implemented in any language that is capable of writing
 and receiving data over TCP socket.  A [reference client] is provided.
-Clients may be implemented both synchronously and asynchronously,
-although the latter is impossible in protocol levels 2 and earlier
-due to the lack of message sequencing.
+Whatever language or I/O model a client uses, it must send commands
+in sequence, as described above.
 
 [WebDriver standard]: https://w3c.github.io/webdriver/#dfn-error-code
 [reference client]: https://searchfox.org/firefox-main/source/testing/marionette/client/

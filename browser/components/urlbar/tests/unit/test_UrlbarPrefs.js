@@ -92,6 +92,10 @@ const EXPECTED_SUGGESTIONS_FIRST_GROUPS = {
                   group: UrlbarShared.RESULT_GROUP.RECENT_SEARCH,
                 },
                 {
+                  flex: 99,
+                  group: UrlbarShared.RESULT_GROUP.TEMPORAL_SUGGESTION,
+                },
+                {
                   flex: 4,
                   group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
                 },
@@ -222,6 +226,10 @@ const EXPECTED_NOT_SUGGESTIONS_FIRST_GROUPS = {
                 {
                   flex: 99,
                   group: UrlbarShared.RESULT_GROUP.RECENT_SEARCH,
+                },
+                {
+                  flex: 99,
+                  group: UrlbarShared.RESULT_GROUP.TEMPORAL_SUGGESTION,
                 },
                 {
                   flex: 4,
@@ -409,6 +417,8 @@ const EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS = {
 
 // Tests interaction between showSearchSuggestionsFirst and resultGroups.
 add_task(function showSearchSuggestionsFirst_resultGroups() {
+  let context = createContext("test", { sapName: "urlbar" });
+
   // Check initial values.
   Assert.equal(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),
@@ -417,7 +427,8 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
   );
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "urlbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_SUGGESTIONS_FIRST_GROUPS,
     "resultGroups is the same as the groups for which showSearchSuggestionsFirst is true"
@@ -426,7 +437,8 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "urlbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_NOT_SUGGESTIONS_FIRST_GROUPS,
     "resultGroups is updated after setting showSearchSuggestionsFirst = false"
@@ -435,7 +447,8 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
   UrlbarPrefs.set("showSearchSuggestionsFirst", true);
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "urlbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_SUGGESTIONS_FIRST_GROUPS,
     "resultGroups is updated after setting showSearchSuggestionsFirst = true"
@@ -445,7 +458,8 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "urlbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_NOT_SUGGESTIONS_FIRST_GROUPS,
     "resultGroups is updated after setting showSearchSuggestionsFirst = false"
@@ -455,7 +469,8 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
   Services.prefs.clearUserPref("browser.urlbar.showSearchSuggestionsFirst");
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "urlbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_SUGGESTIONS_FIRST_GROUPS,
     "resultGroups is updated immediately after clearing showSearchSuggestionsFirst"
@@ -470,6 +485,8 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
 // Tests interaction between showSearchSuggestionsFirst,
 // smartbar.showSearchSuggestionsFirst and smartbar resultGroups.
 add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
+  let context = createContext("test", { sapName: "smartbar" });
+
   Assert.equal(
     UrlbarPrefs.get("smartbar.showSearchSuggestionsFirst"),
     false,
@@ -477,7 +494,8 @@ add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
   );
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "smartbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS,
     "smartbar resultGroups has general results first"
@@ -486,7 +504,8 @@ add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
   UrlbarPrefs.set("smartbar.showSearchSuggestionsFirst", true);
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "smartbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
     "smartbar resultGroups has suggestions first when smartbar.showSearchSuggestionsFirst is true"
@@ -495,7 +514,8 @@ add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "smartbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
     "smartbar resultGroups is unaffected by the pref showSearchSuggestionsFirst"
@@ -508,7 +528,8 @@ add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
   );
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
-      context: { sapName: "smartbar", searchString: "test" },
+      context,
+      showSearchSuggestionsFirst: context.showSearchSuggestionsFirst,
     }),
     EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS,
     "smartbar resultGroups is updated immediately after clearing prefs"
@@ -649,4 +670,35 @@ add_task(async function add() {
     () => UrlbarPrefs.add("addons.featureGate", true),
     /The pref addons.featureGate should handle the values as Set but 'boolean'/
   );
+});
+
+// Tests that the result groups put general results before search results and
+// flex them 7:6 when `showTemporalSuggestions` is true.
+add_task(function showTemporalSuggestions_resultGroups() {
+  let context = createContext("", { sapName: "urlbar" });
+
+  let rootGroup = UrlbarPrefs.getResultGroups({
+    context,
+    showTemporalSuggestions: true,
+  });
+  let mainGroup = rootGroup.children.at(-1);
+  let [general, suggestions] = mainGroup.children;
+  Assert.equal(
+    general.group,
+    UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+    "General results come first"
+  );
+  Assert.equal(general.flex, 7, "General results have flex 7");
+  Assert.equal(suggestions.flex, 6, "Search results have flex 6");
+
+  rootGroup = UrlbarPrefs.getResultGroups({ context });
+  mainGroup = rootGroup.children.at(-1);
+  [general, suggestions] = mainGroup.children;
+  Assert.equal(
+    general.group,
+    UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+    "General results come first by default"
+  );
+  Assert.equal(general.flex, 2, "General results have flex 2 by default");
+  Assert.equal(suggestions.flex, 1, "Search results have flex 1 by default");
 });

@@ -12,12 +12,13 @@ task-defaults:
     attributes:
         local-toolchain: true
     run:
-        clone-with: hg
         script: build-rust-based-toolchain.sh
         toolchain-artifact: public/build/mozcheck.tar.zst
         sparse-profile: null
         resources:
-            - 'tools/lint/mozcheck'
+            - 'tools/lint/mozcheck/Cargo.toml'
+            - 'tools/lint/mozcheck/Cargo.lock'
+            - 'tools/lint/mozcheck/src'
 
 linux64-mozcheck:
     treeherder:

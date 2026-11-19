@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// eslint-disable-next-line import/no-unresolved
+// eslint-disable-next-line import-x/no-unresolved
 import { html, ifDefined } from "lit.all.mjs";
 import "chrome://global/content/elements/moz-card.mjs";
 import { ERRORS } from "chrome://browser/content/backup/backup-constants.mjs";

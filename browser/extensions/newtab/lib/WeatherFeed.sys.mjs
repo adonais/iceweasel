@@ -200,14 +200,14 @@ export class WeatherFeed {
       timeoutMs: 7000,
     });
 
-    if (data?.locations.length) {
-      this.store.dispatch(
-        ac.BroadcastToContent({
-          type: at.WEATHER_LOCATION_SUGGESTIONS_UPDATE,
-          data: data.locations,
-        })
-      );
-    }
+    // Send an empty list when nothing matches so the previous query's
+    // suggestions don't stay visible.
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.WEATHER_LOCATION_SUGGESTIONS_UPDATE,
+        data: data?.locations ?? [],
+      })
+    );
   }
 
   async onPrefChangedAction(action) {

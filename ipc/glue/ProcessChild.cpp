@@ -36,8 +36,8 @@ ProcessChild::ProcessChild(IPC::Channel::ChannelHandle aClientChannel,
     : mUILoop(MessageLoop::current()),
       mParentPid(aParentPid),
       mMessageChannelId(aMessageChannelId),
-      mChildThread(
-          MakeUnique<IOThreadChild>(std::move(aClientChannel), aParentPid)) {
+      mChildThread(std::make_unique<IOThreadChild>(std::move(aClientChannel),
+                                                   aParentPid)) {
   MOZ_ASSERT(mUILoop, "UILoop should be created by now");
   MOZ_ASSERT(!gProcessChild, "should only be one ProcessChild");
   CrashReporter::RegisterAnnotationNSCString(

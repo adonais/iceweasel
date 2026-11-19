@@ -118,7 +118,7 @@ namespace jni {
  *       static void AttachTo(const MyJavaClass::LocalRef& instance)
  *       {
  *           MyJavaClass::Natives<MyClass>::AttachNative(
- *                   instance, mozilla::MakeUnique<MyClass>());
+ *                   instance, std::make_unique<MyClass>());
  *
  *           // "instance" owns the newly created C++ object, so the C++
  *           // object is destroyed as soon as instance.disposeNative() is

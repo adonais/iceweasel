@@ -108,7 +108,7 @@ static Result<UniquePtr<TimeZone>, ICUError> TryCreateTimeZone(
     return Err(ICUError::InternalError);
   }
 
-  return MakeUnique<TimeZone>(std::move(tz));
+  return std::make_unique<TimeZone>(std::move(tz));
 #else
   const char16_t* zoneIDChar16 = nullptr;
   Vector<char16_t, TimeZone::TimeZoneIdentifierLength> zoneIDChars;
@@ -145,7 +145,7 @@ static Result<UniquePtr<TimeZone>, ICUError> TryCreateTimeZone(
     return Err(ToICUError(status));
   }
 
-  return MakeUnique<TimeZone>(calendar);
+  return std::make_unique<TimeZone>(calendar);
 #endif
 }
 

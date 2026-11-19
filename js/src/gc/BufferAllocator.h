@@ -20,6 +20,7 @@
 
 #include "ds/SlimLinkedList.h"
 #include "js/HeapAPI.h"
+#include "js/TracingAPI.h"
 #include "threading/LockGuard.h"
 #include "threading/Mutex.h"
 #include "threading/ProtectedData.h"
@@ -463,11 +464,13 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   static inline size_t GetGoodPower2AllocSize(size_t requiredBytes);
   static inline size_t GetGoodPower2ElementCount(size_t requiredElements,
                                                  size_t elementSize);
-  static bool IsBufferAlloc(void* alloc);
+  static bool IsGCPointerBufferAlloc(void* alloc);
 
-  static bool MarkBuffer(JSTracer* trc, void** bufferp, const char* name);
-  static bool PromoteBuffer(JSTracer* trc, void** bufferp, const char* name,
-                            mozilla::Maybe<bool> nurseryOwned);
+  static JSTracer::TraceBufferResult MarkBuffer(JSTracer* trc, void** bufferp,
+                                                const char* name);
+  static JSTracer::TraceBufferResult PromoteBuffer(
+      JSTracer* trc, void** bufferp, const char* name,
+      mozilla::Maybe<bool> nurseryOwned);
 
   void* alloc(size_t bytes, bool nurseryOwned);
   void* allocInGC(size_t bytes, bool nurseryOwned);

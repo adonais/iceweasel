@@ -10,6 +10,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSPViolationData.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/TrustedTypePolicy.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
@@ -170,9 +171,39 @@ auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
 
 constexpr nsLiteralString kDefaultPolicyName = u"default"_ns;
 
+// Bug 2072122: Trusted Types readiness experiment only, to be removed.
+// Names of the Trusted Types policies created by libraries that support
+// Trusted Types, for the security.trusted_types_readiness telemetry.
+constexpr nsLiteralString kLibraryPolicyNames[] = {
+    u"lit-html"_ns,
+};
+
+static bool IsLibraryPolicyName(const nsAString& aPolicyName) {
+  for (const nsLiteralString& name : kLibraryPolicyNames) {
+    if (aPolicyName.Equals(name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
     JSContext* aJSContext, const nsAString& aPolicyName,
     const TrustedTypePolicyOptions& aPolicyOptions, ErrorResult& aRv) {
+  // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+  // Recorded before the CSP check: a library offering a policy counts towards
+  // readiness even if the page's trusted-types directive rejects its name.
+  if (auto* piDOMWindowInner = mGlobalObject->GetAsInnerWindow()) {
+    if (Document* doc = piDOMWindowInner->GetExtantDoc();
+        doc &&
+        !doc->HasTrustedTypesReadinessSignal(
+            TrustedTypesReadinessSignal::HasTrustedTypesLibrary) &&
+        IsLibraryPolicyName(aPolicyName)) {
+      doc->SetTrustedTypesReadinessSignal(
+          TrustedTypesReadinessSignal::HasTrustedTypesLibrary);
+    }
+  }
+
   if (PolicyCreation::Blocked ==
       ShouldTrustedTypePolicyCreationBeBlockedByCSP(aJSContext, aPolicyName)) {
     nsCString errorMessage =
@@ -209,6 +240,14 @@ already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
 
   if (aPolicyName.Equals(kDefaultPolicyName)) {
     mDefaultPolicy = policy;
+  }
+
+  // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+  if (auto* piDOMWindowInner = mGlobalObject->GetAsInnerWindow()) {
+    if (Document* doc = piDOMWindowInner->GetExtantDoc()) {
+      doc->SetTrustedTypesReadinessSignal(
+          TrustedTypesReadinessSignal::CreatedPolicy);
+    }
   }
 
   mCreatedPolicyNames.AppendElement(aPolicyName);

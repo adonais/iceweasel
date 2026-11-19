@@ -290,8 +290,9 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
   .tile {
     background: var(--newtab-background-card);
+    border: var(--card-border);
     border-radius: var(--border-radius-large);
-    box-shadow: $shadow-card;
+    box-shadow: var(--card-box-shadow);
     height: calc(var(--size-item-large) * 2);
     width: calc(var(--size-item-large) * 2);
     margin: 0 auto;
@@ -301,7 +302,6 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     justify-content: center;
     text-transform: uppercase;
     font-size: var(--font-size-xxlarge);
-    color: var(--newtab-contextual-text-secondary-color);
     cursor: pointer;
 
     .icon-wrapper {
@@ -316,6 +316,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
       &.letter-fallback {
         border-radius: var(--border-radius-circle);
+        color: var(--newtab-contextual-text-secondary-color);
 
         &::before {
           content: attr(data-fallback);
@@ -474,7 +475,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     border-radius: var(--border-radius-circle);
     -moz-context-properties: fill;
     fill: var(--newtab-primary-element-text-color);
-    box-shadow: $shadow-card;
+    box-shadow: var(--card-box-shadow);
     transition: background-size $hover-transition-duration,
       bottom $hover-transition-duration,
       inset-inline-end $hover-transition-duration,
@@ -489,7 +490,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
   &.placeholder {
     .tile {
-      box-shadow: $shadow-card;
+      box-shadow: var(--card-box-shadow);
       cursor: default;
     }
   }
@@ -608,7 +609,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     inset-block-start: calc(var(--col-width) - var(--size-item-large));
   }
 
-  .add-button-tile:only-child {
+  .add-button-tile {
     // Reserves the height of a shortcut tile (75px) + label (32px) + padding
     min-height: calc(107px + var(--space-small));
   }

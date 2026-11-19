@@ -135,6 +135,10 @@ skip-if = [
 
 ["test_htmlcopyencoder_details.html"]
 
+["test_htmlcopyencoder_inlinestyle.html"]
+
+["test_htmlcopyencoder_inlinestyle_opacity.html"]
+
 ["test_htmlcopyencoder_list.html"]
 
 ["test_htmlcopyencoder_range_end_comment.html"]

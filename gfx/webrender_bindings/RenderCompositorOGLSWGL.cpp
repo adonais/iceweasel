@@ -97,7 +97,7 @@ UniquePtr<RenderCompositor> RenderCompositorOGLSWGL::Create(
     return nullptr;
   }
 
-  return MakeUnique<RenderCompositorOGLSWGL>(compositor, aWidget, ctx);
+  return std::make_unique<RenderCompositorOGLSWGL>(compositor, aWidget, ctx);
 }
 
 RenderCompositorOGLSWGL::RenderCompositorOGLSWGL(
@@ -291,7 +291,7 @@ RenderCompositorOGLSWGL::DoCreateTile(Surface* aSurface) {
   auto source = MakeRefPtr<TextureImageTextureSourceOGL>(
       mCompositor->AsCompositorOGL(), layers::TextureFlags::NO_FLAGS);
 
-  return MakeUnique<TileOGL>(std::move(source), aSurface->TileSize());
+  return std::make_unique<TileOGL>(std::move(source), aSurface->TileSize());
 }
 
 bool RenderCompositorOGLSWGL::MaybeReadback(
@@ -317,91 +317,14 @@ bool RenderCompositorOGLSWGL::MaybeReadback(
 }
 
 #ifdef MOZ_WIDGET_ANDROID
-bool RenderCompositorOGLSWGL::MaybeCaptureScreenPixels(
+bool RenderCompositorOGLSWGL::CaptureScreenPixels(
     const gfx::IntRect& aSourceRect,
     layers::AndroidHardwareBuffer* aHardwareBuffer) {
-  auto* const gl = GetGLContext();
-  gl::ScopedBindFramebuffer scopedBind(gl);
-
-  if (!gl->IsSupported(gl::GLFeature::framebuffer_blit)) {
-    // Fallback path for devices which do not support glBlitFramebuffer (i.e.
-    // GLES 2.0 without extensions). Use glReadPixels to read the source rect
-    // into a buffer, then draw into the CPU-mapped hardware buffer, flipping
-    // and scaling as required.
-    const int bpp = gfx::BytesPerPixel(aHardwareBuffer->mFormat);
-    const RefPtr<gfx::DataSourceSurface> surface =
-        gfx::Factory::CreateDataSourceSurfaceWithStride(
-            aSourceRect.Size(), gfx::SurfaceFormat::R8G8B8A8,
-            aSourceRect.width * bpp);
-    if (!surface) {
-      return true;
-    }
-    {
-      const gfx::DataSourceSurface::ScopedMap map(
-          surface, gfx::DataSourceSurface::WRITE);
-      if (!map.IsMapped()) {
-        return true;
-      }
-      gl->BindReadFB(0);
-      gl->fReadPixels(
-          aSourceRect.x,
-          GetBufferSize().height - aSourceRect.y - aSourceRect.height,
-          aSourceRect.width, aSourceRect.height, LOCAL_GL_RGBA,
-          LOCAL_GL_UNSIGNED_BYTE, map.GetData());
-    }
-
-    uint8_t* destBuf = nullptr;
-    if (aHardwareBuffer->Lock(AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN, nullptr,
-                              reinterpret_cast<void**>(&destBuf)) < 0) {
-      return true;
-    }
-    const auto hardwareBufferUnlock =
-        MakeScopeExit([&]() { aHardwareBuffer->Unlock(); });
-    const RefPtr<gfx::DrawTarget> dt = gfx::Factory::CreateDrawTargetForData(
-        gfx::BackendType::SKIA, destBuf, aHardwareBuffer->mSize,
-        aHardwareBuffer->mStride * bpp, aHardwareBuffer->mFormat);
-    if (!dt) {
-      return true;
-    }
-    dt->SetTransform(Matrix::Scaling(1.0, -1.0) *
-                     Matrix::Translation(0, aHardwareBuffer->mSize.height));
-    dt->DrawSurface(surface, gfx::Rect({}, gfx::Size(aHardwareBuffer->mSize)),
-                    gfx::Rect({}, gfx::Size(aSourceRect.Size())),
-                    gfx::DrawSurfaceOptions(gfx::SamplingFilter::LINEAR),
-                    gfx::DrawOptions(1.0f, gfx::CompositionOp::OP_SOURCE));
-    return true;
-  }
-
-  // Attach the hardware buffer to a framebuffer, then blit the source rect to
-  // it from the main framebuffer, flipping and scaling as required.
-  auto* const gle = gl::GLContextEGL::Cast(gl);
-  const auto& egl = gle->mEgl;
-  gl::ScopedEGLImageForAndroidHardwareBuffer eglImage(gle, aHardwareBuffer);
-  gl::ScopedRenderbuffer rb(gl);
-  gl->fBindRenderbuffer(LOCAL_GL_RENDERBUFFER, rb);
-  gl->fEGLImageTargetRenderbufferStorage(LOCAL_GL_RENDERBUFFER, eglImage);
-  gl::ScopedFramebufferForRenderbuffer fb(gl, rb);
-
-  const auto srcRect =
-      gfx::IntRect(aSourceRect.x, GetBufferSize().height - aSourceRect.y,
-                   aSourceRect.width, -aSourceRect.height);
-  const auto destRect = gfx::IntRect({}, aHardwareBuffer->mSize);
-  gl->BindReadFB(0);
-  gl->BindDrawFB(fb.FB());
-  gl->fBlitFramebuffer(srcRect.x, srcRect.y, srcRect.XMost(), srcRect.YMost(),
-                       destRect.x, destRect.y, destRect.XMost(),
-                       destRect.YMost(), LOCAL_GL_COLOR_BUFFER_BIT,
-                       LOCAL_GL_LINEAR);
-
-  if (EGLSync sync =
-          egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr)) {
-    auto fence = UniqueFileHandle(egl->fDupNativeFenceFDANDROID(sync));
-    if (fence) {
-      aHardwareBuffer->SetAcquireFence(std::move(fence));
-    }
-    egl->fDestroySync(sync);
-  }
-  return true;
+  return CaptureScreenPixelsFromGL(
+      gl::GLContextEGL::Cast(GetGLContext()), aSourceRect, GetBufferSize(),
+      SurfaceOriginIsTopLeft() ? gl::OriginPos::TopLeft
+                               : gl::OriginPos::BottomLeft,
+      aHardwareBuffer);
 }
 #endif
 
@@ -507,7 +430,7 @@ bool RenderCompositorOGLSWGL::TileOGL::Map(wr::DeviceIntRect aDirtyRect,
       return false;
     }
     // Verify that we're not somehow using a PBOUnpackSurface.
-    MOZ_ASSERT(map.mData != nullptr);
+    MOZ_RELEASE_ASSERT(map.mData != nullptr);
     // glTex(Sub)Image on ES doesn't support arbitrary strides without
     // the EXT_unpack_subimage extension. To avoid needing to make a
     // copy of the data we'll always draw it with stride = bpp*width

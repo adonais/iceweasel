@@ -73,15 +73,6 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
                     "help": "Runs tests with DMD enabled.",
                 },
             ],
-            [
-                ["--tp5"],
-                {
-                    "action": "store_true",
-                    "dest": "tp5",
-                    "default": False,
-                    "help": "Runs tests with the tp5 pageset.",
-                },
-            ],
         ]
         + testing_config_options
         + copy.deepcopy(code_coverage_config_options)
@@ -98,7 +89,6 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
             [
                 "clobber",
                 "download-and-extract",
-                "populate-webroot",
                 "create-virtualenv",
                 "install",
                 "run-tests",
@@ -109,7 +99,6 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
             [
                 "clobber",
                 "download-and-extract",
-                "populate-webroot",
                 "create-virtualenv",
                 "install",
                 "run-tests",
@@ -156,24 +145,6 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
 
         self.register_virtualenv_module("awsy", self.awsy_path)
 
-    def populate_webroot(self):
-        """Populate the production test machines' webroots"""
-        self.info("Downloading pageset with tooltool...")
-        manifest_file = os.path.join(self.awsy_path, "tp5n-pageset.manifest")
-        page_load_test_dir = os.path.join(self.webroot_dir, "page_load_test")
-        if not os.path.isdir(page_load_test_dir):
-            self.mkdir_p(page_load_test_dir)
-        self.tooltool_fetch(
-            manifest_file,
-            output_dir=page_load_test_dir,
-            cache=self.config.get("tooltool_cache"),
-        )
-        archive = os.path.join(page_load_test_dir, "tp5n.zip")
-        unzip = self.query_exe("unzip")
-        unzip_cmd = [unzip, "-q", "-o", archive, "-d", page_load_test_dir]
-        self.run_command(unzip_cmd, halt_on_failure=False)
-        self.run_command("ls %s" % page_load_test_dir)
-
     def run_tests(self, args=None, **kw):
         """
         AWSY test should be implemented here
@@ -218,11 +189,9 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
 
             env["DMD"] = "--mode=dark-matter --stacks=full"
 
-        runtime_testvars["tp5"] = self.config["tp5"]
-        if not self.config["tp5"]:
-            # mitmproxy needs path to mozharness when installing the cert, and tooltool
-            env["SCRIPTSPATH"] = scripts_path
-            env["EXTERNALTOOLSPATH"] = external_tools_path
+        # mitmproxy needs path to mozharness when installing the cert, and tooltool
+        env["SCRIPTSPATH"] = scripts_path
+        env["EXTERNALTOOLSPATH"] = external_tools_path
 
         runtime_testvars_path = os.path.join(self.awsy_path, "runtime-testvars.json")
         runtime_testvars_file = open(runtime_testvars_path, "w")
@@ -236,8 +205,6 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
             test_vars_file = "base-testvars.json"
         else:
             test_vars_file = "tp6-testvars.json"
-            if self.config["tp5"]:
-                test_vars_file = "testvars.json"
 
         cmd.append(
             "--testvars=%s" % os.path.join(self.awsy_path, "conf", test_vars_file)
@@ -263,8 +230,6 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
         else:
             test_file = os.path.join(self.awsy_libdir, "test_memory_usage.py")
             prefs_file = "tp6-prefs.json"
-            if self.config["tp5"]:
-                prefs_file = "prefs.json"
 
         cmd.append(
             "--preferences=%s" % os.path.join(self.awsy_path, "conf", prefs_file)

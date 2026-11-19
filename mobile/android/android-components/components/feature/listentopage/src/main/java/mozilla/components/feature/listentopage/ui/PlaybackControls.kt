@@ -27,6 +27,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
@@ -36,6 +38,7 @@ import mozilla.components.feature.listentopage.ArticleProgress
 import mozilla.components.feature.listentopage.ListenAction
 import mozilla.components.feature.listentopage.PlaybackSpeed
 import mozilla.components.feature.listentopage.R
+import mozilla.components.feature.listentopage.Voice
 import mozilla.components.feature.listentopage.VoiceState
 import mozilla.components.ui.icons.R as iconsR
 
@@ -65,34 +68,23 @@ internal fun PlaybackControls(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Voices
-        Box {
-            IconButton(
-                enabled = buttonsEnabled,
-                onClick = {
-                    onAction(ListenAction.Controls.VoicesClicked)
-                    voicesExpanded = true
-                },
-                contentDescription = stringResource(R.string.mozac_feature_listentopage_audio),
-            ) {
-                Icon(
-                    painter = painterResource(iconsR.drawable.mozac_ic_audio_wave_24),
-                    contentDescription = null,
-                )
-            }
-            VoiceSelection(
-                expanded = voicesExpanded,
-                availableVoices = voiceState.availableVoices,
-                selectedVoice = voiceState.selectedVoice,
-                onVoiceClick = {
-                    voicesExpanded = false
-                    onAction(ListenAction.Voices.VoiceSelected(it))
-                },
-                onDismissRequest = {
-                    voicesExpanded = false
-                    onAction(ListenAction.Controls.VoicesDismissed)
-                },
-            )
-        }
+        VoiceControls(
+            voiceState = voiceState,
+            voicesExpanded = voicesExpanded,
+            enabled = buttonsEnabled,
+            onClick = {
+                onAction(ListenAction.Controls.VoicesClicked)
+                voicesExpanded = true
+            },
+            onVoiceClick = {
+                voicesExpanded = false
+                onAction(ListenAction.Voices.VoiceSelected(it))
+            },
+            onDismiss = {
+                voicesExpanded = false
+                onAction(ListenAction.Controls.VoicesDismissed)
+            },
+        )
 
         // Media player controls are always LTR:
         // https://m3.material.io/foundations/layout/bidirectionality-rtl
@@ -128,11 +120,22 @@ private fun SpeedControls(
     onClick: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val selectedSpeed = stringResource(speedState.contentDescription)
+    val speedsStateDescription =
+        if (speedsExpanded) {
+            stringResource(R.string.mozac_feature_listentopage_dropdown_expanded, selectedSpeed)
+        } else {
+            stringResource(R.string.mozac_feature_listentopage_playback_speed_collapsed, selectedSpeed)
+        }
     Box {
         IconButton(
             enabled = enabled,
             onClick = onClick,
-            contentDescription = stringResource(speedState.contentDescription),
+            contentDescription = stringResource(R.string.mozac_feature_listentopage_playback_speed),
+            modifier =
+                Modifier.semantics {
+                    stateDescription = speedsStateDescription
+                },
         ) {
             Icon(
                 painter = painterResource(speedState.icon),
@@ -142,6 +145,43 @@ private fun SpeedControls(
         PlaybackSpeedMenu(
             speedList = speedState.menuItems,
             expanded = speedsExpanded,
+            onDismissRequest = onDismiss,
+        )
+    }
+}
+
+@Composable
+private fun VoiceControls(
+    voiceState: VoiceState,
+    enabled: Boolean,
+    voicesExpanded: Boolean,
+    onClick: () -> Unit,
+    onVoiceClick: (Voice) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val voicesStateDescription =
+        if (voicesExpanded) {
+            stringResource(R.string.mozac_feature_listentopage_dropdown_expanded)
+        } else {
+            stringResource(R.string.mozac_feature_listentopage_dropdown_voice_collapsed)
+        }
+    Box {
+        IconButton(
+            enabled = enabled,
+            onClick = onClick,
+            contentDescription = stringResource(R.string.mozac_feature_listentopage_voice_options),
+            modifier = Modifier.semantics { stateDescription = voicesStateDescription },
+        ) {
+            Icon(
+                painter = painterResource(iconsR.drawable.mozac_ic_audio_wave_24),
+                contentDescription = null,
+            )
+        }
+        VoiceSelection(
+            expanded = voicesExpanded,
+            availableVoices = voiceState.availableVoices,
+            selectedVoice = voiceState.selectedVoice,
+            onVoiceClick = onVoiceClick,
             onDismissRequest = onDismiss,
         )
     }

@@ -34,7 +34,7 @@ UtilityProcessParent::~UtilityProcessParent() = default;
 bool UtilityProcessParent::SendRequestMemoryReport(
     const uint32_t& aGeneration, const bool& aAnonymize,
     const bool& aMinimizeMemoryUsage, const Maybe<FileDescriptor>& aDMDFile) {
-  mMemoryReportRequest = MakeUnique<MemoryReportRequestHost>(aGeneration);
+  mMemoryReportRequest = std::make_unique<MemoryReportRequestHost>(aGeneration);
 
   RefPtr<UtilityProcessParent> self(this);
   PUtilityProcessParent::SendRequestMemoryReport(aGeneration, aAnonymize,

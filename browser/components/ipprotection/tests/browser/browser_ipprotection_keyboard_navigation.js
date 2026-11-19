@@ -93,7 +93,14 @@ add_task(async function test_focus_restored_after_activating() {
  * and that the help button responds to the Enter key
  */
 add_task(async function test_keyboard_navigation_in_panel() {
+  const isSiteInclusionsEnabled = Services.prefs.getBoolPref(
+    "browser.ipProtection.features.siteInclusions"
+  );
   const openLinkStub = sinon.stub(window, "openWebLinkIn");
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com"
+  );
   let content = await openPanel({
     isReady: true,
   });
@@ -119,10 +126,21 @@ add_task(async function test_keyboard_navigation_in_panel() {
   let statusCard = content.statusCardEl;
   let turnOnButton = statusCard.actionButtonEl;
   let locationButton = statusCard.locationButtonEl;
+  let siteRulesButton = content.siteRulesEl;
+
+  Assert.equal(
+    !!siteRulesButton,
+    isSiteInclusionsEnabled,
+    "Site rules button should only be present when site inclusions are enabled"
+  );
 
   await expectFocusAfterKey("Tab", turnOnButton);
 
   await expectFocusAfterKey("Tab", locationButton);
+
+  if (isSiteInclusionsEnabled) {
+    await expectFocusAfterKey("Tab", siteRulesButton);
+  }
 
   await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
@@ -136,6 +154,10 @@ add_task(async function test_keyboard_navigation_in_panel() {
   await expectFocusAfterKey("Tab", turnOnButton);
 
   await expectFocusAfterKey("Tab", locationButton);
+
+  if (isSiteInclusionsEnabled) {
+    await expectFocusAfterKey("Tab", siteRulesButton);
+  }
 
   await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
@@ -163,5 +185,6 @@ add_task(async function test_keyboard_navigation_in_panel() {
   await panelHiddenPromise;
   Assert.ok(openLinkStub.calledOnce, "help button should open a link");
   openLinkStub.restore();
+  BrowserTestUtils.removeTab(tab);
   cleanupService();
 });

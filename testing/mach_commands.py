@@ -53,23 +53,23 @@ def resource_monitor_profile(command_context, output_dir=None, command_name="tes
     try:
         yield monitor
     finally:
-        if output_dir:
-            monitor.stop(upload_dir=output_dir)
-            profile_path = os.path.join(output_dir, "profile_resource-usage.json")
-        else:
-            monitor.stop()
-            log_subdir = os.path.join("logs", command_name)
-            command_context._ensure_state_subdir_exists(log_subdir)
-            profile_path = command_context._get_state_filename(
-                construct_log_filename("profile"), subdir=log_subdir
-            )
+        monitor.stop(upload_dir=output_dir)
+        if not monitor.forwarding:
+            if output_dir:
+                profile_path = os.path.join(output_dir, "profile_resource-usage.json")
+            else:
+                log_subdir = os.path.join("logs", command_name)
+                command_context._ensure_state_subdir_exists(log_subdir)
+                profile_path = command_context._get_state_filename(
+                    construct_log_filename("profile"), subdir=log_subdir
+                )
 
-        with open(profile_path, "w", encoding="utf-8", newline="\n") as fh:
-            to_write = json.dumps(monitor.as_profile(), separators=(",", ":"))
-            fh.write(to_write)
-        print(f"Resource usage profile saved to: {profile_path}")
-        if not output_dir:
-            print("View it with: ./mach resource-usage")
+            with open(profile_path, "w", encoding="utf-8", newline="\n") as fh:
+                to_write = json.dumps(monitor.as_profile(), separators=(",", ":"))
+                fh.write(to_write)
+            print(f"Resource usage profile saved to: {profile_path}")
+            if not output_dir:
+                print("View it with: ./mach resource-usage")
 
 
 def get_test_parser():
@@ -1381,11 +1381,46 @@ def test_info_failures(
     conditions=[conditions.is_non_artifact_build],
     description="Run rust unit tests (via cargo test).",
 )
-def run_rusttests(command_context, **kwargs):
+@CommandArgument(
+    "crates",
+    nargs="*",
+    metavar="CRATE",
+    help="Run the tests of only these crates. Each must be listed in a RUST_TESTS.",
+)
+def run_rusttests(command_context, crates=None, **kwargs):
+    from mozbuild.rust_commands import TEST_SELECTION_ENV
+
+    if not crates:
+        return command_context._mach_context.commands.dispatch(
+            "build",
+            command_context._mach_context,
+            what=["rust-prereqs", "rusttests"],
+            append_env={TEST_SELECTION_ENV: ""},
+        )
+
+    ret = command_context._mach_context.commands.dispatch(
+        "build", command_context._mach_context, what=["rust-prereqs"]
+    )
+    if ret:
+        return ret
+
+    index = os.path.join(command_context.topobjdir, "rust-tests.json")
+    with open(index, encoding="utf-8") as fh:
+        known = json.load(fh)["crates"]
+    if unknown := [crate for crate in crates if crate not in known]:
+        command_context.log(
+            logging.ERROR,
+            "rusttests",
+            {"crates": ", ".join(unknown)},
+            "No RUST_TESTS in this build lists {crates}.",
+        )
+        return 1
+
     return command_context._mach_context.commands.dispatch(
         "build",
         command_context._mach_context,
-        what=["rust-prereqs", "rusttests"],
+        what=["rusttests"],
+        append_env={TEST_SELECTION_ENV: " ".join(crates)},
     )
 
 

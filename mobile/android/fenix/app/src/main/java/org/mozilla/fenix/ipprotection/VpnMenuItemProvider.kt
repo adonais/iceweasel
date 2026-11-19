@@ -5,9 +5,12 @@
 package org.mozilla.fenix.ipprotection
 
 import androidx.compose.ui.semantics.Role
+import kotlin.math.roundToLong
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import mozilla.components.compose.base.text.Text
@@ -24,6 +27,7 @@ import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.IPProtectionStatus
+import mozilla.components.feature.ipprotection.store.state.gigabytes
 import mozilla.components.feature.ipprotection.store.state.ipProtectionStatus
 import mozilla.components.feature.ipprotection.store.state.isEligible
 import mozilla.components.ui.icons.R as iconsR
@@ -34,6 +38,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.toMenuState
@@ -46,20 +51,26 @@ import org.mozilla.fenix.components.menu.toMenuState
  *
  * @param ipProtectionStore [IPProtectionStore] with information about the current VPN functionality, used also to
  *   toggle it.
+ * @param target [MenuTarget] for which this menu item would be shown for.
  * @param scope [CoroutineScope] used to keep the item up to date for as long as it can be shown.
  */
 class VpnMenuItemProvider(
     private val ipProtectionStore: IPProtectionStore,
+    private val target: MenuTarget,
     scope: CoroutineScope,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        ipProtectionStore.stateFlow
-            .map { it.ipProtectionMenuItem() }
-            .stateIn(
-                scope = scope,
-                started = SharingStarted.Eagerly,
-                initialValue = ipProtectionStore.state.ipProtectionMenuItem(),
-            )
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM)).asStateFlow()
+        } else {
+            ipProtectionStore.stateFlow
+                .map { listOfNotNull(it.ipProtectionMenuItem()) }
+                .stateIn(
+                    scope = scope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = listOfNotNull(ipProtectionStore.state.ipProtectionMenuItem()),
+                )
+        }
 
     override fun handles(event: MenuEvent) =
         event == MenuAction.IPProtectionToggle || event == MenuAction.Navigate.IPProtectionSettings
@@ -80,12 +91,12 @@ class VpnMenuItemProvider(
         when (ipProtectionStore.state.ipProtectionStatus) {
             IPProtectionStatus.Disabled -> {
                 Vpn.menuTurnedOn.record()
-                ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+                ipProtectionStore.dispatch(IPProtectionAction.ActivationAction.Toggle)
             }
 
             IPProtectionStatus.Enabled -> {
                 Vpn.menuTurnedOff.record()
-                ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+                ipProtectionStore.dispatch(IPProtectionAction.ActivationAction.Toggle)
             }
 
             IPProtectionStatus.AuthRequired -> {
@@ -96,9 +107,9 @@ class VpnMenuItemProvider(
             IPProtectionStatus.AwaitingService -> menu.navigate(settingsDirections())
 
             IPProtectionStatus.Activating,
-            IPProtectionStatus.DataLimitReached,
-            IPProtectionStatus.ConnectionError -> ipProtectionStore.dispatch(IPProtectionAction.Toggle)
+            IPProtectionStatus.ConnectionError -> ipProtectionStore.dispatch(IPProtectionAction.ActivationAction.Toggle)
 
+            IPProtectionStatus.DataLimitReached,
             IPProtectionStatus.Unavailable,
             IPProtectionStatus.Uninitialized -> Unit
         }
@@ -113,37 +124,52 @@ class VpnMenuItemProvider(
             true -> toMenuState().toMenuItem()
             else -> null
         }
-}
 
-private fun IPProtectionMenuState.toMenuItem() =
-    StandardMenuItem(
-        title = MenuItemTitle(Text.Resource(R.string.ip_protection_toggle_label)),
-        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_globe_24),
-        // Only a toggle while it can actually be toggled - otherwise tapping it opens the VPN settings instead.
-        role =
-            when (status) {
-                IPProtectionStatus.AuthRequired,
-                IPProtectionStatus.AwaitingService -> Role.Button
-                else -> Role.Switch
-            },
-        onClickEvent = MenuAction.IPProtectionToggle,
-        summary = dataLimitSummary,
-        badge = MenuItemBadge(text = Text.Resource(status.badgeTextRes), state = status.badgeState),
-        actionButton =
-            MenuItemActionButton(
-                icon = iconsR.drawable.mozac_ic_chevron_right_24,
-                contentDescription = Text.Resource(R.string.ip_protection_navigate_settings),
-                onClickEvent = MenuAction.Navigate.IPProtectionSettings,
-                showDivider = true,
-            ),
-    )
+    private fun IPProtectionMenuState.toMenuItem() =
+        DEFAULT_MENU_ITEM.copy(
+            // Only a toggle while it can actually be toggled - otherwise tapping it opens the VPN settings instead.
+            role =
+                when (status) {
+                    IPProtectionStatus.AuthRequired,
+                    IPProtectionStatus.AwaitingService -> Role.Button
+                    else -> Role.Switch
+                },
+            onClickEvent = MenuAction.IPProtectionToggle,
+            summary = dataLimitSummary,
+            badge = MenuItemBadge(text = Text.Resource(status.badgeTextRes), state = status.badgeState),
+            actionButton =
+                MenuItemActionButton(
+                    icon = iconsR.drawable.mozac_ic_chevron_right_24,
+                    contentDescription = Text.Resource(R.string.ip_protection_navigate_settings),
+                    onClickEvent = MenuAction.Navigate.IPProtectionSettings,
+                    showDivider = true,
+                ),
+            state =
+                when (status) {
+                    IPProtectionStatus.DataLimitReached -> MenuItemState.DISABLED
+                    else -> MenuItemState.DEFAULT
+                },
+        )
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.ip_protection_toggle_label)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_globe_24),
+            )
+    }
+}
 
 private val IPProtectionMenuState.dataLimitSummary: MenuItemSummary?
     get() =
         when {
-            status == IPProtectionStatus.DataLimitReached && dataLimitGb > 0 ->
+            status == IPProtectionStatus.DataLimitReached && dataLimit != null ->
                 MenuItemSummary(
-                    text = Text.Resource(R.string.ip_protection_menu_limit_reached, listOf(dataLimitGb)),
+                    text =
+                        Text.Resource(
+                            R.string.ip_protection_menu_limit_reached,
+                            listOf(dataLimit.gigabytes.roundToLong()),
+                        ),
                     state = MenuItemState.WARNING,
                 )
             else -> null

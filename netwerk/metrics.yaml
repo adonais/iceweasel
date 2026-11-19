@@ -3333,3 +3333,24 @@ network:
     notification_emails:
       - necko@mozilla.com
     expires: never
+
+  apple_fast_datapath_probe:
+    type: labeled_counter
+    description: >
+      Outcome of the Apple fast datapath (sendmsg_x/recvmsg_x) probe at
+      startup. Only recorded on Apple platforms.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2077172
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2077172
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+    labels:
+      - pref_disabled
+      - symbols_missing
+      - socket_failed
+      - probe_failed
+      - available
+    expires: never

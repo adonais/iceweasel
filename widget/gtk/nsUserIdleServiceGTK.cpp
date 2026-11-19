@@ -404,12 +404,12 @@ void nsUserIdleServiceGTK::ProbeService() {
   switch (mIdleServiceType) {
 #ifdef MOZ_ENABLE_DBUS
     case IDLE_SERVICE_MUTTER:
-      mIdleService = MakeUnique<UserIdleServiceMutter>(this);
+      mIdleService = std::make_unique<UserIdleServiceMutter>(this);
       break;
 #endif
 #ifdef MOZ_X11
     case IDLE_SERVICE_XSCREENSAVER:
-      mIdleService = MakeUnique<UserIdleServiceX11>(this);
+      mIdleService = std::make_unique<UserIdleServiceX11>(this);
       break;
 #endif
     default:

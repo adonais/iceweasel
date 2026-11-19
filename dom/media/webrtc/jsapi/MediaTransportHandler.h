@@ -16,13 +16,13 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/dom/PMediaTransportChild.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
 #include "mozilla/dom/RTCErrorBinding.h"
 #include "mozilla/dom/RTCIceTransportBinding.h"  // RTCIceTransportState
 #include "mozilla/dom/RTCPeerConnectionBinding.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
+#include "transport/MediaTransportTypes.h"
 #include "transport/dtlsidentity.h"  // For DtlsDigest
 #include "transport/nr_socket_proxy_config.h"
 #include "transport/nricectx.h"        // Need some enums
@@ -105,8 +105,7 @@ class MediaTransportEvents final {
 
 class MediaTransportHandler {
  public:
-  // Creates either a MediaTransportHandlerLocal or a MediaTransportHandlerIPC,
-  // as appropriate.
+  // Creates a MediaTransportHandlerLocal.
   static already_AddRefed<MediaTransportHandler> Create();
 
   explicit MediaTransportHandler() = default;

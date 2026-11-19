@@ -7,6 +7,8 @@
 #include <CoreAudioTypes/CoreAudioBaseTypes.h>
 #include <mozilla/Result.h>
 
+#include <memory>
+
 #include "ADTSDemuxer.h"
 #include "Adts.h"
 #include "ByteWriter.h"
@@ -17,7 +19,6 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Result.h"
-#include "mozilla/UniquePtr.h"
 #include "nsDebug.h"
 #include "nsTArray.h"
 
@@ -363,7 +364,8 @@ MediaResult AppleATDecoder::DecodeSample(MediaRawData* aSample) {
   const uint32_t maxDecodedSamples = MAX_AUDIO_FRAMES * channels;
 
   // Descriptions for _decompressed_ audio packets. ignored.
-  auto packets = MakeUnique<AudioStreamPacketDescription[]>(MAX_AUDIO_FRAMES);
+  auto packets =
+      std::make_unique<AudioStreamPacketDescription[]>(MAX_AUDIO_FRAMES);
 
   // This API insists on having packets spoon-fed to it from a callback.
   // This structure exists only to pass our state.
@@ -438,7 +440,7 @@ MediaResult AppleATDecoder::DecodeSample(MediaRawData* aSample) {
     AudioConfig in(*mChannelLayout, channels, rate);
     AudioConfig out(AudioConfig::ChannelLayout::SMPTEDefault(*mChannelLayout),
                     channels, rate);
-    mAudioConverter = MakeUnique<AudioConverter>(in, out);
+    mAudioConverter = std::make_unique<AudioConverter>(in, out);
   }
   if (mAudioConverter && mChannelLayout && mChannelLayout->IsValid()) {
     MOZ_ASSERT(mAudioConverter->CanWorkInPlace());
@@ -509,7 +511,7 @@ MediaResult AppleATDecoder::GetInputAudioDescription(
     return NS_OK;
   }
   size_t listCount = formatListSize / sizeof(AudioFormatListItem);
-  auto formatList = MakeUnique<AudioFormatListItem[]>(listCount);
+  auto formatList = std::make_unique<AudioFormatListItem[]>(listCount);
 
   rv = AudioFormatGetProperty(kAudioFormatProperty_FormatList,
                               sizeof(formatInfo), &formatInfo, &formatListSize,
@@ -577,7 +579,7 @@ nsresult AppleATDecoder::SetupChannelLayout() {
     return NS_ERROR_FAILURE;
   }
 
-  auto data = MakeUnique<uint8_t[]>(propertySize);
+  auto data = std::make_unique<uint8_t[]>(propertySize);
   size = propertySize;
   status = AudioConverterGetProperty(
       mConverter, kAudioConverterInputChannelLayout, &size, data.get());
@@ -614,7 +616,7 @@ nsresult AppleATDecoder::SetupChannelLayout() {
           FourCC2Str(property), FourCC2Str(status));
       return NS_ERROR_FAILURE;
     }
-    data = MakeUnique<uint8_t[]>(propertySize);
+    data = std::make_unique<uint8_t[]>(propertySize);
     layout = reinterpret_cast<AudioChannelLayout*>(data.get());
     size = propertySize;
 
@@ -647,7 +649,7 @@ nsresult AppleATDecoder::SetupChannelLayout() {
     AudioConfig::Channel channel = ConvertChannelLabel(id);
     channels[i] = channel;
   }
-  mChannelLayout = MakeUnique<AudioConfig::ChannelLayout>(
+  mChannelLayout = std::make_unique<AudioConfig::ChannelLayout>(
       mOutputFormat.mChannelsPerFrame, channels.Elements());
   return NS_OK;
 }
@@ -824,7 +826,7 @@ static void _MetadataCallback(void* aAppleATDecoder, AudioFileStreamID aStream,
       decoder->mFileStreamError = true;
       return;
     }
-    auto data = MakeUnique<uint8_t[]>(size);
+    auto data = std::make_unique<uint8_t[]>(size);
     rv = AudioFileStreamGetProperty(aStream, aProperty, &size, data.get());
     if (rv) {
       LOG("Couldn't get property '{}' ({})", FourCC2Str(aProperty),

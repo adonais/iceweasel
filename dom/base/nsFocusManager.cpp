@@ -25,6 +25,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -3459,7 +3460,7 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
   if (aContent) {
     NS_ASSERTION(aContent->GetComposedDoc() == aPresShell->GetDocument(),
                  "Wrong document?");
-    nsIFrame* focusFrame = aContent->GetPrimaryFrame();
+    nsIFrame* focusFrame = nsLayoutUtils::GetPrimaryOrAreaImageFrame(aContent);
     if (focusFrame) {
       frameSelection = focusFrame->GetFrameSelection();
     }
@@ -3742,10 +3743,16 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   nsCOMPtr<nsIContent> focusedContent = startContent;
   bool startingFromDescendantOfFocusedContent = false;
   if (startContent) {
+    // Deliberately not GetPrimaryOrAreaImageFrame: an <area> must use its own
+    // tabindex, not the image's.
     nsIFrame* frame = startContent->GetPrimaryFrame();
-    tabIndex = (frame && !startContent->IsHTMLElement(nsGkAtoms::area))
-                   ? frame->IsFocusable().mTabIndex
-                   : startContent->IsFocusableWithoutStyle().mTabIndex;
+    auto startFlags = IsFocusableFlags(0);
+    if (StaticPrefs::dom_forms_retain_focus_on_disabled_enabled()) {
+      startFlags |= IsFocusableFlags::IgnoreDisabled;
+    }
+    tabIndex =
+        frame ? frame->IsFocusable(startFlags).mTabIndex
+              : startContent->IsFocusableWithoutStyle(startFlags).mTabIndex;
 
     if (!aStartContent &&
         (aType == MOVEFOCUS_FORWARD || aType == MOVEFOCUS_BACKWARD)) {
@@ -4461,7 +4468,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
       if (IsScopeOwner(iterContent)) {
         tabIndex = ScopeOwnerTabIndexValue(iterContent);
       } else {
-        nsIFrame* frame = iterContent->GetPrimaryFrame();
+        nsIFrame* frame =
+            nsLayoutUtils::GetPrimaryOrAreaImageFrame(iterContent);
         if (!frame) {
           continue;
         }
@@ -4567,7 +4575,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
     int32_t tabIndex = 0;
     if (IsScopeOwner(startContent)) {
       tabIndex = ScopeOwnerTabIndexValue(startContent);
-    } else if (nsIFrame* frame = startContent->GetPrimaryFrame()) {
+    } else if (nsIFrame* frame =
+                   nsLayoutUtils::GetPrimaryOrAreaImageFrame(startContent)) {
       tabIndex = frame->IsFocusable().mTabIndex;
     } else {
       tabIndex = startContent->IsFocusableWithoutStyle().mTabIndex;
@@ -4589,7 +4598,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
   aStartContent = startContent;
   if (IsScopeOwner(startContent)) {
     *aCurrentTabIndex = ScopeOwnerTabIndexValue(startContent);
-  } else if (nsIFrame* frame = startContent->GetPrimaryFrame()) {
+  } else if (nsIFrame* frame =
+                 nsLayoutUtils::GetPrimaryOrAreaImageFrame(startContent)) {
     *aCurrentTabIndex = frame->IsFocusable().mTabIndex;
   } else {
     *aCurrentTabIndex = startContent->IsFocusableWithoutStyle().mTabIndex;
@@ -4710,7 +4720,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
   nsIContent* topLevelScopeStartContent = startContent;
   // Iterate tab index to find corresponding contents
   while (true) {
-    nsIFrame* frame = iterStartContent->GetPrimaryFrame();
+    nsIFrame* frame =
+        nsLayoutUtils::GetPrimaryOrAreaImageFrame(iterStartContent);
     // if there is no frame, look for another content node that has a frame
     while (!frame) {
       // if the root content doesn't have a frame, just return
@@ -4725,7 +4736,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
         break;
       }
 
-      frame = iterStartContent->GetPrimaryFrame();
+      frame = nsLayoutUtils::GetPrimaryOrAreaImageFrame(iterStartContent);
       // Host without frame, enter its scope.
       if (!frame && IsScopeOwner(iterStartContent)) {
         int32_t tabIndex = ScopeOwnerTabIndexValue(iterStartContent);
@@ -5946,6 +5957,13 @@ static IsFocusableFlags FocusManagerFlagsToIsFocusableFlags(uint32_t aFlags) {
 Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
                                              uint32_t aFlags) {
   MOZ_ASSERT(aTarget);
+
+  // If focus target is an area element with one or more shapes that are
+  // focusable areas.
+  if (auto* area = HTMLAreaElement::FromNode(aTarget)) {
+    return IsAreaElementFocusable(*area) ? area : nullptr;
+  }
+
   nsIFrame* frame = aTarget->GetPrimaryFrame();
   if (!frame) {
     return nullptr;
@@ -5956,12 +5974,6 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
     // the root content can always be focused,
     // except in userfocusignored context.
     return aTarget;
-  }
-
-  // If focus target is an area element with one or more shapes that are
-  // focusable areas.
-  if (auto* area = HTMLAreaElement::FromNode(aTarget)) {
-    return IsAreaElementFocusable(*area) ? area : nullptr;
   }
 
   // For these 3 steps mentioned in the spec
@@ -6002,13 +6014,13 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
 
 /* static */
 bool nsFocusManager::IsAreaElementFocusable(HTMLAreaElement& aArea) {
-  nsIFrame* frame = aArea.GetPrimaryFrame();
+  nsIFrame* frame = aArea.GetImageFrame();
   if (!frame) {
     return false;
   }
-  // HTML areas do not have their own frame, and the img frame we get from
-  // GetPrimaryFrame() is not relevant as to whether it is focusable or
-  // not, so we have to do all the relevant checks manually for them.
+  // HTML areas do not have their own frame, and the img frame is not relevant
+  // as to whether the area is focusable or not, so we have to do all the
+  // relevant checks manually for them.
   return frame->IsVisibleConsideringAncestors() &&
          aArea.IsFocusableWithoutStyle();
 }

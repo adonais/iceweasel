@@ -77,14 +77,13 @@ Result<IndexUpdateInfo, nsresult> MakeIndexUpdateInfo(
 }  // namespace
 
 struct IDBObjectStore::StructuredCloneWriteInfo {
-  JSAutoStructuredCloneBuffer mCloneBuffer;
+  JSStructuredCloneData mCloneData;
   nsTArray<StructuredCloneFileChild> mFiles;
   IDBDatabase* mDatabase;
   uint64_t mOffsetToKeyProp;
 
   explicit StructuredCloneWriteInfo(IDBDatabase* aDatabase)
-      : mCloneBuffer(JS::StructuredCloneScope::DifferentProcessForIndexedDB,
-                     nullptr, nullptr),
+      : mCloneData(JS::StructuredCloneScope::DifferentProcessForIndexedDB),
         mDatabase(aDatabase),
         mOffsetToKeyProp(0) {
     MOZ_ASSERT(aDatabase);
@@ -93,7 +92,7 @@ struct IDBObjectStore::StructuredCloneWriteInfo {
   }
 
   StructuredCloneWriteInfo(StructuredCloneWriteInfo&& aCloneWriteInfo) noexcept
-      : mCloneBuffer(std::move(aCloneWriteInfo.mCloneBuffer)),
+      : mCloneData(std::move(aCloneWriteInfo.mCloneData)),
         mFiles(std::move(aCloneWriteInfo.mFiles)),
         mDatabase(aCloneWriteInfo.mDatabase),
         mOffsetToKeyProp(aCloneWriteInfo.mOffsetToKeyProp) {
@@ -375,9 +374,11 @@ nsresult GetAddInfoCallback(JSContext* aCx, void* aClosure) {
 
   data->mCloneWriteInfo.mOffsetToKeyProp = 0;
 
-  if (!data->mCloneWriteInfo.mCloneBuffer.write(aCx, data->mValue,
-                                                &kStructuredCloneCallbacks,
-                                                &data->mCloneWriteInfo)) {
+  if (!JS_WriteStructuredClone(
+          aCx, data->mValue, &data->mCloneWriteInfo.mCloneData,
+          JS::StructuredCloneScope::DifferentProcessForIndexedDB,
+          JS::CloneDataPolicy(), &kStructuredCloneCallbacks,
+          &data->mCloneWriteInfo, JS::UndefinedHandleValue)) {
     return NS_ERROR_DOM_DATA_CLONE_ERR;
   }
 
@@ -764,7 +765,7 @@ bool IDBObjectStore::DeserializeValue(
   // FIXME: Consider to use StructuredCloneHolder here and in other
   //        deserializing methods.
   return JS_ReadStructuredClone(
-      aCx, aCloneReadInfo.Data(), JS_STRUCTURED_CLONE_VERSION,
+      aCx, aCloneReadInfo.Data(),
       JS::StructuredCloneScope::DifferentProcessForIndexedDB, aValue,
       JS::CloneDataPolicy(), &callbacks, &aCloneReadInfo);
 }
@@ -941,7 +942,7 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
   }
 
   // Total structured clone size in bytes.
-  const size_t structuredCloneSize = cloneWriteInfo.mCloneBuffer.data().Size();
+  const size_t structuredCloneSize = cloneWriteInfo.mCloneData.Size();
 
   // Bug 1783242 introduced the use of shared memory for serializing large
   // JSStructuredCloneData, which required adjusting IPC message size estimation
@@ -1006,8 +1007,7 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
 
   ObjectStoreAddPutParams commonParams;
   commonParams.objectStoreId() = Id();
-  commonParams.cloneInfo().data().data =
-      std::move(cloneWriteInfo.mCloneBuffer.data());
+  commonParams.cloneInfo().data().data = std::move(cloneWriteInfo.mCloneData);
   commonParams.cloneInfo().offsetToKeyProp() = cloneWriteInfo.mOffsetToKeyProp;
   commonParams.key() = key;
   commonParams.indexUpdateInfos() = std::move(updateInfos);
@@ -1940,7 +1940,7 @@ void IDBObjectStore::NoteDeletion() {
   }
 
   // Copy the spec here.
-  mDeletedSpec = MakeUnique<ObjectStoreSpec>(*mSpec);
+  mDeletedSpec = std::make_unique<ObjectStoreSpec>(*mSpec);
   mDeletedSpec->indexes().Clear();
 
   mSpec = mDeletedSpec.get();

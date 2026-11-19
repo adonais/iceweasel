@@ -224,14 +224,11 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
   if (!data) {
     return nullptr;
   }
-
-  // FIXME: Scroll offsets on the RTL container is complicated specifically on
-  // mobile, see https://github.com/w3c/csswg-drafts/issues/12893. For now, we
-  // use the absoluate value to make things simple.
-  const double progress =
-      static_cast<double>(std::abs(data->mPosition) - data->mStart) /
-      static_cast<double>(data->mEnd - data->mStart);
-  return TimeDuration::FromMilliseconds(progress *
+  const auto progress = data->CalculateProgress();
+  if (!progress) {
+    return nullptr;
+  }
+  return TimeDuration::FromMilliseconds(*progress *
                                         PROGRESS_TIMELINE_DURATION_MILLISEC);
 }
 
@@ -249,13 +246,13 @@ void ScrollTimeline::GetCurrentTime(
     aRetVal.SetNull();
     return;
   }
-  // See the FIXME in our GetCurrentTimeAsDuration() override about
-  // RTL/sideways scrollers. We do the same here.
-  const double progress =
-      static_cast<double>(std::abs(data->mPosition) - data->mStart) /
-      static_cast<double>(data->mEnd - data->mStart);
+  const auto progress = data->CalculateProgress();
+  if (!progress) {
+    aRetVal.SetNull();
+    return;
+  }
   aRetVal.SetValue().SetAsCSSNumericValue() = MakeCSSUnitValue(
-      mWindow, StyleNumericType::Percent(), progress * 100.0, "percent"_ns);
+      mWindow, StyleNumericType::Percent(), *progress * 100.0, "percent"_ns);
 }
 
 void ScrollTimeline::WillRefresh() {
@@ -341,9 +338,11 @@ ScrollTimeline::StateSnapshot::StateSnapshot(
                            ? scrollStyles.mHorizontal
                            : scrollStyles.mVertical;
 
-  mAPZIsActiveForSource = gfxPlatform::AsyncPanZoomEnabled() &&
-                          !nsLayoutUtils::ShouldDisableApzForElement(e) &&
-                          DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(e);
+  mAPZIsActiveForSource =
+      gfxPlatform::AsyncPanZoomEnabled() &&
+      !nsLayoutUtils::ShouldDisableApzForElement(e) &&
+      DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(e) &&
+      scrollContainerFrame->IsMaybeAsynchronouslyScrolled();
 }
 
 layers::ScrollDirection ScrollTimeline::StateSnapshot::ComputePhysicalAxis()

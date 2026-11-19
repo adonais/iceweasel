@@ -289,7 +289,9 @@ static uint16_t CreateMaiInterfaces(Accessible* aAccessible) {
     interfaces |= 1 << MAI_INTERFACE_TABLE_CELL;
   }
 
-  if (aAccessible->IsImage()) {
+  const nsRoleMapEntry* roleMapEntry = aAccessible->ARIARoleMap();
+  if (aAccessible->IsImage() ||
+      (roleMapEntry && roleMapEntry->role == roles::GRAPHIC)) {
     interfaces |= 1 << MAI_INTERFACE_IMAGE;
   }
 
@@ -621,6 +623,9 @@ AtkRole getRoleCB(AtkObject* aAtkObj) {
               aAtkObj->role == ATK_ROLE_CONTENT_INSERTION) &&
              !IsAtkVersionAtLeast(2, 34)) {
     aAtkObj->role = ATK_ROLE_SECTION;
+  } else if (aAtkObj->role == ATK_ROLE_DIALOG &&
+             acc->IsARIARole(nsGkAtoms::alertdialog)) {
+    aAtkObj->role = ATK_ROLE_ALERT;
   }
 
   return aAtkObj->role;
@@ -1059,6 +1064,11 @@ void MaiAtkObject::FireStateChangeEvent(uint64_t aState, bool aEnabled) {
 void a11y::PlatformTextChangeEvent(Accessible* aTarget, const nsAString& aStr,
                                    int32_t aStart, uint32_t aLen,
                                    bool aIsInsert, bool aFromUser) {
+  // The text change signals are defined by AtkText, which is only implemented
+  // by objects with a text role.
+  if (!aTarget->IsTextRole()) {
+    return;
+  }
   MaiAtkObject* atkObj = MAI_ATK_OBJECT(GetWrapperFor(aTarget));
   atkObj->FireTextChangeEvent(aStr, aStart, aLen, aIsInsert, aFromUser);
 }

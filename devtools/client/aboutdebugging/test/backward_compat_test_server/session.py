@@ -19,7 +19,7 @@ from typing import Iterator, Mapping
 from . import downloads
 from .control import ControlServer
 from .logs import log
-from .servers import DesktopServer
+from .servers import DesktopServer, XpcshellHarness, XpcshellServer
 
 # Server recipes. "local" runs the build under test, the other ones download the
 # latest build of a distribution channel.
@@ -56,17 +56,26 @@ def provisioned_server(
     log_dir: str,
     server: str = "local",
     headless: bool = True,
+    xpcshell_harness: XpcshellHarness | None = None,
 ) -> Iterator[Mapping[str, str]]:
     """Provision a server and describe it in a JSON configuration file.
 
     :param binary: path of the Firefox binary, used by the "local" recipe.
     :param cache_dir: where downloaded builds are cached.
     :param log_dir: where the server log and the configuration are written.
+    :param xpcshell_harness: the xpcshell harness of the build under test. Only
+        used by the "local" recipe, older xpcshell tests are never debugged
+        from a newer Firefox.
     :returns: a context manager yielding a dict of environment variables
         to be merged with the target environment.
     """
     instance = create_server(server, binary, cache_dir, log_dir, headless)
-    control = ControlServer(instance)
+    xpcshell = None
+    if server == "local" and xpcshell_harness:
+        xpcshell = XpcshellServer(
+            xpcshell_harness, os.path.join(log_dir, "compat-xpcshell.log")
+        )
+    control = ControlServer(instance, xpcshell)
 
     log(f"Starting the '{server}' DevTools server")
     instance.start()
@@ -79,6 +88,7 @@ def provisioned_server(
             "server": server,
             "host": instance.host,
             "control": control.url,
+            "xpcshell": xpcshell is not None,
             "runtime": description,
         }
         log(

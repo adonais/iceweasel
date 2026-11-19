@@ -282,10 +282,57 @@ export class FirefoxProfileMigrator extends MigratorBase {
         aCallback(true);
       },
     };
-    let formData = getFileResource(types.FORMDATA, [
-      "formhistory.sqlite",
-      "autofill-profiles.json",
-    ]);
+    let formData = {
+      type: types.FORMDATA,
+      migrate: async aCallback => {
+        try {
+          let autofillDbCopied = false;
+          for (let fileName of [
+            "formhistory.sqlite",
+            "autofill-profiles.json",
+            "autofill.db",
+            "autofill.db-wal",
+          ]) {
+            let file = this._getFileObject(sourceProfileDir, fileName);
+            if (file) {
+              file.copyTo(currentProfileDir, "");
+              autofillDbCopied ||= fileName == "autofill.db";
+            }
+          }
+
+          // Once a data type is served from autofill.db, autofill-profiles.json
+          // is no longer written for it. Carry the active state over so the new
+          // profile keeps reading the copied autofill.db rather than migrating
+          // the stale JSON into it, which would wipe it. Without autofill.db
+          // the active state would point the new profile at an empty store.
+          // Keep in sync with RUST_MIGRATIONS in FormAutofillStorage.sys.mjs.
+          let oldRawPrefs = autofillDbCopied ? await readOldPrefs() : null;
+          let savePrefsNeeded = false;
+          for (let pref of [
+            "extensions.formautofill.addresses.storage.rust.active",
+            "extensions.formautofill.creditCards.storage.rust.active",
+          ]) {
+            let escaped = pref.replaceAll(".", "\\.");
+            if (
+              new RegExp(`^user_pref\\("${escaped}",\\s*true\\)`, "m").test(
+                oldRawPrefs
+              )
+            ) {
+              Services.prefs.setBoolPref(pref, true);
+              savePrefsNeeded = true;
+            }
+          }
+          if (savePrefsNeeded) {
+            savePrefs();
+          }
+        } catch (e) {
+          console.error(e);
+          aCallback(false);
+          return;
+        }
+        aCallback(true);
+      },
+    };
     let bookmarksBackups = getFileResource(types.OTHERDATA, [
       lazy.PlacesBackups.profileRelativeFolderPath,
     ]);

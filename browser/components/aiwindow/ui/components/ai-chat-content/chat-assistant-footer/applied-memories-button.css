@@ -181,7 +181,7 @@ moz-button.memories-trigger {
   max-width: min(100%, var(--size-layout-large));
   width: 100%;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  bottom: 40px;
+  inset-block-end: 40px;
   inset-inline-start: 0;
   display: flex;
   flex-direction: column;
@@ -276,7 +276,7 @@ moz-button.memories-trigger {
   opacity: var(--aiwindow-remove-btn-opacity);
   pointer-events: var(--aiwindow-remove-btn-pointer-events);
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   margin-inline-end: var(--aiwindow-remove-btn-margin-inline-end);
 
   @media not (forced-colors) {

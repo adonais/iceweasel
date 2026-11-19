@@ -32,7 +32,7 @@
   }
 }
 
-/* Mirrors the sizing of `ai-website-chip` so the button matches the chips. */
+/* Mirrors the sizing of `smartwindow-chip` so the button matches the chips. */
 .chip-container-scroller.smartwindow-overflow-row {
   moz-button {
     --button-border: 1px solid transparent;
@@ -62,11 +62,6 @@
       --button-border: var(--focus-outline-width) solid transparent;
     }
   }
-}
-
-:host([chip-size="small"]) .chip-container-scroller.smartwindow-overflow-row moz-button {
-  --button-border-radius: var(--border-radius-large);
-  --button-padding: var(--space-xxsmall) var(--space-small);
 }
 
 /* when the chip container is part of the chat bubble */

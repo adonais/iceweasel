@@ -569,6 +569,9 @@ public class MediaSession {
 
   /** Flags for supported media session features. */
   public static class Feature {
+    /** Public constructor for Feature. */
+    public Feature() {}
+
     /** No media session features supported. */
     public static final long NONE = 0;
 

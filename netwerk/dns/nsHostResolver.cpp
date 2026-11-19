@@ -749,7 +749,7 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromIPLiteral(
     AddrHostRecord* aAddrRec, const NetAddr& aAddr) {
   // ok, just copy the result into the host record, and be
   // done with it! ;-)
-  aAddrRec->addr = MakeUnique<NetAddr>(aAddr);
+  aAddrRec->addr = std::make_unique<NetAddr>(aAddr);
   glean::dns::lookup_method.AccumulateSingleSample(METHOD_LITERAL);
   // put reference to host record on stack...
   RefPtr<nsHostRecord> result = aAddrRec;

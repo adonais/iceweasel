@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,8 +22,12 @@ import org.mozilla.fenix.ext.components
  * A metrics service that handles sending the first session ping.
  *
  * @param context The application context.
+ * @param ioDispatcher The dispatcher used to fill and submit the ping.
  */
-class FirstSessionMetricsService(private val context: Context) : MetricsService {
+class FirstSessionMetricsService(
+    private val context: Context,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : MetricsService {
     override val type = MetricServiceType.Data
 
     private val prefs: SharedPreferences by lazy {
@@ -67,7 +72,7 @@ class FirstSessionMetricsService(private val context: Context) : MetricsService 
     /** Fills the metrics and triggers the 'installation' ping. This is a separate function to simplify unit-testing. */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun triggerPingIfNotSent() {
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(ioDispatcher).launch {
             if (wasAlreadyTriggered()) {
                 Logger.debug("InstallationPing - already generated")
                 return@launch

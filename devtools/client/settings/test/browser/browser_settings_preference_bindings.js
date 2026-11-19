@@ -5,9 +5,12 @@
 
 const RULERS_PREF = "devtools.command-button-rulers.enabled";
 const SCREENSHOT_PREF = "devtools.command-button-screenshot.enabled";
+const COLOR_UNIT_PREF = "devtools.defaultColorUnit";
 
 add_task(test_independent_preference_bindings);
 add_task(test_preference_binding_without_callback);
+add_task(test_select_preference_binding);
+add_task(test_select_unknown_value);
 
 async function test_independent_preference_bindings() {
   await pushPref(RULERS_PREF, true);
@@ -97,12 +100,31 @@ async function test_preference_binding_without_callback() {
   await toolbox.destroy();
 }
 
-async function openSettings() {
-  await pushPref("devtools.settings.redesign-enabled", true);
-  const tab = await addTab("about:blank");
-  const toolbox = await openToolboxForTab(tab, "options");
-  const root = toolbox.getCurrentPanel().element;
-  await root.updateComplete;
+async function test_select_preference_binding() {
+  await pushPref(COLOR_UNIT_PREF, "hex");
+  const { toolbox, root } = await openSettings();
+  const select = await getSelect(root, "#settings-inspector-color-unit");
+  is(select.value, "hex", "The select reads its pref");
 
-  return { toolbox, root };
+  await chooseOption(select, "rgb");
+  is(
+    Services.prefs.getStringPref(COLOR_UNIT_PREF),
+    "rgb",
+    "Changing the select writes its pref"
+  );
+
+  await toolbox.destroy();
+}
+
+async function test_select_unknown_value() {
+  await pushPref(COLOR_UNIT_PREF, "unknown");
+  const { toolbox, root } = await openSettings();
+  await getSelect(root, "#settings-inspector-color-unit");
+  is(
+    Services.prefs.getStringPref(COLOR_UNIT_PREF),
+    "unknown",
+    "Rendering an unknown value leaves the pref unchanged"
+  );
+
+  await toolbox.destroy();
 }

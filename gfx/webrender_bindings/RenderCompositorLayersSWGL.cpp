@@ -235,13 +235,13 @@ void RenderCompositorLayersSWGL::CreateSurface(wr::NativeSurfaceId aId,
 UniquePtr<RenderCompositorLayersSWGL::Surface>
 RenderCompositorLayersSWGL::DoCreateSurface(wr::DeviceIntSize aTileSize,
                                             bool aIsOpaque) {
-  return MakeUnique<Surface>(aTileSize, aIsOpaque);
+  return std::make_unique<Surface>(aTileSize, aIsOpaque);
 }
 
 void RenderCompositorLayersSWGL::CreateExternalSurface(wr::NativeSurfaceId aId,
                                                        bool aIsOpaque) {
   MOZ_RELEASE_ASSERT(mSurfaces.find(aId) == mSurfaces.end());
-  auto surface = MakeUnique<Surface>(wr::DeviceIntSize{}, aIsOpaque);
+  auto surface = std::make_unique<Surface>(wr::DeviceIntSize{}, aIsOpaque);
   surface->mIsExternal = true;
   mSurfaces.insert({aId, std::move(surface)});
 }

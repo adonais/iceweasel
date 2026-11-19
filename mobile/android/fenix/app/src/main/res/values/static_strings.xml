@@ -101,8 +101,6 @@
     <string name="preferences_sync_debug_pairing_start_title">Begin pairing</string>
     <!-- Label for enabling Homepage as a New Tab -->
     <string name="preferences_debug_settings_homepage_as_new_tab" translatable="false">Enable Homepage as a New Tab</string>
-    <!-- Label for enabling the universal edge-to-edge wallpapers treatment on the homepage -->
-    <string name="preferences_debug_settings_universal_edge_to_edge_wallpapers" translatable="false">Enable universal edge-to-edge wallpapers</string>
     <!-- Label for hiding the Collections UI -->
     <string name="preferences_debug_settings_hide_collections_ui" translatable="false">Hide Collections UI</string>
     <!-- Label for migrating Collections to Tab Groups -->
@@ -111,6 +109,8 @@
     <string name="preferences_debug_settings_show_more_shortcuts" translatable="false">Show More Shortcuts</string>
     <!-- Label for enabling Homepage Weather Widget -->
     <string name="preferences_debug_settings_homepage_weather_widget" translatable="false">Enable Homepage Weather Widget</string>
+    <!-- Label for enabling Homepage Wrexham Widget -->
+    <string name="preferences_debug_settings_homepage_wrexham_widget" translatable="false">Enable Homepage Wrexham Widget</string>
     <!-- Label for enabling Mozilla Ads Client for Sponsored Stories -->
     <string name="preferences_debug_settings_ads_client_for_stories" translatable="false">Enable Ads Client for Stories</string>
     <!-- Label for enabling the custom tab extension -->
@@ -123,8 +123,6 @@
     <string name="preferences_debug_settings_use_scroll_data_for_dynamic_toolbar" translatable="false">Animate dynamic toolbars based on website scroll data</string>
     <!-- Label for the option to show the toolbar in focus mode when clicked -->
     <string name="preferences_debug_settings_show_toolbar_in_focus_mode" translatable="false">Enable focus mode</string>
-    <!-- Label for the option to enable browser menu customization -->
-    <string name="preferences_debug_settings_enable_menu_customization" translatable="false">Enable menu customization</string>
     <!-- Label for the option to enable browser menu customization screen -->
     <string name="preferences_debug_settings_enable_menu_customization_screen" translatable="false">Enable menu customization screen</string>
     <!-- Label for toggling Remote Crash Pull -->
@@ -138,11 +136,13 @@
     <!-- Label for enabling shake to summarize -->
     <string name="preferences_key_enable_shake_to_summarize" translatable="false">Enable Shake to Summarize Feature Flag</string>
     <!-- Label for enabling listen to page -->
-    <string name="preferences_key_enable_listen_to_page" translatable="false">Enable Listen to Page Feature Flag</string>
+    <string name="preferences_key_enable_listen_to_page" translatable="false">Enable Listen to Page Feature Flag (requires app restart)</string>
     <!-- Label for enabling the weekly privacy notification -->
-    <string name="preferences_debug_settings_privacy_report_notification" translatable="false">Enable Weekly Privacy Notification Feature</string>
+    <string name="preferences_debug_settings_privacy_report_notification" translatable="false">Enable Weekly Privacy Report Notification Feature</string>
     <!-- Label for forcing the weekly privacy report notification to show, with a fixed count of blocked trackers -->
-    <string name="preferences_debug_settings_force_weekly_privacy_report_notification" translatable="false">Force weekly privacy report notification trackers over threshold</string>
+    <string name="preferences_debug_settings_force_weekly_privacy_report_notification_title" translatable="false">Show Tracker Count in Weekly Privacy Report Notification</string>
+    <!-- Label for forcing the weekly privacy report notification to show, with a fixed count of blocked trackers -->
+    <string name="preferences_debug_settings_force_weekly_privacy_report_notification_summary" translatable="false">When enabled, sets blocked trackers to 48 to show the \“48 trackers blocked this week\” notification. When disabled, shows the \"feature prompt\" notification.</string>
     <!-- Label for enabling remote search configuration -->
     <string name="preferences_debug_settings_remote_search_configuration" translatable="false">Enable Remote Search Configuration (requires restart)</string>
     <!-- Label for selecting the search-config-v3 Remote Settings collection -->
@@ -163,9 +163,6 @@
     <string name="preferences_debug_settings_enable_search_optimization_sport" translatable="false">Show Search Optimization Sport cards</string>
     <string name="preferences_debug_settings_enable_search_optimization_flight" translatable="false">Show Search Optimization Flight cards</string>
     <string name="preferences_debug_settings_search_optimization_card_summary" translatable="false">This needs the Search Optimization Feature enabled</string>
-
-    <!-- Label for enabling Private Mode and Stories Entry Point -->
-    <string name="preferences_debug_settings_private_mode_and_stories_entry_point" translatable="false">Enable Private Mode and Stories Entry Point</string>
 
     <!-- longfox secret setting -->
     <string name="preferences_debug_settings_enable_longfox" translatable="false">Enable Longfox</string>
@@ -231,6 +228,11 @@
     <string name="preferences_debug_settings_use_account_settings_new_ui" translatable="false">Use new Account Settings UI</string>
 
     <string name="preferences_debug_settings_enable_sync_decoupling" translatable="false">Enable accounts - sync decoupling (requires restart)</string>
+
+    <!-- Label for using the open links in YouTube app preference in secret settings. -->
+    <string name="preferences_debug_settings_open_links_in_youtube" translatable="false">Open links in YouTube app preference</string>
+
+    <string name="preferences_debug_settings_enable_qwac_ui" translatable="false">Enable QWAC UI</string>
 
   <!-- Label for the defaults section and reset action in secret settings. -->
     <string name="preferences_debug_settings_reset_defaults" translatable="false">Reset switches to defaults</string>
@@ -449,6 +451,8 @@
 
     <!-- Label for the Customize Home preference to show the weather widget on the homepage. -->
     <string name="customize_toggle_weather" translatable="false">Weather</string>
+    <!-- Label for the Customize Home preference to show the Wrexham widget on the homepage. -->
+    <string name="customize_toggle_wrexham_widget" translatable="false">Wrexham Widget</string>
 
     <!--  Firefox brand name  -->
     <string name="app_name_firefox" tools:ignore="BrandUsage">Firefox</string>

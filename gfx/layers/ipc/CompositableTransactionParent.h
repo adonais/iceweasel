@@ -27,7 +27,7 @@ class CompositableParentManager : public HostIPCAllocator {
   void DestroyActors(const nsTArray<OpDestroy>& aToDestroy);
 
   void UpdateFwdTransactionId(uint64_t aTransactionId) {
-    MOZ_ASSERT(mFwdTransactionId < aTransactionId);
+    MOZ_RELEASE_ASSERT(mFwdTransactionId < aTransactionId);
     mFwdTransactionId = aTransactionId;
   }
 

@@ -683,7 +683,7 @@ class gfxFontUtils {
   // ServoTypeSet. Always returns nullptr for DOM worker threads.
   static mozilla::ServoStyleSet* CurrentServoStyleSet();
 
-  static void AssertSafeThreadOrServoFontMetricsLocked()
+  static void AssertSafeThreadOrServoFFILocked()
 #ifdef DEBUG
       ;
 #else

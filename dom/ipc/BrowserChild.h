@@ -290,6 +290,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   mozilla::ipc::IPCResult RecvDeactivate(uint64_t aActionId);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvRealMouseMoveEvent(
       const mozilla::WidgetMouseEvent& aMouseEvent,
       const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId);
@@ -310,6 +311,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const mozilla::WidgetMouseEvent& aMouseEvent,
       const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvRealMouseButtonEvent(
       const mozilla::WidgetMouseEvent& aMouseOrPointerEvent,
       const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId);
@@ -337,12 +339,14 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const uint32_t& aDropEffect, nsIPrincipal* aPrincipal,
       nsIPolicyContainer* aPolicyContainer);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvRealKeyEvent(
       const mozilla::WidgetKeyboardEvent& aEvent, const nsID& aUUID);
 
   mozilla::ipc::IPCResult RecvNormalPriorityRealKeyEvent(
       const mozilla::WidgetKeyboardEvent& aEvent, const nsID& aUUID);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvMouseWheelEvent(
       const mozilla::WidgetWheelEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
@@ -351,6 +355,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const mozilla::WidgetWheelEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvRealTouchEvent(const WidgetTouchEvent& aEvent,
                                              const ScrollableLayerGuid& aGuid,
                                              const uint64_t& aInputBlockId,
@@ -360,6 +365,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const WidgetTouchEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId, const nsEventStatus& aApzResponse);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvRealTouchMoveEvent(
       const WidgetTouchEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId, const nsEventStatus& aApzResponse);
@@ -386,24 +392,28 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvSynthesizedEventResponse(
       const uint64_t& aCallbackId);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvCompositionEvent(
       const mozilla::WidgetCompositionEvent& aEvent);
 
   mozilla::ipc::IPCResult RecvNormalPriorityCompositionEvent(
       const mozilla::WidgetCompositionEvent& aEvent);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvSelectionEvent(
       const mozilla::WidgetSelectionEvent& aEvent);
 
   mozilla::ipc::IPCResult RecvNormalPrioritySelectionEvent(
       const mozilla::WidgetSelectionEvent& aEvent);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvSimpleContentCommandEvent(
       const mozilla::EventMessage& aMessage);
 
   mozilla::ipc::IPCResult RecvNormalPrioritySimpleContentCommandEvent(
       const mozilla::EventMessage& aMessage);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvInsertText(const nsAString& aStringToInsert);
 
   mozilla::ipc::IPCResult RecvUpdateRemoteStyle(
@@ -412,6 +422,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvNormalPriorityInsertText(
       const nsAString& aStringToInsert);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvReplaceText(
       const nsString& aReplaceSrcString, const nsString& aStringToInsert,
       uint32_t aOffset, PreventSetSelection aPreventSetSelection);
@@ -637,9 +648,9 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   // called when dispatching some mouse events other than mousemove.
   void FlushAllCoalescedMouseData();
 
-  void ProcessPendingCoalescedMouseDataAndDispatchEvents();
+  MOZ_CAN_RUN_SCRIPT void ProcessPendingCoalescedMouseDataAndDispatchEvents();
 
-  void ProcessPendingCoalescedTouchData();
+  MOZ_CAN_RUN_SCRIPT void ProcessPendingCoalescedTouchData();
 
   /**
    * Dispatch an eMouseRawUpdate event for dispatching ePointerRawUpdate event
@@ -647,13 +658,21 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
    * This does nothing if there is no window which has at least one
    * `pointerrawupdate` event listener.
    */
+  MOZ_CAN_RUN_SCRIPT
   void HandleMouseRawUpdateEvent(const WidgetMouseEvent& aPendingMouseEvent,
                                  const ScrollableLayerGuid& aGuid,
                                  const uint64_t& aInputBlockId);
 
+  MOZ_CAN_RUN_SCRIPT
   void HandleRealMouseButtonEvent(const WidgetMouseEvent& aMouseOrPointerEvent,
                                   const ScrollableLayerGuid& aGuid,
                                   const uint64_t& aInputBlockId);
+
+  MOZ_CAN_RUN_SCRIPT
+  void HandleRealTouchEvent(const WidgetTouchEvent& aEvent,
+                            const ScrollableLayerGuid& aGuid,
+                            const uint64_t& aInputBlockId,
+                            const nsEventStatus& aApzResponse);
 
   /**
    * Dispatch an eTouchRawUpdate event for dispatching ePointerRawUpdate event
@@ -661,6 +680,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
    * This does nothing if there is no window which has at least one
    * `pointerrawupdate` event listener.
    */
+  MOZ_CAN_RUN_SCRIPT
   void HandleTouchRawUpdateEvent(const WidgetTouchEvent& aPendingTouchEvent,
                                  const ScrollableLayerGuid& aGuid,
                                  const uint64_t& aInputBlockId,
@@ -719,6 +739,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const mozilla::LayoutDeviceIntPoint& aEndDragPoint,
       const uint32_t& aKeyModifiers, const uint32_t& aDropEffect);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvStoreDropTargetAndDelayEndDragSession(
       const LayoutDeviceIntPoint& aPt, uint32_t aDropEffect,
       uint32_t aDragAction, nsIPrincipal* aPrincipal,
@@ -795,16 +816,20 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   void UpdateRepeatedKeyEventEndTime(const WidgetKeyboardEvent& aEvent);
 
-  void DispatchCoalescedWheelEvent();
+  MOZ_CAN_RUN_SCRIPT void DispatchCoalescedWheelEvent();
 
   /**
    * Dispatch aEvent on aEvent.mWidget.
+   *
+   * Can run script because it ultimately gets to
+   * PresShellWidgetListener::HandleEvent which is annotated as boundary.
    */
-  nsEventStatus DispatchWidgetEventViaAPZ(WidgetGUIEvent& aEvent);
+  MOZ_CAN_RUN_SCRIPT nsEventStatus
+  DispatchWidgetEventViaAPZ(WidgetGUIEvent& aEvent);
 
-  void DispatchWheelEvent(const WidgetWheelEvent& aEvent,
-                          const ScrollableLayerGuid& aGuid,
-                          const uint64_t& aInputBlockId);
+  MOZ_CAN_RUN_SCRIPT void DispatchWheelEvent(const WidgetWheelEvent& aEvent,
+                                             const ScrollableLayerGuid& aGuid,
+                                             const uint64_t& aInputBlockId);
 
   void InternalSetDocShellIsActive(bool aIsActive);
 

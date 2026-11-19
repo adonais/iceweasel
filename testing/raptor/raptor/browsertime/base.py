@@ -46,6 +46,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
     def __init__(self, app, binary, **kwargs):
         self.browsertime = True
         self.browsertime_failure = ""
+        self.browsertime_fatal_setup_error = ""
         self.browsertime_user_args = []
         self._crash_directory = None
 
@@ -193,46 +194,6 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                 else:
                     chromedriver_version = DEFAULT_CHROMEVERSION
 
-                # Bug 1844578 - Remove this, and change the cd_extracted_names during task
-                # setup once all chrome versions use the new artifact setup.
-                cd_extracted_names_115 = {
-                    "windows": str(
-                        pathlib.Path("{}cft-chromedriver-win64", "chromedriver.exe")
-                    ),
-                    "mac-x86_64": str(
-                        pathlib.Path("{}cft-chromedriver-mac", "chromedriver")
-                    ),
-                    "mac-aarch64": str(
-                        pathlib.Path("{}cft-chromedriver-mac", "chromedriver")
-                    ),
-                    "default": str(
-                        pathlib.Path("{}cft-chromedriver-linux", "chromedriver")
-                    ),
-                }
-
-                if int(chromedriver_version) >= 115:
-                    if "mac" in self.config["platform"]:
-                        self.browsertime_chromedriver = (
-                            self.browsertime_chromedriver.replace(
-                                "{}chromedriver",
-                                cd_extracted_names_115[
-                                    f"mac-{self.config['processor']}"
-                                ],
-                            )
-                        )
-                    elif "win" in self.config["platform"]:
-                        self.browsertime_chromedriver = (
-                            self.browsertime_chromedriver.replace(
-                                "{}chromedriver.exe",
-                                cd_extracted_names_115["windows"],
-                            )
-                        )
-                    else:
-                        self.browsertime_chromedriver = (
-                            self.browsertime_chromedriver.replace(
-                                "{}chromedriver", cd_extracted_names_115["default"]
-                            )
-                        )
                 self.browsertime_chromedriver = self.browsertime_chromedriver.format(
                     chromedriver_version
                 )
@@ -883,6 +844,24 @@ class Browsertime(Perftest, metaclass=ABCMeta):
 
         return True
 
+    def _fatal_setup_error(self, line):
+        """Return instructions for a browsertime error that retrying cannot
+        fix, or None."""
+        if (
+            self.config["app"] in ("safari", "safari-tp")
+            and "Allow remote automation" in line
+        ):
+            return (
+                "Safari does not allow remote automation, so it can't be controlled "
+                "via WebDriver. Enable it in one of two ways, then run the test "
+                "again:\n"
+                "  1. Run: sudo safaridriver --enable\n"
+                '  2. In Safari, open Settings > Advanced and check "Show features '
+                'for web developers", then open Settings > Developer and check '
+                '"Allow remote automation".'
+            )
+        return None
+
     def kill(self, proc):
         if "win" in self.config["platform"]:
             proc.send_signal(signal.CTRL_BREAK_EVENT)
@@ -1037,6 +1016,11 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         env["MINIDUMP_SAVE_PATH"] = str(self.crash_directory)
         env["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
         env["MOZ_REMOTE_SETTINGS_DISABLED"] = "1"
+        # Temporary workaround (bug 2083658): browsertime's bundled geckodriver
+        # doesn't set this. Remove once browsertime is updated (bug 2083786).
+        env["MOZ_REMOTE_ALLOW_SYSTEM_ACCESS"] = "1"
+        if test.get("support_class", None):
+            test.get("support_class").modify_env(env, test)
         if self.browsertime_video and self.browsertime_ffmpeg:
             ffmpeg_dir = os.path.dirname(os.path.abspath(self.browsertime_ffmpeg))
             old_path = env.setdefault("PATH", "")
@@ -1132,6 +1116,13 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                     line = line.replace(b"\xcf\x83", b"")
 
                     line = line.decode("utf-8")
+                    fatal_setup_error = self._fatal_setup_error(line)
+                    if fatal_setup_error:
+                        LOG.info(line)
+                        if not self.browsertime_fatal_setup_error:
+                            self.browsertime_fatal_setup_error = fatal_setup_error
+                            proc.kill()
+                        return
                     match = line_matcher.match(line)
                     if not match:
                         LOG.info(line)
@@ -1232,6 +1223,9 @@ class Browsertime(Perftest, metaclass=ABCMeta):
 
                 if self.browsertime_failure:
                     self.get_failure_screenshot()
+
+                if self.browsertime_fatal_setup_error:
+                    raise Exception(self.browsertime_fatal_setup_error)
 
                 if browsertime_mozprocess.returncode != 0:
                     browsertime_process_attempt_count += 1

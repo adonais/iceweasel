@@ -50,7 +50,6 @@ clippy:
         - security/manager/ssl/abridged_certs/
         - security/manager/ssl/crypto_hash/
         - security/manager/ssl/data_storage/
-        - security/manager/ssl/ipcclientcerts/
         - security/manager/ssl/pdf_trust_anchors/
         - security/manager/ssl/qwac_trust_anchors/
         # - security/manager/ssl/rsclientcerts/

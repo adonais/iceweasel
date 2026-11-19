@@ -7,6 +7,7 @@ from shlex import quote as shell_quote
 from typing import Literal, Optional, Union
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
+from gecko_taskgraph.transforms.job.common import add_gradle
 from taskgraph.util import path
 from taskgraph.util.schema import Schema, taskref_or_string_msgspec
 
@@ -90,21 +91,20 @@ def configure_gradlew(config, job, taskdesc):
     topsrc_dir = "/builds/worker/checkouts/gecko"
     worker.setdefault("env", {}).update({
         "ANDROID_SDK_ROOT": path.join(fetches_dir, "android-sdk-linux"),
-        "GRADLE_USER_HOME": path.join(
-            topsrc_dir, "mobile/android/gradle/dotgradle-offline"
-        ),
         "MOZ_BUILD_DATE": config.params["moz_build_date"],
     })
-    worker["env"].setdefault(
-        "MOZCONFIG",
-        path.join(
-            topsrc_dir,
-            "mobile/android/config/mozconfigs/android-arm/nightly-android-lints",
-        ),
+    add_gradle(config, job, taskdesc, "offline")
+    geckoview = config.kind_dependencies_tasks.get(
+        taskdesc["dependencies"].get("geckoview")
     )
-    worker["env"].setdefault(
-        "MOZ_ANDROID_FAT_AAR_ARCHITECTURES", "armeabi-v7a,arm64-v8a,x86_64"
-    )
+    if geckoview and geckoview.kind == "build":
+        mozconfig = geckoview.task["payload"]["env"]["MOZCONFIG"]
+    else:
+        mozconfig = "mobile/android/config/mozconfigs/android-arm/nightly-android-lints"
+        worker["env"].setdefault(
+            "MOZ_ANDROID_FAT_AAR_ARCHITECTURES", "armeabi-v7a,arm64-v8a,x86_64"
+        )
+    worker["env"].setdefault("MOZCONFIG", path.join(topsrc_dir, mozconfig))
 
     dummy_secrets = [
         _generate_dummy_secret_command(secret)
@@ -140,11 +140,9 @@ def configure_mach_gradle(config, job, taskdesc):
     topsrc_dir = "/builds/worker/checkouts/gecko"
     worker.setdefault("env", {}).update({
         "ANDROID_SDK_ROOT": path.join(fetches_dir, "android-sdk-linux"),
-        "GRADLE_USER_HOME": path.join(
-            topsrc_dir, "mobile/android/gradle/dotgradle-offline"
-        ),
         "MOZ_BUILD_DATE": config.params["moz_build_date"],
     })
+    add_gradle(config, job, taskdesc, "offline")
     worker["env"].setdefault(
         "MOZCONFIG",
         path.join(

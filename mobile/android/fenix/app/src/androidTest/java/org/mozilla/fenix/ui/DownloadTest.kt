@@ -104,8 +104,13 @@ class DownloadTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2298616
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.DownloadTest#verifyDownloadCompleteNotificationTest"],
+        bug = 2083770,
+        since = "2026-10",
+    )
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=2006672"])
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1999369")
+    @Critical
     @Test
     fun verifyDownloadCompleteNotificationTest() {
         downloadRobot(composeTestRule) {
@@ -120,15 +125,7 @@ class DownloadTest {
                 assertExternalAppOpens(GOOGLE_APPS_PHOTOS)
                 mDevice.pressBack()
                 mDevice.openNotification()
-                verifySystemNotificationExists("Download completed")
-                swipeDownloadNotification(
-                    composeTestRule,
-                    direction = "Left",
-                    shouldDismissNotification = true,
-                    canExpandNotification = false,
-                    notificationItem = "png_image.png",
-                )
-                verifySystemNotificationDoesNotExist(appName)
+                verifySystemNotificationDoesNotExist("Download completed")
             }
             .closeNotificationTray(composeTestRule) {}
     }

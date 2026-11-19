@@ -14,7 +14,7 @@ namespace layers {
 namespace apz {
 
 /*static*/ void InitializeGlobalState() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   AsyncPanZoomController::InitializeGlobalState();
 }
 

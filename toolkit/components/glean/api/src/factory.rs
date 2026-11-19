@@ -14,3 +14,105 @@
 include!(mozbuild::objdir_path!(
     "toolkit/components/glean/api/src/factory.rs"
 ));
+
+/// Reload runtime registrations without resetting the pings' enabled flags.
+/// Call only after the Glean dispatcher has been drained by test reset.
+pub fn test_with_preserved_ping_state(reload: impl FnOnce()) {
+    use std::collections::HashMap;
+
+    let mut enabled_states = HashMap::new();
+    {
+        let pings = __jog_metric_maps::PING_MAP.read().unwrap();
+        for (id, ping) in pings.iter() {
+            if let Ping::Parent { inner, name } = ping {
+                // The most recently registered ping is the one exposed to JS.
+                let entry = enabled_states
+                    .entry(name.clone())
+                    .or_insert((*id, inner.naively_enabled()));
+                if *id > entry.0 {
+                    *entry = (*id, inner.naively_enabled());
+                }
+            }
+        }
+    }
+
+    reload();
+
+    let pings = __jog_metric_maps::PING_MAP.read().unwrap();
+    for ping in pings.values() {
+        if let Ping::Parent { inner, name } = ping {
+            if let Some((_, enabled)) = enabled_states.get(name) {
+                if inner.naively_enabled() != *enabled {
+                    inner.set_enabled(*enabled);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::common_test::lock_test;
+    use glean::{
+        ClientInfoMetrics, CommonMetricData, ConfigurationBuilder, Lifetime, TestGetValue,
+    };
+
+    #[test]
+    fn runtime_ping_enabled_flags_survive_reregistration() {
+        let (_lock, dir) = lock_test();
+        let register = |name: &str, enabled| {
+            create_and_register_ping(
+                name.into(),
+                false,
+                true,
+                true,
+                true,
+                enabled,
+                vec![],
+                vec![],
+                true,
+                vec![],
+            )
+            .unwrap()
+        };
+        let enabled_id = register("reset-default-disabled", false);
+        let disabled_id = register("reset-default-enabled", true);
+        let counter = |name: &str, ping: &str| {
+            glean::private::CounterMetric::new(CommonMetricData {
+                name: name.into(),
+                category: "test".into(),
+                send_in_pings: vec![ping.into()],
+                lifetime: Lifetime::Ping,
+                ..Default::default()
+            })
+        };
+        let enabled_counter = counter("enabled", "reset-default-disabled");
+        let disabled_counter = counter("disabled", "reset-default-enabled");
+        {
+            let pings = __jog_metric_maps::PING_MAP.read().unwrap();
+            pings[&enabled_id].set_enabled(true);
+            pings[&disabled_id].set_enabled(false);
+        }
+        enabled_counter.add(42);
+        disabled_counter.add(42);
+        assert_eq!(Some(42), enabled_counter.test_get_value(None));
+        assert_eq!(None, disabled_counter.test_get_value(None));
+
+        let config = ConfigurationBuilder::new(true, dir.path(), "firefox.desktop.test").build();
+        glean::test_reset_glean(config, ClientInfoMetrics::unknown(), true);
+        test_with_preserved_ping_state(|| {
+            id_and_map_reset();
+            // Reversing registration order also checks that state follows names, not IDs.
+            register("reset-default-enabled", true);
+            register("reset-default-disabled", false);
+        });
+
+        assert_eq!(None, enabled_counter.test_get_value(None));
+        enabled_counter.add(7);
+        disabled_counter.add(7);
+        assert_eq!(Some(7), enabled_counter.test_get_value(None));
+        assert_eq!(None, disabled_counter.test_get_value(None));
+        id_and_map_reset();
+    }
+}

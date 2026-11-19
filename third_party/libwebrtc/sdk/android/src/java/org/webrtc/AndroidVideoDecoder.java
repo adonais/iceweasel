@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.ThreadUtils.ThreadChecker;
@@ -64,6 +65,10 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   // those buffers into VideoFrames and delivers them to the callback.  Variable is set on decoder
   // thread and is immutable while the codec is running.
   @Nullable private Thread outputThread;
+
+  // Counted down by the output thread once it has stopped delivering frames, i.e. before it starts
+  // releasing the MediaCodec. Set on the decoder thread together with `outputThread`.
+  @Nullable private CountDownLatch outputThreadDeliveryStopped;
 
   // Checker that ensures work is run on the output thread.
   private ThreadChecker outputThreadChecker;
@@ -186,7 +191,8 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
       return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
     running = true;
-    outputThread = createOutputThread();
+    outputThreadDeliveryStopped = new CountDownLatch(1);
+    outputThread = createOutputThread(codec, outputThreadDeliveryStopped);
     outputThread.start();
 
     Logging.d(TAG, "initDecodeInternal done");
@@ -315,6 +321,13 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     try {
       // The outputThread actually stops and releases the codec once running is false.
       running = false;
+      // release() returns only after frame delivery has stopped. Only the release of the
+      // MediaCodec, which occasionally hangs, is subject to a timeout.
+      if (!ThreadUtils.awaitUninterruptibly(
+              outputThreadDeliveryStopped, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+        Logging.e(TAG, "Output thread slow to stop delivering frames", new RuntimeException());
+        ThreadUtils.awaitUninterruptibly(outputThreadDeliveryStopped);
+      }
       if (!ThreadUtils.joinUninterruptibly(outputThread, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
         // Log an exception to capture the stack trace and turn it into a TIMEOUT error.
         Logging.e(TAG, "Media decoder release timeout", new RuntimeException());
@@ -330,6 +343,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     } finally {
       codec = null;
       outputThread = null;
+      outputThreadDeliveryStopped = null;
       frameInfos.clear();
     }
     return VideoCodecStatus.OK;
@@ -344,15 +358,23 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     return initDecodeInternal(newWidth, newHeight);
   }
 
-  private Thread createOutputThread() {
+  // `threadCodec` is the codec that the output thread releases when done. It is passed explicitly
+  // since the `codec` member may be reset (or reassigned) while the release is still in progress.
+  private Thread createOutputThread(
+      final MediaCodecWrapper threadCodec, final CountDownLatch deliveryStopped) {
     return new Thread("AndroidVideoDecoder.outputThread") {
       @Override
       public void run() {
         outputThreadChecker = new ThreadChecker();
-        while (running) {
-          deliverDecodedFrame();
+        try {
+          while (running) {
+            deliverDecodedFrame();
+          }
+        } finally {
+          // No more frames will be delivered from this thread.
+          deliveryStopped.countDown();
         }
-        releaseCodecOnOutputThread();
+        releaseCodecOnOutputThread(threadCodec);
       }
     };
   }
@@ -615,16 +637,16 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     }
   }
 
-  private void releaseCodecOnOutputThread() {
+  private void releaseCodecOnOutputThread(MediaCodecWrapper threadCodec) {
     outputThreadChecker.checkIsOnValidThread();
     Logging.d(TAG, "Releasing MediaCodec on output thread");
     try {
-      codec.stop();
+      threadCodec.stop();
     } catch (Exception e) {
       Logging.e(TAG, "Media decoder stop failed", e);
     }
     try {
-      codec.release();
+      threadCodec.release();
     } catch (Exception e) {
       Logging.e(TAG, "Media decoder release failed", e);
       // Propagate exceptions caught during release back to the main thread.

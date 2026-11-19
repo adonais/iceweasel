@@ -264,8 +264,8 @@ TEST(ObserverArray, RangeBasedFor_Reference_Forward_NonEmpty)
 {
   const auto arr = [] {
     nsTObserverArray<UniquePtr<int>> arr;
-    arr.AppendElement(MakeUnique<int>(3));
-    arr.AppendElement(MakeUnique<int>(4));
+    arr.AppendElement(std::make_unique<int>(3));
+    arr.AppendElement(std::make_unique<int>(4));
     return arr;
   }();
 
@@ -283,8 +283,8 @@ TEST(ObserverArray, RangeBasedFor_Reference_Forward_NonEmpty)
 TEST(ObserverArray, RangeBasedFor_NonConstReference_Forward_NonEmpty)
 {
   nsTObserverArray<UniquePtr<int>> arr;
-  arr.AppendElement(MakeUnique<int>(3));
-  arr.AppendElement(MakeUnique<int>(4));
+  arr.AppendElement(std::make_unique<int>(3));
+  arr.AppendElement(std::make_unique<int>(4));
 
   size_t iterations = 0;
   int sum = 0;
@@ -389,8 +389,8 @@ TEST(ObserverArray, RangeBasedFor_Reference_Backward_NonEmpty)
 {
   const auto arr = [] {
     nsTObserverArray<UniquePtr<int>> arr;
-    arr.AppendElement(MakeUnique<int>(3));
-    arr.AppendElement(MakeUnique<int>(4));
+    arr.AppendElement(std::make_unique<int>(3));
+    arr.AppendElement(std::make_unique<int>(4));
     return arr;
   }();
 
@@ -408,8 +408,8 @@ TEST(ObserverArray, RangeBasedFor_Reference_Backward_NonEmpty)
 TEST(ObserverArray, RangeBasedFor_NonConstReference_Backward_NonEmpty)
 {
   nsTObserverArray<UniquePtr<int>> arr;
-  arr.AppendElement(MakeUnique<int>(3));
-  arr.AppendElement(MakeUnique<int>(4));
+  arr.AppendElement(std::make_unique<int>(3));
+  arr.AppendElement(std::make_unique<int>(4));
 
   size_t iterations = 0;
   int sum = 0;
@@ -514,8 +514,8 @@ TEST(ObserverArray, RangeBasedFor_Reference_EndLimited_NonEmpty)
 {
   const auto arr = [] {
     nsTObserverArray<UniquePtr<int>> arr;
-    arr.AppendElement(MakeUnique<int>(3));
-    arr.AppendElement(MakeUnique<int>(4));
+    arr.AppendElement(std::make_unique<int>(3));
+    arr.AppendElement(std::make_unique<int>(4));
     return arr;
   }();
 
@@ -533,8 +533,8 @@ TEST(ObserverArray, RangeBasedFor_Reference_EndLimited_NonEmpty)
 TEST(ObserverArray, RangeBasedFor_NonConstReference_EndLimited_NonEmpty)
 {
   nsTObserverArray<UniquePtr<int>> arr;
-  arr.AppendElement(MakeUnique<int>(3));
-  arr.AppendElement(MakeUnique<int>(4));
+  arr.AppendElement(std::make_unique<int>(3));
+  arr.AppendElement(std::make_unique<int>(4));
 
   size_t iterations = 0;
   int sum = 0;
@@ -551,8 +551,8 @@ TEST(ObserverArray, RangeBasedFor_Reference_NonObserving_NonEmpty)
 {
   const auto arr = [] {
     nsTObserverArray<UniquePtr<int>> arr;
-    arr.AppendElement(MakeUnique<int>(3));
-    arr.AppendElement(MakeUnique<int>(4));
+    arr.AppendElement(std::make_unique<int>(3));
+    arr.AppendElement(std::make_unique<int>(4));
     return arr;
   }();
 

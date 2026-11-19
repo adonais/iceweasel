@@ -14,8 +14,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/Likely.h"
-#include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
 #include "mozilla/RDDChild.h"
@@ -239,7 +237,6 @@ bool UntrustedModulesProcessor::IsSupportedProcessType() {
   switch (XRE_GetProcessType()) {
     case GeckoProcessType_Default:
     case GeckoProcessType_Content:
-    case GeckoProcessType_Socket:
       return Telemetry::CanRecordReleaseData();
     case GeckoProcessType_RDD:
     case GeckoProcessType_Utility:
@@ -351,10 +348,6 @@ NS_IMETHODIMP UntrustedModulesProcessor::Observe(nsISupports* aSubject,
       nsTArray<dom::ContentParent*> contentProcesses;
       dom::ContentParent::GetAll(contentProcesses);
       for (auto* proc : contentProcesses) {
-        (void)proc->SendUnblockUntrustedModulesThread();
-      }
-      if (RefPtr<net::SocketProcessParent> proc =
-              net::SocketProcessParent::GetSingleton()) {
         (void)proc->SendUnblockUntrustedModulesThread();
       }
       if (auto* rddMgr = RDDProcessManager::Get()) {
@@ -921,11 +914,6 @@ UntrustedModulesProcessor::SendGetModulesTrust(ModuleIdentifiers&& aModules,
     case GeckoProcessType_RDD: {
       return ::mozilla::SendGetModulesTrust(RDDParent::GetSingleton(),
                                             std::move(aModules), runNormal);
-    }
-    case GeckoProcessType_Socket: {
-      return ::mozilla::SendGetModulesTrust(
-          net::SocketProcessChild::GetSingleton(), std::move(aModules),
-          runNormal);
     }
     case GeckoProcessType_Utility: {
       return ::mozilla::SendGetModulesTrust(

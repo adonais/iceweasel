@@ -94,11 +94,6 @@ add_setup(async function setup() {
   await trrServer.start();
   h2Port = trrServer.port();
 
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
-
   Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRONLY);
 
   let ohttp = Cc["@mozilla.org/network/oblivious-http;1"].getService(

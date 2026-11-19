@@ -265,7 +265,7 @@ class {{ ping|event_class_name(metrics_by_type) }} {
  * @param {string} appDisplayVersion - The application display version.
  * @param {string} channel - The channel.
  * @param {Object} logger_options - The logger options.
- * @returns {EventsServerEventLogger} An instance of EventsServerEventLogger.
+ * @returns {{ "{" }}{{ ping|event_class_name(metrics_by_type) }}{{ "}" }} An instance of {{ ping|event_class_name(metrics_by_type) }}.
  */
 {% if module_spec == "commonjs" %}
 module.exports.{{ ping|factory_method(metrics_by_type) }} = function ({

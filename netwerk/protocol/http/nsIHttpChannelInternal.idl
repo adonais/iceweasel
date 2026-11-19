@@ -16,7 +16,6 @@ namespace mozilla {
 class TimeStamp;
 namespace net {
 class nsHttpConnectionInfo;
-class WebSocketConnectionBase;
 class EarlyHintConnectArgs;
 }
 namespace dom {
@@ -28,7 +27,6 @@ enum class RequestMode : uint8_t;
 [ptr] native StringArray(nsTArray<nsCString>);
 [ref] native CStringArrayRef(const nsTArray<nsCString>);
 [ref] native securityMessagesArray(nsCOMArray<nsISecurityConsoleMessage>);
-[ptr] native WebSocketConnectionBase(mozilla::net::WebSocketConnectionBase);
 
 native TimeStamp(mozilla::TimeStamp);
 native RequestMode(mozilla::dom::RequestMode);
@@ -55,8 +53,6 @@ interface nsIHttpUpgradeListener : nsISupports
                                          in nsIAsyncOutputStream aSocketOut);
 
     [must_use] void onUpgradeFailed(in nsresult aErrorCode);
-
-    [noscript] void onWebSocketConnectionAvailable(in WebSocketConnectionBase aConnection);
 };
 
 /**
@@ -299,11 +295,6 @@ interface nsIHttpChannelInternal : nsISupports
      * contains the reason why that was skipped.
      */
     [must_use] readonly attribute nsITRRSkipReason_value trrSkipReason;
-
-    /**
-     * True if channel is loaded by socket process.
-     */
-    [must_use] readonly attribute boolean isLoadedBySocketProcess;
 
     /**
      * Set to true if the channel is an OCSP check.

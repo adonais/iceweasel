@@ -114,11 +114,6 @@ const COMMON_PREFERENCES = new Map([
   // Disable the profile backup service.
   ["browser.backup.enabled", false],
 
-  // Don't show the content blocking introduction panel.
-  // We use a larger number than the default 22 to have some buffer
-  // This can be removed once Firefox 69 and 68 ESR and are no longer supported.
-  ["browser.contentblocking.introCount", 99],
-
   // Disable extension discovery
   ["browser.discovery.enabled", false],
 
@@ -217,9 +212,6 @@ const COMMON_PREFERENCES = new Map([
 
   // Disable translations
   ["browser.translations.enable", false],
-
-  // Disable first run splash page on Windows 10
-  ["browser.usedOnWindows10.introURL", ""],
 
   // Turn off Merino suggestions in the location bar so as not to trigger
   // network connections.

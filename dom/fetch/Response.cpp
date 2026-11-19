@@ -224,8 +224,8 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
     WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(worker);
     internalResponse->InitChannelInfo(worker->GetChannelInfo());
-    principalInfo =
-        MakeUnique<mozilla::ipc::PrincipalInfo>(worker->GetPrincipalInfo());
+    principalInfo = std::make_unique<mozilla::ipc::PrincipalInfo>(
+        worker->GetPrincipalInfo());
   }
 
   internalResponse->SetPrincipalInfo(std::move(principalInfo));

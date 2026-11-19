@@ -38,8 +38,7 @@ using namespace mozilla::image;
 
 nsIFrame* NS_NewSVGGeometryFrame(mozilla::PresShell* aPresShell,
                                  mozilla::ComputedStyle* aStyle) {
-  return new (aPresShell)
-      mozilla::SVGGeometryFrame(aStyle, aPresShell->GetPresContext());
+  return new mozilla::SVGGeometryFrame(aStyle, aPresShell->GetPresContext());
 }
 
 namespace mozilla {
@@ -902,16 +901,19 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
     };
     wr::LayoutSize tileSize{wrRect.width(), wrRect.height()};
     wr::LayoutSize tileSpacing{0.0f, 0.0f};
-    if (aG.mIsLinear) {
-      aBuilder.PushLinearGradient(
-          wrRect, wrRect, backfaceVisible, toItemVector(aG.mStart),
-          toItemVector(aG.mEnd), aG.mStops, aG.mExtendMode, tileSize,
-          tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
-    } else {
-      aBuilder.PushRadialGradient(
-          wrRect, wrRect, backfaceVisible, toItemVector(aG.mCenter),
-          wr::ToLayoutSize(aG.mRadii * cssToDev), aG.mStops, aG.mExtendMode,
-          tileSize, tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
+    switch (aG.mType) {
+      case SVGGradientFrame::GradientType::Linear:
+        aBuilder.PushLinearGradient(
+            wrRect, wrRect, backfaceVisible, toItemVector(aG.mStart),
+            toItemVector(aG.mEnd), aG.mStops, aG.mExtendMode, tileSize,
+            tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
+        break;
+      case SVGGradientFrame::GradientType::Radial:
+        aBuilder.PushRadialGradient(
+            wrRect, wrRect, backfaceVisible, toItemVector(aG.mCenter),
+            wr::ToLayoutSize(aG.mRadii * cssToDev), aG.mStops, aG.mExtendMode,
+            tileSize, tileSpacing, antialias, wr::AlphaMode::Unpremultiplied);
+        break;
     }
   };
 

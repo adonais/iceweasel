@@ -69,8 +69,8 @@ void nsAlertsIconListener::MaybeSetActivationToken(
   }
 }
 
-static void notify_action_cb(NotifyNotification* notification, gchar* action,
-                             gpointer user_data) {
+static void notify_action_cb(NotifyNotification* notification,
+                             gchar* /*action*/, gpointer user_data) {
   nsAlertsIconListener::MaybeSetActivationToken(notification);
   nsAlertsIconListener* alert = static_cast<nsAlertsIconListener*>(user_data);
   alert->SendCallback();
@@ -87,11 +87,11 @@ static void notify_nondefault_action_cb(NotifyNotification* notification,
   alert->SendActionCallback(NS_ConvertUTF8toUTF16(actionName));
 }
 
-static void notify_closed_marshal(GClosure* closure, GValue* return_value,
+static void notify_closed_marshal(GClosure* closure, GValue* /*return_value*/,
                                   guint n_param_values,
-                                  const GValue* param_values,
-                                  gpointer invocation_hint,
-                                  gpointer marshal_data) {
+                                  const GValue* /*param_values*/,
+                                  gpointer /*invocation_hint*/,
+                                  gpointer /*marshal_data*/) {
   MOZ_ASSERT(n_param_values >= 1, "No object in params");
 
   nsAlertsIconListener* alert =
@@ -265,7 +265,8 @@ nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
 
 void nsAlertsIconListener::SendCallback() {
   if (mAlertCallbacks) {
-    mAlertCallbacks->OnAlertClick(nullptr);
+    mAlertCallbacks->OnAlertClick(nullptr,
+                                  nsIAlertCallbacks::ApplicationState::UNKNOWN);
   }
 }
 
@@ -273,7 +274,8 @@ void nsAlertsIconListener::SendActionCallback(const nsAString& aActionName) {
   if (mAlertCallbacks) {
     nsCOMPtr<nsIAlertAction> alertAction;
     mAlertNotification->GetAction(aActionName, getter_AddRefs(alertAction));
-    mAlertCallbacks->OnAlertClick(alertAction);
+    mAlertCallbacks->OnAlertClick(alertAction,
+                                  nsIAlertCallbacks::ApplicationState::UNKNOWN);
   }
 }
 

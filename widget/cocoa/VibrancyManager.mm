@@ -122,7 +122,7 @@ bool VibrancyManager::UpdateVibrantRegion(
     return hadRegion;
   }
   if (!slot) {
-    slot = MakeUnique<ViewRegion>();
+    slot = std::make_unique<ViewRegion>();
   }
   return slot->UpdateRegion(aRegion, mCoordinateConverter, mContainerView, ^() {
     return [[MOZVibrantView alloc] initWithFrame:NSZeroRect vibrancyType:aType];

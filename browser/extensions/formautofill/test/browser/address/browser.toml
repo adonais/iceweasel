@@ -30,6 +30,9 @@ skip-if = [
 ["browser_address_doorhanger_display.js"]
 
 ["browser_address_doorhanger_invalid_fields.js"]
+skip-if = [
+  "macos_vm", # Bug 2084943 - fails only on the macOS tart VMs
+]
 
 ["browser_address_doorhanger_multiple_tabs.js"]
 

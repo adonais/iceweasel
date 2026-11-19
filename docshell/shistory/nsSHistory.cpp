@@ -31,6 +31,7 @@
 #include "prsystem.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/BounceTrackingState.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -203,14 +204,14 @@ void nsSHistoryObserver::PrefChanged(const char* aPref, void* aSelf) {
   static_cast<nsSHistoryObserver*>(aSelf)->PrefChanged(aPref);
 }
 
-void nsSHistoryObserver::PrefChanged(const char* aPref) {
+void nsSHistoryObserver::PrefChanged(const char* /*aPref*/) {
   nsSHistory::UpdatePrefs();
   nsSHistory::GloballyEvictDocumentViewers();
 }
 
 NS_IMETHODIMP
-nsSHistoryObserver::Observe(nsISupports* aSubject, const char* aTopic,
-                            const char16_t* aData) {
+nsSHistoryObserver::Observe(nsISupports* /*aSubject*/, const char* aTopic,
+                            const char16_t* /*aData*/) {
   if (!strcmp(aTopic, "cacheservice:empty-cache") ||
       !strcmp(aTopic, "memory-pressure")) {
     nsSHistory::GloballyEvictAllDocumentViewers();
@@ -264,7 +265,7 @@ nsSHistory::nsSHistory(BrowsingContext* aRootBC)
 
   // Init mHistoryTracker on setting mRootBC so we can bind its event
   // target to the tabGroup.
-  mHistoryTracker = mozilla::MakeUnique<HistoryTracker>(
+  mHistoryTracker = std::make_unique<HistoryTracker>(
       this,
       mozilla::Preferences::GetUint(CONTENT_VIEWER_TIMEOUT_SECONDS,
                                     CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT),
@@ -1338,12 +1339,22 @@ static const mozilla::dom::SessionHistoryInfo* TraversalViewTransitionTarget(
   return nullptr;
 }
 
+static bool CanRestoreFrameLoader(nsFrameLoader* aFrameLoader) {
+  if (!aFrameLoader->IsRemoteFrame()) {
+    return true;
+  }
+  BrowserParent* browserParent = aFrameLoader->GetBrowserParent();
+  return browserParent && browserParent->CanSend() &&
+         !browserParent->IsDestroyed();
+}
+
 MOZ_CAN_RUN_SCRIPT
 static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
                           nsDocShellLoadState* aLoadState,
                           SessionHistoryEntry* aEntry,
                           nsFrameLoader* aFrameLoader, bool aCanSave,
-                          bool aPageSwapFired = false) {
+                          bool aPageSwapFired = false,
+                          bool aViewTransitionCaptured = false) {
   MOZ_ASSERT(aEntry);
   MOZ_ASSERT(aFrameLoader);
 
@@ -1357,7 +1368,7 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
   nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
       do_QueryInterface(aBrowsingContext->GetEmbedderElement());
   if (frameLoaderOwner && aFrameLoader->GetMaybePendingBrowsingContext() &&
-      indexOfHistoryLoad >= 0) {
+      CanRestoreFrameLoader(aFrameLoader) && indexOfHistoryLoad >= 0) {
     RefPtr<BrowsingContextWebProgress> webProgress =
         aBrowsingContext->GetWebProgress();
     if (webProgress) {
@@ -1384,6 +1395,23 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
         aFrameLoader->GetMaybePendingBrowsingContext()->Canonical();
     RefPtr<nsFrameLoader> currentFrameLoader =
         frameLoaderOwner->GetFrameLoader();
+
+    // Top level navigations otherwise reach bounce tracking protection from
+    // DocumentLoadListener, which a restore does not create. This has to run
+    // before the swap, while the page being left is still current.
+    RefPtr<BounceTrackingState> bounceTrackingState =
+        aBrowsingContext->IsTopContent()
+            ? aBrowsingContext->GetBounceTrackingState()
+            : nullptr;
+    if (bounceTrackingState) {
+      DebugOnly<nsresult> rv = bounceTrackingState->OnStartNavigation(
+          aLoadState->TriggeringPrincipal(),
+          aLoadState->HasValidUserGestureActivation(),
+          aLoadState->GetLoadIdentifier());
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "BounceTrackingState::OnStartNavigation failed");
+    }
+
     // The current page can be bfcached, store the
     // nsFrameLoader in the current SessionHistoryEntry.
     RefPtr<SessionHistoryEntry> currentSHEntry =
@@ -1436,8 +1464,8 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     // browser.navigation.requireUserInteraction is still
     // disabled everywhere.
 
-    bool layersChanged =
-        frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
+    bool layersChanged = frameLoaderOwner->RestoreFrameLoaderFromBFCache(
+        aFrameLoader, aViewTransitionCaptured);
     // EvictOutOfRangeDocumentViewers is called here explicitly to
     // possibly evict the now in the bfcache document.
     // HistoryCommitIndexAndLength might not have evicted that before the
@@ -1451,6 +1479,12 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     }
 
     loadingBC->ReactivateDocuments(aEntry, currentSHEntry);
+
+    if (bounceTrackingState) {
+      DebugOnly<nsresult> rv = bounceTrackingState->OnBFCacheRestored();
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "BounceTrackingState::OnBFCacheRestored failed");
+    }
 
     if (layersChanged) {
       frameLoaderOwner->DispatchLayerTreeEvent();
@@ -1519,7 +1553,7 @@ static void FinishRestoreMaybeDeferred(
              [bc, loadState, entry, frameLoader,
               aCanSave](const ContentParent::
                             BeginOutboundCrossDocumentViewTransitionPromise::
-                                ResolveOrRejectValue&)
+                                ResolveOrRejectValue& aValue)
                  MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
                    // Script ran during the round trip and can have replaced
                    // or discarded bc.
@@ -1531,7 +1565,8 @@ static void FinishRestoreMaybeDeferred(
                    FinishRestore(
                        bc, loadState, entry, frameLoader,
                        aCanSave && bc->AllowedInBFCache(Nothing(), nullptr),
-                       /* aPageSwapFired = */ true);
+                       /* aPageSwapFired = */ true,
+                       aValue.IsResolve() && aValue.ResolveValue());
                  });
 }
 
@@ -1812,10 +1847,13 @@ void nsSHistory::LoadURIs(const nsTArray<LoadEntryResult>& aLoadResults,
                   //      reject the finished promise for apiMethodTracker with
                   //      a new "AbortError" DOMException created in
                   //      navigation's relevant realm.
-                  if (aResult == nsIDocumentViewer::eCanceledByBeforeUnload) {
+                  if (aResult == nsIDocumentViewer::eCanceledByBeforeUnload ||
+                      aResult == nsIDocumentViewer::eCanceledByNavigate) {
                     return aResolver(nsresult::NS_ERROR_DOM_ABORT_ERR);
                   }
 
+                  // The traverse navigate event of the traversable was
+                  // intercepted. Its traversal resumes once it commits.
                   aResolver(NS_OK);
 
                   return;
@@ -2517,6 +2555,11 @@ nsresult nsSHistory::LoadEntry(BrowsingContext* aSourceBrowsingContext,
 
   // This is a normal local history navigation.
 
+  MOZ_ASSERT(mIndex < Length(),
+             "Previous entry index outside of entries array");
+  if (mIndex < 0 || mIndex >= Length()) {
+    return NS_ERROR_FAILURE;
+  }
   RefPtr<SessionHistoryEntry> prevEntry = mEntries[mIndex];
   RefPtr<SessionHistoryEntry> nextEntry = mEntries[aIndex];
   if (!nextEntry || !prevEntry) {

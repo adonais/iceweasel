@@ -93,36 +93,21 @@ add_task(
     domain = "a".repeat(254);
     overrideService.addIPOverride(domain, "1.2.3.4");
 
-    if (mozinfo.socketprocess_networking) {
-      // When using the socket process, the call fails asynchronously.
-      Services.dns.asyncResolve(
-        domain,
-        Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
-        Ci.nsIDNSService.RESOLVE_CANONICAL_NAME,
-        null, // resolverInfo
-        listener,
-        mainThread,
-        defaultOriginAttributes
-      );
-      let [, , inStatus1] = await listener;
-      Assert.equal(inStatus1, Cr.NS_ERROR_UNKNOWN_HOST);
-    } else {
-      Assert.throws(
-        () => {
-          Services.dns.asyncResolve(
-            domain,
-            Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
-            Ci.nsIDNSService.RESOLVE_CANONICAL_NAME,
-            null, // resolverInfo
-            listener,
-            mainThread,
-            defaultOriginAttributes
-          );
-        },
-        /NS_ERROR_UNKNOWN_HOST/,
-        "Should throw for large domains"
-      );
-    }
+    Assert.throws(
+      () => {
+        Services.dns.asyncResolve(
+          domain,
+          Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
+          Ci.nsIDNSService.RESOLVE_CANONICAL_NAME,
+          null, // resolverInfo
+          listener,
+          mainThread,
+          defaultOriginAttributes
+        );
+      },
+      /NS_ERROR_UNKNOWN_HOST/,
+      "Should throw for large domains"
+    );
   }
 );
 

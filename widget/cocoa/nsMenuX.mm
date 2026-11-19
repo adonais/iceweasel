@@ -135,7 +135,8 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
 
   mVisible = !nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent);
 
-  NSString* newCocoaLabelString = nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel);
+  NSString* newCocoaLabelString =
+      nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel, mContent);
   mNativeMenuItem = [[GeckoNSMenuItem alloc] initWithTitle:newCocoaLabelString
                                                     action:nil
                                              keyEquivalent:@""];
@@ -163,7 +164,7 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
     NSApp.windowsMenu = mNativeMenu;
   }
 
-  mIcon = MakeUnique<nsMenuItemIconX>(this);
+  mIcon = std::make_unique<nsMenuItemIconX>(this);
 
   if (mVisible) {
     if (!isXULWindowMenu && !IsXULEditMenu(mContent)) {
@@ -284,9 +285,24 @@ void nsMenuX::AddMenuChild(const MenuChild& aChild) {
     RemovePlaceholderIfPresent();
     [mNativeMenu addItem:nativeItem];
     ++mVisibleItemsCount;
+    if (aChild.is<RefPtr<nsMenuItemX>>()) {
+      aChild.as<RefPtr<nsMenuItemX>>()->CopyUserKeyEquivalentToKeyElement();
+    }
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuX::CopyAllUserKeyEquivalentsToKeyElements() {
+  for (const MenuChild& child : mMenuChildren) {
+    child.match(
+        [](const RefPtr<nsMenuX>& aMenu) {
+          aMenu->CopyAllUserKeyEquivalentsToKeyElements();
+        },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          aMenuItem->CopyUserKeyEquivalentToKeyElement();
+        });
+  }
 }
 
 void nsMenuX::InsertMenuChild(const MenuChild& aChild) {
@@ -916,7 +932,8 @@ void nsMenuX::SetTitle() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   mContent->AsElement()->GetAttr(nsGkAtoms::label, mLabel);
-  NSString* newCocoaLabelString = nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel);
+  NSString* newCocoaLabelString =
+      nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel, mContent);
   mNativeMenu.title = newCocoaLabelString;
   mNativeMenuItem.title = newCocoaLabelString;
 
@@ -1267,6 +1284,9 @@ void nsMenuX::MenuChildChangedVisibility(const MenuChild& aChild,
     NSInteger insertionPoint = CalculateNativeInsertionPoint(aChild);
     [mNativeMenu insertItem:nativeItem atIndex:insertionPoint];
     mVisibleItemsCount++;
+    if (aChild.is<RefPtr<nsMenuItemX>>()) {
+      aChild.as<RefPtr<nsMenuItemX>>()->CopyUserKeyEquivalentToKeyElement();
+    }
   } else {
     MOZ_RELEASE_ASSERT(
         [mNativeMenu indexOfItem:nativeItem] != -1,

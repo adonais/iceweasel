@@ -55,6 +55,9 @@
 #include "mozilla/PageloadEvent.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/ProcInfoParent.h"
+#endif
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
 #include "mozilla/ProfilerLabels.h"
@@ -644,7 +647,6 @@ static const char* sObserverTopics[] = {
     "private-cookie-changed",
     NS_NETWORK_LINK_TYPE_TOPIC,
     NS_NETWORK_TRR_MODE_CHANGED_TOPIC,
-    "network:socket-process-crashed",
     DEFAULT_TIMEZONE_CHANGED_OBSERVER_TOPIC,
 };
 
@@ -1563,6 +1565,21 @@ void ContentParent::Init() {
 
   (void)SendInitProfiler(ProfilerParent::CreateForProcess(OtherPid()));
 
+#ifdef MOZ_WIDGET_ANDROID
+  // On Android content processes may be isolated, meaning we must create a
+  // ProcInfoParent to allow GetProcInfo() to query the process info remotely.
+  Endpoint<PProcInfoParent> procInfoParent;
+  Endpoint<PProcInfoChild> procInfoChild;
+  if (NS_SUCCEEDED(PProcInfo::CreateEndpoints(
+          mozilla::ipc::EndpointProcInfo::Current(), OtherEndpointProcInfo(),
+          &procInfoParent, &procInfoChild))) {
+    mProcInfoParent = ProcInfoParent::Create(std::move(procInfoParent));
+    if (mProcInfoParent) {
+      (void)SendInitProcInfo(std::move(procInfoChild));
+    }
+  }
+#endif
+
   RefPtr<GeckoMediaPluginServiceParent> gmps(
       GeckoMediaPluginServiceParent::GetSingleton());
   if (gmps) {
@@ -1886,6 +1903,13 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
     ProcessHangMonitor::RemoveProcess(mHangMonitorActor);
     mHangMonitorActor = nullptr;
   }
+
+#ifdef MOZ_WIDGET_ANDROID
+  if (mProcInfoParent) {
+    mProcInfoParent->Shutdown();
+    mProcInfoParent = nullptr;
+  }
+#endif
 
   RefPtr<FileSystemSecurity> fss = FileSystemSecurity::Get();
   if (fss) {
@@ -2399,7 +2423,8 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
 
   // Instantiate the pref serializer. It will be cleaned up in
   // `LaunchSubprocessReject`/`LaunchSubprocessResolve`.
-  mPrefSerializer = MakeUnique<mozilla::ipc::SharedPreferenceSerializer>();
+  mPrefSerializer =
+      std::make_unique<mozilla::ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_Content,
                                                 GetRemoteType())) {
     NS_WARNING("SharedPreferenceSerializer::SerializeToSharedMemory failed");
@@ -4026,8 +4051,6 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
 
   } else if (!strcmp(aTopic, NS_NETWORK_LINK_TYPE_TOPIC)) {
     UpdateNetworkLinkType();
-  } else if (!strcmp(aTopic, "network:socket-process-crashed")) {
-    (void)SendSocketProcessCrashed();
   } else if (!strcmp(aTopic, DEFAULT_TIMEZONE_CHANGED_OBSERVER_TOPIC)) {
     (void)SendSystemTimezoneChanged();
   } else if (!strcmp(aTopic, NS_NETWORK_TRR_MODE_CHANGED_TOPIC)) {
@@ -4509,8 +4532,8 @@ void ContentParent::FriendlyName(nsAString& aName, bool aAnonymize) {
 
 mozilla::ipc::IPCResult ContentParent::RecvInitCrashReporter(
     const CrashReporter::CrashReporterInitArgs& aInitArgs) {
-  mCrashReporter = MakeUnique<CrashReporterHost>(GeckoProcessType_Content,
-                                                 OtherChildID(), aInitArgs);
+  mCrashReporter = std::make_unique<CrashReporterHost>(
+      GeckoProcessType_Content, OtherChildID(), aInitArgs);
   return IPC_OK();
 }
 
@@ -4538,7 +4561,7 @@ bool ContentParent::SendRequestMemoryReport(
     const uint32_t& aGeneration, const bool& aAnonymize,
     const bool& aMinimizeMemoryUsage, const Maybe<FileDescriptor>& aDMDFile) {
   // This automatically cancels the previous request.
-  mMemoryReportRequest = MakeUnique<MemoryReportRequestHost>(aGeneration);
+  mMemoryReportRequest = std::make_unique<MemoryReportRequestHost>(aGeneration);
   RefPtr<ContentParent> self(this);
   PContentParent::SendRequestMemoryReport(aGeneration, aAnonymize,
                                           aMinimizeMemoryUsage, aDMDFile)
@@ -4842,7 +4865,7 @@ static int32_t AddGeolocationListener(
     nsIDOMGeoPositionErrorCallback* errorCallBack, bool highAccuracy) {
   RefPtr<Geolocation> geo = Geolocation::NonWindowSingleton();
 
-  UniquePtr<PositionOptions> options = MakeUnique<PositionOptions>();
+  auto options = std::make_unique<PositionOptions>();
   options->mTimeout = 0;
   options->mMaximumAge = 0;
   options->mEnableHighAccuracy = highAccuracy;
@@ -5780,13 +5803,13 @@ mozilla::ipc::IPCResult ContentParent::RecvBeginDriverCrashGuard(
   UniquePtr<gfx::DriverCrashGuard> guard;
   switch (aGuardType) {
     case gfx::CrashGuardType::D3D11Layers:
-      guard = MakeUnique<gfx::D3D11LayersCrashGuard>(this);
+      guard = std::make_unique<gfx::D3D11LayersCrashGuard>(this);
       break;
     case gfx::CrashGuardType::GLContext:
-      guard = MakeUnique<gfx::GLContextCrashGuard>(this);
+      guard = std::make_unique<gfx::GLContextCrashGuard>(this);
       break;
     case gfx::CrashGuardType::WMFVPXVideo:
-      guard = MakeUnique<gfx::WMFVPXVideoCrashGuard>(this);
+      guard = std::make_unique<gfx::WMFVPXVideoCrashGuard>(this);
       break;
     default:
       return IPC_FAIL(this, "unknown crash guard type");
@@ -6960,6 +6983,12 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateBrowsingContext(
     if (!opener) {
       return IPC_FAIL(this, "Opener doesn't exist in parent process");
     }
+    RefPtr<WindowGlobalParent> openerWindow =
+        WindowGlobalParent::GetByInnerWindowId(aInit.mOpenerInnerWindowId);
+    if (!openerWindow || openerWindow->GetContentParent() != this ||
+        openerWindow->GetBrowsingContext()->Id() != aInit.GetOpenerId()) {
+      return IPC_FAIL(this, "Invalid opener window for the creating process");
+    }
   }
 
   if (opener && !opener->Group()->IsKnownForChildID(ChildID())) {
@@ -7591,16 +7620,14 @@ mozilla::ipc::IPCResult ContentParent::RecvNotifyOnHistoryReload(
     const uint32_t& aReloadFlags, NotifyOnHistoryReloadResolver&& aResolver) {
   bool canReload = false;
   Maybe<NotNull<RefPtr<nsDocShellLoadState>>> loadState;
-  Maybe<bool> reloadActiveEntry;
   if (!aContext.IsNullOrDiscarded() &&
       aContext.get_canonical()->IsOwnedByProcess(ChildID())) {
-    aContext.get_canonical()->NotifyOnHistoryReload(
-        aReloadFlags, canReload, loadState, reloadActiveEntry);
+    aContext.get_canonical()->NotifyOnHistoryReload(aReloadFlags, canReload,
+                                                    loadState);
   }
-  aResolver(
-      std::tuple<const bool&,
-                 const Maybe<NotNull<RefPtr<nsDocShellLoadState>>>&,
-                 const Maybe<bool>&>(canReload, loadState, reloadActiveEntry));
+  aResolver(std::tuple<const bool&,
+                       const Maybe<NotNull<RefPtr<nsDocShellLoadState>>>&>(
+      canReload, loadState));
   return IPC_OK();
 }
 

@@ -219,4 +219,36 @@ describe("recent chats", () => {
       newTab = null;
     });
   });
+
+  describe("recent chats menu item click on chat that navigated to several urls", () => {
+    beforeEach(async () => {
+      const conversation = new ChatConversation({
+        title: "Chat on several pages",
+      });
+      conversation.addUserMessage("message 1", new URL("https://example.com/"));
+      conversation.addUserMessage("message 2", new URL("https://example.org/"));
+      conversation.addUserMessage("message 3", new URL("https://example.com/"));
+      await ChatStore.updateConversation(conversation);
+      historyMenu = await openHistoryMenu();
+    });
+
+    it("opens the last page a prompt was submitted on", async () => {
+      await BrowserTestUtils.waitForMutationCondition(
+        historyMenu,
+        { childList: true },
+        () => historyMenu.querySelectorAll(".recent-chat-item").length
+      );
+
+      const recentChatItem = historyMenu.querySelector(".recent-chat-item");
+      const newTab = await triggerMenuItem(historyMenu, recentChatItem);
+
+      Assert.equal(
+        newTab.linkedBrowser.currentURI.spec,
+        "https://example.com/",
+        "The tab should open the last page a prompt was submitted on"
+      );
+
+      await BrowserTestUtils.removeTab(newTab);
+    });
+  });
 });

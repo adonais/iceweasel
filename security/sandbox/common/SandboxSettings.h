@@ -23,7 +23,6 @@ namespace mozilla {
 // minimum allowed level. Returns 0 (disabled) if the env var
 // MOZ_DISABLE_CONTENT_SANDBOX is set.
 int GetEffectiveContentSandboxLevel();
-int GetEffectiveSocketProcessSandboxLevel();
 // Returns the "security.sandbox.gpu.level" preference, or 0 (disabled) if the
 // env var MOZ_DISABLE_GPU_SANDBOX is set.
 int GetEffectiveGpuSandboxLevel();

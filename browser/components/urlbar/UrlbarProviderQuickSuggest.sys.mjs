@@ -432,8 +432,8 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     }
 
     // Set the appropriate suggested index and related properties unless the
-    // feature did it already.
-    if (!result.hasSuggestedIndex) {
+    // feature did it already or assigned the result to a group.
+    if (!result.hasSuggestedIndex && !result.group) {
       if (result.isBestMatch) {
         result.isRichSuggestion = true;
         result.richSuggestionIconSize ||= 52;

@@ -367,6 +367,8 @@ nsresult nsXMLContentSink::OnTransformDone(Document* aSourceDocument,
     // Transform succeeded, or it failed and we have an error document to
     // display.
     mDocument = aResultDocument;
+    // Layout state from the source document doesn't apply to the result.
+    mLayoutStarted = false;
     aResultDocument->SetDocWriteDisabled(false);
 
     // Notify document observers that all the content has been stuck
@@ -726,16 +728,6 @@ nsresult nsXMLContentSink::ProcessStyleLinkFromHeader(
   if (cmd.EqualsASCII(kLoadAsData))
     return NS_OK;  // Do not load stylesheets when loading as data
 
-  bool wasXSLT;
-  nsresult rv = MaybeProcessXSLTLink(nullptr, aHref, aAlternate, aType, aType,
-                                     aMedia, aReferrerPolicy, &wasXSLT);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (wasXSLT) {
-    // We're done here.
-    return NS_OK;
-  }
-
-  // Otherwise fall through to nsContentSink to handle CSS Link headers.
   return nsContentSink::ProcessStyleLinkFromHeader(
       aHref, aAlternate, aTitle, aIntegrity, aType, aMedia, aReferrerPolicy,
       aFetchPriority);
@@ -744,16 +736,12 @@ nsresult nsXMLContentSink::ProcessStyleLinkFromHeader(
 nsresult nsXMLContentSink::MaybeProcessXSLTLink(
     ProcessingInstruction* aProcessingInstruction, const nsAString& aHref,
     bool aAlternate, const nsAString& aTitle, const nsAString& aType,
-    const nsAString& aMedia, const nsAString& aReferrerPolicy, bool* aWasXSLT) {
+    const nsAString& aMedia, const nsAString& aReferrerPolicy) {
   bool wasXSLTType = aType.LowerCaseEqualsLiteral(TEXT_XSL) ||
                      aType.LowerCaseEqualsLiteral(APPLICATION_XSLT_XML) ||
                      aType.LowerCaseEqualsLiteral(TEXT_XML) ||
                      aType.LowerCaseEqualsLiteral(APPLICATION_XML);
   bool wasXSLT = StaticPrefs::dom_xslt_enabled() && wasXSLTType;
-
-  if (aWasXSLT) {
-    *aWasXSLT = wasXSLT;
-  }
 
   if (aAlternate) {
     // don't load alternate XSLT
@@ -1392,7 +1380,7 @@ nsresult nsXMLContentSink::AddAttributes(const char16_t** aAtts,
 
     // Add attribute to content
     aContent->SetAttr(nameSpaceID, localName, prefix,
-                      nsDependentString(aAtts[1]), false,
+                      nsDependentString(aAtts[1]), mightHaveAttrs,
                       IsKnownNewAttr(!mightHaveAttrs));
     aAtts += 2;
   }

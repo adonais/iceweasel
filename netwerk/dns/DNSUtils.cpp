@@ -34,7 +34,7 @@ static void InitHttpHandler() {
 nsresult DNSUtils::CreateChannelHelper(nsIURI* aUri, nsIChannel** aResult) {
   *aResult = nullptr;
 
-  if (NS_IsMainThread() && !XRE_IsSocketProcess()) {
+  if (NS_IsMainThread()) {
     nsresult rv;
     nsCOMPtr<nsIIOService> ios(do_GetIOService(&rv));
     NS_ENSURE_SUCCESS(rv, rv);

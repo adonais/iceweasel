@@ -239,7 +239,7 @@ void RtcEventLogDriver::OnLoggedVideoRecvConfig(
 
 void RtcEventLogDriver::OnLoggedRtpPacketIncoming(
     const webrtc::LoggedRtpPacketIncoming& packet) {
-  HandleEvent(packet.log_time(), [this, packet]() {
+  HandleEvent(packet.log_time(), [this, &packet]() {
     RTC_DCHECK_RUN_ON(simulator_queue_.get());
     uint32_t ssrc = packet.rtp.header.ssrc;
     if (auto it = receiving_streams_.find(ssrc);
@@ -260,7 +260,7 @@ void RtcEventLogDriver::OnLoggedRtpPacketIncoming(
 
 void RtcEventLogDriver::OnLoggedRtcpPacketSenderReportOutgoing(
     const LoggedRtcpPacketSenderReport& packet) {
-  HandleEvent(packet.log_time(), [this, packet]() {
+  HandleEvent(packet.log_time(), [this, &packet]() {
     RTC_DCHECK_RUN_ON(simulator_queue_.get());
     rtt_simulator_->OnOutgoingSenderReport(packet);
   });
@@ -268,7 +268,7 @@ void RtcEventLogDriver::OnLoggedRtcpPacketSenderReportOutgoing(
 
 void RtcEventLogDriver::OnLoggedRtcpPacketExtendedReportsOutgoing(
     const LoggedRtcpPacketExtendedReports& packet) {
-  HandleEvent(packet.log_time(), [this, packet]() {
+  HandleEvent(packet.log_time(), [this, &packet]() {
     RTC_DCHECK_RUN_ON(simulator_queue_.get());
     rtt_simulator_->OnOutgoingExtendedReports(packet);
   });
@@ -276,7 +276,7 @@ void RtcEventLogDriver::OnLoggedRtcpPacketExtendedReportsOutgoing(
 
 void RtcEventLogDriver::OnLoggedRtcpPacketSenderReportIncoming(
     const LoggedRtcpPacketSenderReport& packet) {
-  HandleEvent(packet.log_time(), [this, packet]() {
+  HandleEvent(packet.log_time(), [this, &packet]() {
     RTC_DCHECK_RUN_ON(simulator_queue_.get());
     rtt_simulator_->OnIncomingSenderReport(packet);
   });
@@ -284,7 +284,7 @@ void RtcEventLogDriver::OnLoggedRtcpPacketSenderReportIncoming(
 
 void RtcEventLogDriver::OnLoggedRtcpPacketReceiverReportIncoming(
     const LoggedRtcpPacketReceiverReport& packet) {
-  HandleEvent(packet.log_time(), [this, packet]() {
+  HandleEvent(packet.log_time(), [this, &packet]() {
     RTC_DCHECK_RUN_ON(simulator_queue_.get());
     rtt_simulator_->OnIncomingReceiverReport(packet);
   });
@@ -292,7 +292,7 @@ void RtcEventLogDriver::OnLoggedRtcpPacketReceiverReportIncoming(
 
 void RtcEventLogDriver::OnLoggedRtcpPacketExtendedReportsIncoming(
     const LoggedRtcpPacketExtendedReports& packet) {
-  HandleEvent(packet.log_time(), [this, packet]() {
+  HandleEvent(packet.log_time(), [this, &packet]() {
     RTC_DCHECK_RUN_ON(simulator_queue_.get());
     rtt_simulator_->OnIncomingExtendedReports(packet);
   });

@@ -111,7 +111,7 @@ class BlobSurfaceProvider final : public ISurfaceProvider {
   }
 
  protected:
-  DrawableFrameRef DrawableRef(size_t aFrame) override {
+  DrawableFrameRef DrawableRef(size_t /*aFrame*/) override {
     MOZ_ASSERT_UNREACHABLE("BlobSurfaceProvider::DrawableRef not supported!");
     return DrawableFrameRef();
   }

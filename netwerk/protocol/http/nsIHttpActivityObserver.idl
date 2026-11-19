@@ -5,11 +5,7 @@
 #include "nsISupports.idl"
 
 %{ C++
-namespace mozilla {
-namespace net {
-class HttpActivityArgs;
-} // namespace net
-} // namespace mozilla
+#include "mozilla/net/HttpActivityArgs.h"
 %}
 
 [ref] native HttpActivityArgs(const mozilla::net::HttpActivityArgs);
@@ -71,20 +67,12 @@ interface nsIHttpActivityObserver : nsISupports
     [must_use] readonly attribute boolean isActive;
 
     /**
-     * This function is for internal use only. Every time a http transaction
-     * is created in socket process, we use this function to set the value of
-     * |isActive|. We need this since the real value of |isActive| is
-     * only available in parent process.
-     */
-    [noscript] void setIsActive(in boolean aActived);
-
-    /**
      * This function is used when the real http channel is not available.
      * We use the information in |HttpActivityArgs| to get the http channel or
      * create a |NullHttpChannel|.
      *
      * @param aArgs
-     *        See the definition of |HttpActivityArgs| in PSocketProcess.ipdl.
+     *        See the definition of |HttpActivityArgs| in HttpActivityArgs.h.
      */
     [noscript, must_use]
     void observeActivityWithArgs(in HttpActivityArgs aArgs,

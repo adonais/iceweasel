@@ -17,11 +17,9 @@ PARAMS.update({
     "head_repository": "https://hg.mozilla.org/try",
     "project": "try",
     "target_kind": "mochitest",
-    # These ensure this isn't considered a backstop. The pushdate must
-    # be slightly higher than the one in data/pushes.json, and
-    # pushlog_id must not be a multiple of 10.
-    "pushdate": 1593029536,
-    "pushlog_id": "2",
+    # A multiple of 10 makes this an "expanded" push on autoland, which must
+    # not affect what runs on try.
+    "pushlog_id": "10",
 })
 
 
@@ -95,6 +93,13 @@ def test_tasks_are_scheduled(optimized_task_graph, filter_tasks, func, min_expec
         pytest.param(
             lambda t: t.kind == "upload-symbols",
             id="no upload-symbols",
+        ),
+        pytest.param(
+            lambda t: (
+                {"perf-cadence-backstop", "perf-cadence-expanded"}
+                & set(t.optimization or {})
+            ),
+            id="no backstop or expanded perf tasks",
         ),
     ),
 )

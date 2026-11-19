@@ -72,10 +72,7 @@ add_task(async function test_tab_switch_result() {
     const details = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
 
     assertElementsDisplayed(details, {
-      // The separator should *not* be visible, but Proton merely sets its
-      // opacity to zero, which counts as visible. Pass false and remove this
-      // comment when enabling Nova by default.
-      separator: !Services.prefs.getBoolPref("browser.nova.enabled", false),
+      separator: false,
       title: "about:mozilla",
       type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     });
@@ -304,10 +301,7 @@ add_task(async function test_remote_tab_result() {
     const details = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
 
     assertElementsDisplayed(details, {
-      // The separator should *not* be visible, but Proton merely sets its
-      // opacity to zero, which counts as visible. Pass false and remove this
-      // comment when enabling Nova by default.
-      separator: !Services.prefs.getBoolPref("browser.nova.enabled", false),
+      separator: false,
       title: "Test Remote",
       type: UrlbarShared.RESULT_TYPE.REMOTE_TAB,
     });

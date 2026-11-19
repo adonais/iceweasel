@@ -578,7 +578,7 @@ add_task(async function tabWireframeTests() {
 
   // Discard the first tab so it can't provide a thumbnail image
   await TabStateFlusher.flush(tab1.linkedBrowser);
-  gBrowser.discardBrowser(tab1, true);
+  gBrowser.discardBrowser(tab1, { forceDiscard: true });
 
   const previewPanel = document.getElementById(TAB_PREVIEW_PANEL_ID);
 
@@ -1203,22 +1203,14 @@ add_task(async function tabGroupPanelHorizontalOffsetOptions() {
 
   const testCases = [
     {
-      prefs: [["browser.nova.enabled", false]],
-      expected: { position: "bottomleft topleft", x: 0, y: 0 },
-      message: "Without Nova there is no offset",
-    },
-    {
-      prefs: [["browser.nova.enabled", true]],
+      prefs: [],
       expected: { position: "bottomleft topleft", x: -16, y: 0 },
-      message: "LTR Nova anchors to the left edge and offsets by -16px",
+      message: "LTR anchors to the left edge and offsets by -16px",
     },
     {
-      prefs: [
-        ["browser.nova.enabled", true],
-        ["intl.l10n.pseudo", "bidi"],
-      ],
+      prefs: [["intl.l10n.pseudo", "bidi"]],
       expected: { position: "bottomright topright", x: 16, y: 0 },
-      message: "RTL Nova anchors to the right edge and offsets by +16px",
+      message: "RTL anchors to the right edge and offsets by +16px",
     },
   ];
 
@@ -1235,10 +1227,7 @@ add_task(async function tabGroupPanelHorizontalOffsetOptions() {
 add_task(async function tabGroupPanelHorizontalOpensWithOffset() {
   // The vertical-tabs variant enables sidebar.verticalTabs for the whole run.
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["sidebar.verticalTabs", false],
-      ["browser.nova.enabled", true],
-    ],
+    set: [["sidebar.verticalTabs", false]],
   });
 
   await withGroupPanel(async (groupPanel, group) => {
@@ -1250,7 +1239,7 @@ add_task(async function tabGroupPanelHorizontalOpensWithOffset() {
         group.labelContainerElement,
         sinon.match({ position: "bottomleft topleft", x: -16, y: 0 })
       ),
-      "openPopup is called anchored to the label with the Nova offset"
+      "openPopup is called anchored to the label with the correct offset"
     );
 
     await closeGroupPreviews();
@@ -1263,28 +1252,14 @@ add_task(async function tabGroupPanelHorizontalOpensWithOffset() {
 add_task(async function tabGroupPanelVerticalOffsetOptions() {
   const testCases = [
     {
-      nova: false,
-      start: true,
-      expected: { position: "topright topleft", x: 0, y: -5 },
-      message: "Nova off, sidebar at start: keeps the 5px upward offset",
-    },
-    {
-      nova: false,
-      start: false,
-      expected: { position: "topleft topright", x: 0, y: -5 },
-      message: "Nova off, sidebar at end: 5px offset, anchor mirrored",
-    },
-    {
-      nova: true,
       start: true,
       expected: { position: "topright topleft", x: 0, y: -16 },
-      message: "Nova on, sidebar at start: 16px upward offset",
+      message: "Sidebar at start: 16px upward offset",
     },
     {
-      nova: true,
       start: false,
       expected: { position: "topleft topright", x: 0, y: -16 },
-      message: "Nova on, sidebar at end: 16px offset, anchor mirrored",
+      message: "Sidebar at end: 16px offset, anchor mirrored",
     },
   ];
   await withGroupPanel(async groupPanel => {
@@ -1299,12 +1274,9 @@ add_task(async function tabGroupPanelVerticalOffsetOptions() {
       "Tabs are in vertical mode"
     );
 
-    for (const { nova, start, expected, message } of testCases) {
+    for (const { start, expected, message } of testCases) {
       await assertPopupOptions(groupPanel, {
-        prefs: [
-          ["browser.nova.enabled", nova],
-          ["sidebar.position_start", start],
-        ],
+        prefs: [["sidebar.position_start", start]],
         expected,
         message,
       });

@@ -581,6 +581,7 @@ _cairo_win32_printing_surface_paint_recording_pattern (cairo_win32_printing_surf
 	    goto err;
 
 	_cairo_box_round_to_rectangle (&bbox, &recording_extents);
+	is_subsurface = FALSE;
     }
 
     status = _cairo_win32_printing_surface_get_ctm_clip_box (surface, &clip);
@@ -634,23 +635,23 @@ _cairo_win32_printing_surface_paint_recording_pattern (cairo_win32_printing_surf
 	    /* Set clip path around bbox of the pattern. */
 	    BeginPath (surface->win32.dc);
 
-	    x = 0;
-	    y = 0;
+	    x = recording_extents.x;
+	    y = recording_extents.y;
 	    cairo_matrix_transform_point (&surface->ctm, &x, &y);
 	    MoveToEx (surface->win32.dc, (int) x, (int) y, NULL);
 
-	    x = recording_extents.width;
-	    y = 0;
+	    x = recording_extents.x + recording_extents.width;
+	    y = recording_extents.y;
 	    cairo_matrix_transform_point (&surface->ctm, &x, &y);
 	    LineTo (surface->win32.dc, (int) x, (int) y);
 
-	    x = recording_extents.width;
-	    y = recording_extents.height;
+	    x = recording_extents.x + recording_extents.width;
+	    y = recording_extents.y + recording_extents.height;
 	    cairo_matrix_transform_point (&surface->ctm, &x, &y);
 	    LineTo (surface->win32.dc, (int) x, (int) y);
 
-	    x = 0;
-	    y = recording_extents.height;
+	    x = recording_extents.x;
+	    y = recording_extents.y + recording_extents.height;
 	    cairo_matrix_transform_point (&surface->ctm, &x, &y);
 	    LineTo (surface->win32.dc, (int) x, (int) y);
 

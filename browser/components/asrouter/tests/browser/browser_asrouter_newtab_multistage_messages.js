@@ -135,6 +135,9 @@ add_task(async function test_impression_telemetry() {
       await ContentTaskUtils.waitForCondition(() => {
         return wrapper.shadowRoot?.querySelector(".multistage-newtab-wrapper");
       }, "Waiting for React bundle to mount in shadow root");
+
+      // newtabmessage only triggers a impression once 30% of the element is in view
+      wrapper.scrollIntoView({ block: "center" });
     });
   });
 
@@ -193,6 +196,34 @@ add_task(async function test_screen_impression() {
 });
 
 /**
+ * Tests that showing the first screen of the multistage message records a
+ * per-screen IMPRESSION telemetry event.
+ */
+add_task(async function test_screen_impression_telemetry() {
+  let sandbox = sinon.createSandbox();
+  sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
+
+  await withTestMessage(sandbox, gTestMultistageMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+
+    await TestUtils.waitForCondition(
+      () =>
+        AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+          sinon.match({
+            message_id: sinon.match(`${TEST_MESSAGE_ID}_0_SCREEN_1`),
+            event: "IMPRESSION",
+            pingType: "newtab_message",
+          })
+        ),
+      "The first screen recorded an IMPRESSION telemetry event."
+    );
+  });
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
  * Tests that no CLICK telemetry is recorded when the multistage message first
  * renders. Regression test for the AW handler bridge incorrectly routing
  * impression signals through handleClick.
@@ -214,6 +245,9 @@ add_task(async function test_no_click_telemetry_on_render() {
       await ContentTaskUtils.waitForCondition(() => {
         return wrapper.shadowRoot?.querySelector(".multistage-newtab-wrapper");
       }, "Waiting for React bundle to mount in shadow root");
+
+      // newtabmessage only triggers a impression once 30% of the element is in view
+      wrapper.scrollIntoView({ block: "center" });
     });
   });
 
@@ -228,7 +262,7 @@ add_task(async function test_no_click_telemetry_on_render() {
   );
   Assert.ok(
     !AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
-      sinon.match({ event: "CLICK" })
+      sinon.match({ event: sinon.match(/^CLICK/) })
     ),
     "No CLICK telemetry was fired on initial render."
   );
@@ -237,8 +271,9 @@ add_task(async function test_no_click_telemetry_on_render() {
 });
 
 /**
- * Tests that clicking a primary button within the multistage message records
- * a CLICK telemetry event.
+ * Tests that clicking the primary and secondary buttons within the multistage
+ * message records a CLICK_BUTTON telemetry event with the screen-specific
+ * message id and the button as the source.
  */
 add_task(async function test_primary_button_click_telemetry() {
   let sandbox = sinon.createSandbox();
@@ -261,6 +296,10 @@ add_task(async function test_primary_button_click_telemetry() {
             title: { raw: "Test Title" },
             primary_button: {
               label: { raw: "Primary" },
+              action: {},
+            },
+            secondary_button: {
+              label: { raw: "Secondary" },
               action: {},
             },
           },
@@ -289,20 +328,28 @@ add_task(async function test_primary_button_click_telemetry() {
       let primaryBtn = shadow.querySelector("button.primary");
       Assert.ok(primaryBtn, "Found primary button in shadow root");
       primaryBtn.click();
+      let secondaryBtn = await ContentTaskUtils.waitForCondition(
+        () => shadow.querySelector("button.secondary"),
+        "Waiting for secondary button in shadow root"
+      );
+      secondaryBtn.click();
     });
   });
 
-  await TestUtils.waitForCondition(
-    () =>
-      AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
-        sinon.match({
-          message_id: TEST_MESSAGE_ID,
-          event: "CLICK",
-          pingType: "newtab_message",
-        })
-      ),
-    "Clicking the primary button recorded a CLICK telemetry event."
-  );
+  for (const source of ["primary_button", "secondary_button"]) {
+    await TestUtils.waitForCondition(
+      () =>
+        AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+          sinon.match({
+            message_id: `${TEST_MESSAGE_ID}_0_SCREEN_1`,
+            event: "CLICK_BUTTON",
+            event_context: sinon.match({ source }),
+            pingType: "newtab_message",
+          })
+        ),
+      `Clicking ${source} recorded a CLICK_BUTTON telemetry event.`
+    );
+  }
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   sandbox.restore();
 });
@@ -355,6 +402,132 @@ add_task(async function test_dismiss_button_telemetry() {
       })
     ),
     "Clicking the dismiss button recorded a DISMISS telemetry event."
+  );
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that a card stack auto-dismissing on its last card records a single
+ * DISMISS telemetry event carrying the resolution reason and the completion
+ * status of each shown card.
+ */
+add_task(async function test_card_stack_auto_dismiss_telemetry() {
+  let sandbox = sinon.createSandbox();
+  sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
+
+  const makeCard = (id, targeting) => ({
+    id,
+    targeting,
+    content: {
+      position: "card-stack",
+      title: { raw: id },
+      primary_button: {
+        label: { raw: "Primary" },
+        action: { navigate: true },
+      },
+      secondary_button: {
+        label: { raw: "Secondary" },
+        action: { navigate: true },
+      },
+    },
+  });
+
+  let cardStackMessage = {
+    ...gTestMultistageMessage,
+    content: {
+      messageType: "ASRouterMultistageMessage",
+      id: TEST_MESSAGE_ID,
+      transitions: true,
+      backdrop: "transparent",
+      screens: [
+        makeCard("CARD_1"),
+        makeCard("CARD_HIDDEN", "false"),
+        makeCard("CARD_2"),
+        {
+          id: "CARD_LAST",
+          auto_dismiss: { after: 0 },
+          content: {
+            position: "card-stack",
+            title: { raw: "CARD_LAST" },
+          },
+        },
+      ],
+    },
+  };
+
+  await withTestMessage(sandbox, cardStackMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      const wrapper = await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector(
+          ".asrouter-multistage-message-wrapper"
+        );
+      }, "Waiting for .asrouter-multistage-message-wrapper");
+
+      const shadow = await ContentTaskUtils.waitForCondition(() => {
+        let root = Cu.waiveXrays(wrapper).shadowRoot;
+        return root?.querySelector(".multistage-newtab-wrapper") && root;
+      }, "Waiting for React bundle to mount in shadow root");
+
+      const waitForCard = (id, selector = "") =>
+        ContentTaskUtils.waitForCondition(
+          () => shadow.querySelector(`.screen.${id} ${selector}`.trim()),
+          `Waiting for ${id} ${selector}`
+        );
+
+      (await waitForCard("CARD_1", "button.primary")).click();
+      (await waitForCard("CARD_2", "button.secondary")).click();
+      await waitForCard("CARD_LAST");
+
+      await ContentTaskUtils.waitForCondition(() => {
+        return !content.document.querySelector(
+          ".asrouter-multistage-message-wrapper"
+        );
+      }, "Card stack auto-dismissed and was removed from DOM");
+    });
+  });
+
+  const spy = AboutWelcomeTelemetry.prototype.submitGleanPingForPing;
+  const dismissPings = () =>
+    spy
+      .getCalls()
+      .map(call => call.args[0])
+      .filter(ping => ping.event === "DISMISS");
+  await TestUtils.waitForCondition(
+    () => dismissPings().length,
+    "Waiting for the DISMISS telemetry event"
+  );
+
+  Assert.ok(
+    spy.calledWithMatch(
+      sinon.match({
+        event: "AUTO_DISMISS",
+        message_id: `${TEST_MESSAGE_ID}_2_CARD_LAST`,
+      })
+    ),
+    "The last card recorded an AUTO_DISMISS event."
+  );
+  const pings = dismissPings();
+  Assert.equal(
+    pings.length,
+    1,
+    "Only one DISMISS telemetry event was recorded."
+  );
+  const [ping] = pings;
+  Assert.equal(
+    ping.message_id,
+    TEST_MESSAGE_ID,
+    "DISMISS uses the message id."
+  );
+  Assert.equal(ping.pingType, "newtab_message", "DISMISS is a newtab_message.");
+  Assert.equal(ping.event_context.reason, "engaged", "Resolution reason.");
+  Assert.equal(ping.event_context.completion_count, 1, "Completion count.");
+  Assert.deepEqual(
+    ping.event_context.completion_status,
+    { CARD_1: "completed", CARD_2: "skipped" },
+    "Completion status covers each shown card, not hidden or button-less ones."
   );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   sandbox.restore();

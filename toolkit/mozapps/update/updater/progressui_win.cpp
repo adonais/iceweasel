@@ -96,12 +96,12 @@ static void InitDialog(HWND hDlg) {
 
   int bufferSize =
       MultiByteToWideChar(CP_UTF8, 0, sUIStrings.title.get(), -1, nullptr, 0);
-  szwTitle = mozilla::MakeUnique<WCHAR[]>(bufferSize);
+  szwTitle = std::make_unique<WCHAR[]>(bufferSize);
   MultiByteToWideChar(CP_UTF8, 0, sUIStrings.title.get(), -1, szwTitle.get(),
                       bufferSize);
   bufferSize =
       MultiByteToWideChar(CP_UTF8, 0, sUIStrings.info.get(), -1, nullptr, 0);
-  szwInfo = mozilla::MakeUnique<WCHAR[]>(bufferSize);
+  szwInfo = std::make_unique<WCHAR[]>(bufferSize);
   MultiByteToWideChar(CP_UTF8, 0, sUIStrings.info.get(), -1, szwInfo.get(),
                       bufferSize);
 

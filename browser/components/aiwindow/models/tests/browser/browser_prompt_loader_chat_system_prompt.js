@@ -23,13 +23,9 @@ let gChatModuleRecords;
 let gSkillNames;
 
 add_setup(async function read_real_chat_records() {
-  // TODO: Bug 2053495 - Refactor tests upon pref removal. FEATURE_MAJOR_VERSIONS
-  // for chat depends on this pref (10 when off, 11 when on), which selects which
-  // params version buildChatSystemPrompt resolves.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.mistralRelease", false]],
+    set: [["browser.smartwindow.aitab.enabled", true]],
   });
-
   const records = await getRemoteClient().get();
   gChatParams = records.find(
     record =>
@@ -110,6 +106,7 @@ add_task(
       "{skill_list}",
       "{locale}",
       "{timezone}",
+      "{location}",
       "{isoTimestamp}",
       "{todayDate}",
     ]) {
@@ -130,18 +127,13 @@ add_task(
 );
 
 /**
- * Test the gated pages module when AITab is on. The mistral release pref is a
- * legacy flag that will be removed soon (Bug 2053495).
+ * Test that the pages module follows the AITab preference.
  */
 add_task(async function test_buildChatSystemPrompt_skips_gated_module() {
   const AITAB_PREF = "browser.smartwindow.aitab.enabled";
-  const MISTRAL_RELEASE_PREF = "browser.smartwindow.mistralRelease";
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [MISTRAL_RELEASE_PREF, true],
-      [AITAB_PREF, false],
-    ],
+    set: [[AITAB_PREF, false]],
   });
   const records = await getRemoteClient().get();
   const params = records.find(
@@ -175,10 +167,7 @@ add_task(async function test_buildChatSystemPrompt_skips_gated_module() {
   await SpecialPowers.popPrefEnv();
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [MISTRAL_RELEASE_PREF, true],
-      [AITAB_PREF, true],
-    ],
+    set: [[AITAB_PREF, true]],
   });
   ({ prompt } = await buildChatSystemPrompt(CHAT_MODEL));
   Assert.ok(

@@ -19,7 +19,6 @@ class SandboxBrokerPolicyFactory {
                                                     bool aFileProcess);
 
   static UniquePtr<SandboxBroker::Policy> GetRDDPolicy(int aPid);
-  static UniquePtr<SandboxBroker::Policy> GetSocketProcessPolicy(int aPid);
   static UniquePtr<SandboxBroker::Policy> GetUtilityProcessPolicy(int aPid);
 #ifndef ANDROID
   static UniquePtr<SandboxBroker::Policy> GetHWInferencePolicy(int aPid);

@@ -457,7 +457,7 @@ bool TransportLayerDtls::Setup() {
     MOZ_MTLOG(ML_ERROR, "DTLS layer with nothing below. This is useless");
     return false;
   }
-  nspr_io_adapter_ = MakeUnique<TransportLayerNSPRAdapter>(downward_);
+  nspr_io_adapter_ = std::make_unique<TransportLayerNSPRAdapter>(downward_);
 
   if (!identity_) {
     MOZ_MTLOG(ML_ERROR, "Can't start DTLS without an identity");
@@ -1174,7 +1174,7 @@ void TransportLayerDtls::GetDecryptedPackets() {
       // nICEr uses a 9216 bytes buffer to allow support for jumbo frames
       // Can we peek to get a better idea of the actual size?
       static const size_t kBufferSize = 9216;
-      auto buffer = MakeUnique<uint8_t[]>(kBufferSize);
+      auto buffer = std::make_unique<uint8_t[]>(kBufferSize);
       rv = PR_Recv(ssl_fd_.get(), buffer.get(), kBufferSize, 0,
                    PR_INTERVAL_NO_WAIT);
       if (rv > 0) {

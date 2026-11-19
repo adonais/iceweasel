@@ -1107,7 +1107,7 @@ describe("<Weather> (Widgets/Weather)", () => {
       };
       const { container } = renderWeather("medium", state);
       expect(
-        container.querySelector(".location-search input")
+        container.querySelector(".location-search moz-input-search")
       ).toBeInTheDocument();
     });
 

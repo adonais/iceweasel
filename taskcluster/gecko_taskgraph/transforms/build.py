@@ -148,8 +148,6 @@ def _supports_artifact_build(job, env):
         job.get("index", {}).get("job-name") in ARTIFACT_JOBS
         # If tests aren't packaged, then we are not able to rebuild all the packages
         and env.get("MOZ_AUTOMATION_PACKAGE_TESTS") == "1"
-        # Android shippable artifact builds are not supported
-        and not ("android" in job["name"] and job["attributes"].get("shippable", False))
     )
 
 

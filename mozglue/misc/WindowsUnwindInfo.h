@@ -133,7 +133,7 @@ struct UnwindInfo {
   //       UNW_FLAG_EHANDLER, UNW_FLAG_UHANDLER, and UNW_FLAG_CHAININFO.
   UniquePtr<uint8_t[]> Copy() const {
     auto s = Size();
-    auto result = MakeUnique<uint8_t[]>(s);
+    auto result = std::make_unique<uint8_t[]>(s);
     std::memcpy(result.get(), reinterpret_cast<const void*>(this), s);
     return result;
   }

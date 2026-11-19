@@ -53,10 +53,10 @@ _cairo_box_from_doubles (cairo_box_t *box,
 			 double *x1, double *y1,
 			 double *x2, double *y2)
 {
-    box->p1.x = _cairo_fixed_from_double (*x1);
-    box->p1.y = _cairo_fixed_from_double (*y1);
-    box->p2.x = _cairo_fixed_from_double (*x2);
-    box->p2.y = _cairo_fixed_from_double (*y2);
+    box->p1.x = _cairo_fixed_from_double_clamped (*x1, 0);
+    box->p1.y = _cairo_fixed_from_double_clamped (*y1, 0);
+    box->p2.x = _cairo_fixed_from_double_clamped (*x2, 0);
+    box->p2.y = _cairo_fixed_from_double_clamped (*y2, 0);
 }
 
 cairo_private void

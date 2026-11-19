@@ -121,7 +121,7 @@ class PCUuidGenerator : public JsepUuidGenerator {
  public:
   virtual bool Generate(std::string* idp) override;
   virtual UniquePtr<JsepUuidGenerator> Clone() const override {
-    return MakeUnique<PCUuidGenerator>(*this);
+    return std::make_unique<PCUuidGenerator>(*this);
   }
 
  private:

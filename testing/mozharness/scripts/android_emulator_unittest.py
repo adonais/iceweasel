@@ -388,6 +388,9 @@ class AndroidEmulatorTest(
         if c["disable_fission"] and category not in ["gtest", "cppunittest"]:
             cmd.append("--disable-fission")
 
+        if category == "gtest":
+            cmd.extend(self.query_gtest_symbols_options())
+
         if c["enable_isolated_zygote_process"]:
             cmd.append("--enable-isolated-zygote-process")
 

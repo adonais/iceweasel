@@ -57,7 +57,7 @@ static int ReadMaintenanceServiceStrings(
   mozilla::UniquePtr<char[]> serviceString;
   int result = ReadStrings(path, kServiceKeys, kNumStrings, &serviceString);
   if (result != OK) {
-    results->serviceDescription = mozilla::MakeUnique<char[]>(1);
+    results->serviceDescription = std::make_unique<char[]>(1);
     results->serviceDescription.get()[0] = '\0';
   }
   results->serviceDescription.swap(serviceString);
@@ -157,8 +157,7 @@ BOOL UpdateServiceDescription(SC_HANDLE serviceHandle) {
 
   int bufferSize = MultiByteToWideChar(
       CP_UTF8, 0, serviceStrings.serviceDescription.get(), -1, nullptr, 0);
-  mozilla::UniquePtr<WCHAR[]> serviceDescription =
-      mozilla::MakeUnique<WCHAR[]>(bufferSize);
+  auto serviceDescription = std::make_unique<WCHAR[]>(bufferSize);
   if (!MultiByteToWideChar(CP_UTF8, 0, serviceStrings.serviceDescription.get(),
                            -1, serviceDescription.get(), bufferSize)) {
     LOG_WARN(("Could not convert description to wide string format.  (%lu)",

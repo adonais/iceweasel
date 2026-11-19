@@ -534,6 +534,47 @@ bool BaseCompiler::beginFunction() {
     return false;
   }
 
+  // GenerateFunctionPrologue pushes exactly one wasm::Frame's worth of
+  // stuff, and none of the values are GC pointers.  Hence:
+  const size_t frameWords = sizeof(Frame) / sizeof(void*);
+  if (!stackMapGenerator_.machineStackTracker.pushNonGCPointers(frameWords)) {
+    return false;
+  }
+
+  // The IndirectCallBadSig trap in the prologue fires when the caller's and
+  // callee's signatures differ, so the types and number of arguments specified
+  // by the callee's signature can't be trusted here.  About the best we can do
+  // is to create a map that matches the size of the callee's frame but marks no
+  // entries as being refs.  This seems reasonable given that IndirectCallBadSig
+  // doesn't resume.  The map must be created before any stack args are marked
+  // as refs.
+  CallIndirectId callIndirectId =
+      CallIndirectId::forFunc(codeMeta_, func_.index);
+  StackMap* badSigStackMap = nullptr;
+  if (compilerEnv_.debugEnabled() &&
+      callIndirectId.kind() != CallIndirectIdKind::None) {
+    ExitStubMapVector badSigExtras;
+    if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args,
+                                                               &badSigExtras)) {
+      return false;
+    }
+    // Ensure no refs get into the final badSigStackMap via badSigExtras, per
+    // comment above.
+    for (bool& b : badSigExtras) {
+      b = false;
+    }
+    // stackmap for: signature-mismatch trap in the checked call entry.  Per
+    // comment above, logic here assumes that the trap won't resume, hence the
+    // assertion.
+    const Trap trapKind = Trap::IndirectCallBadSig;
+    MOZ_ASSERT(!wasm::TrapMightResume(trapKind));
+    if (!stackMapGenerator_.createStackMap(Some(trapKind), badSigExtras,
+                                           HasDebugFrameWithLiveRefs::No, stk_,
+                                           &badSigStackMap)) {
+      return false;
+    }
+  }
+
   // Identify GC-managed pointers passed on the stack.
   for (ABIArgIter i(args, ABIKind::Wasm); !i.done(); i++) {
     ABIArg argLoc = *i;
@@ -542,23 +583,21 @@ bool BaseCompiler::beginFunction() {
       uint32_t offset = argLoc.offsetFromArgBase();
       MOZ_ASSERT(offset < inboundStackArgBytes);
       MOZ_ASSERT(offset % sizeof(void*) == 0);
-      stackMapGenerator_.machineStackTracker.setGCPointer(offset /
-                                                          sizeof(void*));
+      stackMapGenerator_.machineStackTracker.setGCPointer(
+          offset / sizeof(void*) + frameWords);
     }
   }
 
   perfSpewer_.startRecording();
   perfSpewer_.markStartOffset(masm.currentOffset());
   perfSpewer_.recordOffset(masm, "Prologue");
+  FaultingCodeRange badSigTrap;
   GenerateFunctionPrologue(
-      masm, CallIndirectId::forFunc(codeMeta_, func_.index),
+      masm, callIndirectId,
       compilerEnv_.mode() != CompileMode::Once ? Some(func_.index) : Nothing(),
-      &offsets_);
-
-  // GenerateFunctionPrologue pushes exactly one wasm::Frame's worth of
-  // stuff, and none of the values are GC pointers.  Hence:
-  if (!stackMapGenerator_.machineStackTracker.pushNonGCPointers(
-          sizeof(Frame) / sizeof(void*))) {
+      &offsets_, &badSigTrap);
+  if (badSigStackMap && badSigTrap.isValid() &&
+      !stackMaps_->add(badSigTrap.resumeOffset(), badSigStackMap)) {
     return false;
   }
 
@@ -587,28 +626,43 @@ bool BaseCompiler::beginFunction() {
   }
 
   // Generate a stack-overflow check and its associated stackmap.
-
   ExitStubMapVector extras;
-  StackMap* functionEntryStackMap;
-  if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras) ||
-      // stackmap for: stack overflow check
-      !stackMapGenerator_.createStackMap(Some(Trap::StackOverflow), extras,
-                                         HasDebugFrameWithLiveRefs::No, stk_,
-                                         &functionEntryStackMap)) {
+  if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras)) {
     return false;
   }
-
-  OutOfLineCode* oolStackOverflowTrap =
-      addOutOfLineCode(new (alloc_) OutOfLineTrap(
-          Trap::StackOverflow,
-          TrapSiteDesc(BytecodeOffset(func_.bytecodeOffset)), nullptr));
+  // This trap doesn't resume, so its stackmap is only needed for debug-mode
+  // checking.
+  StackMap* stackOverflowStackMap = nullptr;
+  if (compilerEnv_.debugEnabled() &&
+      // stackmap for: the stack overflow check
+      !stackMapGenerator_.createStackMap(Some(Trap::StackOverflow), extras,
+                                         HasDebugFrameWithLiveRefs::No, stk_,
+                                         &stackOverflowStackMap)) {
+    return false;
+  }
+  OutOfLineCode* oolStackOverflowTrap = addOutOfLineCode(new (
+      alloc_) OutOfLineTrap(Trap::StackOverflow,
+                            TrapSiteDesc(BytecodeOffset(func_.bytecodeOffset)),
+                            stackOverflowStackMap));
   if (!oolStackOverflowTrap) {
     return false;
   }
   fr.checkStack(ABINonArgReg0, ABINonArgReg1, oolStackOverflowTrap->entry());
 
+  // Generate an interrupt check and its associated stackmap.  Note this might
+  // not be the same as `stackOverflowStackMap` since the two trap kinds have
+  // different resumabilities.  This trap resumes, and the interrupt handler
+  // can GC, so this stackmap is needed whether or not we're compiling for
+  // debugging.
+  StackMap* checkInterruptStackMap;
+  // stackmap for: the interrupt check
+  if (!stackMapGenerator_.createStackMap(Some(Trap::CheckInterrupt), extras,
+                                         HasDebugFrameWithLiveRefs::No, stk_,
+                                         &checkInterruptStackMap)) {
+    return false;
+  }
   OutOfLineCode* oolInterruptTrap = addOutOfLineCode(new (alloc_) OutOfLineTrap(
-      Trap::CheckInterrupt, trapSiteDesc(), functionEntryStackMap));
+      Trap::CheckInterrupt, trapSiteDesc(), checkInterruptStackMap));
   if (!oolInterruptTrap) {
     return false;
   }
@@ -701,9 +755,10 @@ bool BaseCompiler::beginFunction() {
   fr.storeInstancePtr(InstanceReg);
 
   if (compilerEnv_.debugEnabled()) {
-    insertBreakablePoint(CallSiteKind::EnterFrame);
+    CodeOffset resumeOffset = insertBreakablePoint(CallSiteKind::EnterFrame);
     // stackmap for: debug: enter-frame breakpoint
-    if (!createStackMap(Nothing() /* stackmap pertains to a call */)) {
+    if (!createStackMap(Nothing() /* stackmap pertains to a call */,
+                        resumeOffset)) {
       return false;
     }
   }
@@ -763,17 +818,17 @@ bool BaseCompiler::endFunction() {
     // Store and reload the return value from DebugFrame::return so that
     // it can be clobbered, and/or modified by the debug trap.
     saveRegisterReturnValues(resultType);
-    insertBreakablePoint(CallSiteKind::Breakpoint);
+    CodeOffset resumeOffset = insertBreakablePoint(CallSiteKind::Breakpoint);
     // stackmap for: debug: return-point breakpoint
     if (!createStackMap(Nothing() /* stackmap pertains to a call */,
-                        HasDebugFrameWithLiveRefs::Maybe)) {
+                        resumeOffset, HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
 
-    insertBreakablePoint(CallSiteKind::LeaveFrame);
+    resumeOffset = insertBreakablePoint(CallSiteKind::LeaveFrame);
     // stackmap for: debug: leave-frame breakpoint
     if (!createStackMap(Nothing() /* stackmap pertains to a call */,
-                        HasDebugFrameWithLiveRefs::Maybe)) {
+                        resumeOffset, HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
 
@@ -851,7 +906,7 @@ bool BaseCompiler::endFunction() {
 //     SymbolicAddress::HandleDebugTrap.  This contains the detailed logic
 //     needed to handle the breakpoint.
 
-void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
+CodeOffset BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   MOZ_ASSERT(!deadCode_);
 
   // A sync() must happen before this. The debug stub does not save all live
@@ -881,6 +936,9 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   //
   // The conditional call goes to a stub attached to the function that performs
   // further filtering before calling the breakpoint handler.
+
+  CodeOffset resumeOffset;
+
 #if defined(JS_CODEGEN_X64)
   // REX 83 MODRM OFFS IB
   static_assert(Instance::offsetOfDebugStub() < 128);
@@ -893,9 +951,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   masm.j(Assembler::Zero, &L);
 
   // E8 OFFS OFFS OFFS OFFS
-  masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
 
   // Branch destination
   MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() == uint32_t(L.offset()));
@@ -911,9 +968,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   masm.j(Assembler::Zero, &L);
 
   // E8 OFFS OFFS OFFS OFFS
-  masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
 
   // Branch destination
   MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() == uint32_t(L.offset()));
@@ -925,28 +981,30 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
            MemOperand(Address(InstanceReg, Instance::offsetOfDebugStub())));
   masm.Cbz(tmp, &L);
   masm.Bl(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = CodeOffset(masm.currentOffset());
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
   masm.bind(&L);
 #elif defined(JS_CODEGEN_ARM)
   ScratchPtr scratch(*this);
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.ma_orr(scratch, scratch, SetCC);
   masm.ma_bl(&perFunctionDebugStub_, Assembler::NonZero);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = CodeOffset(masm.currentOffset());
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
 #elif defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_MIPS64) || \
     defined(JS_CODEGEN_RISCV64)
   ScratchPtr scratch(*this);
   Label L;
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.branchPtr(Assembler::Equal, scratch, ImmWord(0), &L);
-  const CodeOffset retAddr = masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), retAddr);
+  resumeOffset = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
   masm.bind(&L);
 #else
   MOZ_CRASH("BaseCompiler platform hook: insertBreakablePoint");
 #endif
+
+  return resumeOffset;
 }
 
 void BaseCompiler::insertPerFunctionDebugStub() {
@@ -1693,10 +1751,10 @@ bool BaseCompiler::insertDebugCollapseFrame() {
     return true;
   }
 
-  insertBreakablePoint(CallSiteKind::CollapseFrame);
+  CodeOffset resumeOffset = insertBreakablePoint(CallSiteKind::CollapseFrame);
   // stackmap for: debug: collapse-frame breakpoint
   return createStackMap(Nothing() /* stackmap pertains to a call */,
-                        HasDebugFrameWithLiveRefs::Maybe);
+                        resumeOffset, HasDebugFrameWithLiveRefs::Maybe);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -11091,9 +11149,11 @@ bool BaseCompiler::emitBody() {
           // registers.
           sync();
 
-          insertBreakablePoint(CallSiteKind::Breakpoint);
+          CodeOffset resumeOffset =
+              insertBreakablePoint(CallSiteKind::Breakpoint);
           // stackmap for: debug: per-insn breakpoint
-          if (!createStackMap(Nothing() /* stackmap pertains to a call */)) {
+          if (!createStackMap(Nothing() /* stackmap pertains to a call */,
+                              resumeOffset)) {
             return false;
           }
           previousBreakablePoint_ = masm.currentOffset();
@@ -13163,8 +13223,8 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
 
     // Do the check.  This asserts if the check fails.
     auto checkThisTrapKind_debugMode = [](Trap t) -> bool {
-      // In debug mode, we check most trap kinds.
-      return t != Trap::IndirectCallBadSig && t != Trap::StackOverflow;
+      // In debug mode, we check all trap kinds.
+      return true;
     };
     auto checkThisTrapKind_normalMode = [](Trap t) -> bool {
       // Trap kinds to check in non-debug mode

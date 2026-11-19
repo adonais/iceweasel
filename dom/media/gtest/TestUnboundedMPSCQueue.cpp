@@ -187,7 +187,7 @@ TEST(UnboundedMPSCQueue, MoveOnlyUniquePtr)
 {
   UnboundedMPSCQueue<UniquePtr<int32_t>> queue;
   auto* msg = new UnboundedMPSCQueue<UniquePtr<int32_t>>::Message();
-  msg->data = MakeUnique<int32_t>(99);
+  msg->data = std::make_unique<int32_t>(99);
   queue.Push(msg);
 
   UniquePtr<int32_t> output;
@@ -219,7 +219,7 @@ TEST(UnboundedMPSCQueue, MoveOnlyFIFO)
   UnboundedMPSCQueue<UniquePtr<int32_t>> queue;
   for (int32_t i = 0; i < 100; i++) {
     auto* msg = new UnboundedMPSCQueue<UniquePtr<int32_t>>::Message();
-    msg->data = MakeUnique<int32_t>(i);
+    msg->data = std::make_unique<int32_t>(i);
     queue.Push(msg);
   }
 
@@ -272,7 +272,7 @@ TEST(UnboundedMPSCQueue, DestructorDrainsMoveOnlyElements)
     UnboundedMPSCQueue<UniquePtr<CountedType>> queue;
     for (int32_t i = 0; i < 50; i++) {
       auto* msg = new UnboundedMPSCQueue<UniquePtr<CountedType>>::Message();
-      msg->data = MakeUnique<CountedType>(i);
+      msg->data = std::make_unique<CountedType>(i);
       queue.Push(msg);
     }
   }
@@ -410,7 +410,7 @@ TEST_P(UnboundedMPSCQueueMTTest, MoveOnlyMultiProducer) {
         threads[t]->Dispatch(NS_NewRunnableFunction("MPSCPush", [&queue]() {
           for (int32_t i = 0; i < 10000; i++) {
             auto* msg = new UnboundedMPSCQueue<UniquePtr<int32_t>>::Message();
-            msg->data = MakeUnique<int32_t>(i);
+            msg->data = std::make_unique<int32_t>(i);
             queue.Push(msg);
           }
         })));

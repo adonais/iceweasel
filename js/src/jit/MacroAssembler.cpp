@@ -281,9 +281,9 @@ void MacroAssembler::checkAllocatorState(Register temp, gc::AllocKind allocKind,
       realm()->zone()->hasRealmWithAllocMetadataBuilder()) {
     loadJSContext(temp);
     loadPtr(Address(temp, JSContext::offsetOfRealm()), temp);
-    branchPtr(Assembler::NotEqual,
-              Address(temp, Realm::offsetOfAllocationMetadataBuilder()),
-              ImmWord(0), fail);
+    branch32(Assembler::NotEqual,
+             Address(temp, Realm::offsetOfHasAllocationMetadataBuilder()),
+             Imm32(0), fail);
   }
 }
 
@@ -526,13 +526,8 @@ void MacroAssembler::createArrayWithFixedElements(
       Address(result, NativeObject::offsetOfFixedElements()), temp);
   storePtr(temp, Address(result, NativeObject::offsetOfElements()));
 
-  // Initialize elements header.
-  store32(Imm32(ObjectElements::FIXED),
-          Address(temp, ObjectElements::offsetOfFlags()));
-  store32(Imm32(0), Address(temp, ObjectElements::offsetOfInitializedLength()));
-  store32(Imm32(arrayCapacity),
-          Address(temp, ObjectElements::offsetOfCapacity()));
-  store32(Imm32(arrayLength), Address(temp, ObjectElements::offsetOfLength()));
+  storeElementsHeader(Address(temp, ObjectElements::offsetOfFlags()),
+                      ObjectElements::FIXED, 0, arrayCapacity, arrayLength);
 
   // Initialize dynamic slots.
   if (numUsedDynamicSlots > 0) {
@@ -880,6 +875,13 @@ void MacroAssembler::fillSlotsWithConstantValue(Address base, Register temp,
     store32(temp, ToType(addr));
   }
 #else
+  if (v.asRawBits() == 0) {
+    for (uint32_t i = start; i < end;
+         ++i, base.offset += sizeof(GCPtr<Value>)) {
+      storePtr(ImmWord(0), base);
+    }
+    return;
+  }
   moveValue(v, ValueOperand(temp));
   for (uint32_t i = start; i < end; ++i, base.offset += sizeof(GCPtr<Value>)) {
     storePtr(temp, base);
@@ -896,6 +898,24 @@ void MacroAssembler::fillSlotsWithUninitialized(Address base, Register temp,
                                                 uint32_t start, uint32_t end) {
   fillSlotsWithConstantValue(base, temp, start, end,
                              MagicValue(JS_UNINITIALIZED_LEXICAL));
+}
+
+void MacroAssembler::storeElementsHeader(const Address& header, uint32_t flags,
+                                         uint32_t initializedLength,
+                                         uint32_t capacity, uint32_t length) {
+  // The four uint32_t fields are stored as two 64-bit words. All JIT targets
+  // are little-endian, so the first field of each pair is the low word.
+  static_assert(ObjectElements::offsetOfInitializedLength() ==
+                ObjectElements::offsetOfFlags() + 4);
+  static_assert(ObjectElements::offsetOfCapacity() ==
+                ObjectElements::offsetOfFlags() + 8);
+  static_assert(ObjectElements::offsetOfLength() ==
+                ObjectElements::offsetOfFlags() + 12);
+  auto pair = [](uint32_t low, uint32_t high) {
+    return Imm64(uint64_t(high) << 32 | low);
+  };
+  store64(pair(flags, initializedLength), header);
+  store64(pair(capacity, length), Address(header.base, header.offset + 8));
 }
 
 static std::pair<uint32_t, uint32_t> FindStartOfUninitializedAndUndefinedSlots(
@@ -1133,17 +1153,10 @@ void MacroAssembler::initGCThing(Register obj, Register temp,
       computeEffectiveAddress(Address(obj, elementsOffset), temp);
       storePtr(temp, Address(obj, NativeObject::offsetOfElements()));
 
-      // Fill in the elements header.
-      store32(
-          Imm32(ntemplate.getDenseCapacity()),
-          Address(obj, elementsOffset + ObjectElements::offsetOfCapacity()));
-      store32(Imm32(ntemplate.getDenseInitializedLength()),
-              Address(obj, elementsOffset +
-                               ObjectElements::offsetOfInitializedLength()));
-      store32(Imm32(ntemplate.getArrayLength()),
-              Address(obj, elementsOffset + ObjectElements::offsetOfLength()));
-      store32(Imm32(ObjectElements::FIXED),
-              Address(obj, elementsOffset + ObjectElements::offsetOfFlags()));
+      storeElementsHeader(
+          Address(obj, elementsOffset + ObjectElements::offsetOfFlags()),
+          ObjectElements::FIXED, ntemplate.getDenseInitializedLength(),
+          ntemplate.getDenseCapacity(), ntemplate.getArrayLength());
     } else if (ntemplate.isArgumentsObject()) {
       // The caller will initialize the reserved slots.
       MOZ_ASSERT(!initContents);
@@ -3380,7 +3393,11 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
   loadMegamorphicSetPropCache(scratch2);
   // scratch3 = &scratch2->entries_[scratch3]
   constexpr size_t entrySize = sizeof(MegamorphicSetPropCache::Entry);
-  mul32(Imm32(entrySize), scratch3);
+  if constexpr (std::has_single_bit(entrySize)) {
+    lshift32(Imm32(mozilla::FloorLog2(entrySize)), scratch3);
+  } else {
+    mul32(Imm32(entrySize), scratch3);
+  }
   computeEffectiveAddress(BaseIndex(scratch2, scratch3, TimesOne,
                                     MegamorphicSetPropCache::offsetOfEntries()),
                           scratch3);
@@ -4157,7 +4174,7 @@ void MacroAssembler::generateBailoutTail(Register scratch,
     jump(&copyFrame);
 #endif
 
-    bind(&bailoutStubHandler);
+    bindIndirectTarget(&bailoutStubHandler, TargetKind::Call);
     addCodeLabel(bailoutStubHandler);
 
 #ifdef JS_USE_LINK_REGISTER
@@ -8033,10 +8050,10 @@ void MacroAssembler::wasmNewStructObject(Register instance, Register result,
 
   // Don't execute the inline path if there is an allocation metadata builder
   // on the realm.
-  branchPtr(
+  branch32(
       Assembler::NotEqual,
-      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
-      ImmWord(0), fail);
+      Address(instance, wasm::Instance::offsetOfHasAllocationMetadataBuilder()),
+      Imm32(0), fail);
 
 #ifdef JS_GC_ZEAL
   // Don't execute the inline path if gc zeal or tracing are active.
@@ -8089,10 +8106,10 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 
   // Don't execute the inline path if there is an allocation metadata builder
   // on the realm.
-  branchPtr(
+  branch32(
       Assembler::NotEqual,
-      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
-      ImmWord(0), fail);
+      Address(instance, wasm::Instance::offsetOfHasAllocationMetadataBuilder()),
+      Imm32(0), fail);
 
 #ifdef JS_GC_ZEAL
   // Don't execute the inline path if gc zeal or tracing are active.
@@ -8248,10 +8265,10 @@ void MacroAssembler::wasmNewArrayObjectFixed(
 
   // Don't execute the inline path if there is an allocation metadata builder
   // on the realm.
-  branchPtr(
+  branch32(
       Assembler::NotEqual,
-      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
-      ImmWord(0), fail);
+      Address(instance, wasm::Instance::offsetOfHasAllocationMetadataBuilder()),
+      Imm32(0), fail);
 
 #ifdef JS_GC_ZEAL
   // Don't execute the inline path if gc zeal or tracing are active.

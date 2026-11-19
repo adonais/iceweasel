@@ -40,7 +40,20 @@ function simulateNotificationClickWithNewWindow(action) {
   runCmdLine(cmdLine);
 }
 
+function assertClickTelemetry(action, appState) {
+  let clicked = Glean.webNotification.clicked.testGetValue();
+  is(clicked?.length, 1, "One click should be recorded.");
+  is(clicked[0].extra.action, action, "The action should be recorded.");
+  is(
+    clicked[0].extra.app_state_before_click,
+    appState,
+    "The application state should be recorded."
+  );
+}
+
 add_task(async function test_basic() {
+  Services.fog.testResetFOG();
+
   let newTabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
     "https://example.com/"
@@ -54,6 +67,28 @@ add_task(async function test_basic() {
   let newTab = await newTabPromise;
   ok(newTab, "New tab should be opened.");
   BrowserTestUtils.removeTab(newTab);
+
+  assertClickTelemetry("body", "unknown");
+});
+
+add_task(async function test_action_button() {
+  Services.fog.testResetFOG();
+
+  let newTabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    "https://example.com/"
+  );
+
+  simulateNotificationClickWithExistingWindow({
+    action: "foo",
+    origin: "https://example.com",
+  });
+
+  let newTab = await newTabPromise;
+  ok(newTab, "New tab should be opened.");
+  BrowserTestUtils.removeTab(newTab);
+
+  assertClickTelemetry("action-button", "unknown");
 });
 
 // launchUrl was used pre-140, we can remove it when we are confident enough
@@ -109,6 +144,8 @@ add_task(async function test_user_context() {
 });
 
 add_task(async function test_basic_initial_load() {
+  Services.fog.testResetFOG();
+
   let controller = new AbortController();
   let { signal } = controller;
 
@@ -143,4 +180,6 @@ add_task(async function test_basic_initial_load() {
   BrowserTestUtils.closeWindow(newWin);
 
   controller.abort();
+
+  assertClickTelemetry("body", "closed");
 });

@@ -692,6 +692,7 @@ _cairo_scaled_font_keys_equal (const void *abstract_key_a,
     const cairo_scaled_font_t *key_b = abstract_key_b;
 
     return key_a->original_font_face == key_b->original_font_face &&
+           key_a->font_face == key_b->font_face &&
 	    memcmp ((unsigned char *)(&key_a->font_matrix.xx),
 		    (unsigned char *)(&key_b->font_matrix.xx),
 		    sizeof(cairo_matrix_t)) == 0 &&

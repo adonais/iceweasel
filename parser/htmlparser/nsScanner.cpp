@@ -6,8 +6,9 @@
 
 #include "nsScanner.h"
 
+#include <memory>
+
 #include "mozilla/Encoding.h"
-#include "mozilla/UniquePtr.h"
 #include "nsDebug.h"
 #include "nsReadableUtils.h"
 #include "nsUTF8Utils.h"  // for LossyConvertEncoding
@@ -279,7 +280,7 @@ void nsScanner::SetPosition(nsScannerIterator& aPosition, bool aTerminate) {
 
 void nsScanner::AppendToBuffer(nsScannerString::Buffer* aBuf) {
   if (!mSlidingBuffer) {
-    mSlidingBuffer = mozilla::MakeUnique<nsScannerString>(aBuf);
+    mSlidingBuffer = std::make_unique<nsScannerString>(aBuf);
     mSlidingBuffer->BeginReading(mCurrentPosition);
     mMarkPosition = mCurrentPosition;
   } else {

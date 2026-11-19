@@ -6,10 +6,10 @@
 
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
-#include "mozilla/dom/PMediaTransportChild.h"
 #include "mozilla/dom/RTCDtlsTransportBinding.h"
 #include "mozilla/dom/RTCErrorEvent.h"
 #include "mozilla/dom/TypedArray.h"
+#include "transport/MediaTransportTypes.h"
 
 namespace mozilla::dom {
 
@@ -81,7 +81,7 @@ void RTCDtlsTransport::UpdateState(TransportLayer::State aState,
     errorEventInit.mBubbles = false;
     errorEventInit.mCancelable = false;
     errorEventInit.mError =
-        new RTCError(aError->errorInit(), nsCString(aError->message()));
+        new RTCError(aError->errorInit, nsCString(aError->message));
     RefPtr<Event> errorEvent =
         RTCErrorEvent::Constructor(this, u"error"_ns, errorEventInit);
     DispatchTrustedEvent(errorEvent);

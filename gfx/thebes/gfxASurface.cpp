@@ -451,7 +451,7 @@ void gfxASurface::SetOpaqueRect(const gfxRect& aRect) {
   } else if (!!mOpaqueRect) {
     *mOpaqueRect = aRect;
   } else {
-    mOpaqueRect = MakeUnique<gfxRect>(aRect);
+    mOpaqueRect = std::make_unique<gfxRect>(aRect);
   }
 }
 

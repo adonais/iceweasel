@@ -8,7 +8,6 @@
 #include <bitset>
 
 #include "ASpdySession.h"
-#include "AltServiceChild.h"
 #include "EventTokenBucket.h"
 #include "HttpLog.h"
 #include "LoadContextInfo.h"
@@ -44,12 +43,9 @@
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "mozilla/net/HttpConnectionMgrParent.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/RequestContextService.h"
-#include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/net/rust_helper.h"
 #include "nsAsyncRedirectVerifyHelper.h"
 #include "nsCOMPtr.h"
@@ -107,6 +103,10 @@
 
 #if defined(XP_MACOSX)
 #  include <CoreServices/CoreServices.h>
+#endif
+
+#if defined(XP_MACOSX) || defined(XP_IOS)
+#  include "mozilla/net/AppleFastDatapathProbe.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -364,7 +364,14 @@ nsresult nsHttpHandler::Init() {
   mIOService = new nsMainThreadPtrHolder<nsIIOService>(
       "nsHttpHandler::mIOService", service);
 
-  gIOService->LaunchSocketProcess();
+#if defined(XP_MACOSX) || defined(XP_IOS)
+  if (XRE_IsParentProcess()) {
+    (void)NS_DispatchToMainThreadQueue(
+        NS_NewRunnableFunction("net::StartAppleFastDatapathProbe",
+                               &StartAppleFastDatapathProbe),
+        EventQueuePriority::Idle);
+  }
+#endif
 
   if (IsNeckoChild()) NeckoChild::InitNeckoChild();
 
@@ -427,7 +434,7 @@ nsresult nsHttpHandler::Init() {
         }
         auto map = mAltSvcMappingTemptativeMap.Lock();
         map->InsertOrUpdate(
-            host, MakeUnique<nsCString>(nsPrintfCString("h3=:%d", port)));
+            host, std::make_unique<nsCString>(nsPrintfCString("h3=:%d", port)));
       }
     }
   }
@@ -466,7 +473,7 @@ nsresult nsHttpHandler::Init() {
   rv = InitConnectionMgr();
   if (NS_FAILED(rv)) return rv;
 
-  mAltSvcCache = MakeUnique<AltSvcCache>();
+  mAltSvcCache = std::make_unique<AltSvcCache>();
 
   mRequestContextService = RequestContextService::GetOrCreate();
 
@@ -498,8 +505,7 @@ nsresult nsHttpHandler::Init() {
       static_cast<nsISupports*>(static_cast<void*>(this)),
       NS_HTTP_STARTUP_TOPIC);
 
-  nsCOMPtr<nsIObserverService> obsService =
-      static_cast<nsIObserverService*>(gIOService);
+  nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
   if (obsService) {
     // register the handler object as a weak callback as we don't need to worry
     // about shutdown ordering.
@@ -519,7 +525,6 @@ nsresult nsHttpHandler::Init() {
     obsService->AddObserver(this, "intl:app-locales-changed", true);
     obsService->AddObserver(this, "browser-delayed-startup-finished", true);
     obsService->AddObserver(this, "network:reset-http3-excluded-list", true);
-    obsService->AddObserver(this, "network:socket-process-crashed", true);
     obsService->AddObserver(this, "network:reset_third_party_roots_check",
                             true);
     obsService->AddObserver(this, "idle-daily", true);
@@ -637,27 +642,7 @@ nsresult nsHttpHandler::InitConnectionMgr() {
     return NS_OK;
   }
 
-  if (nsIOService::UseSocketProcess(true) && XRE_IsParentProcess()) {
-    mConnMgr = new HttpConnectionMgrParent();
-    RefPtr<nsHttpHandler> self = this;
-    auto task = [self]() {
-      RefPtr<HttpConnectionMgrParent> parent =
-          self->mConnMgr->AsHttpConnectionMgrParent();
-      RefPtr<SocketProcessParent> socketParent =
-          SocketProcessParent::GetSingleton();
-      (void)socketParent->SendPHttpConnectionMgrConstructor(
-          parent,
-          HttpHandlerInitArgs(self->mLegacyAppName, self->mLegacyAppVersion,
-                              self->mPlatform, self->mOscpu, self->mMisc,
-                              self->mProduct, self->mProductSub, self->mAppName,
-                              self->mAppVersion, self->mCompatFirefox,
-                              self->mCompatDevice, self->mDeviceModelId));
-    };
-    gIOService->CallOrWaitForSocketProcess(std::move(task));
-  } else {
-    MOZ_ASSERT(XRE_IsSocketProcess() || !nsIOService::UseSocketProcess());
-    mConnMgr = new nsHttpConnectionMgr();
-  }
+  mConnMgr = new nsHttpConnectionMgr();
 
   return mConnMgr->Init(mMaxUrgentExcessiveConns, mMaxConnections,
                         mMaxPersistentConnectionsPerServer,
@@ -673,14 +658,15 @@ nsresult nsHttpHandler::InitConnectionMgr() {
 // dictionary load.
 nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
     nsIURI* aURI, ExtContentPolicyType aType, nsHttpRequestHead* aRequest,
-    bool aSecure, nsHttpChannel* aChan, void (*aSuspend)(nsHttpChannel*),
+    bool aAllowDictionaries, nsHttpChannel* aChan,
+    void (*aSuspend)(nsHttpChannel*),
     const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback) {
   LOG(("Adding Dictionary headers"));
   auto guard = MakeScopeExit([&]() { (aCallback)(false, nullptr); });
 
   nsresult rv = NS_OK;
   // Add the "Accept-Encoding" header and possibly Dictionary headers
-  if (aSecure) {
+  if (aAllowDictionaries) {
     // The dictionary info may require us to check the cache.
     if (StaticPrefs::network_http_dictionaries_enable() && mDictionaryCache) {
       // Note: this is async; the lambda can happen later
@@ -1098,13 +1084,6 @@ void nsHttpHandler::BuildUserAgent() {
 #endif
 
 void nsHttpHandler::InitUserAgentComponents() {
-  // Don't build user agent components in socket process, since the system info
-  // is not available.
-  if (XRE_IsSocketProcess()) {
-    mUserAgentIsDirty = true;
-    return;
-  }
-
   // Gather platform.
   mPlatform.AssignLiteral(
 #if defined(ANDROID)
@@ -1280,10 +1259,6 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
 
   LOG(("nsHttpHandler::PrefsChanged [pref=%s]\n", pref));
 
-  if (pref) {
-    gIOService->NotifySocketProcessPrefsChanged(pref);
-  }
-
 #define PREF_CHANGED(p) ((pref == nullptr) || !strcmp(pref, p))
 #define MULTI_PREF_CHANGED(p) \
   ((pref == nullptr) || !strncmp(pref, p, sizeof(p) - 1))
@@ -1331,14 +1306,7 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
   // general.useragent.use_device
   if (PREF_CHANGED(UA_PREF("use_device"))) {
     if (Preferences::GetBool(UA_PREF("use_device"), false)) {
-      if (!XRE_IsSocketProcess()) {
-        mDeviceModelId = mozilla::net::GetDeviceModelId();
-        if (gIOService->SocketProcessReady()) {
-          RefPtr<SocketProcessParent> socketParent =
-              SocketProcessParent::GetSingleton();
-          (void)socketParent->SendUpdateDeviceModelId(mDeviceModelId);
-        }
-      }
+      mDeviceModelId = mozilla::net::GetDeviceModelId();
     } else {
       mDeviceModelId.Truncate();
     }
@@ -2025,7 +1993,7 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
           if (index != kNotFound) {
             map->InsertOrUpdate(
                 Substring(token, 0, index),
-                MakeUnique<nsCString>(Substring(token, index + 1)));
+                std::make_unique<nsCString>(Substring(token, index + 1)));
           }
         }
       }
@@ -2343,8 +2311,6 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
     // depend on this value.
     mSessionStartTime = NowInSeconds();
 
-    // Since nsHttpHandler::Observe() is also called in socket process, we don't
-    // want to do telemetry twice.
     if (XRE_IsParentProcess()) {
       if (!StaticPrefs::privacy_donottrackheader_enabled()) {
         glean::http::dnt_usage.AccumulateSingleSample(2);
@@ -2424,14 +2390,15 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
     // going to the background on android means we should close
     // down idle connections for power conservation
     if (mConnMgr) {
-      rv = mConnMgr->DoShiftReloadConnectionCleanup();
+      rv = StaticPrefs::network_http_close_connections_on_background()
+               ? mConnMgr->DoShiftReloadConnectionCleanup()
+               : mConnMgr->CloseAllIdleConnections();
       if (NS_FAILED(rv)) {
-        LOG(("    DoShiftReloadConnectionCleanup failed (%08x)\n",
+        LOG(("    background connection cleanup failed (%08x)\n",
              static_cast<uint32_t>(rv)));
       }
     }
   } else if (!strcmp(topic, "net:current-browser-id")) {
-    // The window id will be updated by HttpConnectionMgrParent.
     if (XRE_IsParentProcess()) {
       nsCOMPtr<nsISupportsPRUint64> wrapper = do_QueryInterface(subject);
       MOZ_RELEASE_ASSERT(wrapper);
@@ -2454,10 +2421,6 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
   } else if (!strcmp(topic, "network:reset-http3-excluded-list")) {
     MutexAutoLock lock(mHttpExclusionLock);
     mExcludedHttp3Origins.Clear();
-  } else if (!strcmp(topic, "network:socket-process-crashed")) {
-    ShutdownConnectionManager();
-    mConnMgr = nullptr;
-    (void)InitConnectionMgr();
   } else if (!strcmp(topic, "idle-daily")) {
     // Submit the local-network-access ping once per day
     if (XRE_IsParentProcess()) {
@@ -2836,26 +2799,7 @@ void nsHttpHandler::ExcludeHttp2OrHttp3Internal(nsHttpConnectionInfo* ci) {
   }
   LOG(("nsHttpHandler::ExcludeHttp2OrHttp3Internal ci=%s",
        ci->HashKey().get()));
-  // The excluded list needs to be stayed synced between parent process and
-  // socket process, so we send this information to the parent process here.
-  if (XRE_IsSocketProcess()) {
-    MOZ_ASSERT(OnSocketThread());
-
-    RefPtr<nsHttpConnectionInfo> cinfo = ci;
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "nsHttpHandler::ExcludeHttp2OrHttp3Internal",
-        [cinfo{std::move(cinfo)}]() {
-          HttpConnectionInfoCloneArgs connInfoArgs;
-          nsHttpConnectionInfo::SerializeHttpConnectionInfo(cinfo,
-                                                            connInfoArgs);
-          (void)SocketProcessChild::GetSingleton()->SendExcludeHttp2OrHttp3(
-              connInfoArgs);
-        }));
-  }
-
-  MOZ_ASSERT_IF(nsIOService::UseSocketProcess() && XRE_IsParentProcess(),
-                NS_IsMainThread());
-  MOZ_ASSERT_IF(!nsIOService::UseSocketProcess(), OnSocketThread());
+  MOZ_ASSERT(OnSocketThread());
 
   if (ci->IsHttp3()) {
     {
@@ -3004,34 +2948,7 @@ nsresult nsHttpHandler::DoShiftReloadConnectionCleanupWithConnInfo(
 }
 
 void nsHttpHandler::ClearHostMapping(nsHttpConnectionInfo* aConnInfo) {
-  if (XRE_IsSocketProcess()) {
-    AltServiceChild::ClearHostMapping(aConnInfo);
-    return;
-  }
-
   AltServiceCache()->ClearHostMapping(aConnInfo);
-}
-
-void nsHttpHandler::SetHttpHandlerInitArgs(const HttpHandlerInitArgs& aArgs) {
-  MOZ_ASSERT(XRE_IsSocketProcess());
-  mLegacyAppName = aArgs.mLegacyAppName();
-  mLegacyAppVersion = aArgs.mLegacyAppVersion();
-  mPlatform = aArgs.mPlatform();
-  mOscpu = aArgs.mOscpu();
-  mMisc = aArgs.mMisc();
-  mProduct = aArgs.mProduct();
-  mProductSub = aArgs.mProductSub();
-  mAppName = aArgs.mAppName();
-  mAppVersion = aArgs.mAppVersion();
-  mCompatFirefox = aArgs.mCompatFirefox();
-  mCompatDevice = aArgs.mCompatDevice();
-  mDeviceModelId = aArgs.mDeviceModelId();
-  mUserAgentIsDirty = true;
-}
-
-void nsHttpHandler::SetDeviceModelId(const nsACString& aModelId) {
-  MOZ_ASSERT(XRE_IsSocketProcess());
-  mDeviceModelId = aModelId;
 }
 
 void nsHttpHandler::MaybeAddAltSvcForTesting(

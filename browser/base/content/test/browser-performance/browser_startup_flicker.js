@@ -21,7 +21,6 @@ add_task(async function () {
   let unexpectedRects = 0;
   let alreadyFocused = false;
   let inRange = (val, min, max) => min <= val && val <= max;
-  let tabBoundingRect = undefined;
   let urlbarBoundingRect = undefined;
   for (let i = 1; i < frames.length; ++i) {
     let frame = frames[i],
@@ -38,26 +37,6 @@ add_task(async function () {
         /**
          * Please don't add anything new unless justified!
          */
-        {
-          name: "Shadow around active tab should not flicker on macOS (bug 1960967)",
-          condition(r) {
-            if (Services.prefs.getBoolPref("browser.nova.enabled", false)) {
-              // The Nova redesign does not have a shadow around the active tab.
-              return false;
-            }
-            const tabRect = tabBoundingRect
-              ? tabBoundingRect
-              : (tabBoundingRect = gBrowser.tabContainer
-                  .querySelector("tab[selected] .tab-background")
-                  .getBoundingClientRect());
-            return (
-              inRange(r.x1, tabRect.x - 2, tabRect.x + 2) &&
-              inRange(r.y1, tabRect.y - 2, tabRect.y + 2) &&
-              inRange(r.w, tabRect.width - 4, tabRect.width + 4) &&
-              inRange(r.h, tabRect.height - 4, tabRect.height + 4)
-            );
-          },
-        },
         {
           name: "Pixel snapping on urlbar bottom border on MacOS & Windows",
           condition(r) {

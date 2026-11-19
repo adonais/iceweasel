@@ -24,6 +24,7 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
+import { SmartWindowLocation } from "moz-src:///browser/components/aiwindow/models/SmartWindowLocation.sys.mjs";
 
 /**
  * @typedef {import("moz-src:///browser/components/aiwindow/models/Utils.sys.mjs").InferenceParams} InferenceParams
@@ -185,12 +186,21 @@ function listSkills(records, model) {
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * Replaces each `{name}` placeholder that has a substitution with its value.
+ * Placeholders are replaced in a single pass, so substituted values are
+ * inserted literally and never expanded again.
+ *
+ * @param {string} rawContent - Template text.
+ * @param {object} [substitutions] - Values keyed by placeholder name.
+ * @returns {string} The rendered text.
+ */
 function renderTemplate(rawContent, substitutions = {}) {
-  let rendered = rawContent;
-  for (const [name, value] of Object.entries(substitutions)) {
-    rendered = rendered.replaceAll(`{${name}}`, value ?? "");
-  }
-  return rendered;
+  return rawContent.replace(/\{(\w+)\}/g, (placeholder, name) =>
+    Object.hasOwn(substitutions, name)
+      ? (substitutions[name] ?? "")
+      : placeholder
+  );
 }
 
 /**
@@ -266,10 +276,21 @@ export async function buildChatSystemPrompt(model) {
     )
     .join("\n");
 
+  // The location is read and fetched only when a module renders it.
+  let locationText = "Unavailable";
+  if (sections.some(section => section.includes("{location}"))) {
+    locationText = SmartWindowLocation.getCachedLocation() ?? locationText;
+    // Refreshed here as well as when a Smart Window opens, so that a long
+    // session or a feature enabled mid-session picks up the location. Not
+    // awaited so that prompt assembly never waits on the network.
+    SmartWindowLocation.refresh();
+  }
+
   const prompt = renderTemplate(sections.join("\n\n\n"), {
     skill_list: skillList,
     locale: Services.locale.appLocaleAsBCP47,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    location: locationText,
     isoTimestamp,
     todayDate: isoTimestamp.split("T")[0],
   });

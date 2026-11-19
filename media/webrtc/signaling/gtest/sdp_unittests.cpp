@@ -10,6 +10,7 @@
 #include "sdp/ParsingResultComparer.h"
 #include "sdp/RsdparsaSdpParser.h"
 #include "sdp/SdpAttribute.h"
+#include "sdp/SdpHelper.h"
 #include "sdp/SdpImpl.h"
 #include "sdp/SdpMediaSection.h"
 #include "sdp/SipccSdpParser.h"
@@ -1792,6 +1793,32 @@ TEST_P(NewSdpTest, CheckOriginGetAddress) {
   ParseSdp(kVideoSdp);
   ASSERT_EQ("127.0.0.1", Sdp()->GetOrigin().GetAddress())
       << "Wrong address in origin";
+}
+
+TEST_P(NewSdpTest, parseSessionInformation) {
+  SKIP_TEST_WITH_SIPCC_PARSER
+  ParseSdp(
+      "v=0\r\n"
+      "o=- 4294967296 2 IN IP4 127.0.0.1\r\n"
+      "s=With information\r\n"
+      "i=an information\r\n"
+      "c=IN IP4 198.51.100.7\r\n"
+      "t=0 0\r\n"
+      "m=video 56436 RTP/SAVPF 120\r\n"
+      "a=rtpmap:120 VP8/90000\r\n");
+}
+
+TEST_P(NewSdpTest, parseMediaInformation) {
+  SKIP_TEST_WITH_SIPCC_PARSER
+  ParseSdp(
+      "v=0\r\n"
+      "o=- 4294967296 2 IN IP4 127.0.0.1\r\n"
+      "s=With information\r\n"
+      "c=IN IP4 198.51.100.7\r\n"
+      "t=0 0\r\n"
+      "m=video 56436 RTP/SAVPF 120\r\n"
+      "i=an information\r\n"
+      "a=rtpmap:120 VP8/90000\r\n");
 }
 
 TEST_P(NewSdpTest, CheckGetMissingBandwidth) {
@@ -4350,17 +4377,49 @@ TEST(NewSdpTestNoFixture, CheckUnknownMediaTypeParse)
       "m=sprinkles 9 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF
       "m=clowncar 0 UDP/TLS/RTP/SAVPF" CRLF;
 
-  // webrtc-sdp parses and preserves unknown media types, but we reject the
-  // whole document until the rest of the support lands in bug 2072767, which
-  // restores the checks on the parsed media sections. No Sdp is handed back,
-  // because that is the only signal HybridSdpParser acts on unless
-  // media.peerconnection.sdp.strict_success is set.
   RsdparsaSdpParser parser;
   const auto results = parser.Parse(kUnknownMediaTypeOffer);
-  ASSERT_FALSE(!!results->Sdp());
-  ASSERT_EQ(2U, results->Errors().size());
-  ASSERT_EQ("unsupported media value: sprinkles", results->Errors()[0].second);
-  ASSERT_EQ("unsupported media value: clowncar", results->Errors()[1].second);
+  ASSERT_TRUE(!!results->Sdp());
+  ASSERT_EQ(0U, results->Errors().size());
+  ASSERT_EQ(3U, results->Sdp()->GetMediaSectionCount());
+
+  const SdpMediaSection& audio = results->Sdp()->GetMediaSection(0);
+  ASSERT_EQ(SdpMediaSection::kAudio, audio.GetMediaType());
+  ASSERT_TRUE(audio.GetMediaTypeInfo().unknown.isNothing());
+
+  const SdpMediaSection& sprinkles = results->Sdp()->GetMediaSection(1);
+  ASSERT_EQ(SdpMediaSection::kUnknown, sprinkles.GetMediaType());
+  ASSERT_TRUE(sprinkles.GetMediaTypeInfo().unknown.isSome());
+  ASSERT_EQ("sprinkles", sprinkles.GetMediaTypeInfo().unknown->name);
+  ASSERT_EQ("8 16 foo", sprinkles.GetMediaTypeInfo().unknown->formatString);
+  // The format list of an unknown media type is not tokenized
+  ASSERT_TRUE(sprinkles.GetFormats().empty());
+
+  const SdpMediaSection& clowncar = results->Sdp()->GetMediaSection(2);
+  ASSERT_EQ(SdpMediaSection::kUnknown, clowncar.GetMediaType());
+  ASSERT_TRUE(clowncar.GetMediaTypeInfo().unknown.isSome());
+  ASSERT_EQ("clowncar", clowncar.GetMediaTypeInfo().unknown->name);
+  ASSERT_EQ("", clowncar.GetMediaTypeInfo().unknown->formatString);
+
+  // Both m= lines must come back out the way they went in
+  // Make sure we don't add a trailing space to the format string for unknown
+  // media types
+  std::ostringstream os;
+  results->Sdp()->Serialize(os);
+  ASSERT_NE(std::string::npos,
+            os.str().find("m=sprinkles 9 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF));
+  ASSERT_NE(std::string::npos,
+            os.str().find("m=clowncar 0 UDP/TLS/RTP/SAVPF" CRLF));
+
+  // Reparsing our own serialization has to be stable. It will not match the
+  // SDP we were given, because serialization normalizes the session name,
+  // moves the session level connection line into each media section, and
+  // writes out the default directions.
+  const auto reparsed = parser.Parse(os.str());
+  ASSERT_TRUE(!!reparsed->Sdp());
+  std::ostringstream reserialized;
+  reparsed->Sdp()->Serialize(reserialized);
+  ASSERT_EQ(os.str(), reserialized.str());
 }
 
 TEST(NewSdpTestNoFixture, CheckParsingResultComparer)
@@ -6261,6 +6320,60 @@ TEST(NewSdpTestNoFixture, CheckMediaTypeInfoComparison)
   ASSERT_FALSE(sprinkles.MatchesTypeOf(unknown("clowncar", "8 16 foo")));
   ASSERT_FALSE(sprinkles.MatchesTypeOf(audio));
   ASSERT_FALSE(audio.MatchesTypeOf(sprinkles));
+}
+
+// A rejected m= section still has to fit the SDP grammar, which is why
+// DisableMsection gives the media types it understands a placeholder format.
+// The format list of an unknown media type is reproduced verbatim, so it must
+// not gain a placeholder that its own m= line does not mention.
+TEST(NewSdpTestNoFixture, CheckDisableMsectionKeepsUnknownFormats)
+{
+  SdpImpl sdp(SdpOrigin("-", 4294967296, 2, sdp::kIPv4, "127.0.0.1"));
+
+  SdpMediaSection& unknown = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kUnknown,
+       .unknown = Some(SdpMediaSection::UnknownMediaTypeData{
+           .name = "sprinkles", .formatString = "8 16 foo"})},
+      SdpDirectionAttribute::kSendrecv, 9, SdpMediaSection::kUdpTlsRtpSavpf,
+      sdp::kIPv4, "0.0.0.0");
+  SdpHelper::DisableMsection(&sdp, &unknown);
+
+  ASSERT_EQ(0U, unknown.GetPort());
+  ASSERT_FALSE(
+      unknown.GetAttributeList().HasAttribute(SdpAttribute::kRtpmapAttribute));
+  std::ostringstream unknownOs;
+  unknown.Serialize(unknownOs);
+  ASSERT_NE(
+      std::string::npos,
+      unknownOs.str().find("m=sprinkles 0 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF));
+
+  // An empty format list would leave the m= line without the fmt token the
+  // grammar requires, so it gets the placeholder.
+  SdpMediaSection& noFormats = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kUnknown,
+       .unknown = Some(SdpMediaSection::UnknownMediaTypeData{
+           .name = "clowncar", .formatString = ""})},
+      SdpDirectionAttribute::kSendrecv, 9, SdpMediaSection::kUdpTlsRtpSavpf,
+      sdp::kIPv4, "0.0.0.0");
+  SdpHelper::DisableMsection(&sdp, &noFormats);
+
+  ASSERT_FALSE(noFormats.GetAttributeList().HasAttribute(
+      SdpAttribute::kRtpmapAttribute));
+  std::ostringstream noFormatsOs;
+  noFormats.Serialize(noFormatsOs);
+  ASSERT_NE(std::string::npos,
+            noFormatsOs.str().find("m=clowncar 0 UDP/TLS/RTP/SAVPF 19" CRLF));
+
+  // A media type we do know gets the placeholder, which is the branch the
+  // unknown media type has to stay out of.
+  SdpMediaSection& audio = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kAudio}, SdpDirectionAttribute::kSendrecv, 9,
+      SdpMediaSection::kUdpTlsRtpSavpf, sdp::kIPv4, "0.0.0.0");
+  SdpHelper::DisableMsection(&sdp, &audio);
+
+  ASSERT_EQ(0U, audio.GetPort());
+  ASSERT_TRUE(
+      audio.GetAttributeList().HasAttribute(SdpAttribute::kRtpmapAttribute));
 }
 
 }  // End namespace test.

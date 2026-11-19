@@ -13,6 +13,7 @@
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
+#include "nsTArrayForwardDeclare.h"
 
 template <class T>
 struct already_AddRefed;
@@ -39,6 +40,10 @@ class CSSMathMin final : public CSSMathValue {
   CSSMathMin(nsCOMPtr<nsISupports> aParent,
              MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
              RefPtr<CSSNumericArray> aValues);
+
+  static RefPtr<CSSMathMin> Create(nsCOMPtr<nsISupports> aParent,
+                                   UniquePtr<StyleNumericType> aNumericType,
+                                   nsTArray<RefPtr<CSSNumericValue>> aValues);
 
   static RefPtr<CSSMathMin> Create(nsCOMPtr<nsISupports> aParent,
                                    const StyleMathMin& aMathMin);

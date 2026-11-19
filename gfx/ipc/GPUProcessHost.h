@@ -115,6 +115,11 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   // as well as for tests and diagnostics.
   void KillProcess(bool aGenerateMinidump);
 
+  // Kills the GPU process for tests. Unlike KillProcess, this is not treated as
+  // a crash for the purposes of telemetry, crash reporting and fallbacks.
+  void KillProcessForTesting();
+  bool WasKilledForTesting() const { return mKilledForTesting; }
+
   // Causes the GPU process to crash. Used for tests and diagnostics
   void CrashProcess();
 
@@ -169,6 +174,7 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   bool mShutdownRequested;
   bool mChannelClosed;
+  bool mKilledForTesting = false;
   bool mLaunchOomError MOZ_GUARDED_BY(mMonitor) = false;
 
   TimeStamp mLaunchTime;

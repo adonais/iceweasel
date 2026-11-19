@@ -26,15 +26,12 @@
 namespace webrtc {
 
 scoped_refptr<SframeEncryptor> SframeEncryptor::Create(
-    SframeMode mode,
     SframeCipherSuite cipher_suite) {
-  return make_ref_counted<SframeEncryptor>(mode, cipher_suite);
+  return make_ref_counted<SframeEncryptor>(cipher_suite);
 }
 
-SframeEncryptor::SframeEncryptor(SframeMode mode,
-                                 SframeCipherSuite cipher_suite)
+SframeEncryptor::SframeEncryptor(SframeCipherSuite cipher_suite)
     : sequence_checker_(SequenceChecker::kDetached),
-      mode_(mode),
       context_(CreateSframeContext(cipher_suite)) {}
 
 SframeEncryptor::~SframeEncryptor() = default;

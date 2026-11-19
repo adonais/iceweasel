@@ -1,0 +1,137 @@
+diff --git a/media/ffvpx/libavcodec/mediacodec_wrapper.c b/media/ffvpx/libavcodec/mediacodec_wrapper.c
+--- a/media/ffvpx/libavcodec/mediacodec_wrapper.c
++++ b/media/ffvpx/libavcodec/mediacodec_wrapper.c
+@@ -1411,6 +1411,12 @@ fail:
+     return ret;
+ }
+ 
++static int mediacodec_jni_setParameters(FFAMediaCodec *ctx,
++                                        const FFAMediaFormat* format_ctx)
++{
++    return AVERROR_PATCHWELCOME;
++}
++
+ static int mediacodec_jni_start(FFAMediaCodec* ctx)
+ {
+     int ret = 0;
+@@ -1807,6 +1813,7 @@ static const FFAMediaCodec media_codec_j
+     .delete = mediacodec_jni_delete,
+ 
+     .configure = mediacodec_jni_configure,
++    .setParameters = mediacodec_jni_setParameters,
+     .start = mediacodec_jni_start,
+     .stop = mediacodec_jni_stop,
+     .flush = mediacodec_jni_flush,
+@@ -2225,6 +2232,27 @@ static int mediacodec_ndk_configure(FFAM
+     return 0;
+ }
+ 
++static int mediacodec_ndk_setParameters(FFAMediaCodec *ctx,
++                                        const FFAMediaFormat* format_ctx)
++{
++    FFAMediaCodecNdk *codec = (FFAMediaCodecNdk *)ctx;
++    FFAMediaFormatNdk *format = (FFAMediaFormatNdk *)format_ctx;
++    media_status_t status;
++
++    if (format_ctx->class != &amediaformat_ndk_class) {
++        av_log(ctx, AV_LOG_ERROR, "invalid media format\n");
++        return AVERROR(EINVAL);
++    }
++
++    status = AMediaCodec_setParameters(codec->impl, format->impl);
++    if (status != AMEDIA_OK) {
++        av_log(codec, AV_LOG_ERROR, "setParameters failed, %d\n", status);
++        return AVERROR_EXTERNAL;
++    }
++
++    return 0;
++}
++
+ #define MEDIACODEC_NDK_WRAPPER(method)                                   \
+ static int mediacodec_ndk_ ## method(FFAMediaCodec* ctx)                 \
+ {                                                                        \
+@@ -2512,6 +2540,7 @@ static const FFAMediaCodec media_codec_n
+     .delete = mediacodec_ndk_delete,
+ 
+     .configure = mediacodec_ndk_configure,
++    .setParameters = mediacodec_ndk_setParameters,
+     .start = mediacodec_ndk_start,
+     .stop = mediacodec_ndk_stop,
+     .flush = mediacodec_ndk_flush,
+diff --git a/media/ffvpx/libavcodec/mediacodec_wrapper.h b/media/ffvpx/libavcodec/mediacodec_wrapper.h
+--- a/media/ffvpx/libavcodec/mediacodec_wrapper.h
++++ b/media/ffvpx/libavcodec/mediacodec_wrapper.h
+@@ -205,6 +205,7 @@ struct FFAMediaCodec {
+     int (*delete)(FFAMediaCodec* codec);
+ 
+     int (*configure)(FFAMediaCodec* codec, const FFAMediaFormat* format, FFANativeWindow* surface, void *crypto, uint32_t flags);
++    int (*setParameters)(FFAMediaCodec* codec, const FFAMediaFormat* format);
+     int (*start)(FFAMediaCodec* codec);
+     int (*stop)(FFAMediaCodec* codec);
+     int (*flush)(FFAMediaCodec* codec);
+@@ -260,6 +261,12 @@ static inline int ff_AMediaCodec_configu
+     return codec->configure(codec, format, surface, crypto, flags);
+ }
+ 
++static inline int ff_AMediaCodec_setParameters(FFAMediaCodec *codec,
++                                               const FFAMediaFormat *format)
++{
++    return codec->setParameters(codec, format);
++}
++
+ static inline int ff_AMediaCodec_start(FFAMediaCodec* codec)
+ {
+     return codec->start(codec);
+diff --git a/media/ffvpx/libavcodec/mediacodecenc.c b/media/ffvpx/libavcodec/mediacodecenc.c
+--- a/media/ffvpx/libavcodec/mediacodecenc.c
++++ b/media/ffvpx/libavcodec/mediacodecenc.c
+@@ -80,6 +80,7 @@ typedef struct MediaCodecEncContext {
+     AVBSFContext *bsf;
+ 
+     int bitrate_mode;
++    int64_t configured_bit_rate;
+     int level;
+     int pts_as_dts;
+     int extract_extradata;
+@@ -519,6 +520,7 @@ static av_cold int mediacodec_init(AVCod
+ 
+     if (avctx->bit_rate)
+         ff_AMediaFormat_setInt32(format, "bitrate", avctx->bit_rate);
++    s->configured_bit_rate = avctx->bit_rate;
+     if (s->bitrate_mode >= 0) {
+         ff_AMediaFormat_setInt32(format, "bitrate-mode", s->bitrate_mode);
+         if (s->bitrate_mode == BITRATE_MODE_CQ && avctx->global_quality > 0)
+@@ -794,6 +796,7 @@ static int mediacodec_send(AVCodecContex
+     size_t input_size = 0;
+     int64_t pts = 0;
+     uint32_t flags = 0;
++    int request_sync, bitrate_changed;
+     int ret;
+ 
+     if (s->eof_sent)
+@@ -827,6 +830,25 @@ static int mediacodec_send(AVCodecContex
+         copy_frame_to_buffer(avctx, frame, input_buf, input_size);
+ 
+         pts = av_rescale_q(frame->pts, avctx->time_base, AV_TIME_BASE_Q);
++
++        request_sync = frame->pict_type == AV_PICTURE_TYPE_I;
++        bitrate_changed = avctx->bit_rate > 0 &&
++                          avctx->bit_rate != s->configured_bit_rate;
++
++        if (request_sync || bitrate_changed) {
++            FFAMediaFormat *format = ff_AMediaFormat_new(s->use_ndk_codec);
++            if (format) {
++                if (request_sync)
++                    ff_AMediaFormat_setInt32(format, "request-sync", 0);
++                if (bitrate_changed)
++                    ff_AMediaFormat_setInt32(format, "video-bitrate", avctx->bit_rate);
++                if (ff_AMediaCodec_setParameters(codec, format) < 0)
++                    av_log(avctx, AV_LOG_WARNING, "Failed to set codec parameters\n");
++                ff_AMediaFormat_delete(format);
++            }
++            if (bitrate_changed)
++                s->configured_bit_rate = avctx->bit_rate;
++        }
+     } else {
+         flags |= ff_AMediaCodec_getBufferFlagEndOfStream(codec);
+         s->eof_sent = 1;

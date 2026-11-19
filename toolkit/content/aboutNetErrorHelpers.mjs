@@ -56,6 +56,35 @@ export function getHostName() {
   return RPMGetHostForDisplay(document);
 }
 
+/**
+ * If the page that failed to load is on a loopback address (localhost,
+ * *.localhost, 127.0.0.0/8 or [::1]), returns its port as a string and whether
+ * the host is an IP literal. Otherwise returns null.
+ *
+ * Used to give developer-relevant hints when a connection to the local
+ * machine is refused, since in that case the usual network, firewall and
+ * proxy advice doesn't apply: nothing is listening on that port.
+ *
+ * @returns {{ port: string, isIPLiteral: boolean } | null}
+ */
+export function getLoopbackInfo() {
+  let { protocol, hostname, port } = document.location;
+  if (protocol != "http:" && protocol != "https:") {
+    return null;
+  }
+  // Use hostname, not host: host includes the port (e.g. "localhost:5000").
+  const host = hostname.toLowerCase();
+  const isIPLiteral =
+    host == "[::1]" || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
+  if (!isIPLiteral && host != "localhost" && !host.endsWith(".localhost")) {
+    return null;
+  }
+  return {
+    port: port || (protocol == "https:" ? "443" : "80"),
+    isIPLiteral,
+  };
+}
+
 export function getFilePath() {
   try {
     const url = new URL(document.location.href);

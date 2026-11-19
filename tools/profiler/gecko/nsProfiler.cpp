@@ -1181,7 +1181,7 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
   }
 
   mGathering = true;
-  mGatheringLog = mozilla::MakeUnique<Json::Value>(Json::objectValue);
+  mGatheringLog = std::make_unique<Json::Value>(Json::objectValue);
   (*mGatheringLog)[Json::StaticString{
       "profileGatheringLogBegin" TIMESTAMP_JSON_SUFFIX}] =
       ProfilingLog::Timestamp();

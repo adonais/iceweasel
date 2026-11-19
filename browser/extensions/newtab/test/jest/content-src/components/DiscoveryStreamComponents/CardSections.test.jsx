@@ -2,6 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import { WIDGET_ROW_COMPONENTS } from "content-src/components/Widgets/WidgetsComponentRegistry.jsx";
+import { WidgetLocationContext } from "content-src/components/Widgets/WidgetPlacement";
+import { useContext } from "react";
 import { render, fireEvent, createEvent } from "@testing-library/react";
 import { WrapWithProvider } from "test/jest/test-utils";
 import { INITIAL_STATE } from "common/Reducers.sys.mjs";
@@ -213,6 +216,61 @@ describe("<CardSections />", () => {
   });
 
   // @experiment(remove) { bug 2078816 }
+  it("tells a widget in a story section's first card where it renders", () => {
+    const original = WIDGET_ROW_COMPONENTS.lists;
+    WIDGET_ROW_COMPONENTS.lists = function Probe() {
+      return (
+        <div
+          className="location-probe"
+          data-location={useContext(WidgetLocationContext) ?? ""}
+        />
+      );
+    };
+    try {
+      const state = {
+        ...INITIAL_STATE,
+        Prefs: {
+          ...INITIAL_STATE.Prefs,
+          values: {
+            ...INITIAL_STATE.Prefs.values,
+            "nova.enabled": true,
+            "feeds.section.topstories": true,
+            "feeds.system.topstories": true,
+            "pageLayouts.variant": "widget-first-content-slot",
+            "pageLayouts.widgetFirstContentSlot.widget": "lists",
+            "widgets.enabled": true,
+            "widgets.system.lists.enabled": true,
+            "widgets.lists.enabled": true,
+          },
+        },
+      };
+      const { container } = renderCardSections(
+        {
+          data: {
+            ...DEFAULT_PROPS.data,
+            sections: [
+              {
+                ...DEFAULT_PROPS.data.sections[0],
+                data: [
+                  { type: "widget", widgetId: "lists" },
+                  ...DEFAULT_PROPS.data.sections[0].data,
+                ],
+              },
+            ],
+          },
+        },
+        state
+      );
+      expect(
+        container.querySelector(".section-widget .location-probe").dataset
+          .location
+      ).toBe("story_card");
+    } finally {
+      WIDGET_ROW_COMPONENTS.lists = original;
+    }
+  });
+
+  // @experiment(remove) { bug 2078816 }
   it.each([
     ["crossword", ".crossword"],
     ["pictureOfTheDay", ".picture-of-the-day"],
@@ -232,6 +290,9 @@ describe("<CardSections />", () => {
           [`widgets.system.${widgetId}.enabled`]: true,
           [`widgets.${widgetId}.enabled`]: true,
         },
+      },
+      FramedWidgets: {
+        [widgetId]: { url: "https://example.mozgcp.net/" },
       },
     };
     const { container } = renderCardSections(

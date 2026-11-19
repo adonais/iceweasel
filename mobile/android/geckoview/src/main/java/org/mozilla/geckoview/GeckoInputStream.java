@@ -81,7 +81,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
 
     int count = 0;
     while (count < expect) {
-      final long bytesRead = read(bytes, count, expect - count);
+      final int bytesRead = read(bytes, count, expect - count);
       if (bytesRead < 0) {
         return -1;
       }

@@ -8,7 +8,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.DataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Action
@@ -42,7 +41,7 @@ interface PocketSettings {
  */
 class SettingsBackedPocketSettings(private val settings: Settings) : PocketSettings {
     override val showPocketRecommendationsFeature
-        get() = (settings.showPocketRecommendationsFeature || settings.privateModeAndStoriesEntryPointEnabled)
+        get() = settings.showPocketRecommendationsFeature
 
     override val showPocketSponsoredStories
         get() = settings.showPocketSponsoredStories
@@ -75,7 +74,7 @@ class PocketMiddleware(
         when (action) {
             is AppAction.AppLifecycleAction.StartAction -> {
                 visualCompletenessQueue.runIfReadyOrQueue {
-                    coroutineScope.launch(IO) {
+                    coroutineScope.launch {
                         if (settings.showPocketRecommendationsFeature) {
                             pocketStoriesService.value.startPeriodicContentRecommendationsRefresh()
                         }

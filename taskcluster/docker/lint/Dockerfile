@@ -5,6 +5,7 @@ VOLUME /builds/worker/.task-cache/npm
 VOLUME /builds/worker/.task-cache/pip
 VOLUME /builds/worker/.task-cache/uv
 VOLUME /builds/worker/checkouts
+VOLUME /builds/worker/gradle-user-home
 
 # We do want to install recommended packages.
 RUN sed -i /APT::Install-Recommends/d /etc/apt/apt.conf.d/99taskcluster
@@ -12,9 +13,6 @@ RUN sed -i /APT::Install-Recommends/d /etc/apt/apt.conf.d/99taskcluster
 RUN mkdir /build
 # %include python/mozbuild/mozbuild/action/tooltool.py
 ADD topsrcdir/python/mozbuild/mozbuild/action/tooltool.py /build/tooltool.py
-
-# %include taskcluster/docker/recipes/install-node.sh
-ADD topsrcdir/taskcluster/docker/recipes/install-node.sh /build/install-node.sh
 
 ADD system-setup.sh /tmp/system-setup.sh
 RUN bash /tmp/system-setup.sh

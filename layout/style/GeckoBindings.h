@@ -117,7 +117,8 @@ nsAtom** Gecko_Element_ExportedParts(const nsAttrValue*, nsAtom*,
                                      size_t* aOutLength);
 uint64_t Gecko_Element_GetSubtreeBloomFilter(const mozilla::dom::Element*);
 uint64_t Gecko_Element_GetRandomSeed(const mozilla::dom::Element*);
-uint64_t Gecko_Document_GetRandomSeed(const mozilla::dom::Document*);
+void Gecko_Document_GetRandomHasherKey(const mozilla::dom::Document*,
+                                       uint64_t* aK0, uint64_t* aK1);
 
 NS_DECL_THREADSAFE_FFI_REFCOUNTING(mozilla::css::SheetLoadDataHolder,
                                    SheetLoadDataHolder);
@@ -238,6 +239,11 @@ void Gecko_UpdateAnimations(const mozilla::dom::Element* aElementOrPseudo,
                             const mozilla::ComputedStyle* aOldComputedValues,
                             const mozilla::ComputedStyle* aComputedValues,
                             mozilla::UpdateAnimationsTasks aTasks);
+
+// Runs the named timeline lookups that Gecko_UpdateAnimations() deferred.
+// Called by the traversal of aRoot's subtree once its sequential tasks have
+// run, so every element of the traversal has registered its timelines.
+void Gecko_FlushPendingNamedTimelineUpdates(const mozilla::dom::Element* aRoot);
 
 size_t Gecko_GetAnimationEffectCount(
     const mozilla::dom::Element* aElementOrPseudo);
@@ -586,6 +592,7 @@ int32_t Gecko_GetNumStyleThreads();
 mozilla::StyleDisplayMode Gecko_MediaFeatures_GetDisplayMode(
     const mozilla::dom::Document*);
 
+void Gecko_GetSubmitString(const mozilla::dom::Document*, nsAString*);
 bool Gecko_MediaFeatures_UseOverlayScrollbars(const mozilla::dom::Document*);
 int32_t Gecko_MediaFeatures_GetColorDepth(const mozilla::dom::Document*);
 int32_t Gecko_MediaFeatures_GetMonochromeBitsPerPixel(

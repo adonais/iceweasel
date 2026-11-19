@@ -202,14 +202,13 @@ support-files = [
 
 ["browser_moz_support_link_open_links_in_chrome.js"]
 
+["browser_panel_list_subframe_resize.js"]
+
 ["browser_quickfind_editable.js"]
 
 ["browser_remoteness_change_listeners.js"]
 
 ["browser_resume_bkg_video_on_tab_hover.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1775552
-]
 
 ["browser_richlistbox_keyboard.js"]
 

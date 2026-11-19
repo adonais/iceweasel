@@ -12,10 +12,10 @@ import {
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/sidebar/sidebar-opentabs-preview.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/sidebar/sidebar-pins-promo.mjs";
 
 const lazy = {};
@@ -148,6 +148,7 @@ export default class SidebarMain extends MozLitElement {
     window.addEventListener("SidebarItemRemoved", this);
 
     this.setCustomize();
+    this.createTabsObservers();
     this.createSplitter();
     this.createToolsObservers();
   }
@@ -166,6 +167,7 @@ export default class SidebarMain extends MozLitElement {
     window.removeEventListener("SidebarItemChanged", this);
     window.removeEventListener("SidebarItemRemoved", this);
 
+    this._tabsOverflowObserver?.disconnect();
     this._toolsIntersectionObserver?.disconnect();
     this._toolsResizeObserver?.disconnect();
     this.ownerDocument
@@ -175,6 +177,18 @@ export default class SidebarMain extends MozLitElement {
 
   get isToolsDragging() {
     return this.toolsSplitter.getAttribute("state") === "dragging";
+  }
+
+  createTabsObservers() {
+    let tabs = document.getElementById("tabbrowser-tabs");
+    let syncOverflow = () =>
+      this.toggleAttribute("tabs-overflow", tabs.hasAttribute("overflow"));
+    this._tabsOverflowObserver = new MutationObserver(syncOverflow);
+    this._tabsOverflowObserver.observe(tabs, {
+      attributes: true,
+      attributeFilter: ["overflow"],
+    });
+    syncOverflow();
   }
 
   createToolsObservers() {
@@ -658,14 +672,25 @@ export default class SidebarMain extends MozLitElement {
     });
   }
 
-  async showView(view) {
+  /**
+   * Focus the active item in the button group.
+   *
+   * @returns {boolean} `true` if the item was focused successfully.
+   */
+  focusButtonGroup() {
+    const button = this.buttonGroup.activeChild;
+    button?.focus();
+    return !!button && this.shadowRoot.activeElement === button;
+  }
+
+  async showView(view, triggerNode) {
     this._openTabsPreview?.hide();
     const { currentID, toolsAndExtensions } = window.SidebarController;
     let isToolOpening =
       (!currentID || (currentID && currentID !== view)) &&
       toolsAndExtensions.has(view);
     window.SidebarController.recordIconClick(view, this.expanded);
-    window.SidebarController.toggle(view);
+    window.SidebarController.toggle(view, triggerNode);
     if (view === "viewCustomizeSidebar") {
       Glean.sidebarCustomize.iconClick.record();
     }
@@ -830,7 +855,8 @@ export default class SidebarMain extends MozLitElement {
           aria-label=${buttonValues.actionLabel}
           aria-selected=${buttonValues.isActiveView}
           view=${buttonValues.action.view}
-          @click=${async () => await this.showView(buttonValues.action.view)}
+          @click=${e =>
+            this.showView(buttonValues.action.view, e.currentTarget)}
           @mouseover=${e => this.onEntrypointHover(e, buttonValues.action.view)}
           @mouseout=${e =>
             this.onEntrypointHoverEnd(e, buttonValues.action.view)}

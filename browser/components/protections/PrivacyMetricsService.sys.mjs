@@ -79,6 +79,32 @@ export const PrivacyMetricsService = {
   },
 
   /**
+   * Get the number of blocked trackers recorded since a date.
+   *
+   * The query cannot be cancelled, so a caller living in a window gets the
+   * result through a callback it can drop on unload: a promise reaction would
+   * keep the closed window alive until the query completes.
+   *
+   * @param {Date} dateFrom
+   * @param {(total: number) => void} callback
+   * @returns {() => void} Drops the callback.
+   */
+  getTotalSince(dateFrom, callback) {
+    lazy.TrackingDBService.getEventsByDateRange(dateFrom, Date.now()).then(
+      events => {
+        let total = events.reduce(
+          (acc, day) => acc + day.getResultByName("count"),
+          0
+        );
+        callback?.(total);
+      }
+    );
+    return () => {
+      callback = null;
+    };
+  },
+
+  /**
    * Aggregate TrackingDBService data by category.
    *
    * @param {Array} eventRows - Array of database rows from TrackingDBService

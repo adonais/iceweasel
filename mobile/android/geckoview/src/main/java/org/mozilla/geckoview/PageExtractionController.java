@@ -11,6 +11,8 @@ import org.mozilla.gecko.util.ThreadUtils;
 /** Manges the page content extraction */
 @ExperimentalGeckoViewApi
 public class PageExtractionController {
+  /** Public constructor for PageExtractionController. */
+  public PageExtractionController() {}
 
   /** Metadata about a page extracted by {@link SessionPageExtractor#getPageMetadata()} */
   public static class PageMetadata {

@@ -212,6 +212,7 @@ rsync_filter_list = """
 
 + /js/src/**
 + /js/app.mozbuild
++ /js/moz.build
 + /js/*.configure
 + /js/examples/**
 + /js/public/**

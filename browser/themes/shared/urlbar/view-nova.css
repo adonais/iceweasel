@@ -753,10 +753,13 @@
       width: 14px;
       padding-inline: 4px;
       border-color: transparent;
-      background-color: var(--identity-fill-tint);
       background-image: var(--user-context-icon);
       background-size: 14px;
-      fill: var(--identity-fill-color);
+      fill: var(--identity-color);
+
+      .urlbarView-row[selected] & {
+        fill: currentColor;
+      }
 
       /* Chiclet height is determined by its text content. User-context chiclets
          don't have text, so use a nbsp. */
@@ -834,10 +837,6 @@
   /* Increase line-height to avoid cutting overhanging glyphs due to masking on
      the element */
   line-height: 1.4;
-
-  .urlbarView-row:not([selected]) & {
-    color: var(--link-color);
-  }
 }
 
 .urlbarView-url {
@@ -846,6 +845,10 @@
   flex: 100 1 var(--urlbarview-url-flex-basis);
   min-width: 0;
   max-width: max-content;
+
+  .urlbarView-row:not([selected]) & {
+    color: var(--link-color);
+  }
 
   .urlbarView-row:not([has-url]) &,
   .urlbarView:not([action-override]) .urlbarView-row[type="switchtab"] &,
@@ -1042,16 +1045,14 @@
 
 /* Firefox Suggest rows */
 
-.urlbarView-row[is-top-pick] {
-  --urlbarview-icon-size: var(--urlbarview-top-pick-icon-size);
-  --urlbarview-icon-border-radius: var(--urlbarview-top-pick-icon-border-radius);
+.urlbarView-row[top-pick-type="small"] {
+  --urlbarview-icon-size: var(--urlbarview-rich-search-suggestion-icon-size);
+  --urlbarview-icon-border-radius: var(--urlbarview-rich-search-suggestion-icon-border-radius);
 }
 
-@media not -moz-pref("browser.urlbar.quicksuggest.ampTopPickUseNovaIconSize") {
-  .urlbarView-row[type$="_adm_sponsored"][is-top-pick] {
-    --urlbarview-icon-size: var(--urlbarview-rich-search-suggestion-icon-size);
-    --urlbarview-icon-border-radius: var(--urlbarview-rich-search-suggestion-icon-border-radius);
-  }
+.urlbarView-row[top-pick-type="large"] {
+  --urlbarview-icon-size: var(--urlbarview-top-pick-icon-size);
+  --urlbarview-icon-border-radius: var(--urlbarview-top-pick-icon-border-radius);
 }
 
 .urlbarView-row[type$="_amo"] {

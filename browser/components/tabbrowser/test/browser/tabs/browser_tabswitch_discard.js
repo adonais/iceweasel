@@ -26,7 +26,10 @@ add_task(async function test_discard_during_tab_switch() {
     gBrowser._switcher,
     "The switcher is alive while the previous tab awaits unloading"
   );
-  ok(gBrowser.discardBrowser(tab, true), "The background tab was discarded");
+  ok(
+    gBrowser.discardBrowser(tab, { forceDiscard: true }),
+    "The background tab was discarded"
+  );
   ok(!tab.linkedPanel, "The discarded tab has a lazy browser");
   ok(
     !gBrowser._switcher ||

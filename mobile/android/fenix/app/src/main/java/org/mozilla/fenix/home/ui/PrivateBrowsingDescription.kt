@@ -4,33 +4,25 @@
 
 package org.mozilla.fenix.home.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -44,59 +36,47 @@ import org.mozilla.fenix.theme.FirefoxTheme
 fun PrivateBrowsingDescription(onLearnMoreClick: () -> Unit) {
     Surface {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier =
+                Modifier.padding(horizontal = horizontalMargin)
+                    .width(FirefoxTheme.layout.size.containerMaxWidth)
+                    .padding(horizontal = FirefoxTheme.layout.space.static200),
+            verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
         ) {
-            Image(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_private_mode_circle_fill_72),
-                contentDescription = null,
+            Text(
+                text = stringResource(id = R.string.felt_privacy_desc_card_title),
+                style = FirefoxTheme.typography.headline7,
             )
 
-            Spacer(modifier = Modifier.height(height = FirefoxTheme.layout.space.static300))
+            Text(
+                text =
+                    stringResource(
+                        id = R.string.felt_privacy_info_card_subtitle_3,
+                        stringResource(id = R.string.app_name),
+                    ),
+                style = FirefoxTheme.typography.body2,
+            )
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Box(
+                modifier =
+                    Modifier.semantics {
+                        testTagsAsResourceId = true
+                        testTag = HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
+                    }
             ) {
-                Text(
-                    text = stringResource(id = R.string.felt_privacy_desc_card_title),
-                    textAlign = TextAlign.Center,
-                    style = FirefoxTheme.typography.headline5,
-                )
-
-                Text(
-                    text =
-                        stringResource(
-                            id = R.string.felt_privacy_info_card_subtitle_3,
-                            stringResource(id = R.string.app_name),
+                LinkText(
+                    text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
+                    linkTextStates =
+                        listOf(
+                            LinkTextState(
+                                text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
+                                url = "",
+                                onClick = { onLearnMoreClick() },
+                            )
                         ),
-                    textAlign = TextAlign.Center,
-                    style = FirefoxTheme.typography.subtitle1,
+                    style = FirefoxTheme.typography.body2,
+                    linkTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    linkTextDecoration = TextDecoration.Underline,
                 )
-
-                Box(
-                    modifier =
-                        Modifier.semantics {
-                            testTagsAsResourceId = true
-                            testTag = HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
-                        }
-                ) {
-                    LinkText(
-                        text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
-                        linkTextStates =
-                            listOf(
-                                LinkTextState(
-                                    text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
-                                    url = "",
-                                    onClick = { onLearnMoreClick() },
-                                )
-                            ),
-                        style = FirefoxTheme.typography.subtitle1,
-                        linkTextColor = MaterialTheme.colorScheme.onSurface,
-                        linkTextDecoration = TextDecoration.Underline,
-                        textAlign = TextAlign.Center,
-                    )
-                }
             }
         }
     }

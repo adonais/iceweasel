@@ -6,10 +6,6 @@
 
 let h2Port;
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
 add_setup(async function setup() {
   let trrServer = new TRRServer();
   await trrServer.start();
@@ -20,11 +16,6 @@ add_setup(async function setup() {
     trr_clear_prefs();
     await trrServer.stop();
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 
   Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRFIRST);
 });

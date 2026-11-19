@@ -5,7 +5,10 @@
 diff:
     description: Generates diffs of CI changes
     platform: linux
-    worker-type: t-linux-docker-amd
+    # Review bot waits for every lint, and this one is in the long tail that often
+    # finishes last. It parallelizes well, so a 30 core worker shortens the end
+    # to end time.
+    worker-type: b-linux-docker-large-amd
     worker:
         docker-image: {in-tree: "lint"}
         max-run-time: 2400

@@ -1,8 +1,8 @@
-requires-python:>=3.11
+requires-python:>=3.12
 # The following are only required by autodoc
 pth:python/mozpack/test
 pth:tools/lint/eslint/
-pypi:Sphinx==9.0.4
+pypi:Sphinx==9.1.0
 pypi:boto3==1.43.62
 pypi:fluent.pygments==1.0
 pypi:livereload==2.7.1

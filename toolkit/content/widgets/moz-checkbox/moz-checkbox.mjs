@@ -7,9 +7,9 @@
 import { html, ifDefined } from "../vendor/lit.all.mjs";
 import { MozBaseInputElement } from "../lit-utils.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-label.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
 
 /**

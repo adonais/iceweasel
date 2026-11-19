@@ -56,6 +56,20 @@
         <org.mozilla.fenix.settings.RadioButtonPreference
             android:key="@string/pref_key_toolbar_top"
             android:title="@string/preference_top_toolbar" />
+        <androidx.preference.Preference
+            android:key="@string/pref_key_homepage_search_location_header"
+            android:layout="@layout/preference_cat_style"
+            android:title="@string/preferences_homepage_search_location"
+            android:selectable="false"
+            app:isPreferenceVisible="false" />
+        <org.mozilla.fenix.settings.RadioButtonPreference
+            android:key="@string/pref_key_homepage_search_location_top"
+            android:title="@string/preference_homepage_search_location_top"
+            app:radioMarginStart="@dimen/top_bar_alignment_margin_start" />
+        <org.mozilla.fenix.settings.RadioButtonPreference
+            android:key="@string/pref_key_enable_homepage_searchbar2"
+            android:title="@string/preference_homepage_search_location_middle"
+            app:radioMarginStart="@dimen/top_bar_alignment_margin_start" />
         <org.mozilla.fenix.settings.RadioButtonPreference
             android:key="@string/pref_key_toolbar_bottom"
             android:title="@string/preference_bottom_toolbar" />
@@ -102,6 +116,16 @@
         android:layout="@layout/preference_cat_style"
         android:title="@string/preferences_toolbar_shortcut"
         app:iconSpaceReserved="false" />
+
+    <androidx.preference.PreferenceCategory
+        android:key="@string/pref_key_customization_category_menu"
+        android:layout="@layout/preference_cat_style"
+        android:title="@string/preferences_menu"
+        app:iconSpaceReserved="false">
+        <androidx.preference.Preference
+            android:key="@string/pref_key_customize_menu"
+            android:title="@string/customize_menu" />
+    </androidx.preference.PreferenceCategory>
 
     <androidx.preference.PreferenceCategory
         android:layout="@layout/preference_cat_style"

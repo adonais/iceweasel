@@ -159,6 +159,15 @@
   min-width: 0;
 }
 
+.popup-notification-icon[popupid="credit-card-save-update"] {
+  fill: var(--icon-color-success);
+}
+
+/* Align the content with the header icon rather than the header text. */
+.credit-card-capture-notification popupnotificationcontent {
+  margin-inline-start: calc(-1 * (var(--icon-size) + var(--space-small)));
+}
+
 .desc-message-box {
   align-items: center;
   gap: var(--space-medium);

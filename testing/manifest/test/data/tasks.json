@@ -12,7 +12,7 @@
       "opt": true,
       "os": "mac",
       "os_version": "15.30",
-      "runtime": "socketprocess_networking"
+      "runtime": "swgl"
     },
     "failure_types": {
       ".skip_fails_cache/7cf7a9720f4ead03213f1799f3dcc00a413c7a02/browser.toml": [
@@ -47,7 +47,7 @@
       "test-platform": "macosx1500-aarch64-shippable/opt",
       "test-suite": "mochitest-browser-chrome",
       "test-type": "mochitest",
-      "test-variant": "socketprocess_networking",
+      "test-variant": "swgl",
       "tests_grouped": "1",
       "trust-domain": "gecko",
       "worker-implementation": "generic-worker"
@@ -67,7 +67,7 @@
       "opt": true,
       "os": "mac",
       "os_version": "15.30",
-      "runtime": "socketprocess_networking"
+      "runtime": "swgl"
     },
     "failure_types": {
       ".skip_fails_cache/7cf7a9720f4ead03213f1799f3dcc00a413c7a02/browser.toml": [
@@ -102,7 +102,7 @@
       "test-platform": "macosx1500-aarch64-shippable/opt",
       "test-suite": "mochitest-browser-chrome",
       "test-type": "mochitest",
-      "test-variant": "socketprocess_networking",
+      "test-variant": "swgl",
       "tests_grouped": "1",
       "trust-domain": "gecko",
       "worker-implementation": "generic-worker"
@@ -122,7 +122,7 @@
       "opt": true,
       "os": "mac",
       "os_version": "15.30",
-      "runtime": "socketprocess_networking"
+      "runtime": "swgl"
     },
     "failure_types": {
       ".skip_fails_cache/7cf7a9720f4ead03213f1799f3dcc00a413c7a02/browser.toml": [
@@ -157,7 +157,7 @@
       "test-platform": "macosx1500-aarch64-shippable/opt",
       "test-suite": "mochitest-browser-chrome",
       "test-type": "mochitest",
-      "test-variant": "socketprocess_networking",
+      "test-variant": "swgl",
       "tests_grouped": "1",
       "trust-domain": "gecko",
       "worker-implementation": "generic-worker"
@@ -177,7 +177,7 @@
       "opt": true,
       "os": "mac",
       "os_version": "15.30",
-      "runtime": "socketprocess_networking"
+      "runtime": "swgl"
     },
     "failure_types": {
       ".skip_fails_cache/7cf7a9720f4ead03213f1799f3dcc00a413c7a02/browser.toml": [
@@ -212,7 +212,7 @@
       "test-platform": "macosx1500-aarch64-shippable/opt",
       "test-suite": "mochitest-browser-chrome",
       "test-type": "mochitest",
-      "test-variant": "socketprocess_networking",
+      "test-variant": "swgl",
       "tests_grouped": "1",
       "trust-domain": "gecko",
       "worker-implementation": "generic-worker"
@@ -232,7 +232,7 @@
       "opt": true,
       "os": "mac",
       "os_version": "15.30",
-      "runtime": "socketprocess_networking"
+      "runtime": "swgl"
     },
     "failure_types": {
       ".skip_fails_cache/7cf7a9720f4ead03213f1799f3dcc00a413c7a02/browser.toml": [
@@ -263,7 +263,7 @@
       "test-platform": "macosx1500-aarch64-shippable/opt",
       "test-suite": "mochitest-browser-chrome",
       "test-type": "mochitest",
-      "test-variant": "socketprocess_networking",
+      "test-variant": "swgl",
       "tests_grouped": "1",
       "trust-domain": "gecko",
       "worker-implementation": "generic-worker"

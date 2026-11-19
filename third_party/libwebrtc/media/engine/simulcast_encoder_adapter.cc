@@ -973,8 +973,8 @@ SimulcastEncoderAdapter::FetchOrCreateEncoderContext(
     }
 
     encoder_context = std::make_unique<SimulcastEncoderAdapter::EncoderContext>(
-        std::move(encoder), prefer_temporal_support, primary_info,
-        fallback_info, std::move(video_format));
+        std::move(encoder), prefer_temporal_support, std::move(primary_info),
+        std::move(fallback_info), std::move(video_format));
   }
 
   encoder_context->encoder().RegisterEncodeCompleteCallback(

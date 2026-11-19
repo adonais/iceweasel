@@ -485,3 +485,40 @@ add_task(async function test_source_cleared_data_uri_not_serializable() {
     "DownloadSource.toSerializable() should return null when isDataURICleared is set"
   );
 });
+
+/**
+ * Tests that userContextId is persisted while browsingContextId is not, and
+ * that neither ends up in the unknown properties of the source.
+ */
+add_task(async function test_source_context_ids_serialization() {
+  let source = DownloadSource.fromSerializable({
+    url: "http://www.example.com/",
+    userContextId: 2,
+    browsingContextId: 42,
+    triggeredByContentDispositionHeader: true,
+  });
+  Assert.equal(source._unknownProperties, undefined);
+
+  let serializable = source.toSerializable();
+  Assert.equal(serializable.userContextId, 2);
+  Assert.ok(!("browsingContextId" in serializable));
+  Assert.equal(serializable.triggeredByContentDispositionHeader, true);
+
+  let reloaded = DownloadSource.fromSerializable(
+    JSON.parse(JSON.stringify(serializable))
+  );
+  Assert.equal(reloaded.userContextId, 2);
+  Assert.equal(reloaded.browsingContextId, undefined);
+  Assert.equal(reloaded.triggeredByContentDispositionHeader, true);
+
+  source = DownloadSource.fromSerializable({
+    url: "http://www.example.com/",
+    userContextId: 0,
+    browsingContextId: 42,
+  });
+  Assert.equal(
+    source.toSerializable(),
+    "http://www.example.com/",
+    "Short URL-only form is kept"
+  );
+});

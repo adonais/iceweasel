@@ -2022,6 +2022,13 @@ class MediaDecoderStateMachine::AccurateSeekingState
                     MEDIA_PLAYBACK);
                 SLOG("OnSeekRejected wait promise resolved");
                 mWaitRequest.Complete();
+                // Reset the sought tracks in the reader again, as DoSeek() did,
+                // so that the retry does not find anything the reader started
+                // on them while waiting, such as recovery from a decoder error.
+                Reader()->ResetDecode(mSeekJob.mTarget->IsVideoOnly()
+                                          ? TrackSet(TrackInfo::kVideoTrack)
+                                          : TrackSet(TrackInfo::kAudioTrack,
+                                                     TrackInfo::kVideoTrack));
                 DemuxerSeek();
               },
               [this](const WaitForDataRejectValue& aRejection) {

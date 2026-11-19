@@ -1228,7 +1228,7 @@ NS_IMETHODIMP IPCFuzzController::IPCFuzzLoop::Run() {
     msg->header()->flags.mFlags &= ~IPC::Message::HeaderFlags::LAZY_SEND_BIT;
 
     // Create the footer
-    auto messageEvent = MakeUnique<UserMessageEvent>(0);
+    auto messageEvent = std::make_unique<UserMessageEvent>(0);
     messageEvent->set_port_name(new_port_name);
     messageEvent->set_sequence_num(new_fseqno);
 

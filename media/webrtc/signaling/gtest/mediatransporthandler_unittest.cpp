@@ -9,6 +9,7 @@
 #include "mozilla/TimeStamp.h"
 #include "nsComponentManagerUtils.h"
 #include "nsISocketTransportService.h"
+#include "nsNetCID.h"
 #include "nsPISocketTransportService.h"
 #include "nsServiceManagerUtils.h"
 

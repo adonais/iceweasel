@@ -324,6 +324,8 @@ rtc_library("video_coding_utility") {
   sources = [
     "utility/bandwidth_quality_scaler.cc",
     "utility/bandwidth_quality_scaler.h",
+    "utility/cbr_layer_rate_tracker.cc",
+    "utility/cbr_layer_rate_tracker.h",
     "utility/decoded_frames_history.cc",
     "utility/decoded_frames_history.h",
     "utility/frame_dropper.cc",
@@ -345,8 +347,6 @@ rtc_library("video_coding_utility") {
     "utility/simulcast_rate_allocator.h",
     "utility/simulcast_utility.cc",
     "utility/simulcast_utility.h",
-    "utility/temporal_layer_rate_tracker.cc",
-    "utility/temporal_layer_rate_tracker.h",
     "utility/vp8_constants.h",
     "utility/vp8_header_parser.cc",
     "utility/vp8_header_parser.h",
@@ -371,6 +371,7 @@ rtc_library("video_coding_utility") {
     "../../api/video:video_frame",
     "../../api/video:video_frame_type",
     "../../api/video_codecs:video_codecs_api",
+    "../../api/video_codecs:video_encoder_interface",
     "../../common_video",
     "../../rtc_base:bitstream_reader",
     "../../rtc_base:checks",
@@ -1042,7 +1043,7 @@ if (rtc_include_tests) {
       ":sframe_packet_buffer_unittest",
       ":simulcast_rate_allocator_unittest",
       ":svc_config_unittest",
-      ":temporal_layer_rate_tracker_unittest",
+      ":cbr_layer_rate_tracker_unittest",
       ":video_codec_initializer_unittest",
       ":video_decoder_database_unittest",
       ":video_encoder_decoder_instantiation_tests",
@@ -1064,6 +1065,7 @@ if (rtc_include_tests) {
     if (enable_libaom) {
       tests += [
         "codecs/av1:libaom_av1_encoder_unittest",
+        "codecs/av1:libaom_av1_encoder_v2_unittest",
         "codecs/av1:libaom_av1_unittest",
         "codecs/av1:libaom_speed_config_factory_unittest",
       ]
@@ -1597,11 +1599,14 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_cc_test("temporal_layer_rate_tracker_unittest") {
-    sources = [ "utility/temporal_layer_rate_tracker_unittest.cc" ]
+  rtc_cc_test("cbr_layer_rate_tracker_unittest") {
+    sources = [ "utility/cbr_layer_rate_tracker_unittest.cc" ]
     deps = [
       ":video_coding_utility",
       "../../api/units:data_rate",
+      "../../api/units:time_delta",
+      "../../api/video_codecs:video_encoder_factory_interface",
+      "../../api/video_codecs:video_encoder_interface",
       "../../test:test_support",
     ]
   }
@@ -1836,6 +1841,7 @@ if (rtc_include_tests) {
         "../../api:field_trials",
         "../../api:frame_generator_api",
         "../../api:make_ref_counted",
+        "../../api:mock_video_decoder",
         "../../api:mock_video_encoder",
         "../../api:scoped_refptr",
         "../../api/environment:environment_factory",

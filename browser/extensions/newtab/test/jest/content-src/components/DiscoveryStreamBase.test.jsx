@@ -60,7 +60,9 @@ jest.mock(
   })
 );
 jest.mock("content-src/components/Widgets/Widgets", () => ({
-  Widgets: () => <div data-testid="widgets-mock" />,
+  Widgets: ({ placement }) => (
+    <div data-testid="widgets-mock" data-placement={placement ?? ""} />
+  ),
 }));
 jest.mock(
   "content-src/components/CollapsibleSection/CollapsibleSection",
@@ -621,6 +623,34 @@ describe("<DiscoveryStreamBase> ASRouterNewTabMessage positions", () => {
       expect(
         container.querySelectorAll(".layout-highlights-column")
       ).toHaveLength(1);
+    });
+
+    it("tells each space's widgets whether it is Home or the library", () => {
+      const { container } = mountThematic(
+        { ...CONFIG, widgetLibrary: "widgets" },
+        {
+          "widgets.home": '["lists"]',
+          "widgets.system.focusTimer.enabled": true,
+          "widgets.focusTimer.enabled": true,
+        }
+      );
+      const placementIn = id =>
+        container
+          .querySelector(`#spaces-panel-${id} [data-testid='widgets-mock']`)
+          .getAttribute("data-placement");
+
+      expect(placementIn("home")).toBe("home");
+      expect(placementIn("widgets")).toBe("library");
+    });
+
+    it("gives the widgets no placement without a library", () => {
+      const { container } = mountThematic(CONFIG);
+
+      expect(
+        container
+          .querySelector("#spaces-panel-widgets [data-testid='widgets-mock']")
+          .getAttribute("data-placement")
+      ).toBe("");
     });
 
     it("shows only the tablist otherwise", () => {

@@ -13,6 +13,25 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const { SpecialPowersForProcess } = ChromeUtils.importESModule(
+  "resource://testing-common/SpecialPowersProcessActor.sys.mjs"
+);
+
+// browser-test.js forces a shrinking GC and a CC between tests to collect
+// closed windows that JIT code keeps alive (bug 2041420), but only in the
+// parent process. Do the same in the privileged about: content process, where
+// every about:newtab document of this folder lives.
+registerCleanupFunction(async () => {
+  for (let domProcess of ChromeUtils.getAllDOMProcesses()) {
+    if (domProcess.remoteType === "privilegedabout") {
+      await new SpecialPowersForProcess(this, domProcess).spawn([], () => {
+        Cu.forceShrinkingGC();
+        Cu.forceCC();
+      });
+    }
+  }
+});
+
 function popPrefs() {
   return SpecialPowers.popPrefEnv();
 }

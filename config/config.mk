@@ -65,11 +65,9 @@ $(foreach __d,$(__depth) .,$(eval __depth = $(wordlist 2,$(words $(__depth)),$(_
 
 # Sanity check some variables
 CHECK_VARS := \
- XPI_NAME \
  LIBRARY_NAME \
  MODULE \
  DEPTH \
- XPI_PKGNAME \
  SHARED_LIBRARY_NAME \
  SONAME \
  STATIC_LIBRARY_NAME \
@@ -91,17 +89,12 @@ RM = rm -f
 # build products (typelibs, components, chrome). It may already be specified by
 # a moz.build file.
 #
-# If XPI_NAME is set, the files will be shipped to $(DIST)/xpi-stage/$(XPI_NAME)
-# instead of $(DIST)/bin. In both cases, if DIST_SUBDIR is set, the files will be
-# shipped to a $(DIST_SUBDIR) subdirectory.
-FINAL_TARGET ?= $(if $(XPI_NAME),$(DIST)/xpi-stage/$(XPI_NAME),$(DIST)/bin)$(DIST_SUBDIR:%=/%)
+# If DIST_SUBDIR is set, the files will be shipped to a $(DIST_SUBDIR)
+# subdirectory of $(DIST)/bin.
+FINAL_TARGET ?= $(DIST)/bin$(DIST_SUBDIR:%=/%)
 # Override the stored value for the check to make sure that the variable is not
 # redefined in the Makefile.in value.
 FINAL_TARGET_FROZEN := '$(FINAL_TARGET)'
-
-ifdef XPI_NAME
-ACDEFINES += -DXPI_NAME=$(XPI_NAME)
-endif
 
 MKDIR ?= mkdir
 SLEEP ?= sleep
@@ -137,14 +130,6 @@ endif # MOZ_PROFILE_USE
 # Overloaded by comm builds to refer to $(commtopsrcdir), so that
 # `mail` resolves in en-US builds and in repacks.
 LOCALE_TOPDIR ?= $(topsrcdir)
-MAKE_JARS_FLAGS = \
-	-t $(LOCALE_TOPDIR) \
-	-f $(MOZ_JAR_MAKER_FILE_FORMAT) \
-	$(NULL)
-
-ifdef USE_EXTENSION_MANIFEST
-MAKE_JARS_FLAGS += -e
-endif
 
 TAR_CREATE_FLAGS = -chf
 
@@ -171,8 +156,8 @@ LDFLAGS		= $(MOZ_LTO_LDFLAGS) $(COMPUTED_LDFLAGS) $(PGO_LDFLAGS)
 
 COMPILE_CFLAGS	= $(MOZ_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS)
 COMPILE_CXXFLAGS = $(MOZ_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS)
-COMPILE_CMFLAGS = $(MOZ_LTO_CFLAGS) $(OS_COMPILE_CMFLAGS) $(MOZBUILD_CMFLAGS)
-COMPILE_CMMFLAGS = $(MOZ_LTO_CFLAGS) $(OS_COMPILE_CMMFLAGS) $(MOZBUILD_CMMFLAGS)
+COMPILE_CMFLAGS = $(MOZ_LTO_CFLAGS) $(COMPUTED_CMFLAGS)
+COMPILE_CMMFLAGS = $(MOZ_LTO_CFLAGS) $(COMPUTED_CMMFLAGS)
 ASFLAGS = $(COMPUTED_ASFLAGS)
 SFLAGS = $(COMPUTED_SFLAGS)
 
@@ -238,12 +223,6 @@ endif
 
 DEPENDENCIES	= .md
 
-# Export to propagate to cl and submake for third-party code.
-# Eventually, we'll want to just use -I.
-ifdef INCLUDE
-export INCLUDE
-endif
-
 # Export to propagate to link.exe and submake for third-party code.
 # Eventually, we'll want to just use -LIBPATH.
 ifdef LIB
@@ -262,14 +241,6 @@ endif
 
 ifdef SCCACHE_CLIENT_SIDE
 export SCCACHE_CLIENT_SIDE
-endif
-
-ifeq ($(OS_ARCH),WINNT)
-ifneq (,$(filter msvc clang-cl,$(CC_TYPE)))
-WIN32_EXE_LDFLAGS += $(WIN32_EXE_DEFAULT_LDFLAGS)
-else
-MOZ_PROGRAM_LDFLAGS += $(WIN32_EXE_DEFAULT_LDFLAGS)
-endif
 endif
 
 -include $(topsrcdir)/$(MOZ_BUILD_APP)/app-config.mk
@@ -331,20 +302,6 @@ ifdef LOCALE_RELATIVEDIR
 LOCALE_SRCDIR ?= $(call EXPAND_LOCALE_SRCDIR,$(LOCALE_RELATIVEDIR))
 endif
 
-ifdef relativesrcdir
-MAKE_JARS_FLAGS += --relativesrcdir=$(LOCALE_RELATIVEDIR)
-ifneq (en-US,$(AB_CD))
-ifdef IS_LANGUAGE_REPACK
-MAKE_JARS_FLAGS += --l10n-base=$(REAL_LOCALE_MERGEDIR)
-endif
-else
-MAKE_JARS_FLAGS += -c $(LOCALE_SRCDIR)
-endif # en-US
-else
-MAKE_JARS_FLAGS += -c $(LOCALE_SRCDIR)
-endif # ! relativesrcdir
-
-MERGE_FILE = $(LOCALE_SRCDIR)/$(1)
 MERGE_RELATIVE_FILE = $(call EXPAND_LOCALE_SRCDIR,$(2))/$(1)
 
 # Enable verbose logs when not using `make -s`

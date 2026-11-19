@@ -79,6 +79,11 @@ class nsMenuItemX final : public nsChangeObserver,
   nsIContent* Content() { return mContent; }
   NSMenuItem* NativeNSMenuItem() { return mNativeMenuItem; }
 
+  // Mirrors a shortcut the user assigned to this item in System Settings into
+  // the XUL key element, or takes it back out. AppKit applies such shortcuts
+  // once the native item is in a menu, so this runs after insertion.
+  void CopyUserKeyEquivalentToKeyElement();
+
   void Dump(uint32_t aIndent) const;
 
  protected:

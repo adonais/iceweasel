@@ -13,7 +13,7 @@ import {
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { escapeRegExp } from "./search-helpers.mjs";
 import { escapeHtmlEntities } from "./helpers.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 
 const NOW_THRESHOLD_MS = 91000;

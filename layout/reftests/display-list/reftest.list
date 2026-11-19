@@ -17,6 +17,7 @@ skip-if(useDrawSnapshot) == retained-dl-async-scrolled-1.html retained-dl-async-
 skip-if(useDrawSnapshot) == retained-dl-remove-for-ancestor-change-1.html retained-dl-remove-for-ancestor-change-1-ref.html
 skip-if(useDrawSnapshot) == retained-dl-scroll-out-of-view-1.html retained-dl-scroll-out-of-view-1-ref.html
 skip-if(useDrawSnapshot) == retained-dl-opacity-animation-on-ib-split.html retained-dl-opacity-animation-on-ib-split-ref.html
+skip-if(useDrawSnapshot) == retained-dl-top-layer-fixed-pos-cb-1.html retained-dl-top-layer-fixed-pos-cb-1-ref.html
 skip-if(useDrawSnapshot) == 1544948-1.html 1544948-1-ref.html
 
 skip  == reuse-sc-style-change-1.html reuse-sc-style-change-1-ref.html

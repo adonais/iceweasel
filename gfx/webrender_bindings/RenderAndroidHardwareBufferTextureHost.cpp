@@ -51,15 +51,14 @@ bool RenderAndroidHardwareBufferTextureHost::EnsureLockable() {
     const auto& gle = gl::GLContextEGL::Cast(mGL);
     const auto& egl = gle->mEgl;
 
+    // eglCreateSyncKHR takes ownership of the fd even on failure.
+    // Release it here to avoid closing the fd again.
     const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
-                              fenceFd.get(), LOCAL_EGL_NONE};
+                              fenceFd.release(), LOCAL_EGL_NONE};
 
     EGLSync sync =
         egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
     if (sync) {
-      // Release fd here, since it is owned by EGLSync
-      (void)fenceFd.release();
-
       if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
         egl->fWaitSync(sync, 0);
       } else {
@@ -146,7 +145,7 @@ void RenderAndroidHardwareBufferTextureHost::DeleteTextureHandle() {
   if (!mTextureHandle) {
     return;
   }
-  MOZ_ASSERT(mGL);
+  MOZ_RELEASE_ASSERT(mGL);
   // Deferred destruction may run with a different GL context current.
   if (mGL->MakeCurrent()) {
     mGL->fDeleteTextures(1, &mTextureHandle);
@@ -158,7 +157,7 @@ void RenderAndroidHardwareBufferTextureHost::DestroyEGLImage() {
   if (!mEGLImage) {
     return;
   }
-  MOZ_ASSERT(mGL);
+  MOZ_RELEASE_ASSERT(mGL);
   const auto& gle = gl::GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;
   egl->fDestroyImage(mEGLImage);

@@ -38,11 +38,11 @@ parent:
                  TextureFlags aTextureFlags, ContentParentId aContentId, uint64_t aSerial);
 
   /**
-   * Returns the TextureFactoryIdentifier of a compositor used by the given
-   * content process, if there is one.
+   * Returns a TextureFactoryIdentifier describing the compositors of the
+   * process.
    */
-  async GetTextureFactoryIdentifier(ContentParentId aContentId)
-      returns (TextureFactoryIdentifier? aIdentifier);
+  async GetTextureFactoryIdentifier()
+      returns (TextureFactoryIdentifier aIdentifier);
 };
 
 } // namespace

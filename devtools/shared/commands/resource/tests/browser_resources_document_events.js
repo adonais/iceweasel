@@ -315,6 +315,17 @@ async function testBfCacheNavigation() {
   );
   const [willNavigateEvent, loadingEvent, interactiveEvent, completeEvent] =
     documentEvents;
+  is(
+    loadingEvent.activatedFromNavigationalPrefetch,
+    false,
+    "A regular document is not marked as a prefetch activation"
+  );
+  is(
+    interactiveEvent.activatedFromNavigationalPrefetch,
+    undefined,
+    "Only dom-loading reports prefetch activation"
+  );
+  is(completeEvent.activatedFromNavigationalPrefetch, undefined);
 
   is(
     willNavigateEvent.name,

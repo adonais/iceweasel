@@ -76,8 +76,10 @@ DocumentChannel::DocumentChannel(nsDocShellLoadState* aLoadState,
       mIsEmbeddingBlockedError(aIsEmbeddingBlockedError) {
   LOG(("DocumentChannel ctor [this=%p, uri=%s]", this,
        aLoadState->URI()->GetSpecOrDefault().get()));
+  // This also creates gHttpHandler, which DocumentChannelChild::AsyncOpen uses.
   RefPtr<nsHttpHandler> handler = nsHttpHandler::GetInstance();
-  mChannelId = handler->NewChannelId();
+  mChannelId = aLoadState->GetSpeculativeChannelId().valueOrFrom(
+      [&] { return handler->NewChannelId(); });
 }
 
 DocumentChannel::~DocumentChannel() = default;

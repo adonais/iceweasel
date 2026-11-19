@@ -6,8 +6,10 @@ package org.mozilla.fenix.browser
 
 import androidx.compose.ui.semantics.Role
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import mozilla.components.browser.state.state.BrowserState
@@ -42,14 +44,18 @@ class DesktopSiteMenuItemProvider(
     private val requestDesktopSite: SessionUseCases.RequestDesktopSiteUseCase,
     scope: CoroutineScope,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        browserStore.stateFlow
-            .map { it.desktopSiteItem() }
-            .stateIn(
-                scope = scope,
-                started = SharingStarted.Eagerly,
-                initialValue = browserStore.state.desktopSiteItem(),
-            )
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM)).asStateFlow()
+        } else {
+            browserStore.stateFlow
+                .map { listOfNotNull(it.desktopSiteItem()) }
+                .stateIn(
+                    scope = scope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = listOfNotNull(browserStore.state.desktopSiteItem()),
+                )
+        }
 
     override fun handles(event: MenuEvent) =
         event == MenuAction.RequestDesktopSite || event == MenuAction.RequestMobileSite
@@ -66,6 +72,48 @@ class DesktopSiteMenuItemProvider(
         target.browserSessionFrom(this)?.content?.let {
             DesktopSiteStatus(isDesktopMode = it.desktopMode, isPdf = it.isPdf).toMenuItem()
         }
+
+    private fun DesktopSiteStatus.toMenuItem(): MenuItem {
+        val state =
+            when {
+                isPdf -> MenuItemState.DISABLED
+                isDesktopMode -> MenuItemState.ACTIVE
+                else -> MenuItemState.DEFAULT
+            }
+
+        return DEFAULT_MENU_ITEM.copy(
+            onClickEvent =
+                when (isDesktopMode) {
+                    true -> MenuAction.RequestMobileSite
+                    else -> MenuAction.RequestDesktopSite
+                },
+            badge =
+                when (state) {
+                    MenuItemState.DISABLED -> null
+                    else ->
+                        MenuItemBadge(
+                            text =
+                                Text.Resource(
+                                    when (isDesktopMode) {
+                                        true -> R.string.browser_feature_desktop_site_on
+                                        else -> R.string.browser_feature_desktop_site_off
+                                    }
+                                ),
+                            state = state,
+                        )
+                },
+            state = state,
+        )
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_desktop_site)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_device_desktop_24),
+                role = Role.Switch,
+            )
+    }
 }
 
 /**
@@ -78,39 +126,3 @@ private data class DesktopSiteStatus(
     val isDesktopMode: Boolean,
     val isPdf: Boolean,
 )
-
-private fun DesktopSiteStatus.toMenuItem(): MenuItem {
-    val state =
-        when {
-            isPdf -> MenuItemState.DISABLED
-            isDesktopMode -> MenuItemState.ACTIVE
-            else -> MenuItemState.DEFAULT
-        }
-
-    return StandardMenuItem(
-        title = MenuItemTitle(Text.Resource(R.string.browser_menu_desktop_site)),
-        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_device_desktop_24),
-        onClickEvent =
-            when (isDesktopMode) {
-                true -> MenuAction.RequestMobileSite
-                else -> MenuAction.RequestDesktopSite
-            },
-        badge =
-            when (state) {
-                MenuItemState.DISABLED -> null
-                else ->
-                    MenuItemBadge(
-                        text =
-                            Text.Resource(
-                                when (isDesktopMode) {
-                                    true -> R.string.browser_feature_desktop_site_on
-                                    else -> R.string.browser_feature_desktop_site_off
-                                }
-                            ),
-                        state = state,
-                    )
-            },
-        role = Role.Switch,
-        state = state,
-    )
-}

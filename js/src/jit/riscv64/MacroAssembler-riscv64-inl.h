@@ -891,6 +891,13 @@ void MacroAssembler::branchTestDoubleTruthy(bool b, FloatRegister value,
   DoubleCondition cond = b ? DoubleNotEqual : DoubleEqualOrUnordered;
   branchDouble(cond, value, fpscratch, label);
 }
+void MacroAssembler::branchTestGCThing(Condition cond, Register tag,
+                                       Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  ma_b(tag, ImmTagSignExt(JS::detail::ValueLowerInclGCThingTag), label,
+       (cond == Equal) ? AboveOrEqual : Below, ShortJump);
+}
+
 void MacroAssembler::branchTestGCThing(Condition cond, const Address& address,
                                        Label* label) {
   branchTestGCThingImpl(cond, address, label);
@@ -1001,6 +1008,40 @@ void MacroAssembler::branchTestNull(Condition cond, const ValueOperand& value,
   Register scratch2 = temps.Acquire();
   splitSignExtTag(value, scratch2);
   branchTestNull(cond, scratch2, label);
+}
+
+void MacroAssembler::branchTestNullOrUndefined(Condition cond, Register tag,
+                                               Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  constexpr unsigned kShift = JS::detail::ValueNullOrUndefinedShift;
+  constexpr int32_t kNegBits = static_cast<int32_t>(
+      (UINT32_C(1) << (64 - kShift)) - JS::detail::ValueNullOrUndefinedBits);
+  static_assert(is_int12(kNegBits), "the negated bits must fit imm12");
+
+  UseScratchRegisterScope temps(this);
+  const Register scratch2 = temps.Acquire();
+  srai(scratch2, tag, JS::detail::ValueNullOrUndefinedShift - JSVAL_TAG_SHIFT);
+  addi(scratch2, scratch2, kNegBits);
+  ma_b(scratch2, scratch2, label, cond == Equal ? Zero : NonZero, ShortJump);
+}
+
+void MacroAssembler::branchTestNullOrUndefined(Condition cond,
+                                               const ValueOperand& value,
+                                               Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  constexpr unsigned kShift = JS::detail::ValueNullOrUndefinedShift;
+  constexpr uint32_t kBits = JS::detail::ValueNullOrUndefinedBits;
+  static_assert(kBits >> (64 - kShift - 1) == 1,
+                "the shared bits must sign-extend to a negative value");
+  constexpr int32_t kNegBits =
+      static_cast<int32_t>((UINT32_C(1) << (64 - kShift)) - kBits);
+  static_assert(is_int12(kNegBits), "the negated bits must fit a imm12");
+
+  UseScratchRegisterScope temps(this);
+  const Register scratch2 = temps.Acquire();
+  srai(scratch2, value.valueReg(), kShift);
+  addi(scratch2, scratch2, kNegBits);
+  ma_b(scratch2, scratch2, label, cond == Equal ? Zero : NonZero, ShortJump);
 }
 
 void MacroAssembler::branchTestNull(Condition cond, const Address& address,

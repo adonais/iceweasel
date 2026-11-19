@@ -30,7 +30,6 @@ using base::BooleanHistogram;
 using base::CountHistogram;
 using base::FlagHistogram;
 using base::LinearHistogram;
-using mozilla::MakeUnique;
 using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
 using mozilla::UniquePtr;
@@ -1132,7 +1131,7 @@ KeyedHistogram::KeyedHistogram(HistogramID id, const HistogramInfo& info,
     for (uint32_t i = 0; i < info.store_count; i++) {
       auto store = nsDependentCString(
           &gHistogramStringTable[gHistogramStoresTable[info.store_index + i]]);
-      mStorage.InsertOrUpdate(store, MakeUnique<KeyedHistogramMapType>());
+      mStorage.InsertOrUpdate(store, std::make_unique<KeyedHistogramMapType>());
     }
   }
 }

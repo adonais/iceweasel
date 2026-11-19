@@ -32,6 +32,11 @@ SimpleTest.waitForFocus(function () {
   }
 
   var win = Services.wm.getMostRecentWindow("navigator:browser");
+  // New profiles open maximized on small screens, see onBeforeInitialXULLayout.
+  var wasMaximized = win.windowState == win.STATE_MAXIMIZED;
+  if (wasMaximized) {
+    win.restore();
+  }
   var oldWidth = win.outerWidth, oldHeight = win.outerHeight;
   win.maximize();
   var newWidth = win.outerWidth, newHeight = win.outerHeight;
@@ -44,6 +49,9 @@ SimpleTest.waitForFocus(function () {
   win.restore();
   is(win.outerWidth, oldWidth, "restored window has wrong width");
   is(win.outerHeight, oldHeight, "restored window has wrong height");
+  if (wasMaximized) {
+    win.maximize();
+  }
   SimpleTest.finish();
 });
 

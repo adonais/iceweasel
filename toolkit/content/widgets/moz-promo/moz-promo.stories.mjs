@@ -38,6 +38,7 @@ export default {
     imageWidth: {
       options: ["small", "large"],
       control: { type: "radio" },
+      if: { arg: "hasImageSlot", truthy: false },
     },
     imageAlignment: {
       options: ["start", "end", "center"],
@@ -46,6 +47,10 @@ export default {
     imageDisplay: {
       options: ["cover", "padded"],
       control: { type: "radio" },
+      if: { arg: "hasImageSlot", truthy: false },
+    },
+    imageSrc: {
+      if: { arg: "hasImageSlot", truthy: false },
     },
     dismissable: {
       control: { type: "boolean" },
@@ -77,6 +82,7 @@ const Template = ({
   imageDisplay,
   hasActionButton,
   hasSupportLink,
+  hasImageSlot,
   dismissable,
 }) => html`
   <div style="width: 500px">
@@ -97,6 +103,16 @@ const Template = ({
       ${hasSupportLink
         ? html` <a is="moz-support-link" slot="support-link" href="#"></a>`
         : ""}
+      ${hasImageSlot
+        ? html`<div
+            slot="image"
+            style="display: flex; gap: var(--space-medium);"
+          >
+            <img src="chrome://global/skin/icons/info.svg" alt="" />
+            <img src="chrome://global/skin/icons/settings.svg" alt="" />
+            <img src="chrome://global/skin/icons/search-glass.svg" alt="" />
+          </div>`
+        : ""}
     </moz-promo>
   </div>
 `;
@@ -107,6 +123,7 @@ Default.args = {
   l10nId: "moz-promo-message",
   hasActionButton: false,
   hasSupportLink: false,
+  hasImageSlot: false,
   dismissable: false,
 };
 
@@ -178,6 +195,13 @@ export const SlottedSupportLink = Template.bind({});
 SlottedSupportLink.args = {
   ...Default.args,
   hasSupportLink: true,
+};
+
+export const SlottedImage = Template.bind({});
+SlottedImage.args = {
+  ...Default.args,
+  imageAlignment: "center",
+  hasImageSlot: true,
 };
 
 export const Dismissable = Template.bind({});

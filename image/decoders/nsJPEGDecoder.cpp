@@ -261,6 +261,13 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
       if (WantsFrameCount()) {
         PostFrameCount(/* aFrameCount */ 1);
       }
+      if (mInfo.data_precision == 8 && !mInfo.arith_code) {
+        if (mInfo.jpeg_color_space == JCS_GRAYSCALE) {
+          PostEmbeddableJPEGColorSpace(EmbeddableJPEGColorSpace::Grayscale);
+        } else if (mInfo.jpeg_color_space == JCS_YCbCr) {
+          PostEmbeddableJPEGColorSpace(EmbeddableJPEGColorSpace::YCbCr);
+        }
+      }
       if (HasError()) {
         // Setting the size led to an error.
         mState = JPEG_ERROR;

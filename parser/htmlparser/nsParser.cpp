@@ -508,7 +508,7 @@ nsParser::Parse(nsIURI* aURL) {
 
   MOZ_ASSERT(!mParserContext, "We expect mParserContext to be null.");
 
-  mParserContext = MakeUnique<CParserContext>(aURL, mCommand);
+  mParserContext = std::make_unique<CParserContext>(aURL, mCommand);
 
   return NS_OK;
 }
@@ -546,7 +546,7 @@ nsresult nsParser::Parse(const nsAString& aSourceBuffer, bool aLastCall) {
   if (!mParserContext) {
     // Only make a new context if we don't have one.
     mParserContext =
-        MakeUnique<CParserContext>(mUnusedInput, mCommand, aLastCall);
+        std::make_unique<CParserContext>(mUnusedInput, mCommand, aLastCall);
 
     mUnusedInput.Truncate();
   } else if (aLastCall) {

@@ -1815,12 +1815,22 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleTabKeyPressInTable(
     return Err(NS_ERROR_FAILURE);
   }
   // ...so that we can ask for first cell in that row...
-  cell = GetTableCellElementAt(*tblElement, row, 0);
+  const RefPtr<Element> firstEditableRow = [&]() -> Element* {
+    uint32_t colIndex = 0;
+    while (Element* cellInTheRow = GetMaybeGeneratedTableCellElementAt(
+               *tblElement, row, colIndex++)) {
+      if (HTMLEditUtils::IsSimplyEditableNode(*cellInTheRow)) {
+        MOZ_ASSERT(!cellInTheRow->IsInNativeAnonymousSubtree());
+        return cellInTheRow;
+      }
+    }
+    return nullptr;
+  }();
   // ...and then set selection there.  (Note that normally you should use
   // CollapseSelectionToDeepestNonTableFirstChild(), but we know cell is an
   // empty new cell, so this works fine)
-  if (cell) {
-    nsresult rv = CollapseSelectionToStartOf(*cell);
+  if (firstEditableRow) {
+    nsresult rv = CollapseSelectionToStartOf(*firstEditableRow);
     if (NS_FAILED(rv)) {
       NS_WARNING("EditorBase::CollapseSelectionToStartOf() failed");
       return Err(NS_ERROR_EDITOR_DESTROYED);
@@ -4447,7 +4457,11 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
 
   const WSScanResult nextThing =
       HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-          aNextOrAfterModifiedPoint, aPaddingForEmptyBlock, aEditingHost);
+          aNextOrAfterModifiedPoint,
+          aPaddingForEmptyBlock == PaddingForEmptyBlock::Unnecessary
+              ? TreatAsUnnecessaryLineBreak{LineBreakFor::PaddingForEmptyBlock}
+              : TreatAsUnnecessaryLineBreak{},
+          aEditingHost);
   const Maybe<EditorLineBreak>& unnecessaryLineBreak =
       nextThing.MaybeIgnoredLineBreak();
   if (unnecessaryLineBreak.isNothing() ||
@@ -5351,7 +5365,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   AutoTArray<SavedRange, 10> savedRanges;
   for (SelectionType selectionType : kPresentSelectionTypes) {
     SavedRange savingRange;
-    savingRange.mSelection = GetSelection(selectionType);
+    savingRange.mSelection = GetExistingSelection(selectionType);
     if (NS_WARN_IF(!savingRange.mSelection &&
                    selectionType == SelectionType::eNormal)) {
       return Err(NS_ERROR_FAILURE);
@@ -5705,7 +5719,7 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
     EditorRawDOMPoint atNodeToKeep(&aContentToKeep);
     for (SelectionType selectionType : kPresentSelectionTypes) {
       SavedRange savingRange;
-      savingRange.mSelection = GetSelection(selectionType);
+      savingRange.mSelection = GetExistingSelection(selectionType);
       if (selectionType == SelectionType::eNormal) {
         if (NS_WARN_IF(!savingRange.mSelection)) {
           return NS_ERROR_FAILURE;
@@ -7311,7 +7325,7 @@ Element* HTMLEditor::ComputeEditingHostInternal(
     return body && body->IsEditable() ? body : nullptr;
   }
 
-  if (NS_WARN_IF(!content)) {
+  if (!content) {
     return nullptr;
   }
 

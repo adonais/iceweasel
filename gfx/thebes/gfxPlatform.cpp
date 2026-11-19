@@ -589,6 +589,12 @@ static void WebRenderUploadThresholdPrefChangeCallback(const char* aPrefName,
   gfxVars::SetWebRenderBatchedUploadThreshold(value);
 }
 
+static void WebRenderPathAaSamplesPrefChangeCallback(const char* aPrefName,
+                                                     void*) {
+  gfxVars::SetWebRenderPathAaSamples(
+      StaticPrefs::gfx_webrender_path_aa_samples());
+}
+
 static uint32_t GetSkiaGlyphCacheSize() {
   // Only increase font cache size on non-android to save memory.
 #if !defined(MOZ_WIDGET_ANDROID)
@@ -839,10 +845,6 @@ void gfxPlatform::Init() {
     nsAutoCString path;
     Preferences::GetCString("layers.windowrecording.path", path);
     gfxVars::SetLayersWindowRecordingPath(path);
-
-    if (gFxREmbedded) {
-      gfxVars::SetFxREmbedded(true);
-    }
   }
 
   // Drop a note in the crash report if we end up forcing an option that could
@@ -1901,16 +1903,14 @@ DeviceColor gfxPlatform::TransformPixel(const sRGBColor& in,
   return DeviceColor(in.r, in.g, in.b, in.a);
 }
 
-nsTArray<uint8_t> gfxPlatform::GetPrefCMSOutputProfileData() {
-  const auto mirror = StaticPrefs::gfx_color_management_display_profile();
-  const auto& fname = *mirror;
-  if (fname == "") {
+static nsTArray<uint8_t> ReadCMSProfileFile(const nsCString& aPath) {
+  if (aPath.IsEmpty()) {
     return nsTArray<uint8_t>();
   }
 
   void* mem = nullptr;
   size_t size = 0;
-  qcms_data_from_path(fname.get(), &mem, &size);
+  qcms_data_from_path(aPath.get(), &mem, &size);
 
   nsTArray<uint8_t> result;
 
@@ -1920,6 +1920,11 @@ nsTArray<uint8_t> gfxPlatform::GetPrefCMSOutputProfileData() {
   }
 
   return result;
+}
+
+nsTArray<uint8_t> gfxPlatform::GetPrefCMSOutputProfileData() {
+  const auto mirror = StaticPrefs::gfx_color_management_display_profile();
+  return ReadCMSProfileFile(*mirror);
 }
 
 Maybe<nsTArray<uint8_t>>& gfxPlatform::GetCMSOutputProfileData() {
@@ -1956,6 +1961,10 @@ void gfxPlatform::InitializeCMS() {
   }
 
   if (!mCMSOutputProfile) {
+    {
+      const auto mirror = StaticPrefs::gfx_color_management_display_profile();
+      mCMSOutputProfilePrefAtStartup = *mirror;
+    }
     nsTArray<uint8_t> outputProfileData = GetPlatformCMSOutputProfileData();
     if (outputProfileData.IsEmpty()) {
       mCMSOutputProfileStatus = CMSOutputProfileStatus::NoProfileData;
@@ -1995,6 +2004,9 @@ void gfxPlatform::InitializeCMS() {
      bug 444661 for details. */
   qcms_profile_precache_output_transform(mCMSOutputProfile);
 
+  // Create the p3 profile
+  mCMSDisplayP3Profile = qcms_profile_displayP3();
+
   // Create the RGB transform.
   mCMSRGBTransform =
       qcms_transform_create(mCMSsRGBProfile, QCMS_DATA_RGB_8, mCMSOutputProfile,
@@ -2014,6 +2026,16 @@ void gfxPlatform::InitializeCMS() {
   mCMSBGRATransform = qcms_transform_create(mCMSsRGBProfile, QCMS_DATA_BGRA_8,
                                             mCMSOutputProfile, QCMS_DATA_BGRA_8,
                                             QCMS_INTENT_PERCEPTUAL);
+
+  // Create the RGB -> P3 transform
+  mCMSRGBP3Transform = qcms_transform_create(
+      mCMSsRGBProfile, QCMS_DATA_RGBA_8, mCMSDisplayP3Profile, QCMS_DATA_RGBA_8,
+      QCMS_INTENT_DEFAULT);
+
+  // Create the P3 -> RGB transform
+  mCMSP3RGBTransform = qcms_transform_create(
+      mCMSDisplayP3Profile, QCMS_DATA_RGBA_8, mCMSsRGBProfile, QCMS_DATA_RGBA_8,
+      QCMS_INTENT_DEFAULT);
 
   // FIXME: We only enable iccv4 after we create the platform profile, to
   // wallpaper over bug 1697787.
@@ -2066,6 +2088,14 @@ void gfxPlatform::ShutdownCMS() {
     qcms_transform_release(mCMSBGRATransform);
     mCMSBGRATransform = nullptr;
   }
+  if (mCMSRGBP3Transform) {
+    qcms_transform_release(mCMSRGBP3Transform);
+    mCMSRGBP3Transform = nullptr;
+  }
+  if (mCMSP3RGBTransform) {
+    qcms_transform_release(mCMSP3RGBTransform);
+    mCMSP3RGBTransform = nullptr;
+  }
   if (mCMSOutputProfile) {
     // handle the aliased case
     if (mCMSsRGBProfile == mCMSOutputProfile) {
@@ -2078,6 +2108,10 @@ void gfxPlatform::ShutdownCMS() {
   if (mCMSsRGBProfile) {
     qcms_profile_release(mCMSsRGBProfile);
     mCMSsRGBProfile = nullptr;
+  }
+  if (mCMSDisplayP3Profile) {
+    qcms_profile_release(mCMSDisplayP3Profile);
+    mCMSDisplayP3Profile = nullptr;
   }
 
   // Reset the state variables
@@ -2520,6 +2554,11 @@ void gfxPlatform::InitWebRenderConfig() {
       WebRenderUploadThresholdPrefChangeCallback,
       nsDependentCString(
           StaticPrefs::GetPrefName_gfx_webrender_batched_upload_threshold()));
+
+  Preferences::RegisterCallbackAndCall(
+      WebRenderPathAaSamplesPrefChangeCallback,
+      nsDependentCString(
+          StaticPrefs::GetPrefName_gfx_webrender_path_aa_samples()));
 
   if (WebRenderResourcePathOverride()) {
     CrashReporter::RecordAnnotationBool(
@@ -3171,6 +3210,18 @@ void gfxPlatform::InitWebGPUConfig() {
   nsCString failureId;
 
   FeatureState& featureWebGPU = gfxConfig::GetFeature(Feature::WEBGPU);
+
+#ifndef HAVE_64BIT_BUILD
+  featureWebGPU.DisableByDefault(
+      FeatureStatus::Unavailable,
+      "WebGPU is only available on 64-bit architectures.",
+      "FEATURE_WEBGPU_NOT_64_BIT"_ns);
+#elif defined(WIN32) && !defined(MOZ_DXCOMPILER)
+  featureWebGPU.DisableByDefault(
+      FeatureStatus::Unavailable,
+      "DirectX Shader Compiler (DXC) unavailable in this build",
+      "FEATURE_WEBGPU_NO_DXC"_ns);
+#else
   featureWebGPU.EnableByDefault();
 
   if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
@@ -3189,6 +3240,12 @@ void gfxPlatform::InitWebGPUConfig() {
                             failureId);
     }
   }
+#endif
+
+  // Don't check `dom.webgpu.enabled` or `dom.webgpu.service-workers-enabled`
+  // here. We would like those prefs to take effect without restarting Firefox,
+  // and these checks only run at startup. Instead, the prefs should be checked
+  // along with `gfxVars::AllowWebGPU`.
 
   gfxVars::SetAllowWebGPU(featureWebGPU.IsEnabled());
 
@@ -3641,6 +3698,60 @@ void gfxPlatform::GetCMSSupportInfo(mozilla::widget::InfoObject& aObj) {
     return "unknown";
   }();
   aObj.DefineProperty("CMSOutputProfileInUse", inUse);
+
+  if (mCMSOutputProfileStatus != CMSOutputProfileStatus::Uninitialized &&
+      mCMSOutputProfileStatus != CMSOutputProfileStatus::ForcedSRGB) {
+    // The platform code uses the pref's file whenever it can be read, and falls
+    // back to the system profile otherwise. Only a loaded profile's data is
+    // kept, so that is the only case we can verify.
+    nsAutoCString source;
+    if (mCMSOutputProfilePrefAtStartup.IsEmpty()) {
+      source.AssignLiteral("system");
+    } else if (mCMSOutputProfileStatus ==
+               CMSOutputProfileStatus::NoProfileData) {
+      source.AssignLiteral(
+          "none (could not read gfx.color_management.display_profile or get "
+          "system profile)");
+    } else if (mCMSOutputProfileStatus == CMSOutputProfileStatus::ParseFailed ||
+               mCMSOutputProfileStatus == CMSOutputProfileStatus::Bogus) {
+      source.AssignLiteral(
+          "gfx.color_management.display_profile or system (unknown because "
+          "the profile was rejected)");
+    } else if (mCMSOutputProfileStatus == CMSOutputProfileStatus::Loaded) {
+      MOZ_ASSERT(mCMSOutputProfileData.isSome());
+      if (mCMSOutputProfileData.isSome() &&
+          ReadCMSProfileFile(mCMSOutputProfilePrefAtStartup) ==
+              *mCMSOutputProfileData) {
+        source.AssignLiteral("gfx.color_management.display_profile");
+      } else {
+        source.AssignLiteral(
+            "system, unless the gfx.color_management.display_profile file "
+            "changed since startup (it does not match the profile in use)");
+      }
+    }
+    bool prefChanged;
+    {
+      const auto mirror = StaticPrefs::gfx_color_management_display_profile();
+      prefChanged = mCMSOutputProfilePrefAtStartup != *mirror;
+    }
+    if (prefChanged) {
+      source.AppendLiteral(
+          " (gfx.color_management.display_profile pref changed since startup, "
+          "restart to apply)");
+    }
+    aObj.DefineProperty("CMSOutputProfileSource", source.get());
+  }
+
+  if (mCMSOutputProfileStatus == CMSOutputProfileStatus::Loaded) {
+    size_t descriptionLength = 0;
+    const char* description =
+        qcms_profile_get_description(mCMSOutputProfile, &descriptionLength);
+    if (description) {
+      aObj.DefineProperty(
+          "CMSOutputProfileDescription",
+          NS_ConvertUTF8toUTF16(Span(description, descriptionLength)));
+    }
+  }
 
   qcms_CIE_xyYTRIPLE primaries;
   qcms_CIE_xyY white;

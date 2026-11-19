@@ -582,10 +582,8 @@ static nsresult AddDataEntryInternal(
     gDataTable = new nsClassHashtable<nsCStringHashKey, mozilla::dom::DataInfo>;
   }
 
-  mozilla::UniquePtr<mozilla::dom::DataInfo> info =
-      mozilla::MakeUnique<mozilla::dom::DataInfo>(
-          aBlobImpl, aPrincipal, nullOriginEntry, aPartitionKey,
-          aContentParentId);
+  auto info = std::make_unique<mozilla::dom::DataInfo>(
+      aBlobImpl, aPrincipal, nullOriginEntry, aPartitionKey, aContentParentId);
   BlobURLsReporter::GetJSStackForBlob(info.get());
 
   gDataTable->InsertOrUpdate(aURI, std::move(info));

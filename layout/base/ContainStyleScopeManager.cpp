@@ -78,7 +78,8 @@ ContainStyleScope& ContainStyleScopeManager::GetOrCreateScopeForContent(
     auto& parentScope =
         GetOrCreateScopeForContent(aContent->GetFlattenedTreeParent());
     return *mScopes.InsertOrUpdate(
-        aContent, MakeUnique<ContainStyleScope>(this, &parentScope, aContent));
+        aContent,
+        std::make_unique<ContainStyleScope>(this, &parentScope, aContent));
   }
 
   return GetRootScope();

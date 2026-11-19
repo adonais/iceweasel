@@ -550,7 +550,7 @@ BEGIN_TEST(testBufferAllocator_API) {
       void* alloc = AllocBuffer(zone, requestSize, nurseryOwned);
       CHECK(alloc);
 
-      CHECK(IsBufferAlloc(alloc));
+      CHECK(IsGCPointerBufferAlloc(alloc));
       size_t actualSize = GetAllocSize(zone, alloc);
       CHECK(actualSize == GetGoodAllocSize(requestSize));
 
@@ -638,7 +638,7 @@ BEGIN_TEST(testBufferAllocator_realloc) {
       // Realloc nullptr.
       void* alloc = ReallocBuffer(zone, nullptr, requestSize, nurseryOwned);
       CHECK(alloc);
-      CHECK(IsBufferAlloc(alloc));
+      CHECK(IsGCPointerBufferAlloc(alloc));
       CHECK(IsNurseryOwned(zone, alloc) == nurseryOwned);
       size_t actualSize = GetAllocSize(zone, alloc);
       WriteAllocData(alloc, actualSize);
@@ -771,7 +771,7 @@ BEGIN_TEST(testBufferAllocator_alignedAlloc) {
     CHECK(alloc);
     CHECK((uintptr_t(alloc) % requestSize) == 0);
 
-    CHECK(IsBufferAlloc(alloc));
+    CHECK(IsGCPointerBufferAlloc(alloc));
     size_t actualSize = GetAllocSize(zone, alloc);
     CHECK(actualSize == requestSize);
 
@@ -840,16 +840,18 @@ BEGIN_TEST(testBufferAllocator_predicatesOnOtherAllocs) {
   CHECK(buffer);
   CHECK(!isMalloced);
   CHECK(cx->nursery().isInside(buffer));
-  CHECK(!IsBufferAlloc(buffer));
+  CHECK(!IsGCPointerBufferAlloc(buffer));
 
   RootedObject obj(cx, NewPlainObject(cx));
   CHECK(obj);
   CHECK(IsInsideNursery(obj));
-  CHECK(!IsBufferAlloc(obj));
+  CHECK(!IsGCPointerBufferAlloc(obj));
 
   JS_GC(cx);
   CHECK(!IsInsideNursery(obj));
-  CHECK(!IsBufferAlloc(obj));
+  CHECK(!IsGCPointerBufferAlloc(obj));
+
+  // IsGCPointerBufferAlloc is not guaranteed to be correct for malloced memory.
 
   return true;
 }
@@ -973,7 +975,8 @@ END_TEST(testBufferAllocator_stress)
 // A JS object that holds a buffer-allocated vector.
 class VectorObject : public NativeObject {
  public:
-  using VectorT = GCVector<HeapPtr<JSObject*>, 0, BufferAllocPolicy>;
+  using VectorT =
+      BufferAllocated<GCVector<HeapPtr<JSObject*>, 0, BufferAllocPolicy>>;
 
   enum { VectorSlot, SlotCount };
 
@@ -998,16 +1001,20 @@ class VectorObject : public NativeObject {
     return static_cast<VectorT*>(getFixedSlot(VectorSlot).toPrivate());
   }
 
+  size_t length() { return getVector()->length(); }
+
+  JSObject* get(size_t index) { return (*getVector())[index]; }
+
   void check(bool expectNurseryOwned) {
     MOZ_RELEASE_ASSERT(IsInsideNursery(this) == expectNurseryOwned);
 
     VectorT* vector = getVector();
-    MOZ_RELEASE_ASSERT(IsBufferAlloc(vector));
+    MOZ_RELEASE_ASSERT(IsGCPointerBufferAlloc(vector));
     MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), vector) == expectNurseryOwned);
 
     if (!vector->empty()) {
       void* ptr = vector->begin();
-      MOZ_RELEASE_ASSERT(IsBufferAlloc(ptr));
+      MOZ_RELEASE_ASSERT(IsGCPointerBufferAlloc(ptr));
       MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), ptr) == expectNurseryOwned);
     }
   }
@@ -1077,13 +1084,15 @@ bool testVector(bool allocInNursery, bool dieInNursery) {
     obj->check(nurseryOwned);
   }
 
-  auto& vector = *obj->getVector();
-  vector.shrinkTo(ElementCount / 2);
-  vector.shrinkStorageToFit();
-  CHECK(vector.length() == ElementCount / 2);
+  {
+    auto& vector = *obj->getVector();
+    vector.shrinkTo(ElementCount / 2);
+    vector.shrinkStorageToFit();
+    CHECK(vector.length() == ElementCount / 2);
+  }
 
-  for (size_t i = 0; i < vector.length(); i++) {
-    Rooted<PlainObject*> element(cx, &vector[i]->as<PlainObject>());
+  for (size_t i = 0; i < obj->length() / 2; i++) {
+    Rooted<PlainObject*> element(cx, &obj->get(i)->as<PlainObject>());
     RootedValue value(cx);
     CHECK(JS_GetProperty(cx, element, "i", &value));
     CHECK(value.toInt32() == int32_t(i));
@@ -1122,9 +1131,9 @@ END_TEST(testBufferAllocPolicy_vector)
 // A JS object that holds a buffer-allocated hash set.
 class HashSetObject : public NativeObject {
  public:
-  using HashSetT =
+  using HashSetT = BufferAllocated<
       GCHashSet<HeapPtr<JSObject*>, StableCellHasher<HeapPtr<JSObject*>>,
-                BufferAllocPolicy>;
+                BufferAllocPolicy>>;
 
   enum { HashSetSlot, SlotCount };
 
@@ -1153,7 +1162,7 @@ class HashSetObject : public NativeObject {
     MOZ_RELEASE_ASSERT(IsInsideNursery(this) == expectNurseryOwned);
 
     HashSetT* set = getSet();
-    MOZ_RELEASE_ASSERT(IsBufferAlloc(set));
+    MOZ_RELEASE_ASSERT(IsGCPointerBufferAlloc(set));
     MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), set) == expectNurseryOwned);
   }
 

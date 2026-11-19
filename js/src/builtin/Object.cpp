@@ -2383,6 +2383,10 @@ static JSObject* CreateObjectPrototype(JSContext* cx, JSProtoKey key) {
              "should have been able to make a fresh Object.prototype's "
              "[[Prototype]] immutable");
 
+  if (!JSObject::setHasRealmFuseProperty(cx, objectProto)) {
+    return nullptr;
+  }
+
   return objectProto;
 }
 

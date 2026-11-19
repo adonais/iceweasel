@@ -21,7 +21,7 @@ function waitForFaviconMessage(isTabIcon = undefined, expectedURL = undefined) {
       }
 
       // If requested filter out loads of the wrong kind of icon.
-      if (isTabIcon != undefined && isTabIcon == data.isRichIcon) {
+      if (isTabIcon != undefined && isTabIcon != data.isTabIcon) {
         return;
       }
 

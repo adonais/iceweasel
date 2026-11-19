@@ -159,8 +159,15 @@ add_task(async function test_show_selection_menu() {
   Services.prefs.setBoolPref("browser.highlightToSearch.search.enabled", false);
 
   Assert.ok(
+    GenAI.canShowSelectionMenu,
+    "Menu still shows for Copy when the chatbot is blocked and Search is off"
+  );
+
+  Services.prefs.setBoolPref("browser.highlightToSearch.copy.enabled", false);
+
+  Assert.ok(
     !GenAI.canShowSelectionMenu,
-    "No menu when neither the chatbot nor search has an action to offer"
+    "No menu when the chatbot, search and copy have nothing to offer"
   );
 
   Services.prefs.setBoolPref("browser.ml.chat.enabled", true);

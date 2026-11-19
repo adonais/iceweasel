@@ -64,7 +64,7 @@ class OverflowChangedTracker {
     }
     auto* entriesForDepth = mEntries[depth].get();
     if (!entriesForDepth) {
-      mEntries[depth] = MakeUnique<FrameChangedMap>();
+      mEntries[depth] = std::make_unique<FrameChangedMap>();
       entriesForDepth = mEntries[depth].get();
     }
     if (auto p = entriesForDepth->lookupForAdd(aFrame)) {
@@ -160,7 +160,7 @@ class OverflowChangedTracker {
               parent->FrameMaintainsOverflow()) {
             auto* entriesForParentDepth = mEntries.LastElement().get();
             if (!entriesForParentDepth) {
-              mEntries.LastElement() = MakeUnique<FrameChangedMap>();
+              mEntries.LastElement() = std::make_unique<FrameChangedMap>();
               entriesForParentDepth = mEntries.LastElement().get();
             }
             if (auto p = entriesForParentDepth->lookupForAdd(parent)) {

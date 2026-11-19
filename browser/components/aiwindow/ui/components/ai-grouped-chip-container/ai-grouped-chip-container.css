@@ -33,13 +33,13 @@
     transition: gap 0.3s ease-in-out;
   }
 
-  @media not forced-colors {
+  @media not (forced-colors) {
     background-color: var(--ai-grouped-chip-container-bg-color);
+    color: var(--button-text-color);
   }
 }
 
 .grouped-chips__label {
-  color: var(--text-color);
   font-size: var(--font-size-small);
   margin-inline-start: var(--space-xsmall);
 }
@@ -80,7 +80,7 @@
 }
 
 .grouped-chips__arrow-icon {
-  fill: var(--icon-color);
+  fill: currentColor;
   -moz-context-properties: fill;
 
   .grouped-chips[data-is-smartwindow-panel-open] & {

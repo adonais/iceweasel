@@ -205,6 +205,7 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "writing-mode",
       "-moz-image-decoding",
       "-moz-line-scroll-amount",
+      "-x-text-scale",
     ]),
   ],
   [
@@ -451,6 +452,7 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "stop-opacity",
       "stroke-miterlimit",
       "stroke-opacity",
+      "text-autospace-size",
       "zoom",
       "-moz-window-opacity",
     ]),

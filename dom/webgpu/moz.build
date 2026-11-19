@@ -57,6 +57,7 @@ h_and_cpp = [
     "ValidationError",
 ]
 EXPORTS.mozilla.webgpu += [x + ".h" for x in h_and_cpp]
+EXPORTS.mozilla.webgpu += ["FrontBufferSnapshot.h"]
 UNIFIED_SOURCES += [x + ".cpp" for x in h_and_cpp]
 
 IPDL_SOURCES += [

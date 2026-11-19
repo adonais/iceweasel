@@ -79,6 +79,10 @@
 ; GMP clearkey plugin
 @BINPATH@/@DLL_PREFIX@clearkey@DLL_SUFFIX@
 
+; ANGLE GLES rendering library
+@BINPATH@/@DLL_PREFIX@EGL_angle@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@GLESv2_angle@DLL_SUFFIX@
+
 #ifdef MOZ_APPSERVICES_IN_TREE
 [appservices destdir="appservices/lib/@ANDROID_CPU_ARCH@"]
 ; Process the megazord during packaging, but don't put it in `geckoview/lib`.

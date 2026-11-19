@@ -10,6 +10,8 @@ run-if = [
 
 ["test_page_reducer.js"]
 
+["test_speculative_loads_reducer.js"]
+
 ["test_ui_reducer.js"]
 
 ["test_workers_reducer.js"]

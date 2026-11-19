@@ -8,7 +8,7 @@ const { MockRegistrar } = ChromeUtils.importESModule(
   "resource://testing-common/MockRegistrar.sys.mjs"
 );
 const { ChromePushSubscription } = ChromeUtils.importESModule(
-  "resource://gre/modules/ChromePushSubscription.sys.mjs"
+  "moz-src:///dom/push/ChromePushSubscription.sys.mjs"
 );
 
 let pushService = Cc["@mozilla.org/push/Service;1"].getService(

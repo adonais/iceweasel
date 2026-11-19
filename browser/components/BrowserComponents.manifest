@@ -200,16 +200,19 @@ category browser-idle-startup moz-src:///browser/components/places/PlacesUIUtils
 category browser-idle-startup resource:///modules/BuiltInThemes.sys.mjs BuiltInThemes.ensureBuiltInThemes
 category browser-idle-startup resource://gre/modules/RFPHelper.sys.mjs RFPHelper.init
 category browser-idle-startup resource://gre/modules/Blocklist.sys.mjs Blocklist.loadBlocklistAsync
-category browser-idle-startup resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs RemoteSecuritySettings.init
+category browser-idle-startup moz-src:///security/manager/ssl/RemoteSecuritySettings.sys.mjs RemoteSecuritySettings.init
 category browser-idle-startup moz-src:///browser/components/tabbrowser/TabUnloader.sys.mjs TabUnloader.init
+category browser-idle-startup moz-src:///browser/components/tabbrowser/TabGroupsToolbarButton.sys.mjs TabGroupsToolbarButton.init
 category browser-idle-startup moz-src:///browser/components/genai/GenAI.sys.mjs GenAI.init
 category browser-idle-startup moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs QuickSuggest.init
+category browser-idle-startup moz-src:///browser/components/urlbar/QuickActionsLoaderMessaging.sys.mjs QuickActionsLoaderMessaging.init
 category browser-idle-startup moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.init
 category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 category browser-idle-startup moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs ContextualIdentityService.load
 category browser-idle-startup resource:///modules/asrouter/ASRouterTargeting.sys.mjs WebPushTargeting.init
+category browser-idle-startup resource://autofill/FormAutofillParent.sys.mjs FormAutofillStatus.loadStorageOnIdle
 #ifdef MOZ_UPDATER
 category browser-idle-startup resource://gre/modules/UpdateListener.sys.mjs UpdateListener.maybeShowUnsupportedNotification
 category browser-idle-startup resource:///modules/UpdatePolicyEnforcer.sys.mjs UpdatePolicyEnforcer.registerObservers

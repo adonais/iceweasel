@@ -155,7 +155,7 @@
   "text/color/deemphasized": {
     "light": "color-mix(in srgb, currentColor 69%, transparent)",
     "dark": "color-mix(in srgb, currentColor 69%, transparent)",
-    "forcedColors": "inherit"
+    "forcedColors": "currentColor"
   },
   "text/color/disabled": {
     "light": "color-mix(in srgb, currentColor 40%, transparent)",
@@ -585,23 +585,23 @@
     "forcedColors": "{HCM Theme$GrayText}"
   },
   "button/text/color/ghost": {
-    "light": "inherit",
-    "dark": "inherit",
+    "light": "currentColor",
+    "dark": "currentColor",
     "forcedColors": "{Theme$button/text/color}"
   },
   "button/text/color/ghost/active": {
-    "light": "inherit",
-    "dark": "inherit",
+    "light": "currentColor",
+    "dark": "currentColor",
     "forcedColors": "{Theme$button/text/color/active}"
   },
   "button/text/color/ghost/disabled": {
-    "light": "inherit",
-    "dark": "inherit",
-    "forcedColors": "inherit"
+    "light": "currentColor",
+    "dark": "currentColor",
+    "forcedColors": "{Theme$button/text/color/disabled}"
   },
   "button/text/color/ghost/hover": {
-    "light": "inherit",
-    "dark": "inherit",
+    "light": "currentColor",
+    "dark": "currentColor",
     "forcedColors": "{Theme$button/text/color/hover}"
   },
   "button/text/color/ghost/selected": {
@@ -1030,8 +1030,8 @@
     "forcedColors": "transparent"
   },
   "toolbarbutton/icon/fill": {
-    "light": "{Colors$color/gray/70}",
-    "dark": "{Colors$color/gray/0}",
+    "light": "color-mix(in srgb, currentColor 69%, transparent)",
+    "dark": "currentColor",
     "forcedColors": "{Theme$button/text/color}"
   },
   "toolbarbutton/icon/fill/hover": {

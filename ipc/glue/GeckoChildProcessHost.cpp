@@ -55,7 +55,6 @@
 #include "mozilla/ipc/IOThread.h"
 #include "mozilla/ipc/EnvironmentMap.h"
 #include "mozilla/ipc/NodeController.h"
-#include "mozilla/net/SocketProcessHost.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
@@ -380,7 +379,7 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
       mChildID(++gChildCounter),
       mIsFileContent(aIsFileContent),
       mMonitor("mozilla.ipc.GeckoChildProcessHost.mMonitor"),
-      mLaunchOptions(MakeUnique<base::LaunchOptions>()),
+      mLaunchOptions(std::make_unique<base::LaunchOptions>()),
       mInitialChannelId(nsID::GenerateUUID()),
       mProcessState(CREATING_CHANNEL),
 #ifdef XP_WIN
@@ -692,7 +691,7 @@ bool ResolveChildProcessPathFromPlistForTesting(
 // static
 mozilla::BinPathType BaseProcessLauncher::GetPathToBinary(
     FilePath& exePath, GeckoProcessType processType,
-    SandboxingKind utilitySandbox) {
+    [[maybe_unused]] SandboxingKind utilitySandbox) {
   exePath = {};
   BinPathType pathType = XRE_GetChildProcBinPathType(processType);
 
@@ -1009,7 +1008,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
   return true;
 }
 
-void GeckoChildProcessHost::OnProcessLaunchError(const LaunchError aError) {
+void GeckoChildProcessHost::OnProcessLaunchError(const LaunchError /*aError*/) {
   MonitorAutoLock lock(mMonitor);
   mProcessState = PROCESS_ERROR;
   lock.Notify();
@@ -1155,8 +1154,8 @@ class IPCLaunchThreadObserver final : public nsIObserver {
 NS_IMPL_ISUPPORTS(IPCLaunchThreadObserver, nsIObserver, nsISupports)
 
 NS_IMETHODIMP
-IPCLaunchThreadObserver::Observe(nsISupports* aSubject, const char* aTopic,
-                                 const char16_t* aData) {
+IPCLaunchThreadObserver::Observe(nsISupports* /*aSubject*/, const char* aTopic,
+                                 const char16_t* /*aData*/) {
   MOZ_RELEASE_ASSERT(strcmp(aTopic, "xpcom-shutdown-threads") == 0);
 
   nsCOMPtr<nsIThread> thread;
@@ -1197,7 +1196,7 @@ void
 AddAppDirToCommandLine(CommandLine& aCmdLine, nsIFile* aAppDir)
 #else
 AddAppDirToCommandLine(geckoargs::ChildProcessArgs& aCmdLine,
-                       nsIFile* aAppDir, nsIFile* aProfileDir)
+                       nsIFile* aAppDir, [[maybe_unused]] nsIFile* aProfileDir)
 #endif
 {
   // Content processes need access to application resources, so pass
@@ -1560,8 +1559,6 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
   ExtensionKitProcess::Kind kind = ExtensionKitProcess::Kind::WebContent;
   if (mProcessType == GeckoProcessType_GPU) {
     kind = ExtensionKitProcess::Kind::Rendering;
-  } else if (mProcessType == GeckoProcessType_Socket) {
-    kind = ExtensionKitProcess::Kind::Networking;
   }
 
   DarwinObjectPtr<xpc_object_t> bootstrapMessage =
@@ -1757,7 +1754,7 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   }
 
 #  if defined(MOZ_SANDBOX)
-  mResults.mSandboxBroker = MakeUnique<SandboxBroker>();
+  mResults.mSandboxBroker = std::make_unique<SandboxBroker>();
 
   // XXX: Bug 1124167: We should get rid of the process specific logic for
   // sandboxing in this class at some point. Unfortunately it will take a bit
@@ -1814,15 +1811,6 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
         if (NS_WARN_IF(
                 !mResults.mSandboxBroker->SetSecurityLevelForRDDProcess())) {
           return Err(LaunchError("SetSecurityLevelForRDDProcess"));
-        }
-        mUseSandbox = true;
-      }
-      break;
-    case GeckoProcessType_Socket:
-      if (!PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS_SANDBOX")) {
-        if (NS_WARN_IF(
-                !mResults.mSandboxBroker->SetSecurityLevelForSocketProcess())) {
-          return Err(LaunchError("SetSecurityLevelForSocketProcess"));
         }
         mUseSandbox = true;
       }
@@ -2041,9 +2029,6 @@ bool GeckoChildProcessHost::StartMacSandbox(int aArgc, char** aArgv,
       break;
     case GeckoProcessType_RDD:
       sandboxType = RDDProcessHost::GetMacSandboxType();
-      break;
-    case GeckoProcessType_Socket:
-      sandboxType = net::SocketProcessHost::GetMacSandboxType();
       break;
     case GeckoProcessType_GMPlugin:
       sandboxType = gmp::GMPProcessParent::GetMacSandboxType();

@@ -414,15 +414,13 @@ add_task(async function test_async_resolve_with_trr_server() {
   Services.dns.clearCache(true);
   setModeAndURI(5, "doh?responseIP=2.2.2.2");
 
-  // When dns is resolved in socket process, we can't set |expectEarlyFail| to true.
-  let inSocketProcess = mozinfo.socketprocess_networking;
   await new TRRDNSListener(
     "bar_with_trr3.example.com",
     undefined,
     false,
     undefined,
     `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`,
-    !inSocketProcess
+    true
   );
 
   // Call normal AsyncOpen, it will return result from the native resolver.
@@ -999,141 +997,136 @@ add_task(async function test_padding() {
   );
 });
 
-// Can't test for socket process since telemetry is captured in different process.
-add_task(
-  { skip_if: () => mozinfo.socketprocess_networking },
-  async function test_trr_pb_telemetry() {
-    setModeAndURI(Ci.nsIDNSService.MODE_TRRONLY, `doh`);
-    Services.dns.clearCache(true);
-    Services.fog.initializeFOG();
-    Services.fog.testResetFOG();
-    await new TRRDNSListener("testytest.com", { expectedAnswer: "5.5.5.5" });
+add_task(async function test_trr_pb_telemetry() {
+  setModeAndURI(Ci.nsIDNSService.MODE_TRRONLY, `doh`);
+  Services.dns.clearCache(true);
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+  await new TRRDNSListener("testytest.com", { expectedAnswer: "5.5.5.5" });
 
-    Assert.equal(
-      await Glean.networking.trrRequestCount.regular.testGetValue(),
-      2
-    ); // One for IPv4 and one for IPv6.
-    Assert.equal(
-      await Glean.networking.trrRequestCount.private.testGetValue(),
-      null
-    );
+  Assert.equal(
+    await Glean.networking.trrRequestCount.regular.testGetValue(),
+    2
+  ); // One for IPv4 and one for IPv6.
+  Assert.equal(
+    await Glean.networking.trrRequestCount.private.testGetValue(),
+    null
+  );
 
-    await new TRRDNSListener("testytest.com", {
-      expectedAnswer: "5.5.5.5",
-      originAttributes: { privateBrowsingId: 1 },
-    });
+  await new TRRDNSListener("testytest.com", {
+    expectedAnswer: "5.5.5.5",
+    originAttributes: { privateBrowsingId: 1 },
+  });
 
-    Assert.equal(
-      await Glean.networking.trrRequestCount.regular.testGetValue(),
-      2
-    );
-    Assert.equal(
-      await Glean.networking.trrRequestCount.private.testGetValue(),
-      2
-    );
-    // We've made 4 TRR requests.
-    Assert.equal(
-      await Glean.networking.trrRequestSize.other.testGetValue().count,
-      4
-    );
-    Assert.equal(
-      await Glean.networking.trrResponseSize.other.testGetValue().count,
-      4
-    );
+  Assert.equal(
+    await Glean.networking.trrRequestCount.regular.testGetValue(),
+    2
+  );
+  Assert.equal(
+    await Glean.networking.trrRequestCount.private.testGetValue(),
+    2
+  );
+  // We've made 4 TRR requests. Size metrics are recorded after the lookup
+  // completes, so wait for them.
+  await TestUtils.waitForCondition(
+    () => Glean.networking.trrResponseSize.other.testGetValue()?.count == 4,
+    "Wait for all TRR response sizes to be recorded"
+  );
+  Assert.equal(
+    await Glean.networking.trrRequestSize.other.testGetValue().count,
+    4
+  );
+  Assert.equal(
+    await Glean.networking.trrResponseSize.other.testGetValue().count,
+    4
+  );
+});
+
+add_task(async function test_trr_timing_telemetry() {
+  setModeAndURI(Ci.nsIDNSService.MODE_TRRONLY, `doh`);
+  Services.dns.clearCache(true);
+
+  // Close the previous TRR connection.
+  Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  await new Promise(r => do_timeout(3000, r));
+
+  Services.fog.testResetFOG();
+  // Disable IPv6, so we only send one TRR request.
+  Services.prefs.setBoolPref("network.dns.disableIPv6", true);
+  await new TRRDNSListener("timing.com", { expectedAnswer: "5.5.5.5" });
+
+  await new Promise(r => do_timeout(100, r));
+
+  let dnsStart = await Glean.networking.trrDnsStart.other.testGetValue();
+  let dnsEnd = await Glean.networking.trrDnsEnd.other.testGetValue();
+  let tcpConnection =
+    await Glean.networking.trrTcpConnection.other.testGetValue();
+  let tlsHandshake =
+    await Glean.networking.trrTlsHandshake.other.testGetValue();
+  let openToFirstSent =
+    await Glean.networking.trrOpenToFirstSent.other.testGetValue();
+  let firstSentToLastReceived =
+    await Glean.networking.trrFirstSentToLastReceived.other.testGetValue();
+  let openToFirstReceived =
+    await Glean.networking.trrOpenToFirstReceived.other.testGetValue();
+  let completeLoad =
+    await Glean.networking.trrCompleteLoad.other.testGetValue();
+
+  info("dnsStart=" + JSON.stringify(dnsStart));
+  info("dnsEnd=" + JSON.stringify(dnsEnd));
+  info("tcpConnection=" + JSON.stringify(tcpConnection));
+  info("tlsHandshake=" + JSON.stringify(tlsHandshake));
+  info("openToFirstSent=" + JSON.stringify(openToFirstSent));
+  info("firstSentToLastReceived=" + JSON.stringify(firstSentToLastReceived));
+  info("openToFirstReceived=" + JSON.stringify(openToFirstReceived));
+  info("completeLoad=" + JSON.stringify(completeLoad));
+
+  Assert.equal(dnsStart.count, 1);
+  Assert.equal(dnsEnd.count, 1);
+  Assert.equal(tcpConnection.count, 1);
+  Assert.equal(tlsHandshake.count, 1);
+  Assert.equal(openToFirstSent.count, 1);
+  Assert.equal(firstSentToLastReceived.count, 1);
+  Assert.equal(openToFirstReceived.count, 1);
+  Assert.equal(completeLoad.count, 1);
+
+  function getValue(obj) {
+    const keys = Object.keys(obj);
+    return keys.length ? +keys[0] : 0;
   }
-);
+  Assert.greaterOrEqual(
+    getValue(openToFirstReceived.values),
+    getValue(openToFirstSent.values),
+    "openToFirstReceived >= openToFirstSent"
+  );
+  Assert.greaterOrEqual(
+    getValue(completeLoad.values),
+    getValue(openToFirstReceived.values),
+    "completeLoad >= openToFirstReceived"
+  );
+});
 
-add_task(
-  { skip_if: () => mozinfo.socketprocess_networking },
-  async function test_trr_timing_telemetry() {
-    setModeAndURI(Ci.nsIDNSService.MODE_TRRONLY, `doh`);
-    Services.dns.clearCache(true);
+add_task(async function test_trr_request_per_conn_telemetry() {
+  setModeAndURI(Ci.nsIDNSService.MODE_TRRONLY, `doh`);
+  Services.dns.clearCache(true);
 
-    // Close the previous TRR connection.
-    Services.obs.notifyObservers(null, "net:cancel-all-connections");
-    await new Promise(r => do_timeout(3000, r));
+  // Close the previous TRR connection.
+  Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  await new Promise(r => do_timeout(3000, r));
 
-    Services.fog.testResetFOG();
-    // Disable IPv6, so we only send one TRR request.
-    Services.prefs.setBoolPref("network.dns.disableIPv6", true);
-    await new TRRDNSListener("timing.com", { expectedAnswer: "5.5.5.5" });
+  Services.fog.testResetFOG();
+  Services.prefs.setBoolPref("network.dns.disableIPv6", false);
+  await new TRRDNSListener("timing.com", { expectedAnswer: "5.5.5.5" });
 
-    await new Promise(r => do_timeout(100, r));
+  // Close the TRR connection again, so trr_request_count_per_conn
+  // can be recorded.
+  Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  await new Promise(r => do_timeout(3000, r));
 
-    let dnsStart = await Glean.networking.trrDnsStart.other.testGetValue();
-    let dnsEnd = await Glean.networking.trrDnsEnd.other.testGetValue();
-    let tcpConnection =
-      await Glean.networking.trrTcpConnection.other.testGetValue();
-    let tlsHandshake =
-      await Glean.networking.trrTlsHandshake.other.testGetValue();
-    let openToFirstSent =
-      await Glean.networking.trrOpenToFirstSent.other.testGetValue();
-    let firstSentToLastReceived =
-      await Glean.networking.trrFirstSentToLastReceived.other.testGetValue();
-    let openToFirstReceived =
-      await Glean.networking.trrOpenToFirstReceived.other.testGetValue();
-    let completeLoad =
-      await Glean.networking.trrCompleteLoad.other.testGetValue();
+  let requestPerConn =
+    await Glean.networking.trrRequestCountPerConn.other.testGetValue();
 
-    info("dnsStart=" + JSON.stringify(dnsStart));
-    info("dnsEnd=" + JSON.stringify(dnsEnd));
-    info("tcpConnection=" + JSON.stringify(tcpConnection));
-    info("tlsHandshake=" + JSON.stringify(tlsHandshake));
-    info("openToFirstSent=" + JSON.stringify(openToFirstSent));
-    info("firstSentToLastReceived=" + JSON.stringify(firstSentToLastReceived));
-    info("openToFirstReceived=" + JSON.stringify(openToFirstReceived));
-    info("completeLoad=" + JSON.stringify(completeLoad));
+  info("requestPerConn=" + JSON.stringify(requestPerConn));
 
-    Assert.equal(dnsStart.count, 1);
-    Assert.equal(dnsEnd.count, 1);
-    Assert.equal(tcpConnection.count, 1);
-    Assert.equal(tlsHandshake.count, 1);
-    Assert.equal(openToFirstSent.count, 1);
-    Assert.equal(firstSentToLastReceived.count, 1);
-    Assert.equal(openToFirstReceived.count, 1);
-    Assert.equal(completeLoad.count, 1);
-
-    function getValue(obj) {
-      const keys = Object.keys(obj);
-      return keys.length ? +keys[0] : 0;
-    }
-    Assert.greaterOrEqual(
-      getValue(openToFirstReceived.values),
-      getValue(openToFirstSent.values),
-      "openToFirstReceived >= openToFirstSent"
-    );
-    Assert.greaterOrEqual(
-      getValue(completeLoad.values),
-      getValue(openToFirstReceived.values),
-      "completeLoad >= openToFirstReceived"
-    );
-  }
-);
-
-add_task(
-  { skip_if: () => mozinfo.socketprocess_networking },
-  async function test_trr_request_per_conn_telemetry() {
-    setModeAndURI(Ci.nsIDNSService.MODE_TRRONLY, `doh`);
-    Services.dns.clearCache(true);
-
-    // Close the previous TRR connection.
-    Services.obs.notifyObservers(null, "net:cancel-all-connections");
-    await new Promise(r => do_timeout(3000, r));
-
-    Services.fog.testResetFOG();
-    Services.prefs.setBoolPref("network.dns.disableIPv6", false);
-    await new TRRDNSListener("timing.com", { expectedAnswer: "5.5.5.5" });
-
-    // Close the TRR connection again, so trr_request_count_per_conn
-    // can be recorded.
-    Services.obs.notifyObservers(null, "net:cancel-all-connections");
-    await new Promise(r => do_timeout(3000, r));
-
-    let requestPerConn =
-      await Glean.networking.trrRequestCountPerConn.other.testGetValue();
-
-    info("requestPerConn=" + JSON.stringify(requestPerConn));
-
-    Assert.greaterOrEqual(requestPerConn, 2);
-  }
-);
+  Assert.greaterOrEqual(requestPerConn, 2);
+});

@@ -5,7 +5,7 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
-  PushService: "resource://gre/modules/PushService.sys.mjs",
+  PushService: "moz-src:///dom/push/PushService.sys.mjs",
 });
 
 // BroadcastService is exported for test purposes.

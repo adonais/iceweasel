@@ -28,7 +28,6 @@ support-files = [
   "../browser-general/video.webm",
 ]
 skip-if = [
-  "asan",
   "verify", # bug 1997129
 ]
 

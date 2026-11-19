@@ -7,6 +7,7 @@ import os
 import re
 import signal
 import subprocess
+import tempfile
 
 from mozlint import result
 
@@ -33,22 +34,28 @@ def get_ruff_version(binary):
 
 
 def run_process(cmd, log):
-    orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
-    signal.signal(signal.SIGINT, orig)
-    try:
-        stdout, stderr = proc.communicate()
-        proc.wait()
-        for line in stderr.splitlines():
-            if line:
-                log.debug(line)
-    except KeyboardInterrupt:
-        proc.kill()
-        return "", -1
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".args") as fh:
+        fh.write("\n".join(cmd[1:]))
+        fh.flush()
+        orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        proc = subprocess.Popen(
+            [cmd[0], f"@{fh.name}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        signal.signal(signal.SIGINT, orig)
+        try:
+            stdout, stderr = proc.communicate()
+            proc.wait()
+            for line in stderr.splitlines():
+                if line:
+                    log.debug(line)
+        except KeyboardInterrupt:
+            proc.kill()
+            return "", -1
 
-    return stdout, proc.returncode
+        return stdout, proc.returncode
 
 
 def lint(paths, config, log, **lintargs):

@@ -62,7 +62,8 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () =>
 const NULL = Symbol("NULL");
 
 // Apply here only the configurations that will be initialized in the parent process,
-// except from `viewport-override` which is handled separately.
+// except from `device-pixel-ratio-override` and `viewport-override` which are
+// handled separately.
 const CONFIGURATIONS_TO_APPLY = [
   SessionDataCategory.DownloadBehaviorOverride,
   SessionDataCategory.LocaleOverride,
@@ -141,19 +142,14 @@ class _ConfigurationModule extends RootBiDiModule {
         }
       );
 
-      if (!sessionData.length) {
+      // setViewport replaces the previous item, so there is at most one item
+      // per user context. Its value is null if the viewport was reset.
+      const viewport = sessionData[0]?.value;
+      if (!viewport) {
         return;
       }
 
-      const lastViewportItem = sessionData.findLast(
-        item => item.value.viewport !== undefined
-      );
-
-      if (!lastViewportItem || !lastViewportItem.value.viewport) {
-        return;
-      }
-
-      const { height, width } = lastViewportItem.value.viewport;
+      const { height, width } = viewport;
       subject.style.setProperty("height", height + "px");
       subject.style.setProperty("width", width + "px");
 
@@ -223,15 +219,13 @@ class _ConfigurationModule extends RootBiDiModule {
     for (const { category, contextDescriptor, value } of sessionDataItems) {
       if (
         !CONFIGURATIONS_TO_APPLY.includes(category) &&
-        category !== SessionDataCategory.ViewportOverride
+        category !== SessionDataCategory.DevicePixelRatioOverride
       ) {
         continue;
       }
 
-      if (category === SessionDataCategory.ViewportOverride) {
-        if (value.devicePixelRatio !== undefined) {
-          devicePixelRatioOverride = value.devicePixelRatio;
-        }
+      if (category === SessionDataCategory.DevicePixelRatioOverride) {
+        devicePixelRatioOverride = value;
       } else {
         configurationMap[category][contextDescriptor.type] = value;
       }

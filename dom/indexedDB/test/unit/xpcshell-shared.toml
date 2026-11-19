@@ -3,9 +3,6 @@
 ["test_abort_deleted_index.js"]
 
 ["test_abort_deleted_objectStore.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug && socketprocess_networking",
-]
 
 ["test_add_put.js"]
 
@@ -67,18 +64,11 @@ skip-if = [
 ["test_globalObjects_other.js"]
 skip-if = [
   "os == 'android'", # bug 1079278
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug && socketprocess_networking",
 ]
 
 ["test_globalObjects_xpc.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug && socketprocess_networking",
-]
 
 ["test_global_data.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug && socketprocess_networking",
-]
 
 ["test_index_empty_keyPath.js"]
 

@@ -348,7 +348,7 @@ nsUrlClassifierStreamUpdater::DownloadUpdates(
   urlUtil->GetTelemetryProvider(tables.SafeElementAt(0, ""_ns),
                                 mTelemetryProvider);
 
-  mCurrentRequest = MakeUnique<UpdateRequest>();
+  mCurrentRequest = std::make_unique<UpdateRequest>();
   BuildUpdateRequest(aRequestTables, aRequestPayload, aRequestQueryParameters,
                      aIsPostRequest, aProvider, aUpdateUrl, aSuccessCallback,
                      aUpdateErrorCallback, aDownloadErrorCallback,
@@ -696,7 +696,7 @@ nsUrlClassifierStreamUpdater::OnStartRequest(nsIRequest* request) {
 }
 
 NS_IMETHODIMP
-nsUrlClassifierStreamUpdater::OnDataAvailable(nsIRequest* request,
+nsUrlClassifierStreamUpdater::OnDataAvailable(nsIRequest* /*request*/,
                                               nsIInputStream* aIStream,
                                               uint64_t aSourceOffset,
                                               uint32_t aLength) {
@@ -732,7 +732,7 @@ nsUrlClassifierStreamUpdater::OnDataAvailable(nsIRequest* request,
 }
 
 NS_IMETHODIMP
-nsUrlClassifierStreamUpdater::OnStopRequest(nsIRequest* request,
+nsUrlClassifierStreamUpdater::OnStopRequest(nsIRequest* /*request*/,
                                             nsresult aStatus) {
   if (!mDBService) return NS_ERROR_NOT_INITIALIZED;
 
@@ -797,8 +797,9 @@ nsUrlClassifierStreamUpdater::OnStopRequest(nsIRequest* request,
 // nsIObserver implementation
 
 NS_IMETHODIMP
-nsUrlClassifierStreamUpdater::Observe(nsISupports* aSubject, const char* aTopic,
-                                      const char16_t* aData) {
+nsUrlClassifierStreamUpdater::Observe(nsISupports* /*aSubject*/,
+                                      const char* aTopic,
+                                      const char16_t* /*aData*/) {
   if (nsCRT::strcmp(aTopic, gQuitApplicationMessage) == 0) {
     if (mIsUpdating && mChannel) {
       LOG(("Cancel download"));

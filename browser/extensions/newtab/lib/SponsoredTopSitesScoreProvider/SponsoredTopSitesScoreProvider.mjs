@@ -265,7 +265,6 @@ export class _SponsoredTopSitesScoreProvider {
   async getScores() {
     const scores = (await this._cache?.get(SCORES_CACHE_KEY)) ?? {};
     if (this._rs && !this._refreshPromise) {
-      // @ts-expect-error The locks global is not declared in tools/@types yet.
       this._refreshPromise = locks
         .request(SCORES_LOCK, () => this._refreshScores())
         .catch(e => lazy.logConsole.debug("Refresh failed", e))
@@ -287,7 +286,6 @@ export class _SponsoredTopSitesScoreProvider {
     if (!this._cache) {
       return;
     }
-    // @ts-expect-error The locks global is not declared in tools/@types yet.
     await locks.request(SCORES_LOCK, async () => {
       const data = await this._cache.get();
       const hasData =

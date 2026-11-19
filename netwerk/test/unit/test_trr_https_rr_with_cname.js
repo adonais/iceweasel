@@ -8,10 +8,6 @@ var { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
 let h2Port;
 let h3Port;
 let h3EchConfig;
@@ -35,11 +31,6 @@ function channelOpenPromise(chan, flags) {
 }
 
 add_setup(async function setup() {
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
-
   Services.prefs.setBoolPref("network.dns.port_prefixed_qname_https_rr", false);
 
   // Happy Eyeballs does not support check CNAME for now.

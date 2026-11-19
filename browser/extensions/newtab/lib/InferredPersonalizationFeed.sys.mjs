@@ -50,6 +50,10 @@ const PREF_DEBUG_OVERRIDE =
 const DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY =
   "debug_override_interest_values";
 
+// set once a client starts on location interests, so the sticky experiment
+// branch keeps using them after the client starts clicking
+const LOCATION_INIT_STARTED_KEY = "location_init_started";
+
 function timeMSToSeconds(timeMS) {
   return Math.round(timeMS / 1000);
 }
@@ -327,10 +331,9 @@ export class InferredPersonalizationFeed {
     this.locationPrivateInferredInterests = null;
     this.shouldUseLocationVector = false;
     // experiment gate, we only ping for location if in experiment
-    if (
-      !this.store.getState().Prefs.values?.trainhopConfig?.locationInitInferred
-        ?.enabled
-    ) {
+    const locationConfig =
+      this.store.getState().Prefs.values?.trainhopConfig?.locationInitInferred;
+    if (!locationConfig?.enabled) {
       return;
     }
 
@@ -348,6 +351,16 @@ export class InferredPersonalizationFeed {
       hasContentClicks,
       coarseInferredInterests
     );
+    // sticky: a client that started on location interests keeps them, even
+    // after clicking. clients that already had clicks never start on them.
+    if (locationConfig.sticky && this.cache) {
+      const started = await this.cache.get(LOCATION_INIT_STARTED_KEY);
+      if (this.shouldUseLocationVector && !started) {
+        await this.cache.set(LOCATION_INIT_STARTED_KEY, true);
+      } else if (!this.shouldUseLocationVector && started) {
+        this.shouldUseLocationVector = true;
+      }
+    }
     if (!this.shouldUseLocationVector) {
       // early return if we aren't going to use the vector anyway
       return;
@@ -437,6 +450,7 @@ export class InferredPersonalizationFeed {
       applyPostProcessing: isClickModel,
     });
 
+    /** @type {{[key: string]: any}} */
     let result = interests;
     if (
       model.modelType === MODEL_TYPE.CLICK_IMP_PAIR ||

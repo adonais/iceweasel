@@ -108,6 +108,7 @@ if (!build_with_mozilla) {
       "portal_request_response.h",
       "scoped_glib.cc",
       "scoped_glib.h",
+      "screencast_persist_mode.h",
       "xdg_desktop_portal_utils.cc",
       "xdg_desktop_portal_utils.h",
       "xdg_session_details.h",

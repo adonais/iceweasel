@@ -271,7 +271,7 @@ add_task(async function test_getRecentChats_filters_sensitive_info() {
       createdDate: fixedNow - 2_000,
       ordinal: 2,
       role: MESSAGE_ROLE.USER,
-      content: { type: "text", body: "My phone is 555-123-4567" },
+      content: { type: "text", body: "My phone is 202-555-0123" },
       pageUrl: "https://example.com/phone",
       turnIndex: 0,
     }),
@@ -318,7 +318,7 @@ add_task(async function test_getRecentChats_filters_sensitive_info() {
       "Should filter message with email in content"
     );
     Assert.ok(
-      !contentTexts.some(c => c.includes("555-123-4567")),
+      !contentTexts.some(c => c.includes("202-555-0123")),
       "Should filter message with phone number in content"
     );
   } finally {

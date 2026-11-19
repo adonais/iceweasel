@@ -107,4 +107,26 @@ void WebTransportChild::CloseAll() {
   return IPC_OK();
 }
 
+void WebTransportChild::SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+    const Nullable<uint16_t>& aValue) {
+  if (CanSend()) {
+    Maybe<uint16_t> maybeValue;
+    if (!aValue.IsNull()) {
+      maybeValue = Some(aValue.Value());
+    }
+    SendSetAnticipatedConcurrentIncomingUnidirectionalStreams(maybeValue);
+  }
+}
+
+void WebTransportChild::SetAnticipatedConcurrentIncomingBidirectionalStreams(
+    const Nullable<uint16_t>& aValue) {
+  if (CanSend()) {
+    Maybe<uint16_t> maybeValue;
+    if (!aValue.IsNull()) {
+      maybeValue = Some(aValue.Value());
+    }
+    SendSetAnticipatedConcurrentIncomingBidirectionalStreams(maybeValue);
+  }
+}
+
 }  // namespace mozilla::dom

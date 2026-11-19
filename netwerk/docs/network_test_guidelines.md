@@ -47,12 +47,6 @@ There are also {doc}`web-platform-tests </web-platform/index>` that is related t
   ./mach xpcshell-test netwerk/test/unit/test_http3.js
   ```
 
-  Run with socket process enabled:
-
-  ```console
-  ./mach xpcshell-test --setpref="network.http.network_access_on_socket_process.enabled=true" netwerk/test/unit/test_http3.js
-  ```
-
   We usually debug networking issues with `HTTP Logging`. To enable logging when running tests:
 
   ```console

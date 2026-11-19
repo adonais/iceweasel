@@ -178,10 +178,7 @@ function fetchNoThrow(url) {
 add_task(
   {
     skip_if: () =>
-      AppConstants.MOZ_SYSTEM_NSS ||
-      !gServerStarted ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+      AppConstants.MOZ_SYSTEM_NSS || !gServerStarted || mozinfo.os == "android",
   },
   async function test_he_0rtt_alpn_switch_dead_winner_blocks_host() {
     // Warm-up (IPv4-only) sets mUsingSpdy=true on the CM entry and issues an
@@ -284,10 +281,7 @@ add_task(
 add_task(
   {
     skip_if: () =>
-      AppConstants.MOZ_SYSTEM_NSS ||
-      !gServerStarted ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+      AppConstants.MOZ_SYSTEM_NSS || !gServerStarted || mozinfo.os == "android",
   },
   async function test_he_0rtt_h2_txn_gone_closes_connection() {
     const host = "0rtt-reject-h2.example.com";
@@ -368,10 +362,7 @@ add_task(
 add_task(
   {
     skip_if: () =>
-      AppConstants.MOZ_SYSTEM_NSS ||
-      !gServerStarted ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+      AppConstants.MOZ_SYSTEM_NSS || !gServerStarted || mozinfo.os == "android",
   },
   async function test_he_0rtt_h1_reject_txn_gone_no_assert() {
     // Regression test for bug 2047480: an H1 0-RTT request whose real

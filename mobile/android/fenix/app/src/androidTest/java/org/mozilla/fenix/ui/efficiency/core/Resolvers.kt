@@ -4,12 +4,14 @@
 
 package org.mozilla.fenix.ui.efficiency.core
 
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionCollection
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasAnyChild
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
@@ -143,7 +145,10 @@ object Resolvers {
             }
         return when (locator.extra) {
             Extra.TEXT -> base and hasText(second)
+            Extra.TEXT_SUBSTRING -> base and hasText(second, substring = true)
             Extra.DESC_SUBSTRING -> base and hasContentDescription(second, substring = true)
+            Extra.STATE_DESC -> base and SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, second)
+            Extra.CLICKABLE_WITHOUT_TEXT -> base and hasClickAction() and !hasText(second)
             Extra.EDITABLE_UNDER -> hasSetTextAction() and hasAnyAncestor(hasTestTag(selector.value))
             else -> base
         }

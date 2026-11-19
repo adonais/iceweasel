@@ -92,7 +92,6 @@ skip-if = [
 
 ["test_conformance__rendering__many-draw-calls.html"]
 skip-if = [
-  "debug",
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
 ]
 

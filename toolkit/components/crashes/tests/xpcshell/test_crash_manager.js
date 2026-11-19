@@ -97,7 +97,6 @@ add_task(async function test_process_ping() {
   Assert.ok(m.isPingAllowed("gpu"));
   Assert.ok(m.isPingAllowed("main"));
   Assert.ok(m.isPingAllowed("rdd"));
-  Assert.ok(m.isPingAllowed("socket"));
   Assert.ok(m.isPingAllowed("utility"));
   Assert.ok(m.isPingAllowed("vr"));
 });
@@ -556,12 +555,6 @@ add_task(async function test_addCrash() {
     "rdd-crash",
     DUMMY_DATE
   );
-  await m.addCrash(
-    m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_SOCKET],
-    m.CRASH_TYPE_CRASH,
-    "socket-crash",
-    DUMMY_DATE
-  );
 
   await m.addCrash(
     m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT],
@@ -577,7 +570,7 @@ add_task(async function test_addCrash() {
   );
 
   crashes = await m.getCrashes();
-  Assert.equal(crashes.length, 10);
+  Assert.equal(crashes.length, 9);
 
   let map = new Map(crashes.map(crash => [crash.id, crash]));
 
@@ -699,22 +692,6 @@ add_task(async function test_addCrash() {
   Assert.ok(
     crash.isOfType(
       m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_RDD],
-      m.CRASH_TYPE_CRASH
-    )
-  );
-
-  crash = map.get("socket-crash");
-  Assert.ok(!!crash);
-  Assert.equal(crash.crashDate, DUMMY_DATE);
-  Assert.equal(
-    crash.type,
-    m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_SOCKET] +
-      "-" +
-      m.CRASH_TYPE_CRASH
-  );
-  Assert.ok(
-    crash.isOfType(
-      m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_SOCKET],
       m.CRASH_TYPE_CRASH
     )
   );

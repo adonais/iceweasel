@@ -153,7 +153,7 @@ static UniquePtr<char[]> getUnpackedLibraryName(const char* libraryName) {
 
   size_t len = strlen(libdir) + 1 /* path separator */ + strlen(libraryName) +
                1; /* null terminator */
-  auto file = MakeUnique<char[]>(len);
+  auto file = std::make_unique<char[]>(len);
   snprintf(file.get(), len, "%s/%s", libdir, libraryName);
   return file;
 }

@@ -41,7 +41,6 @@
       - 1proc
       - msix
       - no-fission
-      - socketprocess
       - xorigin
 
 # android isolated-process

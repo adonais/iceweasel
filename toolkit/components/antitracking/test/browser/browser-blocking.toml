@@ -40,14 +40,8 @@ support-files = [
 ]
 
 ["browser_blockingCookies.js"]
-skip-if = [
-  "socketprocess_networking",
-]
 
 ["browser_blockingDOMCache.js"]
-skip-if = [
-  "socketprocess_networking",
-]
 
 ["browser_blockingIndexedDb.js"]
 

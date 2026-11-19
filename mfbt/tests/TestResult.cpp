@@ -590,13 +590,11 @@ static void AndThenTest() {
 
 using UniqueResult = Result<UniquePtr<int>, const char*>;
 
-static UniqueResult UniqueTask() { return mozilla::MakeUnique<int>(3); }
+static UniqueResult UniqueTask() { return std::make_unique<int>(3); }
 static UniqueResult UniqueTaskError() { return Err("bad"); }
 
 using UniqueErrorResult = Result<int, UniquePtr<int>>;
-static UniqueErrorResult UniqueError() {
-  return Err(mozilla::MakeUnique<int>(4));
-}
+static UniqueErrorResult UniqueError() { return Err(std::make_unique<int>(4)); }
 
 static Result<Ok, UniquePtr<int>> TryUniqueErrorResult() {
   MOZ_TRY(UniqueError());
@@ -617,14 +615,14 @@ static void UniquePtrTest() {
   {
     auto err = UniqueTaskError();
     MOZ_RELEASE_ASSERT(err.isErr());
-    auto ptr = err.unwrapOr(mozilla::MakeUnique<int>(4));
+    auto ptr = err.unwrapOr(std::make_unique<int>(4));
     MOZ_RELEASE_ASSERT(ptr);
     MOZ_RELEASE_ASSERT(*ptr == 4);
   }
 
   {
     auto result = UniqueTaskError();
-    result = UniqueResult(mozilla::MakeUnique<int>(6));
+    result = UniqueResult(std::make_unique<int>(6));
     MOZ_RELEASE_ASSERT(result.isOk());
     MOZ_RELEASE_ASSERT(result.inspect() && *result.inspect() == 6);
   }

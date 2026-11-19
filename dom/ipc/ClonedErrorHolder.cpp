@@ -373,6 +373,8 @@ bool ClonedErrorHolder::ToErrorValue(JSContext* aCx,
 bool ClonedErrorHolder::Holder::ReadStructuredCloneInternal(
     JSContext* aCx, JSStructuredCloneReader* aReader) {
   uint32_t length;
+  // The written version is no longer used, but is still read to preserve the
+  // on-wire format of already-persisted data.
   uint32_t version;
   if (!JS_ReadUint32Pair(aReader, &length, &version)) {
     return false;
@@ -391,8 +393,8 @@ bool ClonedErrorHolder::Holder::ReadStructuredCloneInternal(
     length -= size;
   }
 
-  mBuffer = MakeUnique<JSAutoStructuredCloneBuffer>(
-      mStructuredCloneScope, &StructuredCloneHolder::sCallbacks, this);
-  mBuffer->adopt(std::move(data), version, &StructuredCloneHolder::sCallbacks);
+  mData.emplace(std::move(data));
+  mData->setCallbacks(&StructuredCloneHolder::sCallbacks, nullptr,
+                      OwnTransferablePolicy::OwnsTransferablesIfAny);
   return true;
 }

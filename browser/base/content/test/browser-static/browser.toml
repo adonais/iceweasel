@@ -28,10 +28,6 @@ skip-if = [
 ]
 
 ["browser_parsable_script.js"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && ccov", # https://bugzilla.mozilla.org/show_bug.cgi?id=1608081
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # https://bugzilla.mozilla.org/show_bug.cgi?id=1608081
-]
 
 ["browser_sentence_case_strings.js"]
 

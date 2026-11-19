@@ -165,7 +165,7 @@ void Sanitizer::SetDefaultConfig() {
       // Walkthrough the element specific attribute list in lockstep.
       // The last "name" in the array is a nullptr sentinel.
       if (name == aElementWithAttributes[i]) {
-        attributes = MakeUnique<StaticAtomSet>();
+        attributes = std::make_unique<StaticAtomSet>();
         while (aElementWithAttributes[++i]) {
           attributes->Insert(aElementWithAttributes[i]);
         }

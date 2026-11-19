@@ -384,7 +384,7 @@ var CustomizableUIInternal = {
         type: CustomizableUI.TYPE_TOOLBAR,
         overflowable: true,
         defaultPlacements: navbarPlacements,
-        verticalTabsDefaultPlacements: [
+        verticalTabsAdditionalPlacements: [
           "alltabs-button",
           "smartwindow-group-tabs-button",
           "ai-window-toggle",
@@ -1133,6 +1133,31 @@ var CustomizableUIInternal = {
   },
 
   /**
+   * Returns the default placements for an area, taking the current tab
+   * orientation into account. When tabs are vertical, an area's
+   * verticalTabsDefaultPlacements replace its defaultPlacements, while its
+   * verticalTabsAdditionalPlacements are appended to them.
+   *
+   * @param {string} aAreaId
+   *   The ID of the area to get the default placements for.
+   * @returns {string[]}
+   */
+  getDefaultPlacements(aAreaId) {
+    let props = gAreas.get(aAreaId);
+    let defaults = props.get("defaultPlacements");
+    if (!CustomizableUI.verticalTabsEnabled) {
+      return defaults;
+    }
+    if (props.has("verticalTabsDefaultPlacements")) {
+      return props.get("verticalTabsDefaultPlacements");
+    }
+    if (props.has("verticalTabsAdditionalPlacements")) {
+      return [...defaults, ...props.get("verticalTabsAdditionalPlacements")];
+    }
+    return defaults;
+  },
+
+  /**
    * If a new area was defined, or new default widgets for an area are defined,
    * this reconciles the placements of those new default widgets with the
    * existing customization and toolbar state of the browser.
@@ -1144,17 +1169,7 @@ var CustomizableUIInternal = {
     let futurePlacedWidgets = gFuturePlacements.get(aArea);
     let savedPlacements =
       gSavedState && gSavedState.placements && gSavedState.placements[aArea];
-    let defaultPlacements;
-    if (
-      CustomizableUI.verticalTabsEnabled &&
-      gAreas.get(aArea).has("verticalTabsDefaultPlacements")
-    ) {
-      defaultPlacements = gAreas
-        .get(aArea)
-        .get("verticalTabsDefaultPlacements");
-    } else {
-      defaultPlacements = gAreas.get(aArea).get("defaultPlacements");
-    }
+    let defaultPlacements = this.getDefaultPlacements(aArea);
     if (
       !savedPlacements ||
       !savedPlacements.length ||
@@ -1340,6 +1355,14 @@ var CustomizableUIInternal = {
     // Sanity check default placements array:
     if (!Array.isArray(props.get("defaultPlacements"))) {
       throw new Error("Should provide an array of default placements");
+    }
+    if (
+      props.has("verticalTabsDefaultPlacements") &&
+      props.has("verticalTabsAdditionalPlacements")
+    ) {
+      throw new Error(
+        "An area cannot have both verticalTabsDefaultPlacements and verticalTabsAdditionalPlacements"
+      );
     }
 
     if (!areaIsKnown) {
@@ -3680,16 +3703,7 @@ var CustomizableUIInternal = {
 
       if (!restored) {
         lazy.log.debug("Restoring " + aAreaId + " from default state");
-        let defaults = gAreas.get(aAreaId).get("defaultPlacements");
-        if (
-          CustomizableUI.verticalTabsEnabled &&
-          gAreas.get(aAreaId).has("verticalTabsDefaultPlacements")
-        ) {
-          lazy.log.debug(
-            "Using verticalTabsDefaultPlacements to restore " + aAreaId
-          );
-          defaults = gAreas.get(aAreaId).get("verticalTabsDefaultPlacements");
-        }
+        let defaults = this.getDefaultPlacements(aAreaId);
 
         if (defaults) {
           for (let id of defaults) {
@@ -5018,9 +5032,10 @@ var CustomizableUIInternal = {
   },
 
   /**
+   * True if the CustomizableUI state of the browser is in the stock state
+   * that is shipped by default.
+   *
    * @type {boolean}
-   *   True if the CustomizableUI state of the browser is in the stock state
-   *   that is shipped by default.
    */
   get inDefaultState() {
     if (CustomizableUI.verticalTabsEnabled) {
@@ -5440,8 +5455,9 @@ var CustomizableUIInternal = {
   },
 
   /**
+   * True if the horizontal and vertical tabstrips have been registered.
+   *
    * @type {boolean}
-   *   True if the horizontal and vertical tabstrips have been registered.
    */
   get tabstripAreasReady() {
     return (

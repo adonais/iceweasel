@@ -383,6 +383,46 @@ import pytest
             """.strip(),
             id="unexpected_assertion_count",
         ),
+        pytest.param(
+            [
+                (
+                    "suite_start",
+                    {
+                        "manifestA": ["dir/test_foo.py"],
+                        "manifestB": ["dir/test_bar.py"],
+                    },
+                ),
+                (
+                    "test_start",
+                    "dir/test_foo.py TestFoo.test_foo",
+                    None,
+                    None,
+                    "manifestA",
+                ),
+                ("test_end", "dir/test_foo.py TestFoo.test_foo", "ERROR", "PASS"),
+                (
+                    "test_start",
+                    "dir/test_bar.py TestBar.test_bar",
+                    None,
+                    None,
+                    "manifestB",
+                ),
+                ("crash", "", "signature", "dir/test_bar.py TestBar.test_bar"),
+                ("test_end", "dir/test_bar.py TestBar.test_bar", "ERROR", "PASS"),
+                ("crash", "", "signature", "marionette.py"),
+                ("suite_end",),
+            ],
+            """
+                {"groups": ["manifestA", "manifestB"], "action": "test_groups", "line": 0}
+                {"test": "dir/test_foo.py TestFoo.test_foo", "subtest": null, "group": "manifestA", "status": "ERROR", "expected": "PASS", "message": null, "stack": null, "modifiers": "", "known_intermittent": [], "action": "test_result", "line": 2}
+                {"test": "dir/test_bar.py TestBar.test_bar", "group": "manifestB", "signature": "signature", "stackwalk_stderr": null, "stackwalk_stdout": null, "action": "crash", "line": 4}
+                {"test": "dir/test_bar.py TestBar.test_bar", "subtest": null, "group": "manifestB", "status": "ERROR", "expected": "PASS", "message": null, "stack": null, "modifiers": "", "known_intermittent": [], "action": "test_result", "line": 5}
+                {"test": "marionette.py", "group": "", "signature": "signature", "stackwalk_stderr": null, "stackwalk_stdout": null, "action": "crash", "line": 6}
+                {"group": "manifestA", "status": "ERROR", "duration": 10, "action": "group_result", "line": 7}
+                {"group": "manifestB", "status": "ERROR", "duration": 20, "action": "group_result", "line": 7}
+            """.strip(),
+            id="group_from_test_start",
+        ),
     ),
 )
 def test_errorsummary(monkeypatch, get_logger, logs, expected):

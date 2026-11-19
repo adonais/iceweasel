@@ -512,6 +512,10 @@ class Decoder {
   // @param aFrameCount The expected frame count.
   void PostFrameCount(uint32_t aFrameCount);
 
+  // Called by the JPEG decoder if its data can be embedded as-is in other
+  // formats.
+  void PostEmbeddableJPEGColorSpace(EmbeddableJPEGColorSpace aColorSpace);
+
   // Called by decoders when they end a frame. Informs the image, sends
   // notifications, and does internal book-keeping.
   // Specify whether this frame is opaque as an optimization.

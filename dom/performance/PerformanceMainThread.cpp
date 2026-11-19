@@ -65,6 +65,13 @@ void GetURLSpecFromChannel(nsITimedChannel* aChannel, nsAString& aSpec) {
   CopyUTF8toUTF16(spec, aSpec);
 }
 
+bool MatchesNameAndType(PerformanceEntry* aEntry, const nsAString& aName,
+                        const Optional<nsAString>& aEntryType) {
+  return aEntry && aEntry->GetName()->Equals(aName) &&
+         (!aEntryType.WasPassed() ||
+          aEntry->GetEntryType()->Equals(aEntryType.Value()));
+}
+
 }  // namespace
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(PerformanceMainThread)
@@ -75,7 +82,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(PerformanceMainThread,
       mTiming, mNavigation, mDocEntry, mFCPTiming, mEventTimingEntries,
       mLargestContentfulPaintEntries, mContainerTimingEntries, mFirstInputEvent,
       mPendingPointerDown, mPendingEventTimingEntries, mEventCounts,
-      mInteractionMetrics, mCurrentEventTimingEntry)
+      mInteractionMetrics, mCurrentEventTimingEntry, mPendingLCPCandidate)
   tmp->mTextFrameUnions.Clear();
   tmp->mContainerTimingRecords.Clear();
   mozilla::DropJSObjects(tmp);
@@ -88,7 +95,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(PerformanceMainThread,
       mLargestContentfulPaintEntries, mContainerTimingEntries, mFirstInputEvent,
       mPendingPointerDown, mPendingEventTimingEntries, mEventCounts,
       mTextFrameUnions, mContainerTimingRecords, mInteractionMetrics,
-      mCurrentEventTimingEntry)
+      mCurrentEventTimingEntry, mPendingLCPCandidate)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -182,8 +189,7 @@ PerformanceTiming* PerformanceMainThread::Timing() {
 
 void PerformanceMainThread::DispatchResourceTimingBufferFullEvent() {
   RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
-  // it bubbles, and it isn't cancelable
-  event->InitEvent(u"resourcetimingbufferfull"_ns, true, false);
+  event->InitEvent(u"resourcetimingbufferfull"_ns, false, false);
   event->SetTrusted(true);
   DispatchEvent(*event);
 }
@@ -673,8 +679,7 @@ void PerformanceMainThread::CreateNavigationTimingEntry() {
   nsAutoString name;
   GetURLSpecFromChannel(mChannel, name);
 
-  UniquePtr<PerformanceTimingData> timing =
-      std::make_unique<PerformanceTimingData>(mChannel, nullptr, 0);
+  auto timing = std::make_unique<PerformanceTimingData>(mChannel, nullptr, 0);
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
   if (httpChannel) {
@@ -740,6 +745,10 @@ void PerformanceMainThread::GetEntries(
   if (mFCPTiming) {
     aRetval.AppendElement(mFCPTiming);
   }
+
+  if (mFirstInputEvent) {
+    aRetval.AppendElement(mFirstInputEvent);
+  }
   aRetval.Sort(PerformanceEntryComparator());
 }
 
@@ -798,18 +807,18 @@ void PerformanceMainThread::GetEntriesByName(
     nsTArray<RefPtr<PerformanceEntry>>& aRetval) {
   Performance::GetEntriesByName(aName, aEntryType, aRetval);
 
-  if (mFCPTiming && mFCPTiming->GetName()->Equals(aName) &&
-      (!aEntryType.WasPassed() ||
-       mFCPTiming->GetEntryType()->Equals(aEntryType.Value()))) {
-    aRetval.AppendElement(mFCPTiming);
-    return;
+  if (MatchesNameAndType(mFCPTiming, aName, aEntryType)) {
+    aRetval.InsertElementSorted(mFCPTiming, PerformanceEntryComparator());
+  }
+
+  if (MatchesNameAndType(mFirstInputEvent, aName, aEntryType)) {
+    aRetval.InsertElementSorted(mFirstInputEvent, PerformanceEntryComparator());
   }
 
   // The navigation entry is the first one. If it exists and the name matches,
   // let put it in front.
-  if (mDocEntry && mDocEntry->GetName()->Equals(aName)) {
+  if (MatchesNameAndType(mDocEntry, aName, aEntryType)) {
     aRetval.InsertElementAt(0, mDocEntry);
-    return;
   }
 }
 
@@ -920,6 +929,13 @@ void PerformanceMainThread::FinalizeLCPEntriesForText() {
   MOZ_ASSERT(GetTextFrameUnions().IsEmpty());
 }
 
+void PerformanceMainThread::QueuePendingLCPCandidate() {
+  if (RefPtr<LargestContentfulPaint> candidate =
+          std::move(mPendingLCPCandidate)) {
+    candidate->QueueEntry();
+  }
+}
+
 bool PerformanceMainThread::IsPendingLCPCandidate(
     Element* aElement, imgRequestProxy* aImgRequestProxy) {
   Document* doc = aElement->GetComposedDoc();
@@ -959,6 +975,7 @@ void PerformanceMainThread::SetHasDispatchedInputEvent() {
 void PerformanceMainThread::ClearGeneratedTempDataForLCP() {
   mTextFrameUnions.Clear();
   mImagesPendingRendering.Clear();
+  mPendingLCPCandidate = nullptr;
 
   nsIGlobalObject* global = GetRelevantGlobal();
   if (!global) {

@@ -24,8 +24,9 @@ add_task(async function run_test() {
   await do_content_crash(null, function (mdump, extra) {
     Assert.ok(mdump.exists());
     Assert.greater(mdump.fileSize, 0);
-    Assert.ok("StartupTime" in extra);
-    Assert.ok("CrashTime" in extra);
+    Assert.ok("StartupTime" in extra, "StartupTime annotation is present");
+    Assert.ok("CrashTime" in extra, "CrashTime annotation is present");
+    Assert.ok("UptimeTS" in extra, "UptimeTS annotation is present");
     Assert.ok(
       CrashTestUtils.dumpHasStream(
         mdump.path,
@@ -76,6 +77,10 @@ add_task(async function run_test() {
       TelemetryController.testSetup();
     },
     function (mdump, extra) {
+      Assert.ok("StartupTime" in extra, "StartupTime annotation is present");
+      Assert.ok("CrashTime" in extra, "CrashTime annotation is present");
+      Assert.ok("UptimeTS" in extra, "UptimeTS annotation is present");
+
       Assert.equal(extra.TestKey, "TestValue");
       Assert.equal(extra.TestUnicode, "\u{1F4A9}\n\u{0000}Escape");
       Assert.ok(

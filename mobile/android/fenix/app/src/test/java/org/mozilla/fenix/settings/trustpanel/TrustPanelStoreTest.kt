@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.content.PermissionHighlightsState
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+import mozilla.components.feature.ipprotection.store.state.DataVolume
 import mozilla.components.feature.ipprotection.store.state.IPProtectionStatus
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.ASK_TO_ALLOW
 import org.junit.Assert.assertEquals
@@ -275,7 +276,7 @@ class TrustPanelStoreTest {
             val newState =
                 IPProtectionMenuState(
                     status = IPProtectionStatus.Enabled,
-                    dataLimitGb = 5,
+                    dataLimit = DataVolume.roundedGigabytes(5),
                 )
 
             store.dispatch(TrustPanelAction.UpdateIPProtectionMenuState(newState))

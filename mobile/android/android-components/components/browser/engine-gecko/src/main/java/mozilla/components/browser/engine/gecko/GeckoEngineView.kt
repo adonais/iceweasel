@@ -282,4 +282,14 @@ constructor(
     companion object {
         internal const val DARK_COVER = 0xFF2A2A2E.toInt()
     }
+
+    override fun setAccessibilityTraversalAfter(afterId: Int) {
+        geckoView.accessibilityTraversalAfter = afterId
+        super.setAccessibilityTraversalAfter(afterId)
+    }
+
+    override fun setAccessibilityTraversalBefore(beforeId: Int) {
+        geckoView.accessibilityTraversalBefore = beforeId
+        super.setAccessibilityTraversalBefore(beforeId)
+    }
 }

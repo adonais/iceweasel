@@ -148,6 +148,8 @@ support-files = ["file_pdfjs_js.pdf"]
 
 ["browser_pdfjs_main.js"]
 
+["browser_pdfjs_max_canvas_dim.js"]
+
 ["browser_pdfjs_minimum_font_size.js"]
 
 ["browser_pdfjs_mlguess_validation.js"]

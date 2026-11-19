@@ -198,6 +198,7 @@ class FirefoxUIFunctionalTests(TestingMixin, VCSToolsScript, CodeCoverageMixin):
     def run_test(self, binary_path, env=None, marionette_port=2828):
         """All required steps for running the tests against an installer."""
         dirs = self.query_abs_dirs()
+        self.mkdir_p(dirs["abs_blob_upload_dir"])
 
         # Import the harness to retrieve the location of the cli scripts
         import firefox_ui_harness

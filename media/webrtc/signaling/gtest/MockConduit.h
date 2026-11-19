@@ -105,6 +105,7 @@ class MockVideoConduit : public MockConduitBase<VideoSessionConduit> {
   MOCK_METHOD(void, RequestKeyFrame, (FrameTransformerProxy*), (override));
   MOCK_METHOD(void, GenerateKeyFrame,
               (const Maybe<std::string>&, FrameTransformerProxy*), (override));
+  MOCK_METHOD(void, GenerateKeyFrames, (std::vector<std::string>), (override));
 };
 }  // namespace mozilla
 

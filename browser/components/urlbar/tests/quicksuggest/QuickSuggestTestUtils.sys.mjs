@@ -471,15 +471,23 @@ class _QuickSuggestTestUtils {
     suggestedIndex = 0,
     isSuggestedIndexRelativeToGroup = true,
     isBestMatch = false,
+    bestMatchType = undefined,
     requestId = undefined,
     dismissalKey = undefined,
     categories = [],
     suggestionId = "amp-suggestion-id",
   } = {}) {
+    if (bestMatchType === undefined) {
+      bestMatchType = isBestMatch
+        ? lazy.UrlbarShared.BEST_MATCH_TYPE.SMALL
+        : lazy.UrlbarShared.BEST_MATCH_TYPE.NONE;
+    }
+
     let result = {
       suggestedIndex,
       isSuggestedIndexRelativeToGroup,
       isBestMatch,
+      bestMatchType,
       type: lazy.UrlbarShared.RESULT_TYPE.URL,
       source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       heuristic: false,
@@ -1178,6 +1186,9 @@ class _QuickSuggestTestUtils {
    *   Whether the result is expected to be sponsored.
    * @param {boolean} [options.isBestMatch]
    *   Whether the result is expected to be a best match.
+   * @param {string} [options.bestMatchType]
+   *   The result's expected best-match type, a `UrlbarShared.BEST_MATCH_TYPE`
+   *   value.
    * @returns {Promise<object>}
    *   The quick suggest result.
    */
@@ -1188,6 +1199,7 @@ class _QuickSuggestTestUtils {
     index = -1,
     isSponsored = true,
     isBestMatch = false,
+    bestMatchType = undefined,
   }) {
     this.Assert.ok(
       url || originalUrl,
@@ -1245,6 +1257,22 @@ class _QuickSuggestTestUtils {
     this.Assert.equal(!!result.isBestMatch, isBestMatch, "Result isBestMatch");
 
     let { row } = details.element;
+
+    if (!isBestMatch) {
+      this.Assert.ok(
+        !row.hasAttribute("top-pick-type"),
+        "Row should not have top-pick-type"
+      );
+    } else {
+      if (bestMatchType === undefined) {
+        bestMatchType = lazy.UrlbarShared.BEST_MATCH_TYPE.LARGE;
+      }
+      this.Assert.equal(
+        row.getAttribute("top-pick-type"),
+        bestMatchType,
+        "Row should have expected top-pick-type"
+      );
+    }
 
     let bottomLabel = row._elements.get("bottomLabel");
     this.Assert.ok(bottomLabel, "Result bottom label should exist");

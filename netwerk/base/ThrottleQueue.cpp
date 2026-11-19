@@ -5,7 +5,6 @@
 #include "ThrottleQueue.h"
 
 #include "mozilla/Components.h"
-#include "mozilla/net/InputChannelThrottleQueueParent.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIOService.h"
 #include "nsISeekableStream.h"
@@ -231,13 +230,7 @@ void ThrottleInputStream::AllowInput() {
 already_AddRefed<nsIInputChannelThrottleQueue> ThrottleQueue::Create() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  nsCOMPtr<nsIInputChannelThrottleQueue> tq;
-  if (nsIOService::UseSocketProcess()) {
-    tq = new InputChannelThrottleQueueParent();
-  } else {
-    tq = new ThrottleQueue();
-  }
-
+  nsCOMPtr<nsIInputChannelThrottleQueue> tq = new ThrottleQueue();
   return tq.forget();
 }
 

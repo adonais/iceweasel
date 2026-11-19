@@ -3,8 +3,6 @@ subsuite = "mozlint"
 
 ["test_agent_skills_sync.py"]
 
-["test_android_expired_strings.py"]
-
 ["test_android_format.py"]
 
 ["test_android_ktfmt_ac.py"]
@@ -96,6 +94,8 @@ sequential = true
 ["test_trojan_source.py"]
 
 ["test_updatebot.py"]
+
+["test_uri_setspec.py"]
 
 ["test_wpt-subsuite-tagging.py"]
 

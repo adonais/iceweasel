@@ -278,12 +278,13 @@ BrowserGlue.prototype = {
         // This notification is broadcast by the docshell when it "fixes up" a
         // URI that it's been asked to load into a keyword search.
         let engine = null;
+        let info = null;
         try {
-          engine = lazy.SearchService.getEngineById(
-            subject.QueryInterface(Ci.nsISupportsString).data
-          );
+          info = subject.QueryInterface(Ci.nsIURIFixupInfo);
+          engine = lazy.SearchService.getEngineById(info.keywordProviderId);
         } catch (ex) {
           console.error(ex);
+          return;
         }
         let win = lazy.BrowserWindowTracker.getTopWindow({
           allowFromInactiveWorkspace: true,
@@ -291,7 +292,15 @@ BrowserGlue.prototype = {
         lazy.BrowserSearchTelemetry.recordSearch(
           win.gBrowser.selectedBrowser,
           engine,
-          "urlbar"
+          "urlbar",
+          {
+            submission: info
+              ? {
+                  partnerCode: info.keywordPartnerCode,
+                  telemetryId: info.keywordTelemetryId || undefined,
+                }
+              : undefined,
+          }
         );
         break;
       }
@@ -511,17 +520,9 @@ BrowserGlue.prototype = {
       return;
     }
 
-    let message = win.gNavigatorBundle.getString(
-      "unsignedAddonsDisabled.message"
-    );
     let buttons = [
       {
-        label: win.gNavigatorBundle.getString(
-          "unsignedAddonsDisabled.learnMore.label"
-        ),
-        accessKey: win.gNavigatorBundle.getString(
-          "unsignedAddonsDisabled.learnMore.accesskey"
-        ),
+        "l10n-id": "unsigned-addons-disabled-learn-more",
         callback() {
           win.BrowserAddonUI.openAddonsMgr(
             "addons://list/extension?unsigned=true"
@@ -533,7 +534,7 @@ BrowserGlue.prototype = {
     win.gNotificationBox.appendNotification(
       "unsigned-addons-disabled",
       {
-        label: message,
+        label: { "l10n-id": "unsigned-addons-disabled-message" },
         priority: win.gNotificationBox.PRIORITY_WARNING_MEDIUM,
       },
       buttons

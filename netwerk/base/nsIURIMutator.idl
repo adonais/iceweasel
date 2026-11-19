@@ -159,6 +159,13 @@ interface nsIURISetSpec : nsISupports
    * initialize the object. We define it separately allowing mutator implementors
    * to define it separately, while the rest of the setters may be simply
    * forwarded to the mutable URI.
+   *
+   * Do not call this outside of URI construction code in netwerk. It lets you
+   * hand a spec to a URI implementation that was never meant to parse it - for
+   * example calling it with an http:// spec on a data: URI mutator - which
+   * gives surprising results. Use NS_NewURI() (C++) or Services.io.newURI()
+   * (JS) instead; they dispatch the spec to the right implementation for its
+   * scheme. New callers are rejected by the `avoid-uri-setspec` lint.
    */
   [must_use] nsIURIMutator setSpec(in AUTF8String aSpec);
 };

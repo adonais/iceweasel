@@ -695,6 +695,13 @@ nsPrintSettings::GetPageRanges(nsTArray<int32_t>& aPages) {
   return NS_OK;
 }
 
+mozilla::gfx::IntSize nsIPrintSettings::GetEffectiveSheetSizeInPoints() {
+  double width, height;
+  GetEffectiveSheetSize(&width, &height);
+  return mozilla::gfx::IntSize::Ceil(width / TWIPS_PER_POINT_FLOAT,
+                                     height / TWIPS_PER_POINT_FLOAT);
+}
+
 bool nsIPrintSettings::IsPageSkipped(int32_t aPageNum,
                                      const nsTArray<int32_t>& aRanges) {
   MOZ_RELEASE_ASSERT(aRanges.Length() % 2 == 0);

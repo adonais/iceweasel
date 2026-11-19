@@ -37,6 +37,8 @@ tags = "os_integration"
 ["test_accesskey.html"]
 tags = "os_integration"
 
+["test_accesskey_visibility_content.html"]
+
 ["test_addEventListenerExtraArg.html"]
 
 ["test_all_synthetic_events.html"]
@@ -98,9 +100,6 @@ skip-if = [
 ["test_bug432698.html"]
 
 ["test_bug443985.html"]
-skip-if = [
-  "standalone", # Bug 2026600
-]
 
 ["test_bug447736.html"]
 
@@ -609,10 +608,8 @@ skip-if = [
 ["test_mouse_enterleave_iframe.html"]
 support-files = ["file_mouse_enterleave.html"]
 skip-if = [
-  "asan", # Bug 1781668
   "http2",
   "http3",
-  "opt", # Bug 1781668
   "os == 'android'", # timeout
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857022
   "verify-standalone",

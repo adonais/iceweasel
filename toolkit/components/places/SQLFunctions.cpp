@@ -552,34 +552,13 @@ nsresult CalculateFrecencyFunction::create(mozIStorageConnection* aDBConn) {
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(CalculateFrecencyFunction, mozIStorageFunction)
+CalculateFrecencyFunction::CalculateFrecencyFunction()
+    : mSQL(BuildFrecencySQL(
+          StaticPrefs::places_frecency_pages_numSampledVisits_AtStartup())) {}
 
-NS_IMETHODIMP
-CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
-                                          nsIVariant** _result) {
-  // Fetch arguments.  Use default values if they were omitted.
-  uint32_t numEntries;
-  nsresult rv = aArguments->GetNumEntries(&numEntries);
-  NS_ENSURE_SUCCESS(rv, rv);
-  MOZ_ASSERT(numEntries <= 2, "unexpected number of arguments");
-
-  int64_t pageId = aArguments->AsInt64(0);
-  MOZ_ASSERT(pageId > 0, "Should always pass a valid page id");
-  if (pageId <= 0) {
-    *_result = MakeAndAddRef<IntegerVariant>(0).take();
-    return NS_OK;
-  }
-
-  int32_t isRedirect = 0;
-  if (numEntries > 1) {
-    isRedirect = aArguments->AsInt32(1);
-  }
-  // This is a const version of the history object for thread-safety.
-  const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
-  NS_ENSURE_STATE(history);
-  RefPtr<Database> DB = Database::GetDatabase();
-  NS_ENSURE_STATE(DB);
-
+/* static */
+nsCString CalculateFrecencyFunction::BuildFrecencySQL(
+    uint32_t aNumSampledVisits) {
   /*
     Exponentially decay each visit with an half-life of halfLifeDays.
     Score per each visit is a weight exponentially decayed depending on how
@@ -595,7 +574,11 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
 
     TODO: Add reference link to source docs here.
   */
-  nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+  // The LIMIT is inlined rather than bound: SQLite recompiles a statement
+  // whenever a parameter used as a LIMIT is rebound or cleared, which would
+  // happen on every call. The pref is fixed at startup, so the SQL string
+  // and the cached statement stay valid.
+  nsCString sql(
       // No index can order the union of the moz_historyvisits and
       // moz_places_metadata rows that visit_interaction samples, so that merge
       // is sorted at run time, over a set bounded by numSampledVisits.
@@ -618,7 +601,7 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "        OR (total_view_time >= :viewTimeIfManyKeypressesSeconds * 1000 "
       "          AND key_presses >= :manyKeypresses)) "
       "  ORDER BY created_at DESC "
-      "  LIMIT :numSampledVisits "
+      "  LIMIT {numSampledVisits} "
       "), "
       "sampled_visits AS ( "
       "  SELECT "
@@ -669,7 +652,7 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "  UNION ALL "
       "  SELECT * FROM virtual_visits "
       "  ORDER BY visit_date DESC "
-      "  LIMIT :numSampledVisits "
+      "  LIMIT {numSampledVisits} "
       "), "
       "visits (days, weight) AS ( "
       "  SELECT "
@@ -739,6 +722,40 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "END "
       "FROM moz_places h, reference, lambda, scores "
       "WHERE h.id = :pageId");
+  sql.ReplaceSubstring("{numSampledVisits}"_ns,
+                       IntToCString(aNumSampledVisits));
+  return sql;
+}
+
+NS_IMPL_ISUPPORTS(CalculateFrecencyFunction, mozIStorageFunction)
+
+NS_IMETHODIMP
+CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
+                                          nsIVariant** _result) {
+  // Fetch arguments.  Use default values if they were omitted.
+  uint32_t numEntries;
+  nsresult rv = aArguments->GetNumEntries(&numEntries);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(numEntries <= 2, "unexpected number of arguments");
+
+  int64_t pageId = aArguments->AsInt64(0);
+  MOZ_ASSERT(pageId > 0, "Should always pass a valid page id");
+  if (pageId <= 0) {
+    *_result = MakeAndAddRef<IntegerVariant>(0).take();
+    return NS_OK;
+  }
+
+  int32_t isRedirect = 0;
+  if (numEntries > 1) {
+    isRedirect = aArguments->AsInt32(1);
+  }
+  // This is a const version of the history object for thread-safety.
+  const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
+  NS_ENSURE_STATE(history);
+  RefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
+
+  nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(mSQL);
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper infoScoper(stmt);
 
@@ -749,10 +766,6 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
   rv = stmt->BindInt64ByName(
       "halfLifeDays"_ns,
       StaticPrefs::places_frecency_pages_halfLifeDays_AtStartup());
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = stmt->BindInt64ByName(
-      "numSampledVisits"_ns,
-      StaticPrefs::places_frecency_pages_numSampledVisits_AtStartup());
   NS_ENSURE_SUCCESS(rv, rv);
   rv = stmt->BindInt64ByName(
       "lowWeight"_ns, StaticPrefs::places_frecency_pages_lowWeight_AtStartup());
@@ -821,34 +834,15 @@ nsresult CalculateAltFrecencyFunction::create(mozIStorageConnection* aDBConn) {
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(CalculateAltFrecencyFunction, mozIStorageFunction)
+CalculateAltFrecencyFunction::CalculateAltFrecencyFunction()
+    : mSQL(BuildFrecencySQL(
+          StaticPrefs::
+              places_frecency_pages_alternative_numSampledVisits_AtStartup())) {
+}
 
-NS_IMETHODIMP
-CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
-                                             nsIVariant** _result) {
-  // Fetch arguments.  Use default values if they were omitted.
-  uint32_t numEntries;
-  nsresult rv = aArguments->GetNumEntries(&numEntries);
-  NS_ENSURE_SUCCESS(rv, rv);
-  MOZ_ASSERT(numEntries <= 2, "unexpected number of arguments");
-
-  int64_t pageId = aArguments->AsInt64(0);
-  MOZ_ASSERT(pageId > 0, "Should always pass a valid page id");
-  if (pageId <= 0) {
-    *_result = MakeAndAddRef<IntegerVariant>(0).take();
-    return NS_OK;
-  }
-
-  int32_t isRedirect = 0;
-  if (numEntries > 1) {
-    isRedirect = aArguments->AsInt32(1);
-  }
-  // This is a const version of the history object for thread-safety.
-  const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
-  NS_ENSURE_STATE(history);
-  RefPtr<Database> DB = Database::GetDatabase();
-  NS_ENSURE_STATE(DB);
-
+/* static */
+nsCString CalculateAltFrecencyFunction::BuildFrecencySQL(
+    uint32_t aNumSampledVisits) {
   /*
     Exponentially decay each visit with an half-life of halfLifeDays.
     Score per each visit is a weight exponentially decayed depending on how
@@ -864,7 +858,9 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
 
     TODO: Add reference link to source docs here.
   */
-  nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+  // See CalculateFrecencyFunction::BuildFrecencySQL for why the LIMIT is
+  // inlined.
+  nsCString sql(
       // No index can order the union of the moz_historyvisits and
       // moz_places_metadata rows that visit_interaction samples, so that merge
       // is sorted at run time, over a set bounded by numSampledVisits.
@@ -887,7 +883,7 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "        OR (total_view_time >= :viewTimeIfManyKeypressesSeconds * 1000 "
       "          AND key_presses >= :manyKeypresses)) "
       "  ORDER BY created_at DESC "
-      "  LIMIT :numSampledVisits "
+      "  LIMIT {numSampledVisits} "
       "), "
       "sampled_visits AS ( "
       "  SELECT "
@@ -936,7 +932,7 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "  UNION ALL "
       "  SELECT * FROM virtual_visits "
       "  ORDER BY visit_date DESC "
-      "  LIMIT :numSampledVisits "
+      "  LIMIT {numSampledVisits} "
       "), "
       "visits (days, weight) AS ( "
       "  SELECT "
@@ -1005,6 +1001,40 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "END "
       "FROM moz_places h, reference, lambda, scores "
       "WHERE h.id = :pageId");
+  sql.ReplaceSubstring("{numSampledVisits}"_ns,
+                       IntToCString(aNumSampledVisits));
+  return sql;
+}
+
+NS_IMPL_ISUPPORTS(CalculateAltFrecencyFunction, mozIStorageFunction)
+
+NS_IMETHODIMP
+CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
+                                             nsIVariant** _result) {
+  // Fetch arguments.  Use default values if they were omitted.
+  uint32_t numEntries;
+  nsresult rv = aArguments->GetNumEntries(&numEntries);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(numEntries <= 2, "unexpected number of arguments");
+
+  int64_t pageId = aArguments->AsInt64(0);
+  MOZ_ASSERT(pageId > 0, "Should always pass a valid page id");
+  if (pageId <= 0) {
+    *_result = MakeAndAddRef<IntegerVariant>(0).take();
+    return NS_OK;
+  }
+
+  int32_t isRedirect = 0;
+  if (numEntries > 1) {
+    isRedirect = aArguments->AsInt32(1);
+  }
+  // This is a const version of the history object for thread-safety.
+  const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
+  NS_ENSURE_STATE(history);
+  RefPtr<Database> DB = Database::GetDatabase();
+  NS_ENSURE_STATE(DB);
+
+  nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(mSQL);
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper infoScoper(stmt);
 
@@ -1015,11 +1045,6 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
   rv = stmt->BindInt64ByName(
       "halfLifeDays"_ns,
       StaticPrefs::places_frecency_pages_alternative_halfLifeDays_AtStartup());
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = stmt->BindInt64ByName(
-      "numSampledVisits"_ns,
-      StaticPrefs::
-          places_frecency_pages_alternative_numSampledVisits_AtStartup());
   NS_ENSURE_SUCCESS(rv, rv);
   rv = stmt->BindInt64ByName(
       "lowWeight"_ns,

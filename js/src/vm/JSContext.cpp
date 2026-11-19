@@ -12,6 +12,7 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/Utf8.h"  // mozilla::ConvertUtf16ToUtf8
 
+#include <iterator>
 #include <string.h>
 
 #include "vm/JSContext-inl.h"
@@ -26,6 +27,7 @@
 #include "jstypes.h"
 
 #include "builtin/RegExp.h"  // js::RegExpSearcherLastLimitSentinel
+#include "builtin/TestingFunctions.h"
 #ifdef MOZ_EXECUTION_TRACING
 #  include "debugger/ExecutionTracer.h"
 #endif
@@ -968,6 +970,7 @@ js::UniquePtr<JS::JobQueue::SavedJobQueue> InternalJobQueue::saveJobQueue(
 // embedder enqueued (typically a Private value) which the GC cannot follow, so
 // it is handed to the JobQueue hook instead.
 void JS::MicroTask::trace(JSTracer* trc, const char* name) {
+  TraceRootRange(trc, std::size(extra_), extra_, name);
   if (value_.isGCThing()) {
     TraceRoot(trc, &value_, name);
     return;
@@ -979,6 +982,10 @@ void JS::MicroTask::trace(JSTracer* trc, const char* name) {
     queue->traceNonGCThingMicroTask(trc, &value_);
   }
 }
+
+static_assert(sizeof(JS::MicroTask) == 7 * sizeof(JS::Value),
+              "MicroTasks are held by value in several queues; keep them "
+              "compact");
 
 void js::MicroTaskQueueElement::trace(JSTracer* trc) {
   microTask_.trace(trc, "microtask-queue-entry");
@@ -1228,7 +1235,8 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       bypassCSPForDebugger(this, false),
       hasDebuggerForcedLexicalInit(this, false),
       insideExclusiveDebuggerOnEval(this, nullptr),
-      microTaskQueues(this) {
+      microTaskQueues(this),
+      testingFunctionData_(this) {
   MOZ_ASSERT(static_cast<JS::RootingContext*>(this) ==
              JS::RootingContext::get(this));
 
@@ -1272,6 +1280,17 @@ JSContext::~JSContext() {
   }
 
   TlsContext.set(nullptr);
+}
+
+TestingFunctionData* JSContext::getOrCreateTestingFunctionData() {
+  if (!testingFunctionData_.ref()) {
+    testingFunctionData_ = MakeUnique<TestingFunctionData>();
+    if (!testingFunctionData_.ref()) {
+      ReportOutOfMemory(this);
+      return nullptr;
+    }
+  }
+  return testingFunctionData_.ref().get();
 }
 
 void JSContext::unsetOOMStackTrace() { oomStackTraceBufferValid_ = false; }

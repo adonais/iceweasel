@@ -24,10 +24,7 @@ function loadFileContent(aFile, aCharset) {
     if(aCharset == undefined)
         aCharset = 'UTF-8';
 
-    var baseUri = SpecialPowers.Cc['@mozilla.org/network/standard-url-mutator;1']
-                                  .createInstance(SpecialPowers.Ci.nsIURIMutator)
-                                  .setSpec(window.location.href)
-                                  .finalize();
+    var baseUri = SpecialPowers.Services.io.newURI(window.location.href);
 
     var ios = SpecialPowers.Services.io;
     var chann = ios.newChannel(aFile,

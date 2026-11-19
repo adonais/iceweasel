@@ -139,9 +139,9 @@ class NetworkEventContentWatcher {
       //
       // For scripts from the cache, multiple network requests should be
       // created.
-      const hasURI = Array.from(this.networkEvents.values()).some(
-        networkEvent => networkEvent.uri === channel.URI.spec
-      );
+      const hasURI = this.networkEvents
+        .values()
+        .some(networkEvent => networkEvent.uri === channel.URI.spec);
 
       if (hasURI) {
         return;

@@ -26,6 +26,7 @@ struct MOZ_STACK_CLASS GMPVideoDecoderParams {
   GMPCrashHelper* mCrashHelper;
   layers::KnowsCompositor* mKnowsCompositor;
   const Maybe<TrackingId> mTrackingId;
+  const CreateDecoderParams::OptionSet mOptions;
 };
 
 DDLoggedTypeDeclNameAndBase(GMPVideoDecoder, MediaDataDecoder);
@@ -121,6 +122,7 @@ class GMPVideoDecoder final : public MediaDataDecoder,
   bool mConvertToAnnexB = false;
   bool mCanDecodeBatch = false;
   bool mReorderFrames = true;
+  bool mLowLatency = false;
 };
 
 }  // namespace mozilla

@@ -175,7 +175,7 @@ MessagePort::MessagePort(nsIGlobalObject* aGlobal, State aState)
       mHasBeenTransferredOrClosed(false) {
   MOZ_ASSERT(aGlobal);
 
-  mIdentifier = MakeUnique<MessagePortIdentifier>();
+  mIdentifier = std::make_unique<MessagePortIdentifier>();
   mIdentifier->neutered() = true;
   mIdentifier->sequenceId() = 0;
 }

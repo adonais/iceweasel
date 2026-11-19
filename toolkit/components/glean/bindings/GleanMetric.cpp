@@ -29,7 +29,7 @@ Maybe<SubmetricToMirrorMutex::AutoLock> GetLabeledMirrorLock() {
     return Nothing();
   }
   if (!*lock) {
-    *lock = MakeUnique<SubmetricToLabeledMirrorMapType>();
+    *lock = std::make_unique<SubmetricToLabeledMirrorMapType>();
     RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
         auto lock = sLabeledMirrors.Lock();
@@ -76,7 +76,7 @@ GetLabeledDistributionMirrorLock() {
     return Nothing();
   }
   if (!*lock) {
-    *lock = MakeUnique<SubmetricToLabeledDistributionMirrorMapType>();
+    *lock = std::make_unique<SubmetricToLabeledDistributionMirrorMapType>();
     RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
         auto lock = sLabeledDistributionMirrors.Lock();
@@ -123,7 +123,7 @@ GetDualLabeledDistributionMirrorLock() {
     return Nothing();
   }
   if (!*lock) {
-    *lock = MakeUnique<SubmetricToDualLabeledDistributionMirrorMapType>();
+    *lock = std::make_unique<SubmetricToDualLabeledDistributionMirrorMapType>();
     RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
         auto lock = sDualLabeledDistributionMirrors.Lock();

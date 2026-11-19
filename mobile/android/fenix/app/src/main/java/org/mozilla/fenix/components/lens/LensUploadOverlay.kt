@@ -26,7 +26,7 @@ import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 
 /**
- * The message shown once a failed photo picker upload has brought the camera back.
+ * The message shown once a failed upload has brought the camera back.
  *
  * @param context Context to read the strings from.
  * @param reason Which step of the upload failed.
@@ -40,7 +40,7 @@ internal fun lensUploadFailureSnackbarState(
 ): SnackbarState =
     when (reason) {
         LensUploadFailure.IMAGE_LOAD ->
-            SnackbarState(message = context.getString(R.string.lens_camera_image_load_failed))
+            SnackbarState(message = context.getString(R.string.lens_camera_image_load_failed_v2))
         LensUploadFailure.UPLOAD ->
             SnackbarState(
                 message = context.getString(R.string.lens_camera_upload_failed),
@@ -53,8 +53,9 @@ internal fun lensUploadFailureSnackbarState(
     }
 
 /**
- * Uploads photo picker images for [LensCameraActivity] behind [LensUploadLoadingScreen], which covers the camera until
- * the upload succeeds, fails or is cancelled. A successful upload finishes the activity with the Lens result URL.
+ * Uploads camera captures and photo picker images for [LensCameraActivity] behind [LensUploadLoadingScreen], which
+ * covers the camera until the upload succeeds, fails or is cancelled. A successful upload finishes the activity with
+ * the Lens result URL.
  *
  * @param activity The activity whose camera the loading screen covers.
  * @param viewModel Runs the upload across configuration changes.
@@ -81,15 +82,16 @@ internal class LensUploadOverlay(
     /**
      * Uploads the image at [imageUri].
      *
-     * @param imageUri The photo picker image to upload.
+     * @param imageUri The image to upload.
      * @param isPrivate Whether the upload runs in the private cookie context.
+     * @param source Upload method the image came from, recorded as telemetry.
      */
-    fun start(imageUri: Uri, isPrivate: Boolean) {
+    fun start(imageUri: Uri, isPrivate: Boolean, source: String) {
         // The snackbar sits above the overlay, so it would otherwise cover the loading screen.
         failureSnackbar?.dismiss()
         // Shown first, so an upload that settles straight away finds the overlay to take down.
         show(animateIn = true)
-        viewModel.start(imageUri, isPrivate)
+        viewModel.start(imageUri, isPrivate, source)
     }
 
     /** Puts the loading screen back up after a recreation mid-upload, then handles how uploads end. */
@@ -156,7 +158,7 @@ internal class LensUploadOverlay(
         val state =
             lensUploadFailureSnackbarState(activity, failure.reason) {
                 if (!activity.isFinishing) {
-                    start(failure.imageUri, failure.isPrivate)
+                    start(failure.imageUri, failure.isPrivate, failure.source)
                 }
             }
         failureSnackbarState = state

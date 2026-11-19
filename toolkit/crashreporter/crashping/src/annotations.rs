@@ -147,13 +147,13 @@ fn convert_string_to_string_list(
     Ok(())
 }
 
-fn convert_to_crash_time(metric: &DatetimeMetric, value: &str) -> anyhow::Result<()> {
+fn convert_unix_timestamp(metric: &DatetimeMetric, value: &str) -> anyhow::Result<()> {
     let seconds_since_epoch: i64 = value
         .parse()
-        .context("failed to parse crash time seconds")?;
+        .context("failed to parse unix timestamp seconds")?;
     metric.set(Some(glean_datetime(
         time::OffsetDateTime::from_unix_timestamp(seconds_since_epoch)
-            .context("failed to convert crash time unix timestamp")?,
+            .context("failed to convert unix timestamp")?,
     )));
     Ok(())
 }

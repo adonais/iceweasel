@@ -99,6 +99,7 @@ case "$TARGET" in
         OVERLAY="-Xclang -ivfsoverlay -Xclang $MOZ_FETCHES_DIR/vs/overlay.yaml"
         export CFLAGS="$CROSS_FLAGS $OVERLAY"
         CXX_LINK_O="$CROSS_FLAGS -nologo -fuse-ld=lld -Fe\$@"
+        MODULE_LDFLAGS="-PDBALTPATH:%_PDB% -Brepro"
         . "$GECKO_PATH/taskcluster/scripts/misc/vs-setup.sh"
         ;;
     *-apple-darwin)
@@ -121,6 +122,9 @@ MAKE_PARAMS=(
 if [ -n "${CXX_LINK_O:-}" ]; then
     MAKE_PARAMS+=("CXX_LINK_O=$CXX_LINK_O")
 fi
+if [ -n "${MODULE_LDFLAGS:-}" ]; then
+    MAKE_PARAMS+=("MODULE_LDFLAGS=$MODULE_LDFLAGS")
+fi
 
 make -C "$OPENH264_SRC" plugin "${MAKE_PARAMS[@]}"
 
@@ -129,9 +133,11 @@ mapfile -t PLUGIN_FILES < <(ls libgmpopenh264.so gmpopenh264.dll libgmpopenh264.
 : "${PLUGIN_FILES[0]:?No plugin files found in build output}"
 
 ARTIFACT_ZIP="$PRIVATE_DIR/openh264-v$OPENH264_VERSION-$PLATFORM.zip"
-zip "$ARTIFACT_ZIP" "${PLUGIN_FILES[@]}"
+PYTHONPATH="$GECKO_PATH/python/mozbuild:$GECKO_PATH/third_party/python/packaging" \
+    python3 -m mozbuild.action.zip \
+    -C "$OPENH264_SRC" "$ARTIFACT_ZIP" "${PLUGIN_FILES[@]}"
 
-SYMBOL_ZIP="$PUBLIC_DIR/openh264-v$OPENH264_VERSION-$PLATFORM.symbols.zip"
+SYMBOL_ARCHIVE="$PUBLIC_DIR/openh264-v$OPENH264_VERSION-$PLATFORM.symbols.tar.zst"
 DUMP_SYMS="$MOZ_FETCHES_DIR/dump_syms/dump_syms"
 for f in "${PLUGIN_FILES[@]}"; do
     case "$f" in
@@ -142,6 +148,6 @@ done
 : "${LIBRARY_FILE:?No library file found in build output}"
 
 python3 "$GECKO_PATH/python/mozbuild/mozbuild/action/packagesymbols.py" \
-    --symbol-zip "$SYMBOL_ZIP" \
+    --symbol-archive "$SYMBOL_ARCHIVE" \
     "$DUMP_SYMS" \
     "$LIBRARY_FILE"

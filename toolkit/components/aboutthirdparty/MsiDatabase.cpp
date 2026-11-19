@@ -34,7 +34,7 @@ UniquePtr<wchar_t[]> MsiDatabase::GetRecordString(MSIHANDLE aRecord,
   // needs to include a null-character.
   ++len;
 
-  auto buf = MakeUnique<wchar_t[]>(len);
+  auto buf = std::make_unique<wchar_t[]>(len);
   ret = ::MsiRecordGetStringW(aRecord, aFieldIndex, buf.get(), &len);
   if (ret != ERROR_SUCCESS) {
     return nullptr;

@@ -158,6 +158,7 @@
 #include "js/WasmModule.h"    // JS::WasmModule
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"  // js::IsDeadProxyObject
+#include "shell/DebugSession.h"
 #include "shell/jsoptparse.h"
 #include "shell/jsshell.h"
 #include "shell/OSObject.h"
@@ -850,14 +851,11 @@ already_AddRefed<JS::Stencil> OffThreadJob::stealStencil(JSContext* cx) {
   return stencil_.forget();
 }
 
-struct ShellCompartmentPrivate {
-  HeapPtr<ArrayObject*> blackRoot;
-  HeapPtr<ArrayObject*> grayRoot;
-
-  // If true, objects from other compartments are wrapped with security
-  // wrappers.
-  bool useSecurityWrappers = false;
-};
+static bool IsDebugSessionHostCompartment(JS::Compartment* comp) {
+  auto* priv =
+      static_cast<ShellCompartmentPrivate*>(JS_GetCompartmentPrivate(comp));
+  return priv && priv->isDebugSessionHost;
+}
 
 struct MOZ_STACK_CLASS EnvironmentPreparer
     : public js::ScriptEnvironmentPreparer {
@@ -919,7 +917,6 @@ enum class ShellGlobalKind {
   WindowProxy,
 };
 
-static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options);
 static JSObject* NewStringInterruptCallbackGlobal(JSContext* cx);
 static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
                                  JSPrincipals* principals, ShellGlobalKind kind,
@@ -1081,7 +1078,8 @@ ShellContext::ShellContext(JSContext* cx, IsWorkerEnum isWorker_)
       errFilePtr(nullptr),
       outFilePtr(nullptr),
       offThreadMonitor(mutexid::ShellOffThreadState),
-      taskCallbacks(cx) {}
+      taskCallbacks(cx),
+      debugSessionHost(cx) {}
 
 ShellContext* js::shell::GetShellContext(JSContext* cx) {
   ShellContext* sc = static_cast<ShellContext*>(JS_GetContextPrivate(cx));
@@ -1578,6 +1576,10 @@ static bool GlobalOfFirstJobInQueue(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
   MOZ_ASSERT(global);
+  if (IsDebugSessionHostCompartment(JS::GetCompartment(global))) {
+    JS_ReportErrorASCII(cx, "The job belongs to an internal global");
+    return false;
+  }
   if (!cx->compartment()->wrap(cx, &global)) {
     return false;
   }
@@ -1644,6 +1646,11 @@ static void ForwardingPromiseRejectionTrackerCallback(
     JSContext* cx, bool mutedErrors, JS::HandleObject promise,
     JS::PromiseRejectionHandlingState state, void* data) {
   AutoReportException are(cx);
+
+  // Don't expose promises of the debug session host.
+  if (IsDebugSessionHostCompartment(JS::GetCompartment(promise))) {
+    return;
+  }
 
   if (!TrackUnhandledRejections(cx, promise, state)) {
     return;
@@ -4481,7 +4488,8 @@ static const JSClass sandbox_class = {
     &sandbox_classOps,
 };
 
-static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options) {
+void js::shell::SetStandardRealmOptions(JSContext* cx,
+                                        JS::RealmOptions& options) {
   options.creationOptions()
       .setSharedMemoryAndAtomicsEnabled(enableSharedMemory)
       .setCoopAndCoepEnabled(false)
@@ -5642,7 +5650,8 @@ static bool Elapsed(JSContext* cx, unsigned argc, Value* vp) {
   return false;
 }
 
-static ShellCompartmentPrivate* EnsureShellCompartmentPrivate(JSContext* cx) {
+ShellCompartmentPrivate* js::shell::EnsureShellCompartmentPrivate(
+    JSContext* cx) {
   Compartment* comp = cx->compartment();
   auto priv =
       static_cast<ShellCompartmentPrivate*>(JS_GetCompartmentPrivate(comp));
@@ -7959,9 +7968,8 @@ static bool WithSourceHook(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  mozilla::UniquePtr<ShellSourceHook> hook =
-      mozilla::MakeUnique<ShellSourceHook>(cx,
-                                           args[0].toObject().as<JSFunction>());
+  auto hook = std::make_unique<ShellSourceHook>(
+      cx, args[0].toObject().as<JSFunction>());
   if (!hook) {
     return false;
   }
@@ -10113,6 +10121,25 @@ static bool DisableExecutionTracing(JSContext* cx, unsigned argc,
 
 // clang-format off
 static const JSFunctionSpecWithHelp shell_functions[] = {
+    JS_FN_HELP("debugSessionCreate", DebugSessionCreate, 1, 0,
+"debugSessionCreate(global)",
+"  Create a debug session for |global|. Debug sessions use the DebugSession\n"
+"  module shared with WebDriver BiDi. With --fuzzing-safe, they replace the\n"
+"  Debugger API. See debugSessionCommand for its commands."),
+
+    JS_FN_HELP("debugSessionCommand", DebugSessionCommand, 2, 0,
+"debugSessionCommand(command, [arg])",
+"  Run a debug session command:\n"
+"  - enable, disable: start or stop debugging the session's global.\n"
+"  - destroy: end the session.\n"
+"  - setBreakpoints: arg is a list of {id, url, line, column}.\n"
+"  - setPauseOnExceptions: arg is none, uncaught or all.\n"
+"  - setPauseActions: arg is a list of actions. Each pause takes actions from\n"
+"        the list until a resume or step action.\n"
+"  - listScripts: return the URLs of the debuggee's scripts.\n"
+"  - getScriptSource: arg is a URL, return the source of its script.\n"
+"  - takeLog: return and clear the list of pauses and evaluation results."),
+
     JS_FN_HELP("options", Options, 0, 0,
 "options([option ...])",
 "  Get or toggle JavaScript options."),
@@ -11479,7 +11506,7 @@ static const JSClassOps global_classOps = {
 static constexpr uint32_t DOM_PROTOTYPE_SLOT = JSCLASS_GLOBAL_SLOT_COUNT;
 static constexpr uint32_t DOM_GLOBAL_SLOTS = 1;
 
-static const JSClass global_class = {
+const JSClass js::shell::ShellGlobalClass = {
     "global",
     JSCLASS_GLOBAL_FLAGS | JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(DOM_GLOBAL_SLOTS),
     &global_classOps,
@@ -12026,7 +12053,7 @@ static JSObject* NewStringInterruptCallbackGlobal(JSContext* cx) {
   options.creationOptions().setInvisibleToDebugger(true);
 
   RootedObject glob(cx,
-                    JS_NewGlobalObject(cx, &global_class, nullptr,
+                    JS_NewGlobalObject(cx, &ShellGlobalClass, nullptr,
                                        JS::DontFireOnNewGlobalHook, options));
   if (!glob) {
     return nullptr;
@@ -12060,7 +12087,7 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
                                  JS::HandleObject existingWindowProxy,
                                  bool securityWrappers) {
   RootedObject glob(cx,
-                    JS_NewGlobalObject(cx, &global_class, principals,
+                    JS_NewGlobalObject(cx, &ShellGlobalClass, principals,
                                        JS::DontFireOnNewGlobalHook, options));
   if (!glob) {
     return nullptr;
@@ -12129,7 +12156,9 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
     if (!JS_InitReflectParse(cx, glob)) {
       return nullptr;
     }
-    if (!JS_DefineDebuggerObject(cx, glob)) {
+    // With --fuzzing-safe the Debugger API is only available through the debug
+    // session module. See the SMDOC comment in DebugSession.cpp.
+    if (!fuzzingSafe && !JS_DefineDebuggerObject(cx, glob)) {
       return nullptr;
     }
     if (!JS_DefineFunctionsWithHelp(cx, glob, shell_functions) ||

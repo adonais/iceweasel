@@ -10,6 +10,7 @@ import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.feature.addons.Addon
+import mozilla.components.feature.ipprotection.store.state.DataVolume
 import mozilla.components.feature.ipprotection.store.state.IPProtectionStatus
 import mozilla.components.lib.state.State
 import mozilla.components.support.ktx.kotlin.isAboutUrl
@@ -206,10 +207,11 @@ data class TranslationInfo(
  * Represents the state of the IP protection menu item.
  *
  * @property status The current [IPProtectionStatus] shown in the badge.
- * @property dataLimitGb The total monthly data allowance in GB.
+ * @property dataLimit The limit of the [mozilla.components.feature.ipprotection.store.state.UsageQuota.Metered]
+ *   [DataVolume] quota. When the quota is unknown or unlimited, this value is null.
  */
 @Immutable
 data class IPProtectionMenuState(
     val status: IPProtectionStatus = IPProtectionStatus.Uninitialized,
-    val dataLimitGb: Int = -1,
+    val dataLimit: DataVolume? = null,
 )

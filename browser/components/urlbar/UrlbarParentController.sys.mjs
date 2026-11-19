@@ -7,7 +7,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 /**
  * @import {BrowserSearchTelemetry} from "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"
  * @import {ProvidersManager} from "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs"
- * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+ * @import {SearchEngine, SearchSubmissionData} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import {SapLocation} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
  * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  * @import {WindowMode} from "moz-src:///browser/components/urlbar/content/UrlbarInputBase.mjs"
@@ -123,6 +123,9 @@ export class UrlbarParentController {
   // Whether the controller serves the address bar.
   #isAddressbar = false;
 
+  /** @type {BrowserWindow} */
+  #browserWindow;
+
   /**
    * Initialises the controller from standalone data; the live input/view are
    * reached at runtime through the paired `UrlbarChildController`.
@@ -149,6 +152,9 @@ export class UrlbarParentController {
     this.#isAddressbar = sapName == "urlbar";
     this.isPrivate = isPrivate;
     this.#actor = actor;
+    this.#browserWindow = /** @type {BrowserWindow} */ (
+      actor?.browsingContext.topChromeWindow
+    );
 
     /**
      * @type {ProvidersManager}
@@ -176,9 +182,7 @@ export class UrlbarParentController {
    * @type {BrowserWindow}
    */
   get browserWindow() {
-    return /** @type {BrowserWindow} */ (
-      this.#actor?.browsingContext?.topChromeWindow
-    );
+    return this.#browserWindow;
   }
 
   /**
@@ -578,40 +582,20 @@ export class UrlbarParentController {
   /**
    * Records that a search is being loaded: bumps the search-count prefs,
    * informs ASRouter, records search telemetry and adds the search query
-   * to form history. The parent-side counterpart to the content-side
-   * `_recordSearch()`.
+   * to form history.
    *
-   * @param {object} searchData
-   * @param {string} searchData.engineId
-   *   The id of the engine handling the search.
-   * @param {string} searchData.query
-   * @param {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} searchData.searchSource
-   *   Where the search originated from.
-   * @param {object} searchData.details
-   *   The search action details, per `BrowserSearchTelemetry.recordSearch()`.
-   * @param {boolean} [searchData.opensInPrivateWindow]
-   *   Whether the search opens in a new private window, in which case it's
-   *   not added to form history. If this is false but the current window
-   *   is private, it's not added either.
+   * @param {UrlbarSearchData & {browser: MozBrowser, submission?: SearchSubmissionData}} searchData
+   *   The search data, the browser where the search is loading and, if known,
+   *   the submission that is being loaded.
    */
-  recordSearch(searchData) {
-    let browser = this.browserWindow.gBrowser.selectedBrowser;
-    this.#recordSearchForBrowser({ ...searchData, browser });
-  }
-
-  /**
-   * See this.recordSearch().
-   *
-   * @param {Parameters<typeof this.recordSearch>[0] & {browser: MozBrowser}} searchData
-   *   The data for `recordSearch` and the browser where the search is loading.
-   */
-  #recordSearchForBrowser({
+  #recordSearch({
     browser,
     engineId,
     query,
     searchSource,
     details,
     opensInPrivateWindow,
+    submission,
   }) {
     // Record when the user uses the search bar to be used for message
     // targeting. This is arbitrarily capped at 100, only to prevent the number
@@ -654,7 +638,7 @@ export class UrlbarParentController {
       browser,
       engineId,
       searchSource,
-      details
+      submission ? { ...details, submission } : details
     );
 
     let engine = lazy.SearchService.getEngineById(engineId);
@@ -672,20 +656,66 @@ export class UrlbarParentController {
    * load opens the tab right after this call; TabOpen fires synchronously, so
    * the next-opened tab is the search tab. Reaching its browser is parent-only.
    *
-   * @param {Parameters<typeof this.recordSearch>[0]} searchData
-   *   The data for `recordSearch`.
+   * @param {UrlbarSearchData & {submission?: SearchSubmissionData}} searchData
+   *   The search data and, if known, the submission being loaded.
+   * @returns {() => void}
+   *   Removes the listener, for when the load fails before opening the tab.
    */
-  recordSearchInOpenedTab(searchData) {
-    this.browserWindow.gBrowser.tabContainer.addEventListener(
-      "TabOpen",
-      tabEvent => {
-        this.#recordSearchForBrowser({
-          ...searchData,
-          browser: tabEvent.target.linkedBrowser,
-        });
-      },
-      { once: true }
-    );
+  #recordSearchInOpenedTab(searchData) {
+    let { tabContainer } = this.browserWindow.gBrowser;
+    let listener = tabEvent => {
+      this.#recordSearch({
+        ...searchData,
+        browser: tabEvent.target.linkedBrowser,
+      });
+    };
+    tabContainer.addEventListener("TabOpen", listener, { once: true });
+    return () => tabContainer.removeEventListener("TabOpen", listener);
+  }
+
+  /**
+   * Opens a URL via `openTrustedLinkIn` and, for a search, records it only once
+   * the load has gone ahead.
+   *
+   * @param {string} url
+   * @param {string} where
+   * @param {object} params
+   *   The `openTrustedLinkIn` params.
+   * @param {object} search
+   * @param {MozBrowser} search.browser
+   *   The browser the search is recorded against, unless it opens in a new tab.
+   * @param {?UrlbarSearchData} [search.searchData]
+   *   The search data, or null if this isn't a search to record.
+   * @param {?SearchSubmissionData} [search.submission]
+   *   The submission being loaded.
+   */
+  #openTrustedLinkAndRecordSearch(
+    url,
+    where,
+    params,
+    { browser, searchData = null, submission = null }
+  ) {
+    let removeTabOpenListener;
+    if (searchData && where.startsWith("tab")) {
+      removeTabOpenListener = this.#recordSearchInOpenedTab({
+        ...searchData,
+        submission,
+      });
+    }
+    try {
+      lazy.URILoadingHelper.openTrustedLinkIn(
+        this.browserWindow,
+        url,
+        where,
+        params
+      );
+    } catch (ex) {
+      removeTabOpenListener?.();
+      throw ex;
+    }
+    if (searchData && !removeTabOpenListener) {
+      this.#recordSearch({ ...searchData, browser, submission });
+    }
   }
 
   /**
@@ -807,7 +837,7 @@ export class UrlbarParentController {
    * Opens a search engine result page (SERP) for the specified
    * search engine and search query.
    *
-   * Does not record telemetry, so it should be recorded by the caller.
+   * Only records search telemetry if `searchData` is passed.
    *
    * @param {string} engineId
    * @param {string} searchTerms
@@ -817,9 +847,9 @@ export class UrlbarParentController {
    *   The target browser's id. Only used if `where == current` and the call
    *   isn't coming from a content process. If it's not specified and
    *   `where == current`, the currently selected tab is used.
-   * @param {boolean} [tracksBounce]
-   *   Whether the caller tracks a bounce for this load. Any other load ends a
-   *   bounce tracked in the tab it navigates.
+   * @param {?UrlbarSearchData} [searchData]
+   *   The search data, recorded with the submission's partner
+   *   code once the SERP is loading.
    */
   openSERP(
     engineId,
@@ -827,29 +857,34 @@ export class UrlbarParentController {
     where,
     inBackground = false,
     browserId = null,
-    tracksBounce = false
+    searchData = null
   ) {
     let searchEngine = lazy.SearchService.getEngineById(engineId);
 
-    let [url, postData] = lazy.UrlbarUtils.getSearchQueryUrl(
+    let [url, postData, submission] = lazy.UrlbarUtils.getSearchQueryUrl(
       searchEngine,
-      searchTerms
+      searchTerms,
+      searchData?.searchSource
     );
 
     let browser =
       this.resolveTargetBrowser(browserId) ??
       this.browserWindow.gBrowser.selectedBrowser;
-    lazy.URILoadingHelper.openTrustedLinkIn(this.browserWindow, url, where, {
-      inBackground,
-      initiatedByURLBar: tracksBounce,
-      postData,
-      resolveOnContentBrowserCreated: claimBounceForLoad(browser),
-      targetBrowser: where == "current" ? browser : null,
-      globalHistoryOptions: {
-        triggeringSource: this.sapName,
-        triggeringSearchEngine: searchEngine.name,
+    this.#openTrustedLinkAndRecordSearch(
+      url,
+      where,
+      {
+        inBackground,
+        postData,
+        resolveOnContentBrowserCreated: claimBounceForLoad(browser),
+        targetBrowser: where == "current" ? browser : null,
+        globalHistoryOptions: {
+          triggeringSource: this.sapName,
+          triggeringSearchEngine: searchEngine.name,
+        },
       },
-    });
+      { browser, searchData, submission }
+    );
   }
 
   /**
@@ -948,9 +983,8 @@ export class UrlbarParentController {
    * @param {string} reason Reason for the speculative connect request.
    */
   speculativeConnect(result, context, reason) {
-    // browserWindow is null only during teardown. Never speculative connect in
-    // private contexts.
-    if (!this.browserWindow || context.isPrivate || !context.results.length) {
+    // Never speculative connect in private contexts.
+    if (context.isPrivate || !context.results.length) {
       return;
     }
 
@@ -1027,6 +1061,9 @@ export class UrlbarParentController {
    *   target browser has gone away.
    * @param {string} [loadData.userTypedValue]
    *   The value to record as the browser's typed value, for a `current` load.
+   * @param {?UrlbarSearchData} [loadData.searchData]
+   *   For an engine search, the search data. It is recorded with
+   *   the submission's partner code once the load has gone ahead.
    * @returns {{reverted: boolean, browserId: number}}
    *   Whether the load threw without showing an error page, so the input should
    *   revert, and the id of the browser the load resolved to. The latter is not
@@ -1035,7 +1072,14 @@ export class UrlbarParentController {
    *   browser to hand `focusBrowser` on the deferred-Enter keyup -- a
    *   content-process input can't resolve the selected browser itself.
    */
-  loadURL({ loadRequest, where, params, browserId, userTypedValue }) {
+  loadURL({
+    loadRequest,
+    where,
+    params,
+    browserId,
+    userTypedValue,
+    searchData = null,
+  }) {
     // TODO(bug 2076823): Simplify how the target browser is picked.
     let browser = this.resolveTargetBrowser(browserId);
     if (!browser) {
@@ -1048,7 +1092,10 @@ export class UrlbarParentController {
     }
     params.resolveOnContentBrowserCreated = claimBounceForLoad(browser);
 
-    let { url, postData } = lazy.UrlbarUtils.loadRequestToUrl(loadRequest);
+    let { url, postData, submission } = lazy.UrlbarUtils.loadRequestToUrl(
+      loadRequest,
+      searchData?.searchSource
+    );
     if (!url) {
       return { reverted: true, browserId: browser.browserId };
     }
@@ -1081,12 +1128,11 @@ export class UrlbarParentController {
     }
 
     try {
-      lazy.URILoadingHelper.openTrustedLinkIn(
-        this.browserWindow,
-        url,
-        where,
-        params
-      );
+      this.#openTrustedLinkAndRecordSearch(url, where, params, {
+        browser,
+        searchData,
+        submission,
+      });
     } catch (ex) {
       // This load can throw in certain cases; unless an error page was shown,
       // the input should revert to the loaded URL.
@@ -1497,6 +1543,25 @@ export class UrlbarParentController {
     }
   }
 }
+
+/**
+ * The data for recording a search, which the parent records once the search's
+ * URL is being loaded.
+ *
+ * @typedef {object} UrlbarSearchData
+ * @property {string} engineId
+ *   The id of the engine handling the search.
+ * @property {string} query
+ *   The search query, which is added to form history.
+ * @property {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} searchSource
+ *   Where the search originated from.
+ * @property {Parameters<typeof lazy.BrowserSearchTelemetry.recordSearch>[3]} details
+ *   The search action details, per `BrowserSearchTelemetry.recordSearch()`.
+ * @property {boolean} [opensInPrivateWindow]
+ *   Whether the search opens in a new private window, in which case it's
+ *   not added to form history. If this is false but the current window
+ *   is private, it's not added either.
+ */
 
 /**
  * A bounce a message-path child collector built at engagement time.
@@ -2211,14 +2276,11 @@ export class TelemetryEvent {
   /**
    * Returns Smart Window telemetry data for SAP `smartbar`.
    *
-   * @param {string} searchSource
-   *   The search source identifier.
    * @returns {{ chatId: string, intent: string, model: string } | null}
    *   Telemetry for the smartbar.
    */
-  #getOptionalSmartbarTelemetry(searchSource) {
-    const isSmartbar = this.#searchSourceToSap(searchSource) === "smartbar";
-    if (!isSmartbar) {
+  #getOptionalSmartbarTelemetry() {
+    if (this._controller.sapName != "smartbar") {
       return null;
     }
     return this.#smartbarData;
@@ -2691,7 +2753,7 @@ export class TelemetryEvent {
       viewTime: viewTime / 1000,
       location: snapshot.location,
       windowMode: snapshot.windowMode,
-      ...this.#getOptionalSmartbarTelemetry(snapshot.searchSource),
+      ...this.#getOptionalSmartbarTelemetry(),
     });
   }
 }

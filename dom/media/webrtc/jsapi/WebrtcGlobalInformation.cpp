@@ -132,7 +132,7 @@ GetStatsPromiseForThisProcess(const nsAString& aPcIdFilter) {
       if ((aPcIdFilter.IsEmpty() || aPcIdFilter == report.mPcid) &&
           !pcids.count(report.mPcid)) {
         promises.AppendElement(dom::RTCStatsReportPromise::CreateAndResolve(
-            MakeUnique<dom::RTCStatsReportInternal>(report), __func__));
+            std::make_unique<dom::RTCStatsReportInternal>(report), __func__));
       }
     }
   }
@@ -273,7 +273,7 @@ void WebrtcGlobalInformation::GatherHistory() {
     }
     for (auto& report : aResult.ResolveValue()) {
       WebrtcGlobalStatsHistory::Record(
-          MakeUnique<RTCStatsReportInternal>(std::move(report)));
+          std::make_unique<RTCStatsReportInternal>(std::move(report)));
     }
   };
   // Each process gets a new request only once the reply to its previous one
@@ -709,7 +709,7 @@ mozilla::ipc::IPCResult WebrtcGlobalParent::RecvPeerConnectionDestroyed(
 
 mozilla::ipc::IPCResult WebrtcGlobalParent::RecvPeerConnectionFinalStats(
     const RTCStatsReportInternal& aFinalStats) {
-  auto finalStats = MakeUnique<RTCStatsReportInternal>(aFinalStats);
+  auto finalStats = std::make_unique<RTCStatsReportInternal>(aFinalStats);
   WebrtcGlobalStatsHistory::Record(std::move(finalStats));
   WebrtcGlobalStatsHistory::CloseHistory(aFinalStats.mPcid);
   return IPC_OK();

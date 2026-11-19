@@ -4,16 +4,50 @@ const BASE = "https://example.com/browser/dom/base/test/";
 const NAVIGATIONAL_PREFETCH = 1 << 1;
 const NAVIGATIONAL_PREFETCH_ELIGIBLE = 1 << 2;
 
-// Sampling keeps every load on nightly and early beta but only one in three
-// later, minus the roughly one in ten routed to the domain ping instead.
-const MAX_ATTEMPTS = 40;
+let gCollectPageloadEvents = true;
+let gSubmittedPageloadEvents = [];
+
+function keepSubmittedPageloadEvents() {
+  if (!gCollectPageloadEvents) {
+    return;
+  }
+  GleanPings.pageload.testBeforeNextSubmit(() => {
+    if (!gCollectPageloadEvents) {
+      return;
+    }
+    gSubmittedPageloadEvents.push(
+      ...(Glean.perf.pageLoad.testGetValue() ?? [])
+    );
+    Promise.resolve().then(keepSubmittedPageloadEvents);
+  });
+}
+
+async function resetPageloadTelemetry() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+  gSubmittedPageloadEvents = [];
+  keepSubmittedPageloadEvents();
+}
+
+async function waitForPageloadEvent() {
+  let records;
+  await TestUtils.waitForCondition(() => {
+    records = [
+      ...gSubmittedPageloadEvents,
+      ...(Glean.perf.pageLoad.testGetValue() ?? []),
+    ];
+    return records.length;
+  }, "A pageload event was recorded.");
+  Assert.equal(records.length, 1, "Only the expected document was reported.");
+  return records;
+}
 
 function documentFeatures(records) {
   return records.map(r => parseInt(r.extra.document_features || "0", 10));
 }
 
 function targetURL(token, { noStore = false, large = false } = {}) {
-  // A fresh URL per attempt, so attempts cannot share a cache entry.
+  // A fresh URL per navigation, so tests cannot share a cache entry.
   return (
     `${BASE}file_pageload_prefetch_target.sjs?v=${token}-${Date.now()}` +
     (noStore ? "&nostore=1" : "") +
@@ -25,7 +59,7 @@ function sourceURL(file, target) {
   return `${BASE}${file}?target=${encodeURIComponent(target)}`;
 }
 
-// Navigates source -> target; returns the target's pageload event or null.
+// Navigates source -> target; returns the target's pageload event.
 async function pageloadEventFor(source, target, expectPrefetch) {
   // The prefetch can finish before the source page fires load.
   const prefetched = expectPrefetch
@@ -35,54 +69,53 @@ async function pageloadEventFor(source, target, expectPrefetch) {
       )
     : Promise.resolve();
 
+  await resetPageloadTelemetry();
+
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: source,
     waitForLoad: true,
   });
-  await prefetched;
-  if (!expectPrefetch) {
-    await TestUtils.waitForTick();
+  try {
+    await prefetched;
+    if (!expectPrefetch) {
+      await TestUtils.waitForTick();
+    }
+
+    const loaded = BrowserTestUtils.browserLoaded(
+      tab.linkedBrowser,
+      false,
+      target
+    );
+    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, target);
+    await loaded;
+
+    // Wait for the source event before clearing it, leaving only the target's.
+    await waitForPageloadEvent();
+    await resetPageloadTelemetry();
+  } finally {
+    await BrowserTestUtils.removeTab(tab);
   }
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, target);
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, target);
-
-  // Drop the source document's event, leaving only the target's.
-  Services.fog.testResetFOG();
-  BrowserTestUtils.removeTab(tab);
-
-  // Submitted from Document::Destroy(), so it lands after the tab is gone.
-  let records = null;
-  await TestUtils.waitForCondition(() => {
-    records = Glean.perf.pageLoad.testGetValue();
-    return records && records.length;
-  }, "a pageload event was recorded").catch(() => {});
-  return records && records.length ? records : null;
+  return waitForPageloadEvent();
 }
 
-// Runs `trial` until sampling produces an event, then checks it.
 async function withPageloadEvent(name, trial, check) {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const records = await trial(`${name}${attempt}`);
-    if (!records) {
-      info(
-        `${name} attempt ${attempt}: no pageload event (sampling); retrying.`
-      );
-      continue;
-    }
-    check(records);
-    return;
-  }
-  Assert.ok(
-    false,
-    `${name}: no pageload event after ${MAX_ATTEMPTS} attempts.`
-  );
+  check(await trial(name));
 }
 
 add_setup(async function () {
+  registerCleanupFunction(() => {
+    gCollectPageloadEvents = false;
+    GleanPings.pageload.testBeforeNextSubmit(() => {});
+    gSubmittedPageloadEvents = [];
+  });
+
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.speculation_rules.enabled", true]],
+    set: [
+      ["dom.speculation_rules.enabled", true],
+      ["dom.pageload_event.testing.always_send_normal", true],
+    ],
   });
 });
 

@@ -910,6 +910,7 @@ SettingGroupManager.registerGroups({
     items: [
       {
         id: "websiteLanguageWrapper",
+        l10nId: "website-language-list",
         control: "moz-box-group",
         controlAttrs: {
           type: "reorderable-list",

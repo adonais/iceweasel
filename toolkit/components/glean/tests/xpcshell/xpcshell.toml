@@ -65,6 +65,9 @@ skip-if = [
   "os == 'android'", # FOG isn't responsible for monitoring prefs and controlling upload on Android
 ]
 
+["test_PingReset.js"]
+run-if = ["os != 'android'"] # Android does not reload JOG on reset.
+
 ["test_ProfilerMarkers.js"]
 head = "head.js head_ProfilerMarkers.js"
 

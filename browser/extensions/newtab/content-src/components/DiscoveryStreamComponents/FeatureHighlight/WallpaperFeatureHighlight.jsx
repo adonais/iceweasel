@@ -57,37 +57,9 @@ export function WallpaperFeatureHighlight({
     [dispatch, onDismiss, handleClick, messageData]
   );
 
-  const { messageType } = messageData?.content || {};
-  const isSemiFinal =
-    isNova && messageType === "WorldCupSemiFinalWallpaperHighlight";
-  const isWorldCup =
-    isNova && (messageType === "WorldCupWallpaperHighlight" || isSemiFinal);
-
-  const worldCupTitleL10nId = isSemiFinal
-    ? "newtab-sports-widget-message-wallpapers-semifinals-title"
-    : "newtab-sports-widget-message-wallpapers-title";
-  const worldCupSubtitleL10nId = isSemiFinal
-    ? "newtab-sports-widget-message-wallpapers-semifinals-body"
-    : "newtab-sports-widget-message-wallpapers-body";
-
-  const novaHighlightImage = isWorldCup
-    ? "chrome://newtab/content/data/content/assets/highlights/wallpaper-callout.png"
-    : "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg";
-  const novaImgWidth = isWorldCup ? "319" : "207";
-  const novaImgHeight = isWorldCup ? "204" : "156";
-  const novaTitleL10nId = isWorldCup
-    ? worldCupTitleL10nId
-    : "newtab-wallpaper-feature-highlight-title";
-  const novaSubtitleL10nId = isWorldCup
-    ? worldCupSubtitleL10nId
-    : "newtab-wallpaper-feature-highlight-subtitle";
-  const novaCtaL10nId = isWorldCup
-    ? "newtab-sports-widget-message-wallpapers-cta"
-    : "newtab-wallpaper-feature-highlight-cta";
-
   return (
     <div
-      className={`wallpaper-feature-highlight ${isWorldCup ? "world-cup-variant" : ""} ${messageData.content?.darkModeDismiss ? "is-inverted-dark-dismiss-button" : ""}`}
+      className={`wallpaper-feature-highlight ${messageData.content?.darkModeDismiss ? "is-inverted-dark-dismiss-button" : ""}`}
     >
       <FeatureHighlight
         position={position}
@@ -108,7 +80,7 @@ export function WallpaperFeatureHighlight({
                 srcSet={
                   messageData.content?.darkModeImageURL ||
                   (isNova
-                    ? novaHighlightImage
+                    ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg"
                     : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg")
                 }
                 media="(prefers-color-scheme: dark)"
@@ -117,14 +89,14 @@ export function WallpaperFeatureHighlight({
                 srcSet={
                   messageData.content?.imageURL ||
                   (isNova
-                    ? novaHighlightImage
+                    ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg"
                     : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg")
                 }
                 media="(prefers-color-scheme: light)"
               />
               <img
-                width={isNova ? novaImgWidth : "320"}
-                height={isNova ? novaImgHeight : "195"}
+                width={isNova ? "207" : "320"}
+                height={isNova ? "156" : "195"}
                 alt=""
               />
             </picture>
@@ -137,7 +109,7 @@ export function WallpaperFeatureHighlight({
                   data-l10n-id={
                     messageData.content.title ||
                     (isNova
-                      ? novaTitleL10nId
+                      ? "newtab-wallpaper-feature-highlight-title"
                       : "newtab-new-user-custom-wallpaper-title")
                   }
                 />
@@ -150,7 +122,7 @@ export function WallpaperFeatureHighlight({
                   data-l10n-id={
                     messageData.content.subtitle ||
                     (isNova
-                      ? novaSubtitleL10nId
+                      ? "newtab-wallpaper-feature-highlight-subtitle"
                       : "newtab-new-user-custom-wallpaper-subtitle")
                   }
                 />
@@ -170,7 +142,7 @@ export function WallpaperFeatureHighlight({
                   data-l10n-id={
                     messageData.content.cta ||
                     (isNova
-                      ? novaCtaL10nId
+                      ? "newtab-wallpaper-feature-highlight-cta"
                       : "newtab-new-user-custom-wallpaper-cta")
                   }
                 />

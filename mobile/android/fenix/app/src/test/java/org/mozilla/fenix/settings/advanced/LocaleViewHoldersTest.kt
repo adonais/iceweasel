@@ -74,12 +74,12 @@ class LocaleViewHoldersTest {
     // test will fail
     @Test
     fun `GIVEN a locale is not properly identified in Android WHEN we bind locale THEN the title and subtitle are set from locale maps`() {
-        val otherLocale = Locale.forLanguageTag("vec")
+        val otherLocale = Locale.forLanguageTag("kmr")
 
         localeViewHolder.bind(otherLocale)
 
-        assertEquals("Vèneto", localeSettingsItemBinding.localeTitleText.text)
-        assertEquals("Venetian", localeSettingsItemBinding.localeSubtitleText.text)
+        assertEquals("Kurmancî", localeSettingsItemBinding.localeTitleText.text)
+        assertEquals("Kurmanji Kurdish", localeSettingsItemBinding.localeSubtitleText.text)
     }
 
     @Test

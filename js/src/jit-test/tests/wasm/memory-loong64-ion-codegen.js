@@ -94,7 +94,7 @@ codegenTestLOONG64_adhoc(
          (i32.load (i32.const 32768))))`,
     "f",
     `lu12i\\.w      \\$a0, 8
-     ldx\\.w        \\$a0, \\$s7, \\$a0`);
+     ldx\\.w        \\$a0, \\$a0, \\$s7`);
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -104,7 +104,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$a0, 8
      ori            \\$a0, \\$a0, 0x7d0
-     ldx\\.w        \\$a0, \\$s7, \\$a0`);
+     ldx\\.w        \\$a0, \\$a0, \\$s7`);
 
 // Stores
 
@@ -140,7 +140,7 @@ codegenTestLOONG64_adhoc(
          (i32.store (i32.const 32768) (local.get 0))))`,
     "f",
     `lu12i\\.w      \\$t6, 8
-     stx\\.w        \\$a0, \\$s7, \\$t6`);
+     stx\\.w        \\$a0, \\$t6, \\$s7`);
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -150,7 +150,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$t6, 8
      ori            \\$t6, \\$t6, 0x3e8
-     stx\\.w        \\$a0, \\$s7, \\$t6`);
+     stx\\.w        \\$a0, \\$t6, \\$s7`);
 
 // Various special cases.
 
@@ -162,7 +162,7 @@ codegenTestLOONG64_adhoc(
          (i32.load (i32.const 0x7fff_f000))))`,
     "f",
     `lu12i\\.w      \\$a0, 524287
-     ldx\\.w        \\$a0, \\$s7, \\$a0`,
+     ldx\\.w        \\$a0, \\$a0, \\$s7`,
     {no_prefix: true});
 
 // Adding one to the offset also requires ori.
@@ -174,7 +174,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$a0, 524287
      ori            \\$a0, \\$a0, 0x1
-     ldx\\.w        \\$a0, \\$s7, \\$a0`,
+     ldx\\.w        \\$a0, \\$a0, \\$s7`,
     {no_prefix: true});
 
 // Offset is INT32_MAX.
@@ -186,7 +186,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$a0, 524287
      ori            \\$a0, \\$a0, 0xfff
-     ldx\\.w        \\$a0, \\$s7, \\$a0`,
+     ldx\\.w        \\$a0, \\$a0, \\$s7`,
     {no_prefix: true});
 
 // Static offset and dynamic offset are INT32_MAX.
@@ -199,7 +199,7 @@ codegenTestLOONG64_adhoc(
     `lu12i\\.w      \\$t6, -1
      bstrins\\.d    \\$t6, \\$zero, 0x3f, 0x20
      ori            \\$t6, \\$t6, 0xffe
-     ldx\\.w        \\$a0, \\$s7, \\$t6`,
+     ldx\\.w        \\$a0, \\$t6, \\$s7`,
     {no_prefix: true});
 
 // The combined address exceeds UINT32_MAX.
@@ -211,7 +211,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$t6, 0
      lu32i\\.d      \\$t6, 1
-     ldx\\.w        \\$a0, \\$s7, \\$t6`,
+     ldx\\.w        \\$a0, \\$t6, \\$s7`,
     {no_prefix: true});
 
 // Offset is negative.
@@ -224,7 +224,7 @@ codegenTestLOONG64_adhoc(
     `lu12i\\.w      \\$t6, -1
      bstrins\\.d    \\$t6, \\$zero, 0x3f, 0x20
      ori            \\$t6, \\$t6, 0xfff
-     ldx\\.w        \\$a0, \\$s7, \\$t6`,
+     ldx\\.w        \\$a0, \\$t6, \\$s7`,
     {no_prefix: true});
 
 // Offset is INT32_MIN.
@@ -236,7 +236,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$t6, -524288
      bstrins\\.d    \\$t6, \\$zero, 0x3f, 0x20
-     ldx\\.w        \\$a0, \\$s7, \\$t6`,
+     ldx\\.w        \\$a0, \\$t6, \\$s7`,
     {no_prefix: true});
 
 // Other scalar types.
@@ -291,7 +291,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$a0, 1
      ori            \\$a0, \\$a0, 0x770
-     ldx\\.bu       \\$a0, \\$s7, \\$a0`);
+     ldx\\.bu       \\$a0, \\$a0, \\$s7`);
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -301,7 +301,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$a0, 1
      ori            \\$a0, \\$a0, 0x770
-     ldx\\.wu       \\$a0, \\$s7, \\$a0`);
+     ldx\\.wu       \\$a0, \\$a0, \\$s7`);
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -311,7 +311,7 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$t6, 1
      ori            \\$t6, \\$t6, 0x770
-     fldx\\.s       \\$f0, \\$s7, \\$t6`);
+     fldx\\.s       \\$f0, \\$t6, \\$s7`);
 
 codegenTestLOONG64_adhoc(
     `(module
@@ -321,4 +321,4 @@ codegenTestLOONG64_adhoc(
     "f",
     `lu12i\\.w      \\$t6, 1
      ori            \\$t6, \\$t6, 0x770
-     fstx\\.d       \\$f0, \\$s7, \\$t6`);
+     fstx\\.d       \\$f0, \\$t6, \\$s7`);

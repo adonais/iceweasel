@@ -5,12 +5,13 @@
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import mozilla.components.browser.state.selector.selectedTab
-import org.mozilla.fenix.components.menu.MenuDialogTestTag
+import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.recommendedAddons
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.appContext
@@ -127,7 +128,7 @@ class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
 
     /**
      * Installs a recommended extension from the expanded Extensions submenu. The submenu must already be expanded
-     * (click [MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR]) before calling.
+     * (click [MainMenuSelectors.EXTENSIONS_BUTTON]) before calling.
      *
      * Which extensions AMO recommends is server-driven, so this prefers one on [recommendedAddons], which are known to
      * add a menu entry, and otherwise installs the first one shown. Extensions without a toolbar button leave the
@@ -135,13 +136,14 @@ class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
      */
     fun installFirstRecommendedExtension(): InstalledExtension {
         // The recommendation list is fetched from AMO asynchronously, so wait for a row before reading it.
-        // Unmerged tree: the title tag is merged into the row's semantics and hidden from the default tree.
+        // Each row's install button is described "Add <listing title>", which is where the titles are read from.
         mozVerify(MainMenuSelectors.RECOMMENDED_ADDON_ITEM)
+        val installButtonPrefix = getStringResource(R.string.browser_menu_extension_plus_icon_content_description_2, "")
         val listedTitles =
             composeRule
-                .onAllNodesWithTag(MenuDialogTestTag.RECOMMENDED_ADDON_ITEM_TITLE, useUnmergedTree = true)
+                .onAllNodes(hasContentDescription(installButtonPrefix, substring = true), useUnmergedTree = true)
                 .fetchSemanticsNodes()
-                .map { it.config[SemanticsProperties.Text].first().text }
+                .map { it.config[SemanticsProperties.ContentDescription].first().removePrefix(installButtonPrefix) }
         val listingTitle =
             listedTitles.firstOrNull { title -> recommendedAddons.any { title.contains(it) } } ?: listedTitles.first()
 

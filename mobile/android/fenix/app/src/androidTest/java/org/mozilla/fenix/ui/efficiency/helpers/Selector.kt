@@ -68,6 +68,18 @@ enum class SelectorStrategy {
     COMPOSE_BY_TEXT,
     COMPOSE_BY_TEXT_MERGED,
     COMPOSE_BY_TEXT_SUBSTRING,
+
+    // A merged node whose text matches value and also contains secondaryValue, e.g. a menu row whose
+    // summary carries the detail being checked.
+    COMPOSE_BY_TEXT_AND_TEXT_SUBSTRING,
+
+    // A merged node whose text matches value and whose state description is secondaryValue, e.g. a
+    // switch menu row reporting "On".
+    COMPOSE_BY_TEXT_AND_STATE_DESCRIPTION,
+
+    // A clickable node whose text contains value but none of whose texts is secondaryValue. Tells a
+    // submenu item apart from its header when the header's summary repeats the item's label.
+    COMPOSE_CLICKABLE_BY_TEXT_SUBSTRING_WITHOUT_TEXT,
     ESPRESSO_BY_ID,
     ESPRESSO_BY_ID_WITH_DESCENDANT_TEXT,
     ESPRESSO_BY_ID_WITH_SIBLING_TEXT,

@@ -255,22 +255,27 @@ impl<'a> TreeWalker<'a> {
                 Some(pic_index),
                 self.picture_children(pic_index),
             ),
-            PrimitiveKind::TextRun { data_handle } => {
-                let data = &data_stores.text_run[data_handle].kind;
-                color = Some(data.font.color.into());
-                ("TextRun", format!("{} glyphs", data.glyphs.len()), None, Vec::new())
+            PrimitiveKind::TextRun { handle } => {
+                let data = &dl_stores.text_runs[handle];
+                match data.kind {
+                    Some(ref run) => {
+                        color = Some(run.font.color.into());
+                        ("TextRun", format!("{} glyphs", run.glyphs.len()), None, Vec::new())
+                    }
+                    None => ("TextRun", "unresolved font".to_string(), None, Vec::new()),
+                }
             }
             PrimitiveKind::Rectangle { handle } => {
                 let data = &dl_stores.rectangles[handle];
                 color = Some(data.resolve(self.scene_properties));
                 ("Rectangle", String::new(), None, Vec::new())
             }
-            PrimitiveKind::Image { data_handle } => {
-                let data = &data_stores.image[data_handle];
+            PrimitiveKind::Image { handle } => {
+                let data = &dl_stores.images[handle];
                 ("Image", format!("{:?}", data.kind.key), None, Vec::new())
             }
-            PrimitiveKind::YuvImage { data_handle } => {
-                let data = &data_stores.yuv_image[data_handle];
+            PrimitiveKind::YuvImage { handle } => {
+                let data = &dl_stores.yuv_images[handle];
                 ("YuvImage", format!("{:?}", data.kind.format), None, Vec::new())
             }
             PrimitiveKind::LineDecoration { .. } => ("LineDecoration", String::new(), None, Vec::new()),
@@ -286,8 +291,8 @@ impl<'a> TreeWalker<'a> {
                 Some(pic_index),
                 Vec::new(),
             ),
-            PrimitiveKind::BoxShadow { data_handle } => {
-                let data = &data_stores.box_shadow[data_handle];
+            PrimitiveKind::BoxShadow { handle } => {
+                let data = &dl_stores.box_shadows[handle];
                 color = Some(data.kind.color);
                 ("BoxShadow", String::new(), None, Vec::new())
             }

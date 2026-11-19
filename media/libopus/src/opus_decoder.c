@@ -479,9 +479,10 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
                                 st->arch );
         if( silk_ret ) {
            if (lost_flag) {
-              /* PLC failure should not be fatal */
-              silk_frame_size = frame_size;
-              for (i=0;i<frame_size*st->channels;i++)
+              /* PLC failure should not be fatal. Only fill what is left of
+                 the frame since pcm_ptr has already been advanced. */
+              silk_frame_size = frame_size - decoded_samples;
+              for (i=0;i<silk_frame_size*st->channels;i++)
                  pcm_ptr[i] = 0;
            } else {
              RESTORE_STACK;
@@ -633,7 +634,8 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
          MUST_SUCCEED(celt_decoder_ctl(celt_dec, CELT_SET_START_BAND(0)));
          celt_decode_with_ec(celt_dec, silence, 2, pcm, F2_5, NULL, celt_accum);
       }
-      st->rangeFinal = dec.rng;
+      /* The range decoder is not initialised when concealing (data == NULL). */
+      st->rangeFinal = data != NULL ? dec.rng : 0;
    }
 
    {
@@ -696,10 +698,12 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
          opus_val32 x;
 #ifdef ENABLE_RES24
          x = MULT32_32_Q16(pcm[i],gain);
+         /* Same headroom as the rest of the fixed-point pipeline. */
+         pcm[i] = SATURATE(x, SIG_SAT>>(SIG_SHIFT-RES_SHIFT));
 #else
          x = MULT16_32_P16(pcm[i],gain);
-#endif
          pcm[i] = SATURATE(x, 32767);
+#endif
       }
    }
 
@@ -1127,6 +1131,10 @@ int opus_decoder_ctl(OpusDecoder *st, int request, ...)
       silk_ResetDecoder( silk_dec );
       st->stream_channels = st->channels;
       st->frame_size = st->Fs/400;
+#ifdef ENABLE_OSCE_BWE
+      /* DecControl is not part of the cleared area */
+      st->DecControl.prev_osce_extended_mode = OSCE_MODE_CELT_ONLY;
+#endif
 #ifdef ENABLE_DEEP_PLC
       lpcnet_plc_reset( &st->lpcnet );
 #endif

@@ -10,6 +10,7 @@
 #include "mozilla/SVGIntegrationUtils.h"  // for WrFiltersHolder
 #include "mozilla/layers/ClipManager.h"
 #include "mozilla/layers/HitTestInfoManager.h"
+#include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
@@ -59,6 +60,24 @@ class WebRenderCommandBuilder final {
   void PushOverrideForASR(const ActiveScrolledRoot* aASR,
                           const wr::WrSpatialId& aSpatialId);
   void PopOverrideForASR(const ActiveScrolledRoot* aASR);
+
+  // The reference frames a frame can create, which together with the frame
+  // identify a reference frame.
+  enum class FrameReferenceFrame : uint8_t {
+    Transform,
+    TransformSeparator,
+    SVGOrigin,
+    Perspective,
+    OwnLayer,
+    ViewTransitionCapture,
+  };
+
+  // Defines reference frame aKind of aFrame in the current space. Every
+  // reference frame created for a frame goes through here.
+  DefinedReferenceFrame DefineReferenceFrame(
+      wr::DisplayListBuilder& aBuilder, nsIFrame* aFrame,
+      FrameReferenceFrame aKind, const LayoutDevicePoint& aOrigin,
+      const wr::ReferenceFrameParams& aParams);
 
   Maybe<wr::ImageKey> CreateImageKey(
       nsDisplayItem* aItem, ImageContainer* aContainer,

@@ -1197,6 +1197,20 @@ void MacroAssembler::branchTestNull(Condition cond, Register tag,
   ma_b(tag, ImmTag(JSVAL_TAG_NULL), label, cond);
 }
 
+void MacroAssembler::branchTestNullOrUndefined(Condition cond, Register tag,
+                                               Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  if (cond == Equal) {
+    branchTestNull(Equal, tag, label);
+    branchTestUndefined(Equal, tag, label);
+    return;
+  }
+  Label done;
+  branchTestNull(Equal, tag, &done);
+  branchTestUndefined(NotEqual, tag, label);
+  bind(&done);
+}
+
 void MacroAssembler::branchTestNull(Condition cond, const Address& address,
                                     Label* label) {
   UseScratchRegisterScope temps(*this);
@@ -1233,6 +1247,13 @@ void MacroAssembler::branchTestObject(Condition cond, const BaseIndex& address,
   Register scratch2 = temps.Acquire();
   Register tag = extractTag(address, scratch2);
   branchTestObject(cond, tag, label);
+}
+
+void MacroAssembler::branchTestGCThing(Condition cond, Register tag,
+                                       Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  ma_b(tag, ImmTag(JS::detail::ValueLowerInclGCThingTag), label,
+       (cond == Equal) ? AboveOrEqual : Below);
 }
 
 void MacroAssembler::branchTestGCThing(Condition cond, const Address& address,

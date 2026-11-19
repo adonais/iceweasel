@@ -43,7 +43,9 @@ no data in it.
   data, `--repo autoland` to inspect the culprit push, and `--watch --notify` to wait on a
   running try push instead of polling it.
 - **Before/After profiles** — `profiler-cli`, driven through the **profiler-analysis**
-  skill. If it is not installed: `npm install -g @firefox-devtools/profiler-cli@latest`.
+  skill. If it is not installed, run `./mach bootstrap`, then restart the agent from a new
+  terminal, since the current shell's PATH won't include the directory bootstrap installs
+  it to.
 
 `profiler-analysis` owns the profiler-cli protocol (run `profiler-cli guide` first, stop
 the daemon when done). Hand profiles to that skill instead of reimplementing it here.

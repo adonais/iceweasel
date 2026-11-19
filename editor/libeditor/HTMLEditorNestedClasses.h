@@ -1904,7 +1904,7 @@ struct MOZ_STACK_CLASS HTMLEditor::ReplaceWhiteSpacesData final {
   ReplaceWhiteSpacesData(nsAutoString&& aWhiteSpaces, uint32_t aStartOffset,
                          uint32_t aReplaceLength,
                          uint32_t aOffsetAfterReplacing = UINT32_MAX)
-      : mNormalizedString(std::forward<nsAutoString>(aWhiteSpaces)),
+      : mNormalizedString(std::move(aWhiteSpaces)),
         mReplaceStartOffset(aStartOffset),
         mReplaceEndOffset(aStartOffset + aReplaceLength),
         mNewOffsetAfterReplace(aOffsetAfterReplacing) {

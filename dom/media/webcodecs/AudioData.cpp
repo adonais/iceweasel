@@ -755,7 +755,7 @@ UniquePtr<AudioData::TransferredData> AudioData::Transfer() {
   }
 
   // This adds a ref to the resource
-  auto serialized = MakeUnique<AudioDataSerializedData>(*this);
+  auto serialized = std::make_unique<AudioDataSerializedData>(*this);
   // This removes the ref to the resource, effectively transfering the backing
   // storage.
   Close();

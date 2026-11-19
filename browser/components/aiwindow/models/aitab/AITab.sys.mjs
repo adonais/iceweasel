@@ -119,6 +119,16 @@ export const MAX_AITAB_CONTEXT_TABS = 10;
 // Surface properties the browser navigates to or loads. The model may only
 // fill them with URL tokens it was given (see expandSurfaceUrlTokens).
 const LINK_FIELDS = new Set(["href", "image"]);
+
+/**
+ * @param {string} url
+ * @returns {string|null} The form URLs are compared in when checking a link
+ *   against the ones a conversation has seen, or null when `url` is invalid.
+ */
+function linkKey(url) {
+  return URL.parse(String(url ?? ""))?.href ?? null;
+}
+
 // Nesting limit for walking model output in expandSurfaceUrlTokens. Surfaces
 // are flat adjacency lists, so real ones stay far below this.
 const MAX_EXPAND_RECURSION_DEPTH = 32;
@@ -874,7 +884,8 @@ export class AITab {
    * @param {string} [options.modifyInstructions] - What to change about it.
    *   Cut to MAX_INSTRUCTION_CHARS.
    * @param {string} [options.howInitiated] - How the generation was requested,
-   *   for telemetry: tab_list, tab_group, chat, chat_followup or refresh.
+   *   for telemetry: tab_list, tab_group, fxms, chat, chat_followup or
+   *   refresh.
    * @param {AbortSignal} [options.signal] - Cancels the generation. Checked at
    *   every await boundary here and in #generateStructuredSurface, and passed to
    *   the page extractions so they can be torn down early.
@@ -1002,7 +1013,7 @@ export class AITab {
     if (sources.error) {
       return sources;
     }
-    const { urlsUsed, sourceText } = sources;
+    const { urlsUsed, readUrls, sourceText } = sources;
 
     const focusText = AITab.#capped(focus);
 
@@ -1021,6 +1032,9 @@ export class AITab {
       focus: focusText,
       modifyInstructions: instructions,
       priorConversation: prior?.conversation,
+      allowedLinks: conversation?.securityProperties.untrustedInput
+        ? AITab.#allowedLinks({ conversation, readUrls, prior })
+        : null,
       signal,
       stats,
     });
@@ -1100,6 +1114,53 @@ export class AITab {
   }
 
   /**
+   * The URLs a generated page may link to: those the chat has seen, its
+   * search results and @mentions, the pages read for this turn, and, for a
+   * revision, the links already on the page.
+   *
+   * @param {object} options
+   * @param {ChatConversation} options.conversation - The chat asking for the
+   *   page.
+   * @param {string[]} options.readUrls - Pages read for this turn.
+   * @param {{page: object, conversation: Conversation}|null} options.prior -
+   *   The page being revised, from #loadPageToModify.
+   * @returns {Set<string>} Normalized URLs (see linkKey).
+   */
+  static #allowedLinks({ conversation, readUrls, prior }) {
+    const urls = [
+      ...(conversation?.seenUrls ?? []),
+      ...(conversation?.serpUrlsForAnonymousFetch ?? []),
+      ...(conversation?.getAllMentionURLs() ?? []),
+      ...readUrls,
+      ...AITab.#linkedUrls(prior?.page.components?.surface),
+    ];
+    return new Set(urls.map(linkKey).filter(Boolean));
+  }
+
+  /**
+   * The `href` values in a surface, including those in its data model.
+   *
+   * @param {any} value - A surface, or a value nested in one.
+   * @param {number} [recursionDepth] - Nesting level of `value`; callers
+   *   leave it unset.
+   * @returns {string[]}
+   */
+  static #linkedUrls(value, recursionDepth = 0) {
+    if (
+      !value ||
+      typeof value != "object" ||
+      recursionDepth > MAX_EXPAND_RECURSION_DEPTH
+    ) {
+      return [];
+    }
+    return Object.entries(value).flatMap(([key, sub]) =>
+      key == "href" && typeof sub == "string"
+        ? [sub]
+        : AITab.#linkedUrls(sub, recursionDepth + 1)
+    );
+  }
+
+  /**
    * A model-supplied free-text parameter, trimmed and cut to
    * MAX_INSTRUCTION_CHARS.
    *
@@ -1153,9 +1214,10 @@ export class AITab {
    * @param {ChatConversation} options.conversation - Gates each URL's access
    *   check, so a page the chat may not read contributes nothing.
    * @param {AbortSignal} [options.signal] - Cancels the extractions.
-   * @returns {Promise<{urlsUsed: AITabSource[], sourceText: string}
-   *   |{error: string}>} The sources in the order requested and the text for
-   *   the prompt, or a description of why there is nothing to build from.
+   * @returns {Promise<{urlsUsed: AITabSource[], readUrls: string[],
+   *   sourceText: string}|{error: string}>} The sources in the order
+   *   requested, the URLs among them that could be read, and the text for the
+   *   prompt, or a description of why there is nothing to build from.
    */
   static async #collectSources({ urls, rawText, conversation, signal }) {
     // Pull the readable content for each requested URL (order-aligned with
@@ -1234,7 +1296,11 @@ export class AITab {
       );
     }
 
-    return { urlsUsed, sourceText: sourceParts.join(PAGE_BREAK) };
+    return {
+      urlsUsed,
+      readUrls: urls.filter((url, index) => contents[index]?.ok),
+      sourceText: sourceParts.join(PAGE_BREAK),
+    };
   }
 
   /**
@@ -1520,14 +1586,24 @@ export class AITab {
    * `href` does not is dropped, and any other invalid link field is removed,
    * so a URL the model was never given can't become a link or image.
    *
+   * When `allowedLinks` is given, an `href` must also be one of them.
+   *
    * @param {any} value - A parsed surface, or a value nested in one.
    * @param {UrlTokenizer} urlTokenizer - The tokenizer used for the prompt.
+   * @param {Set<string>|null} [allowedLinks] - Normalized URLs (see
+   *   linkKey) an `href` may point to; an item linking anywhere else is
+   *   dropped. Null allows any URL the prompt contained.
    * @param {number} [recursionDepth] - Nesting level of `value`; callers
    *   leave it unset.
    * @returns {any} A detokenized copy, or undefined when `value` is dropped or
    *   nested deeper than MAX_EXPAND_RECURSION_DEPTH.
    */
-  static expandSurfaceUrlTokens(value, urlTokenizer, recursionDepth = 0) {
+  static expandSurfaceUrlTokens(
+    value,
+    urlTokenizer,
+    allowedLinks = null,
+    recursionDepth = 0
+  ) {
     if (typeof value == "string") {
       return stripUnresolvedUrlTokens(
         expandUrlTokens(value, urlTokenizer.tokenToUrl)
@@ -1539,7 +1615,12 @@ export class AITab {
     if (Array.isArray(value)) {
       return value
         .map(item =>
-          AITab.expandSurfaceUrlTokens(item, urlTokenizer, recursionDepth + 1)
+          AITab.expandSurfaceUrlTokens(
+            item,
+            urlTokenizer,
+            allowedLinks,
+            recursionDepth + 1
+          )
         )
         .filter(item => item !== undefined);
     }
@@ -1550,6 +1631,15 @@ export class AITab {
     for (const [key, sub] of Object.entries(value)) {
       if (LINK_FIELDS.has(key)) {
         const url = urlTokenizer.resolveExactToken(sub);
+        if (
+          key == "href" &&
+          url &&
+          allowedLinks &&
+          !allowedLinks.has(linkKey(url))
+        ) {
+          lazy.console.warn("dropping item with unseen link", url);
+          return undefined;
+        }
         if (url) {
           result[key] = url;
         } else if (key == "href") {
@@ -1561,6 +1651,7 @@ export class AITab {
       const expanded = AITab.expandSurfaceUrlTokens(
         sub,
         urlTokenizer,
+        allowedLinks,
         recursionDepth + 1
       );
       if (expanded !== undefined) {
@@ -1652,6 +1743,8 @@ export class AITab {
    *   surface `priorConversation` already produced.
    * @param {Conversation} [options.priorConversation] The conversation to
    *   continue; a fresh one is built when there is none.
+   * @param {Set<string>|null} options.allowedLinks URLs the surface may link
+   *   to, as expandSurfaceUrlTokens takes them.
    * @param {AbortSignal} [options.signal] - Cancels the generation.
    * @param {{charsRead: number, charsOut: number}} options.stats - Filled in
    *   with the characters sent to and received from the model.
@@ -1663,6 +1756,7 @@ export class AITab {
     focus,
     modifyInstructions,
     priorConversation,
+    allowedLinks,
     signal,
     stats,
   }) {
@@ -1726,12 +1820,15 @@ export class AITab {
       }
 
       stats.charsRead = charsRead;
-      // The signal is deliberately not forwarded to run(): an AbortSignal
-      // cannot be structured-cloned to the engine actor, so the model call can
-      // only be abandoned once it resolves.
+      // An AbortSignal cannot be structured-cloned to the engine actor.
+      // We pass it between functions in the calling process to identify
+      // when it's aborted. When that happens, the engine sends a
+      // cancellation message with a request ID so the backend
+      // aborts the HTTP request to the model.
       const response = await conversation.run({
         args,
         token: await lazy.AuthProvider.getToken(),
+        signal,
       });
 
       if (signal?.aborted) {
@@ -1768,7 +1865,11 @@ export class AITab {
         };
       }
 
-      const surface = AITab.expandSurfaceUrlTokens(parsed, urlTokenizer);
+      const surface = AITab.expandSurfaceUrlTokens(
+        parsed,
+        urlTokenizer,
+        allowedLinks
+      );
 
       const result = AITab.buildSurface(surface, env);
       if (!result.ok) {
@@ -1788,6 +1889,9 @@ export class AITab {
       lazy.console.debug("structured surface validated successfully");
       return { surface: result.surface, conversation };
     } catch (error) {
+      if (signal?.aborted) {
+        return CANCELED_RESULT;
+      }
       lazy.console.error("structured generation failed", error);
       return {
         error: `page generation failed: ${error?.message ?? error}`,

@@ -513,7 +513,7 @@ add_task(async function test_check_now_dispatches_check_update() {
 });
 
 add_task(async function test_watch_url_chip_dispatches_open_link() {
-  const detail = await getDisplayCardActionDetail("ai-website-chip", {
+  const detail = await getDisplayCardActionDetail("smartwindow-chip", {
     eventType: "AIChatContent:OpenLink",
     innerSelector: ".chip",
   });
@@ -568,7 +568,7 @@ add_task(async function test_create_card_chip_shows_open_tab_title() {
       const chipLabels = () =>
         [
           ...card.shadowRoot.querySelectorAll(
-            ".page-pills-row ai-website-chip"
+            ".page-pills-row smartwindow-chip"
           ),
         ].map(chip => chip.getAttribute("label"));
 

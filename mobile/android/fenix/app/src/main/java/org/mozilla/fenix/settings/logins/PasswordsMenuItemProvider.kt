@@ -17,6 +17,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuFragmentDirections
 import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.store.MenuAction
 
 /**
@@ -24,24 +25,37 @@ import org.mozilla.fenix.components.menu.store.MenuAction
  *
  * @param isAutofillSupported Whether saving and autofilling passwords is supported on this device. The item is hidden
  *   otherwise.
+ * @param target [MenuTarget] for which this menu item would be shown for.
  */
-class PasswordsMenuItemProvider(isAutofillSupported: Boolean) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        MutableStateFlow(
-            when (isAutofillSupported) {
-                true ->
-                    StandardMenuItem(
-                        title = MenuItemTitle(Text.Resource(R.string.browser_menu_passwords)),
-                        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_login_24),
-                        onClickEvent = MenuAction.Navigate.Passwords,
-                    )
-                false -> null
-            }
-        )
+class PasswordsMenuItemProvider(
+    isAutofillSupported: Boolean,
+    private val target: MenuTarget,
+) : MenuItemProvider {
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            MutableStateFlow(
+                listOfNotNull(
+                    when (isAutofillSupported) {
+                        true -> DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.Navigate.Passwords)
+                        false -> null
+                    }
+                )
+            )
+        }
 
     override fun handles(event: MenuEvent) = event == MenuAction.Navigate.Passwords
 
     override fun onEvent(event: MenuEvent, menu: MenuHost) {
         menu.navigate(MenuFragmentDirections.actionMenuFragmentToLoginsListFragment())
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_passwords)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_login_24),
+            )
     }
 }

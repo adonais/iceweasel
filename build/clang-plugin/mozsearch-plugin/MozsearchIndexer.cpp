@@ -2667,8 +2667,8 @@ public:
         ForwardedTemplateLocations.cend())
       return;
 
-    // If this is a forwarding template (eg MakeUnique), visit the forwarded
-    // statements
+    // If this is a forwarding template (eg std::make_unique), visit the
+    // forwarded statements
     auto todo = std::stack{std::vector<const Stmt *>{E}};
     auto seen = std::unordered_set<const Stmt *>{};
     while (!todo.empty()) {

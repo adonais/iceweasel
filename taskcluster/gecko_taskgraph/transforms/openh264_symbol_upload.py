@@ -29,7 +29,9 @@ def make_symbol_upload_description(config, jobs):
                 config.params["level"]
             )
         )
-        artifact_path = f"public/build/openh264-v{version}-{build_platform}.symbols.zip"
+        artifact_path = (
+            f"public/build/openh264-v{version}-{build_platform}.symbols.tar.zst"
+        )
 
         dep_th = dep_job.task.get("extra", {}).get("treeherder", {})
         treeherder = inherit_treeherder_from_dep(job, dep_job)
@@ -46,6 +48,9 @@ def make_symbol_upload_description(config, jobs):
                 "max-run-time": 1200,
                 "env": {
                     "SYMBOL_SECRET": symbol_secret,
+                    "MAKECAB": "/builds/worker/fetches/makecab/makecab",
+                    "UPLOAD_SYMBOLS": "/builds/worker/fetches/upload-symbols-cli/upload-symbols",
+                    "MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE": "system",
                 },
             },
             "run": {
@@ -57,6 +62,10 @@ def make_symbol_upload_description(config, jobs):
                 "sparse-profile": "upload-symbols",
             },
             "dependencies": {"openh264": dep_job.label},
+            "fetches": {
+                "fetch": ["upload-symbols-linux64"],
+                "toolchain": ["linux64-makecab"],
+            },
             "attributes": copy_attributes_from_dependent_job(dep_job),
             "run-on-projects": dep_job.attributes.get("run_on_projects"),
             "run-on-repo-type": job.get("run-on-repo-type", ["hg"]),

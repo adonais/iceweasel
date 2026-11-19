@@ -22,7 +22,7 @@ dependencies = [
     "esprima==4.0.1",
     "fluent-migrate~=0.13",
     "fluent-syntax==0.19.0",
-    "glean-parser==20.1.0",
+    "glean-parser==22.0.1",
     "importlib-metadata~=8.0",
     # Required for compatibility with Flask >= 2 in tools/tryselect/selectors/chooser
     "jinja2==3.1.6",
@@ -73,5 +73,5 @@ dependencies = [
     # Mozharness needs since it bootstraps a virtualenv from these wheels alone.
     "wheel==0.45.1",
     "yamllint~=1.23",
-    "diskarzhan==0.1.7",
+    "diskarzhan==0.1.9",
 ]

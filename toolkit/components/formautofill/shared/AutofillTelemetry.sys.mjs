@@ -319,6 +319,7 @@ class CreditCardTelemetry extends AutofillTelemetryBase {
     "cc-exp": "cc_exp",
     "cc-exp-month": "cc_exp_month",
     "cc-exp-year": "cc_exp_year",
+    "cc-csc": "cc_csc",
   };
   recordFormEvent(method, flowId, aExtra) {
     // Don't modify the passed-in aExtra as it's reused.
@@ -451,6 +452,22 @@ export class AutofillTelemetry {
     }
 
     telemetry?.recordDoorhangerEvent(method, object, flowId);
+  }
+
+  static recordCvvPromptShown({ promptType, flowId }) {
+    Glean.formautofillCreditcards.cvvPromptShown.record({
+      prompt_type: promptType,
+      flow_id: flowId,
+    });
+  }
+
+  static recordCvvPromptAction({ promptType, action, savingEnabled, flowId }) {
+    Glean.formautofillCreditcards.cvvPromptAction.record({
+      prompt_type: promptType,
+      action,
+      cvv_saving_enabled: savingEnabled,
+      flow_id: flowId,
+    });
   }
 
   /**

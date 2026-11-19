@@ -4,8 +4,10 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import mozilla.components.compose.browser.toolbar.R as browserToolbarR
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.TABS_COUNTER
+import mozilla.components.feature.summarize.R as summarizeR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.BrowserToolbarTestTags.SITE_INFO_INSECURE_CONNECTION
@@ -26,6 +28,7 @@ object ToolbarSelectors : SelectorContainer {
         HOME_SCREEN_TOOLBAR,
         BROWSER_VIEW_TOOLBAR_ITEMS,
         TAB_COUNTER_SHORTCUT_MENU,
+        SIMPLE_TOOLBAR_NONE_SHORTCUT_ITEMS,
     }
 
     val TOOLBAR =
@@ -42,6 +45,15 @@ object ToolbarSelectors : SelectorContainer {
             value = TABS_COUNTER,
             description = "Tab counter button",
             readiness = PageReadinessProfiles.READY_CONTENT,
+            groups = setOf(Group.SIMPLE_TOOLBAR_NONE_SHORTCUT_ITEMS),
+        )
+
+    val MAIN_MENU_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
+            value = getStringResource(R.string.content_description_menu),
+            description = "Three dot menu button",
+            groups = setOf(Group.SIMPLE_TOOLBAR_NONE_SHORTCUT_ITEMS),
         )
 
     val TOOLBAR_URL_BOX =
@@ -127,6 +139,13 @@ object ToolbarSelectors : SelectorContainer {
             groups = setOf(Group.TAB_COUNTER_SHORTCUT_MENU),
         )
 
+    val EXPANDED_TOOLBAR_HOMEPAGE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = "Homepage",
+            description = "Simple toolbar homepage button",
+        )
+
     val EXPANDED_TOOLBAR_ADD_BOOKMARK_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
@@ -175,6 +194,48 @@ object ToolbarSelectors : SelectorContainer {
             groups = setOf(Group.EXPANDED_TOOLBAR_IN_LANDSCAPE_ITEM),
         )
 
+    val SIMPLE_TOOLBAR_SHARE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = "Share",
+            description = "Simple toolbar share button",
+        )
+
+    val SIMPLE_TOOLBAR_HOMEPAGE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = "Homepage",
+            description = "Simple toolbar homepage button",
+        )
+
+    val SIMPLE_TOOLBAR_BACK_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = "Back",
+            description = "Simple toolbar back button",
+        )
+
+    val SIMPLE_TOOLBAR_SUMMARIZE_PAGES_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(summarizeR.string.mozac_summarize_settings_summarize_pages),
+            description = "Simple toolbar summarize pages button",
+        )
+
+    val SIMPLE_TOOLBAR_NEW_TAB_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(R.string.home_screen_shortcut_open_new_tab_2),
+            description = "Simple toolbar new tab button",
+        )
+
+    val EDIT_SHORTCUT_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(R.string.toolbar_shortcut_menu_edit_option),
+            description = "Edit shortcut button",
+        )
+
     val SITE_INFO_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
@@ -182,15 +243,28 @@ object ToolbarSelectors : SelectorContainer {
             description = "Site information button",
         )
 
-    // An item in the context menu shown after long-pressing the display-mode (browser) URL box, e.g.
-    // "Copy", "Paste", "Paste & Go". Mirrors the legacy clickDisplayModeToolbarContextMenuItem, which
-    // matched these by content description on the Compose toolbar.
-    @Suppress("FunctionName")
-    fun DISPLAY_MODE_TOOLBAR_MENU_ITEM(contentDescription: String = "") =
+    // Items in the context menu shown after long-pressing the display-mode (browser) URL box, matched by content
+    // description on the Compose toolbar. Strings come from the browser-toolbar component (see
+    // PageOriginContextualMenuBuilder); Paste/Paste & Go only appear when the clipboard holds text/a URL.
+    val DISPLAY_MODE_TOOLBAR_COPY =
         Selector(
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
-            value = contentDescription,
-            description = "Display-mode toolbar context menu item '$contentDescription'",
+            value = getStringResource(browserToolbarR.string.mozac_browser_toolbar_long_press_popup_copy),
+            description = "Display-mode toolbar 'Copy' menu item",
+        )
+
+    val DISPLAY_MODE_TOOLBAR_PASTE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(browserToolbarR.string.mozac_browser_toolbar_long_press_popup_paste),
+            description = "Display-mode toolbar 'Paste' menu item",
+        )
+
+    val DISPLAY_MODE_TOOLBAR_PASTE_AND_GO =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            value = getStringResource(browserToolbarR.string.mozac_browser_toolbar_long_press_popup_paste_and_go),
+            description = "Display-mode toolbar 'Paste & Go' menu item",
         )
 
     @Suppress("FunctionName")
@@ -202,9 +276,10 @@ object ToolbarSelectors : SelectorContainer {
             groups = setOf(Group.HOME_SCREEN_TOOLBAR),
         )
 
+    // Substring to support selecting Reader View whether "Listen to Page" is enabled or disabled.
     val READER_VIEW_BUTTON =
         Selector(
-            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+            strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = getStringResource(R.string.browser_menu_read),
             description = "Reader view toolbar button",
         )

@@ -13,7 +13,7 @@ import {
   MozLitElement,
   hasModifierKey,
 } from "chrome://global/content/lit-utils.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
 
 /**

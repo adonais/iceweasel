@@ -22,6 +22,7 @@
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Result.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/intl/Localization.h"
@@ -39,6 +40,7 @@
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsProxyRelease.h"
+#include "nsWindow.h"
 #include "nsXREDirProvider.h"
 
 namespace mozilla {
@@ -252,6 +254,24 @@ Result<nsString, nsresult> ToastNotificationHandler::GetLaunchArgument() {
   }
 
   return launchArg;
+}
+
+static nsIAlertCallbacks::ApplicationState GetApplicationState() {
+  HWND foreground = ::GetForegroundWindow();
+  if (foreground && ::IsWindowVisible(foreground) &&
+      WinUtils::IsOurProcessWindow(foreground)) {
+    return nsIAlertCallbacks::ApplicationState::FOREGROUND;
+  }
+
+  // Clicking a toast moves focus to the shell before we are told about the
+  // click, so if we stopped being the active application this recently we
+  // assume the click is what took it from us.
+  TimeStamp lastDeactivation = nsWindow::GetLastAppDeactivationTime();
+  if (!lastDeactivation.IsNull() &&
+      TimeStamp::Now() - lastDeactivation <= TimeDuration::FromSeconds(1)) {
+    return nsIAlertCallbacks::ApplicationState::FOREGROUND;
+  }
+  return nsIAlertCallbacks::ApplicationState::BACKGROUND_WINDOWS;
 }
 
 static ComPtr<IToastNotificationManagerStatics>
@@ -889,6 +909,8 @@ ToastNotificationHandler::OnActivate(
     } else if (actionValue && *actionValue == kAlertActionDisable) {
       mAlertCallbacks->OnAlertDisable();
     } else if (mClickable) {
+      nsIAlertCallbacks::ApplicationState state = GetApplicationState();
+
       // When clicking toast, focus moves to another process, but we want to set
       // focus on Firefox process.
       nsCOMPtr<nsIWindowMediator> winMediator(
@@ -914,7 +936,7 @@ ToastNotificationHandler::OnActivate(
 
       // Null subject for the default action or an action object for extra
       // actions
-      mAlertCallbacks->OnAlertClick(alertAction);
+      mAlertCallbacks->OnAlertClick(alertAction, state);
     }
   }
   HandleCloseFromSystem();

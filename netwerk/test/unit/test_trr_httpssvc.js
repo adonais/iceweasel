@@ -4,10 +4,6 @@
 
 "use strict";
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
 let h2Port;
 let trrServer;
 
@@ -60,11 +56,6 @@ add_setup(async function setup() {
     trr_clear_prefs();
     Services.prefs.clearUserPref("network.dns.port_prefixed_qname_https_rr");
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 });
 
 add_task(async function testHTTPSSVC() {

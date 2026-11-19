@@ -52,6 +52,12 @@ def install_moz_phab(command_context, force=False, no_system_changes=False):
             {},
             f"moz-phab is already installed in {moz_phab_executable}.",
         )
+        command_context.log(
+            logging.INFO,
+            "already_installed",
+            {},
+            "If you wish to reinstall moz-phab, use --force option.",
+        )
         sys.exit(0)
 
     # moz-phab requires user.email to be configured, so check and run `./mach vcs-setup` if needed
@@ -71,7 +77,9 @@ def install_moz_phab(command_context, force=False, no_system_changes=False):
 
     command_context.log(logging.INFO, "run", {}, "Installing moz-phab using uv")
 
-    install_cmd = ["uv", "tool", "install", "MozPhab"]
+    # Pin the tool environment to the interpreter mach runs with, so an
+    # existing environment created with an older Python gets recreated.
+    install_cmd = ["uv", "tool", "install", "--python", sys.executable, "MozPhab"]
     if force:
         install_cmd.extend(["--force", "--reinstall"])
 
@@ -122,7 +130,7 @@ def install_moz_phab(command_context, force=False, no_system_changes=False):
                 "shim_missing",
                 {},
                 f"moz-phab shim is missing from {tool_dir} even after a --force "
-                f"reinstall. Please run 'uv tool install MozPhab --force' manually.",
+                f"reinstall. Please run './mach install-moz-phab --force' manually.",
             )
             sys.exit(1)
 

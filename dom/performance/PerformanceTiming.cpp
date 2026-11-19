@@ -71,7 +71,7 @@ UniquePtr<PerformanceTimingData> PerformanceTimingData::Create(
   // The last argument is the "zero time" (offset). Since we don't want
   // any offset for the resource timing, this will be set to "0" - the
   // resource timing returns a relative timing (no offset).
-  return MakeUnique<PerformanceTimingData>(aTimedChannel, aChannel, 0);
+  return std::make_unique<PerformanceTimingData>(aTimedChannel, aChannel, 0);
 }
 
 /* static */
@@ -86,7 +86,7 @@ UniquePtr<PerformanceTimingData> PerformanceTimingData::Create(
     return nullptr;
   }
 
-  // (Note: we have to use WrapUnique(new...) here instead of MakeUnique,
+  // (Note: we have to use WrapUnique(new...) here instead of std::make_unique,
   // because the PerformanceTimingData constructor that we're invoking
   // happens to be private.)
   return WrapUnique(new PerformanceTimingData(
@@ -157,6 +157,10 @@ CacheablePerformanceTimingData::CacheablePerformanceTimingData(
   // in subframes, and resources linked from a document.
   if (aHttpChannel) {
     SetCacheablePropertiesFromHttpChannel(aHttpChannel, aChannel);
+    // Fetch fails the TAO check for every response after a redirect hop fails
+    // it. Navigation timing entries don't go through here, so they keep only
+    // checking the final response in CheckTimingAllowedForOrigin.
+    mTimingAllowed = mTimingAllowed && mAllRedirectsPassTAO;
   }
 }
 

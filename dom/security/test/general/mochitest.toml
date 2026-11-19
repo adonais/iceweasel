@@ -34,9 +34,6 @@ skip-if = [
 ]
 
 ["test_assert_about_page_no_csp.html"]
-skip-if = [
-  "opt",
-]
 
 ["test_block_script_wrong_mime.html"]
 
@@ -120,9 +117,6 @@ skip-if = [
 ]
 
 ["test_same_site_cookies_laxByDefault.html"]
-skip-if = [
-  "debug",
-]
 support-files = ["closeWindow.sjs"]
 
 ["test_same_site_cookies_redirect.html"]

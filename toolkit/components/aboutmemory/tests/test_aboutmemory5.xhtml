@@ -127,17 +127,12 @@
             endOfBrowsers = actual.match(/End of [wW]eb /g);
           }
 
-          let socketProcessRunning = 0;
-          if (SpecialPowers.Services.io.socketProcessLaunched) {
-            socketProcessRunning = 1;
-          }
-
           let rddProcessRunning = 0;
           if (window.windowUtils.rddProcessPid != -1) {
             rddProcessRunning = 1;
           }
 
-          let m2 = (vsizes.length == (4 + socketProcessRunning + rddProcessRunning + ChromeUtils.aliveUtilityProcesses) &&
+          let m2 = (vsizes.length == (4 + rddProcessRunning + ChromeUtils.aliveUtilityProcesses) &&
                     endOfBrowsers.length == 3);
           ok(m2, "three content processes present in loaded data");
           good = good && !!m2;

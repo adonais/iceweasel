@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!-- Any copyright is dedicated to the Public Domain.
+     https://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+<head>
+  <title>Nested event loop started from a native event does not lose the outer loop's wake-up</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script>
+"use strict";
+
+const TOPIC = "appshell-native-test-event";
+
+add_task(async function test_nested_native_loop_wakeup() {
+  const appShell = Cc["@mozilla.org/widget/appshell/mac;1"].getService(
+    Ci.nsICocoaAppShellTestUtils
+  );
+
+  let innerDone = false;
+  let outerDone = false;
+  let ranNested = false;
+  let innerReturnedAt = 0;
+
+  const observer = () => {
+    Services.obs.removeObserver(observer, TOPIC);
+    ranNested = true;
+    // A timer makes sure the wake-up arrives while the nested loop is
+    // blocked in the native wait, not before it starts waiting.
+    const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    timer.initWithCallback(
+      () => {
+        innerDone = true;
+        outerDone = true;
+      },
+      50,
+      Ci.nsITimer.TYPE_ONE_SHOT
+    );
+    Services.tm.spinEventLoopUntil("test inner loop", () => innerDone);
+    innerReturnedAt = ChromeUtils.now();
+  };
+  Services.obs.addObserver(observer, TOPIC);
+
+  const rescue = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  rescue.initWithCallback(() => {}, 5000, Ci.nsITimer.TYPE_ONE_SHOT);
+
+  const lostBefore = appShell.lostNativeWakeups;
+  appShell.postNativeTestEvent();
+  Services.tm.spinEventLoopUntil("test outer loop", () => outerDone);
+  const stall = ChromeUtils.now() - innerReturnedAt;
+  rescue.cancel();
+
+  ok(ranNested, "The nested loop ran from within the native event dispatch");
+  info(`Outer loop returned ${stall.toFixed(1)} ms after the nested loop`);
+  is(
+    appShell.lostNativeWakeups - lostBefore,
+    0,
+    "The outer native loop did not go back to waiting after a nested loop consumed its wake-up"
+  );
+});
+</script>
+</body>
+</html>

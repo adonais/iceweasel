@@ -113,6 +113,30 @@ Example:
 }
 ```
 
+### `OPEN_SUPPORT_PAGE`
+
+* args:
+```ts
+{
+  args: string, // support page slug, e.g. "firefox-backup"
+  where?: "current" | "save" | "tab" | "tabshifted" | "window", // defaults to "current"
+}
+```
+
+Opens a support.mozilla.org article. `args` is the article's slug, resolved against
+the `app.support.baseURL` pref, so the link always points to the support site for
+the user's version, OS and locale. The page must resolve to a URL under
+`app.support.baseURL`; other URLs throw an error.
+
+Example:
+
+```json
+"action": {
+  "type": "OPEN_SUPPORT_PAGE",
+  "data": { "args": "firefox-backup", "where": "current" }
+}
+```
+
 ### `SHOW_FIREFOX_ACCOUNTS`
 
 * args: (none)
@@ -173,6 +197,21 @@ window or tab closed before sign-in could be completed.
 }
 ```
 
+### `SHOW_QR_CODE`
+
+* args: `string` (a url)
+
+Shows a QR code for the given url in a dialog over the current tab. Resolves once the dialog is closed.
+
+Example:
+
+```json
+"action": {
+  "type": "SHOW_QR_CODE",
+  "data": { "args": "https://www.mozilla.org/firefox/mobile/" }
+}
+```
+
 ### `SHOW_MIGRATION_WIZARD`
 
 * args:
@@ -218,6 +257,24 @@ Opens the protection panel behind on the lock icon of the awesomebar
 Opens the Smart Window Monitor toolbar panel straight to the create form.
 
 * args: (none)
+
+### `SUBMIT_SMARTWINDOW_PROMPT`
+
+Sends a prompt to the Smart Window sidebar chat, as if the user had typed it
+there. If the sidebar is closed, it is opened on the selected tab's
+conversation first.
+
+* args:
+```ts
+{
+  // Prompt to send, e.g. "Collect ingredients from recipes in my open tabs
+  // and put them in a page".
+  prompt: string;
+  // Recorded as submit_type on chat telemetry and how_initiated on AI Tab
+  // telemetry. Defaults to "fxms".
+  source?: string;
+}
+```
 
 ### `DISABLE_STP_DOORHANGERS`
 
@@ -277,6 +334,7 @@ Action for pinning Firefox to the user's taskbar.
 {
   privatePin?: boolean; // Pin private browsing mode
   fireAndForget?: boolean; // Don't wait for user confirmation before resolving the action
+  promptOnly?: boolean; // Only pin via the OS consent prompt and never fall back to silent pinning. Set automatically for action_only messages
 }
 ```
 
@@ -295,6 +353,7 @@ Action for pinning Firefox to the user's taskbar and setting it as the default b
 {
   privatePin?: boolean; // Pin private browsing mode
   fireAndForget?: boolean; // Don't wait for user confirmation before resolving the action
+  promptOnly?: boolean; // Only pin via the OS consent prompt and never fall back to silent pinning. Set automatically for action_only messages
 }
 ```
 
@@ -542,6 +601,12 @@ Sets the visibility of the bookmarks toolbar.
 ### `SET_TERMS_OF_USE_INTERACTED`
 
 Notify Firefox that the Terms of Use policy was interacted with.
+
+- args: (none)
+
+### `ACCEPT_SMARTWINDOW_TOU`
+
+Notify Smart Window that the user accepted its Terms of Use, through the `smartwindow-tou-accepted` observer notification. Smart Window records the consent itself.
 
 - args: (none)
 

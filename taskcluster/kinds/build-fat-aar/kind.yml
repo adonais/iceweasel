@@ -26,12 +26,12 @@ task-defaults:
         product: mobile
     worker-type: b-linux-docker-amd
     use-python: default
+    # Online in order to download the per-architecture AARs.
+    use-gradle: online
     worker:
         docker-image: {in-tree: android-build}
         max-run-time: 7200
         env:
-            # Online in order to download the per-architecture AARs.
-            GRADLE_USER_HOME: "/builds/worker/checkouts/build/gecko/mobile/android/gradle/dotgradle-online"
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
             MOZ_ANDROID_FAT_AAR_ARCHITECTURES: "armeabi-v7a,arm64-v8a,x86_64"
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
@@ -141,7 +141,7 @@ tasks:
             maven_packages:
                 - geckoview
         shipping-phase: build
-        shipping-product: fennec
+        shipping-product: firefox-android
         index:
             job-name: android-geckoview-fat-aar-opt
             type: shippable-with-multi-l10n
@@ -178,7 +178,7 @@ tasks:
             maven_packages:
                 - geckoview
         shipping-phase: build
-        shipping-product: fennec
+        shipping-product: firefox-android
         index:
             job-name: android-geckoview-fat-aar-opt-lite
             type: shippable-with-multi-l10n

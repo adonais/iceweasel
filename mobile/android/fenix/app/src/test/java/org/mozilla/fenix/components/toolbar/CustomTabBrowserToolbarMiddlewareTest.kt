@@ -598,8 +598,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
         assertEquals(1, toolbarPageActions.size)
         assertIs<ActionButtonRes>(toolbarPageActions[0])
 
-        ipProtectionStore.dispatch(IPProtectionAction.ServiceStateChanged(ServiceState.Ready))
-        ipProtectionStore.dispatch(IPProtectionAction.ProxyStateChanged(ProxyState.ACTIVE))
+        ipProtectionStore.dispatch(IPProtectionAction.ServiceAction.ServiceStateChanged(ServiceState.Ready))
+        ipProtectionStore.dispatch(IPProtectionAction.ProxyAction.ProxyStateChanged(ProxyState.ACTIVE))
         testDispatcher.scheduler.advanceUntilIdle()
 
         toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
@@ -636,8 +636,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
             assertEquals(1, toolbarPageActions.size)
             assertIs<AnimatedPillActionRes>(toolbarPageActions[0])
 
-            ipProtectionStore.dispatch(IPProtectionAction.ServiceStateChanged(ServiceState.Ready))
-            ipProtectionStore.dispatch(IPProtectionAction.ProxyStateChanged(ProxyState.READY))
+            ipProtectionStore.dispatch(IPProtectionAction.ServiceAction.ServiceStateChanged(ServiceState.Ready))
+            ipProtectionStore.dispatch(IPProtectionAction.ProxyAction.ProxyStateChanged(ProxyState.READY))
             testDispatcher.scheduler.advanceUntilIdle()
 
             toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
@@ -670,14 +670,14 @@ class CustomTabBrowserToolbarMiddlewareTest {
                 )
             val toolbarStore = buildStore(middleware)
 
-            ipProtectionStore.dispatch(IPProtectionAction.ServiceStateChanged(ServiceState.Ready))
-            ipProtectionStore.dispatch(IPProtectionAction.ProxyStateChanged(ProxyState.READY))
+            ipProtectionStore.dispatch(IPProtectionAction.ServiceAction.ServiceStateChanged(ServiceState.Ready))
+            ipProtectionStore.dispatch(IPProtectionAction.ProxyAction.ProxyStateChanged(ProxyState.READY))
             testDispatcher.scheduler.advanceUntilIdle()
             assertIs<AnimatedPillActionRes>(toolbarStore.state.displayState.pageActionsStart[0])
 
             // Simulates the pill's onAnimationFinished callback, normally invoked by Compose once
             // the collapse animation has actually finished on screen.
-            ipProtectionStore.dispatch(IPProtectionAction.ProxyActivationShown)
+            ipProtectionStore.dispatch(IPProtectionAction.ActivationAction.ProxyActivationShown)
             testDispatcher.scheduler.advanceUntilIdle()
 
             val toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
@@ -1060,7 +1060,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
         every { customTab.config.showShareMenuItem } returns false
         val expectedMenuButton =
             ActionButtonRes(
-                drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                drawableResId = iconsR.drawable.mozac_ic_more_vertical_round_24,
                 contentDescription = R.string.content_description_menu,
                 onClick = MenuClicked,
             )
@@ -1078,7 +1078,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
         every { customTab.config.showShareMenuItem } returns true
         val expectedMenuButton =
             ActionButtonRes(
-                drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                drawableResId = iconsR.drawable.mozac_ic_more_vertical_round_24,
                 contentDescription = R.string.content_description_menu,
                 onClick = MenuClicked,
             )

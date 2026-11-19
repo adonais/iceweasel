@@ -50,11 +50,16 @@ const { Status } = ChromeUtils.importESModule(
 const { MASTER_PASSWORD_LOCKED } = ChromeUtils.importESModule(
   "resource://services-sync/constants.sys.mjs"
 );
+const { UpdatableCreditCardFields } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
+);
 
 const ENABLED_PREF = "extensions.formautofill.creditCards.storage.rust.enabled";
 const ACTIVE_PREF = "extensions.formautofill.creditCards.storage.rust.active";
 // What `engine.enabled = true` writes.
 const SYNC_ENGINE_PREF = "services.sync.engine.creditcards";
+const CVV_SUPPORTED_PREF = "extensions.formautofill.creditCards.cvv.supported";
+const CVV_ENABLED_PREF = "extensions.formautofill.creditCards.cvv.enabled";
 
 const TEST_NUMBER = "4111111111111111";
 const REMOTE_NUMBER = "378282246310005";
@@ -87,6 +92,8 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref(ENABLED_PREF);
   Services.prefs.clearUserPref(ACTIVE_PREF);
   Services.prefs.clearUserPref(SYNC_ENGINE_PREF);
+  Services.prefs.clearUserPref(CVV_SUPPORTED_PREF);
+  Services.prefs.clearUserPref(CVV_ENABLED_PREF);
 });
 
 add_setup(async function () {
@@ -210,6 +217,115 @@ add_task(async function test_sync_round_trip_carries_the_number() {
       "with its number in the clear rather than the stored mask"
     );
   } finally {
+    await engine.finalize();
+    await promiseStopServer(server);
+  }
+});
+
+/**
+ * Start a credit card sync against a fresh server holding one card, saved on
+ * another device with a security code, and sync it into the store.
+ *
+ * @returns {object} The engine, server, collection, the card's guid and the
+ *   Rust store holding it.
+ */
+async function syncInCardWithSecurityCode() {
+  const engine = new BridgedCreditCardsEngine(Service);
+  await engine.initialize();
+  engine.enabled = true;
+
+  await resetBetweenTasks(engine);
+  await engine.resetLocalSyncID();
+
+  const server = await serverForFoo(engine);
+  try {
+    await SyncTestingInfrastructure(server);
+
+    const guid = "remote-cvv-aa";
+    const collection = server.user("foo").collection("creditcards");
+    collection.insert(
+      guid,
+      encryptPayload({
+        id: guid,
+        entry: {
+          ...card("Saved Elsewhere", REMOTE_NUMBER),
+          "cc-cvv": "123",
+          version: 3,
+        },
+      }),
+      new_timestamp()
+    );
+    await sync_engine_and_validate_telem(engine, false);
+
+    const store = await RustAutofillCreditCardsAdapter.getInstance()._store();
+    Assert.equal(
+      (await store.getCreditCard(guid)).ccCvv,
+      "123",
+      "the incoming security code was stored"
+    );
+
+    return { engine, server, collection, guid, store };
+  } catch (e) {
+    await engine.finalize();
+    await promiseStopServer(server);
+    throw e;
+  }
+}
+
+add_task(async function test_security_code_survives_an_edit_that_omits_it() {
+  const { engine, server, collection, guid, store } =
+    await syncInCardWithSecurityCode();
+  try {
+    // Straight to the store rather than through formAutofillStorage, whose
+    // update() merges the stored code back in: this is the call a client
+    // without security code support (Android today) makes, with no ccCvv. If
+    // that cleared the code, the next upload would drop cc-cvv and the code
+    // would vanish from every device.
+    await store.updateCreditCard(
+      guid,
+      new UpdatableCreditCardFields({
+        ccName: "Edited Without A Code",
+        ccNumber: REMOTE_NUMBER,
+        ccExpMonth: 4,
+        ccExpYear: 2030,
+        ccType: "amex",
+      })
+    );
+    await sync_engine_and_validate_telem(engine, false);
+
+    const uploaded = collection.cleartext(guid);
+    Assert.equal(
+      uploaded.entry["cc-name"],
+      "Edited Without A Code",
+      "the edit was uploaded"
+    );
+    Assert.equal(
+      uploaded.entry["cc-cvv"],
+      "123",
+      "with the security code the edit did not mention"
+    );
+  } finally {
+    await engine.finalize();
+    await promiseStopServer(server);
+  }
+});
+
+add_task(async function test_security_code_cleared_on_desktop_is_uploaded() {
+  const { engine, server, collection, guid } =
+    await syncInCardWithSecurityCode();
+  Services.prefs.setStringPref(CVV_SUPPORTED_PREF, "on");
+  Services.prefs.setBoolPref(CVV_ENABLED_PREF, true);
+  try {
+    await formAutofillStorage.creditCards.update(guid, { "cc-csc": "" }, true);
+    await sync_engine_and_validate_telem(engine, false);
+
+    Assert.ok(
+      !("cc-cvv" in collection.cleartext(guid).entry),
+      "a security code cleared on this device is removed from the server"
+    );
+  } finally {
+    Services.prefs.clearUserPref(CVV_SUPPORTED_PREF);
+    Services.prefs.clearUserPref(CVV_ENABLED_PREF);
     await engine.finalize();
     await promiseStopServer(server);
   }

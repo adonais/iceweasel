@@ -18,8 +18,7 @@ using namespace mozilla;
 
 PrintedSheetFrame* NS_NewPrintedSheetFrame(PresShell* aPresShell,
                                            ComputedStyle* aStyle) {
-  return new (aPresShell)
-      PrintedSheetFrame(aStyle, aPresShell->GetPresContext());
+  return new PrintedSheetFrame(aStyle, aPresShell->GetPresContext());
 }
 
 namespace mozilla {
@@ -387,6 +386,10 @@ void PrintedSheetFrame::ComputePagesPerSheetGridMetrics(
 
 gfx::IntSize PrintedSheetFrame::GetPrintTargetSizeInPoints(
     const int32_t aAppUnitsPerPhysicalInch) const {
+  if (!StaticPrefs::
+          print_save_as_pdf_use_page_rule_size_as_paper_size_enabled()) {
+    return mPD->mPrintSettings->GetEffectiveSheetSizeInPoints();
+  }
   const auto size = GetSize();
   MOZ_ASSERT(size.width > 0 && size.height > 0);
   const float pointsPerAppUnit =

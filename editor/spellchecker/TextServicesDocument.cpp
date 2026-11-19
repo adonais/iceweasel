@@ -1192,9 +1192,9 @@ nsresult TextServicesDocument::OffsetEntryArray::DidInsertText(
     } else {
       // Insert an inserted text offset entry before the current
       // entry!
-      UniquePtr<OffsetEntry> newInsertedTextEntry =
-          MakeUnique<OffsetEntry>(entry->mTextNode, entry->mOffsetInTextInBlock,
-                                  aInsertedString.Length());
+      auto newInsertedTextEntry = std::make_unique<OffsetEntry>(
+          entry->mTextNode, entry->mOffsetInTextInBlock,
+          aInsertedString.Length());
       newInsertedTextEntry->mIsInsertedText = true;
       newInsertedTextEntry->mOffsetInTextNode = entry->mOffsetInTextNode;
       // XXX(Bug 1631371) Check if this should use a fallible operation as it
@@ -1227,7 +1227,7 @@ nsresult TextServicesDocument::OffsetEntryArray::DidInsertText(
     if (!insertedTextEntry) {
       // We didn't find an inserted text offset entry, so
       // create one.
-      UniquePtr<OffsetEntry> newInsertedTextEntry = MakeUnique<OffsetEntry>(
+      auto newInsertedTextEntry = std::make_unique<OffsetEntry>(
           entry->mTextNode, mSelection.StartOffsetInTextInBlock(), 0);
       newInsertedTextEntry->mOffsetInTextNode = entry->EndOffsetInTextNode();
       newInsertedTextEntry->mIsInsertedText = true;
@@ -1277,9 +1277,9 @@ nsresult TextServicesDocument::OffsetEntryArray::DidInsertText(
     // pretended earlier.
     UniquePtr<OffsetEntry>& insertedTextEntry = *InsertElementAt(
         mSelection.StartIndex() + 1,
-        MakeUnique<OffsetEntry>(entry->mTextNode,
-                                mSelection.StartOffsetInTextInBlock(),
-                                aInsertedString.Length()));
+        std::make_unique<OffsetEntry>(entry->mTextNode,
+                                      mSelection.StartOffsetInTextInBlock(),
+                                      aInsertedString.Length()));
     LockOffsetEntryArrayLengthInDebugBuild(observer, *this);
     insertedTextEntry->mIsInsertedText = true;
     insertedTextEntry->mOffsetInTextNode = entry->EndOffsetInTextNode();
@@ -2514,8 +2514,9 @@ TextServicesDocument::OffsetEntryArray::Init(
 
         // Add an entry for this text node into the offset table:
 
-        UniquePtr<OffsetEntry>& entry = *AppendElement(
-            MakeUnique<OffsetEntry>(*content->AsText(), offset, str.Length()));
+        UniquePtr<OffsetEntry>& entry =
+            *AppendElement(std::make_unique<OffsetEntry>(*content->AsText(),
+                                                         offset, str.Length()));
         LockOffsetEntryArrayLengthInDebugBuild(observer, *this);
 
         // If one or both of the endpoints of the iteration range
@@ -2625,9 +2626,9 @@ nsresult TextServicesDocument::OffsetEntryArray::SplitElementAt(
   // pretended earlier.
   UniquePtr<OffsetEntry>& rightEntry = *InsertElementAt(
       aIndex + 1,
-      MakeUnique<OffsetEntry>(leftEntry->mTextNode,
-                              leftEntry->mOffsetInTextInBlock + oldLength,
-                              aOffsetInTextNode));
+      std::make_unique<OffsetEntry>(leftEntry->mTextNode,
+                                    leftEntry->mOffsetInTextInBlock + oldLength,
+                                    aOffsetInTextNode));
   LockOffsetEntryArrayLengthInDebugBuild(observer, *this);
   leftEntry->mLength = oldLength;
   rightEntry->mOffsetInTextNode = leftEntry->mOffsetInTextNode + oldLength;

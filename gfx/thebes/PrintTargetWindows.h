@@ -41,19 +41,22 @@ class PrintTargetWindows final : public PrintTarget {
   nsresult AbortPrinting() override;
   nsresult BeginPage(const IntSize& aSizeInPoints) override;
   nsresult EndPage() override;
+  void Finish() override;
 
   already_AddRefed<DrawTarget> MakeDrawTarget(
       const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) final;
   already_AddRefed<DrawTarget> GetReferenceDrawTarget() final;
 
  private:
-  PrintTargetWindows(cairo_surface_t* aCairoSurface, const IntSize& aSize,
-                     HDC aDC);
-  PrintTargetWindows(std::unique_ptr<SkGDI::Document> aDocument,
-                     const IntSize& aSize, HDC aDC);
+  PrintTargetWindows(cairo_surface_t* aCairoSurface, HDC aDC);
+  PrintTargetWindows(std::unique_ptr<SkGDI::Document> aDocument, HDC aDC);
   ~PrintTargetWindows() override;
 
   HDC mDC;
+
+  // Only used for cairo printing.
+  cairo_surface_t* mCairoSurface = nullptr;
+  bool mIsFinished = false;
 
   // Only used for Skia printing. The document draws into mDC, but needs to
   // draw each page multiple times, so pages are recorded with mRecorder, and

@@ -87,8 +87,6 @@ var gSanitizePromptDialog = {
     this._inClearOnShutdownNewDialog = false;
     this._inClearSiteDataNewDialog = false;
     this._inBrowserWindow = !!arg.inBrowserWindow;
-    this._closeWindowsWithHistory = !!(arg.wrappedJSObject ?? arg)
-      .closeWindowsWithHistory;
     this._entryPoint =
       (arg.wrappedJSObject ?? arg).entryPoint ??
       Sanitizer.DIALOG_ENTRY_POINTS.OTHER;
@@ -105,8 +103,10 @@ var gSanitizePromptDialog = {
       .addEventListener("click", () => this._dialog.cancelDialog());
     if (arg.inBrowserWindow && !this._inClearOnShutdownNewDialog) {
       // Start keyboard focus on the content rather than the close button.
-      document.subDialogSetDefaultFocus = () =>
-        document.getElementById("sanitizeDurationChoice").focus();
+      document.subDialogSetDefaultFocus = (isInitialFocus, { focusVisible }) =>
+        document
+          .getElementById("sanitizeDurationChoice")
+          .focus({ focusVisible });
     }
 
     if (arg.inBrowserWindow) {
@@ -349,14 +349,6 @@ var gSanitizePromptDialog = {
       };
 
       let itemsToClear = this.getItemsToClear();
-      // The sanitizer closes the windows before clearing anything else, so the
-      // closed tabs don't end up in recently closed history.
-      if (
-        this._closeWindowsWithHistory &&
-        itemsToClear.includes("browsingHistoryAndDownloads")
-      ) {
-        itemsToClear.push("openWindows");
-      }
       Sanitizer.sanitize(itemsToClear, options)
         .catch(console.error)
         .then(() => {
@@ -582,7 +574,7 @@ var gSanitizePromptDialog = {
     [amount, unit] = this.cacheSize;
     document.l10n.setAttributes(
       this._cacheCheckbox,
-      "item-cached-content-with-size",
+      "item-cached-content-with-size2",
       { amount, unit }
     );
 

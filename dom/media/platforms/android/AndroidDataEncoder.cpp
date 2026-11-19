@@ -214,8 +214,8 @@ RefPtr<MediaDataEncoder::InitPromise> AndroidDataEncoder::ProcessInit() {
                     "cannot create Java callback object"),
         __func__);
   }
-  JavaCallbacksSupport::AttachNative(
-      mJavaCallbacks, mozilla::MakeUnique<CallbacksSupport>(this));
+  JavaCallbacksSupport::AttachNative(mJavaCallbacks,
+                                     std::make_unique<CallbacksSupport>(this));
 
   mJavaEncoder = java::CodecProxy::Create(true /* encoder */, mFormat, nullptr,
                                           mJavaCallbacks, u""_ns);

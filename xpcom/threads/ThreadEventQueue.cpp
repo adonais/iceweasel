@@ -199,7 +199,7 @@ bool ThreadEventQueue::ShutdownIfNoPendingEvents() {
 }
 
 already_AddRefed<nsISerialEventTarget> ThreadEventQueue::PushEventQueue() {
-  auto queue = MakeUnique<EventQueue>();
+  auto queue = std::make_unique<EventQueue>();
   RefPtr<NestedSink> sink = new NestedSink(queue.get(), this);
   RefPtr eventTarget =
       MakeRefPtr<ThreadEventTarget>(sink, NS_IsMainThread(), false);

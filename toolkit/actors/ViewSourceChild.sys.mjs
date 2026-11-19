@@ -135,6 +135,19 @@ export class ViewSourceChild extends JSWindowActorChild {
    *        The URL string to load.
    */
   loadSourceFromURL(URL) {
+    // Prevent view-source:javascript: loads.
+    try {
+      const uri = Services.io.newURI(URL);
+      if (
+        uri instanceof Ci.nsINestedURI &&
+        uri.QueryInterface(Ci.nsINestedURI).innermostURI.schemeIs("javascript")
+      ) {
+        return;
+      }
+    } catch (e) {
+      // go through, fixupAndLoadURIString might salvage the URL
+    }
+
     let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
     let webNav = this.docShell.QueryInterface(Ci.nsIWebNavigation);
     let loadURIOptions = {

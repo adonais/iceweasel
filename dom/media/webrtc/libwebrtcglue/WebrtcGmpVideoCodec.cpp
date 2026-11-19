@@ -261,7 +261,7 @@ void WebrtcGmpVideoEncoder::InitEncode_g(const GMPVideoCodec& aCodecParams,
                                          uint32_t aMaxPayloadSize) {
   nsTArray<nsCString> tags;
   tags.AppendElement("h264"_ns);
-  auto callback = MakeUnique<InitDoneCallback>(this, aCodecParams);
+  auto callback = std::make_unique<InitDoneCallback>(this, aCodecParams);
   mInitting = true;
   mMaxPayloadSize = aMaxPayloadSize;
   mSyncLayerCap = aCodecParams.mTemporalLayerNum;
@@ -410,7 +410,8 @@ void WebrtcGmpVideoEncoder::RegetEncoderForResolutionChange(uint32_t aWidth,
   Close_g();
 
   UniquePtr<GetGMPVideoEncoderCallback> callback =
-      MakeUnique<InitDoneForResolutionChangeCallback>(this, aWidth, aHeight);
+      std::make_unique<InitDoneForResolutionChangeCallback>(this, aWidth,
+                                                            aHeight);
 
   // OpenH264 codec (at least) can't handle dynamic input resolution changes
   // re-init the plugin when the resolution changes
@@ -876,7 +877,7 @@ void WebrtcGmpVideoDecoder::Configure_g(
   nsTArray<nsCString> tags;
   tags.AppendElement("h264"_ns);
   UniquePtr<GetGMPVideoDecoderCallback> callback =
-      MakeUnique<InitDoneCallback>(this);
+      std::make_unique<InitDoneCallback>(this);
   mInitting = true;
   nsresult rv =
       mMPS->GetGMPVideoDecoder(nullptr, &tags, ""_ns, std::move(callback));
@@ -994,8 +995,8 @@ int32_t WebrtcGmpVideoDecoder::Decode(const webrtc::EncodedImage& aInputImage,
   // know to request a PLI and the video stream will remain frozen unless an IDR
   // happens to arrive for other reasons. Bug 1492852 tracks implementing a
   // proper solution.
-  auto decodeData =
-      MakeUnique<GMPDecodeData>(aInputImage, aMissingFrames, aRenderTimeMs);
+  auto decodeData = std::make_unique<GMPDecodeData>(aInputImage, aMissingFrames,
+                                                    aRenderTimeMs);
 
   MOZ_ALWAYS_SUCCEEDS(
       mGMPThread->Dispatch(NewRunnableMethod<UniquePtr<GMPDecodeData>&&>(

@@ -32,6 +32,26 @@ let CONFIG_V2 = [
       },
     ],
   },
+  {
+    recordType: "engine",
+    identifier: "engine-partner-code",
+    base: {
+      name: "Test Engine With Partner Code",
+      partnerCode: "firefox-code",
+      urls: {
+        search: {
+          base: "https://www.example.org/search",
+          params: [{ name: "tt", value: "{partnerCode}" }],
+          searchTermParamName: "q",
+        },
+      },
+    },
+    variants: [
+      {
+        environment: { allRegionsAndLocales: true },
+      },
+    ],
+  },
 ];
 
 let defaultEngine;
@@ -293,6 +313,35 @@ add_task(async function test_searchTermFromResult_paramsInSearchUrl() {
     getTerm(url, testEngine),
     "",
     "Should get a blank string from an engine with no params and no delimiter in its url."
+  );
+});
+
+add_task(async function test_searchTermFromResult_partnerCode() {
+  let engine = SearchService.getEngineByName("Test Engine With Partner Code");
+  let url = URL.fromURI(engine.getSubmission(TERM, null).uri);
+  Assert.equal(
+    url.searchParams.get("tt"),
+    "firefox-code",
+    "Submission url should contain the partner code."
+  );
+  Assert.equal(
+    getTerm(url, engine),
+    TERM,
+    "Should get term from a url with the partner code."
+  );
+
+  url.searchParams.set("tt", "other-code");
+  Assert.equal(
+    getTerm(url, engine),
+    TERM,
+    "Should get term from a url with a different partner code."
+  );
+
+  url.searchParams.delete("tt");
+  Assert.equal(
+    getTerm(url, engine),
+    "",
+    "Should get a blank string from a url missing the partner code param."
   );
 });
 

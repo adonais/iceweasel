@@ -39,7 +39,7 @@ class SaveAsPdfMenuItemProviderTest {
                 onClickEvent = MenuAction.SaveAsPdfRequested,
             )
 
-        val item = provider.itemFlow.value
+        val item = provider.itemsFlow.value.single()
 
         assertEquals(expectedItem, item)
     }
@@ -58,7 +58,7 @@ class SaveAsPdfMenuItemProviderTest {
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
         val provider = createProvider()
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.PrintRequested))

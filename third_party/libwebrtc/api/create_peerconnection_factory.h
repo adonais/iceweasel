@@ -51,6 +51,8 @@ CreatePeerConnectionFactory(
 // that is distinct from the network thread is being removed; use the overload
 // without worker_thread instead. See
 // https://groups.google.com/g/discuss-webrtc/c/Fs_Hd5XNJh0
+[[deprecated(
+    "Use the CreatePeerConnectionFactory overload without worker_thread.")]]
 RTC_EXPORT scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory(
     Thread* network_thread,

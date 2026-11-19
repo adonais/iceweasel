@@ -29,6 +29,7 @@
 #  include "mozilla/gfx/gfxVars.h"
 #endif
 #include "nsStringFwd.h"
+#include "nsXULAppAPI.h"
 
 // The ffmpeg namespace is introduced to avoid the PixelFormat's name conflicts
 // with MediaDataEncoder::PixelFormat in MediaDataEncoder class scope.
@@ -361,6 +362,10 @@ FFmpegVideoEncoder<LIBAV_VER>::FFmpegVideoEncoder(
 RefPtr<MediaDataEncoder::InitPromise> FFmpegVideoEncoder<LIBAV_VER>::Init() {
   FFMPEGV_LOG("Init");
   return InvokeAsync(mTaskQueue, __func__, [self = RefPtr(this)]() {
+    // FFmpegEncoderModule may have already initialized us in the GPU process.
+    if (self->mCodecContext) {
+      return InitPromise::CreateAndResolve(true, __func__);
+    }
     MediaResult r = self->InitEncoder();
     if (NS_FAILED(r.Code())) {
       FFMPEGV_LOG("{}", r.Description().get());
@@ -392,6 +397,19 @@ bool FFmpegVideoEncoder<LIBAV_VER>::SvcEnabled() const {
 
 bool FFmpegVideoEncoder<LIBAV_VER>::ShouldTryHardware() const {
 #ifdef MOZ_WIDGET_ANDROID
+  if (FFmpegEncoderModule<LIBAV_VER>::ShouldEncodeInGPUProcess()) {
+    FFMPEGV_LOG("Platform encoder must be used in the GPU process");
+    return false;
+  }
+
+  // mediacodecenc doesn't expose MediaCodec temporal layering (ts-schema), and
+  // per-frame layer ids are only reported on Android 17+ by encoders supporting
+  // a webrtc.svc schema.
+  if (SvcEnabled()) {
+    FFMPEGV_LOG("MediaCodec encoders do not support SVC");
+    return false;
+  }
+
   // On Android, the MediaCodec encoders are the only ones available to us,
   // which may be implemented in hardware or software.
   if (mCodecID == AV_CODEC_ID_H264 || mCodecID == AV_CODEC_ID_HEVC) {
@@ -419,8 +437,10 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoder() {
     result = InitEncoderInternal(/* aHardware */ true);
   }
   // TODO(aosmond): We should be checking here for RequireHardware, but we fail
-  // encoding tests if we don't allow fallback to software on Linux in CI.
-  if (NS_FAILED(result.Code())) {
+  // encoding tests if we don't allow fallback to software on Linux in CI. Pure
+  // software encoding is never permitted in the GPU process however, so we fail
+  // there instead.
+  if (NS_FAILED(result.Code()) && !XRE_IsGPUProcess()) {
     result = InitEncoderInternal(/* aHardware */ false);
   }
   return result;

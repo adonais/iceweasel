@@ -790,6 +790,37 @@ BounceTrackingProtection::TestRunPurgeBounceTrackers(
 }
 
 NS_IMETHODIMP
+BounceTrackingProtection::TestFlushStorage(JSContext* aCx,
+                                           mozilla::dom::Promise** aPromise) {
+  NS_ENSURE_ARG_POINTER(aCx);
+  NS_ENSURE_ARG_POINTER(aPromise);
+
+  nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aCx);
+  if (!globalObject) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  ErrorResult result;
+  RefPtr<dom::Promise> promise = dom::Promise::Create(globalObject, result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+
+  mStorage->TestFlush()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [promise](const GenericPromise::ResolveOrRejectValue& aValue) {
+        if (aValue.IsResolve()) {
+          promise->MaybeResolveWithUndefined();
+        } else {
+          promise->MaybeReject(aValue.RejectValue());
+        }
+      });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 BounceTrackingProtection::TestClearExpiredUserActivations() {
   return ClearExpiredUserInteractions();
 }

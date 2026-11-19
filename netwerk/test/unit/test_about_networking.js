@@ -118,13 +118,6 @@ add_test(function test_dns() {
 });
 
 add_test(function test_sockets() {
-  // TODO: enable this test in bug 1581892.
-  if (mozinfo.socketprocess_networking) {
-    info("skip test_sockets");
-    run_next_test();
-    return;
-  }
-
   let sts = Cc["@mozilla.org/network/socket-transport-service;1"].getService(
     Ci.nsISocketTransportService
   );
@@ -171,13 +164,6 @@ add_test(function test_sockets() {
 });
 
 add_test(function test_sockets_origin_attributes() {
-  // TODO: enable this test in bug 1581892.
-  if (mozinfo.socketprocess_networking) {
-    info("skip test_sockets_origin_attributes");
-    run_next_test();
-    return;
-  }
-
   let sts = Cc["@mozilla.org/network/socket-transport-service;1"].getService(
     Ci.nsISocketTransportService
   );
@@ -255,13 +241,6 @@ add_test(function test_http_private_browsing() {
 });
 
 add_test(function test_sockets_private_browsing() {
-  // TODO: enable this test in bug 1581892.
-  if (mozinfo.socketprocess_networking) {
-    info("skip test_sockets_private_browsing");
-    run_next_test();
-    return;
-  }
-
   let sts = Cc["@mozilla.org/network/socket-transport-service;1"].getService(
     Ci.nsISocketTransportService
   );

@@ -805,7 +805,6 @@ tags = "cloneelementvisually"
 
 ["test_cloneElementVisually_resource_change.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1559308 - lower frequency intermittent
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1909908
 ]
 tags = "cloneelementvisually os_integration"
@@ -837,6 +836,12 @@ run-if = [
   "os == 'android'",
 ]
 tags = "hls"
+
+["test_android_gpu_process_decoding.html"]
+run-if = [
+  "os == 'android'",
+]
+scheme = "https"
 
 ["test_hw_video_decoding.html"]
 run-if = [

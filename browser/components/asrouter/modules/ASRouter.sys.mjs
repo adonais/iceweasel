@@ -116,6 +116,8 @@ const JEXL_PROVIDER_CACHE = new Set();
 // To observe the app locale change notification.
 const TOPIC_INTL_LOCALE_CHANGED = "intl:app-locales-changed";
 const TOPIC_EXPERIMENT_ENROLLMENT_CHANGED = "nimbus:enrollments-updated";
+// Notified after messages have been reloaded from at least one provider.
+const TOPIC_MESSAGES_LOADED = "asrouter:messages-loaded";
 // To observe the pref that controls if ASRouter should use the remote Fluent files for l10n.
 const USE_REMOTE_L10N_PREF =
   "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
@@ -1117,6 +1119,7 @@ export class _ASRouter {
 
       await this.setState(newState);
       await this.cleanupImpressions();
+      Services.obs.notifyObservers(null, TOPIC_MESSAGES_LOADED);
     }
 
     await this._fireMessagesLoadedTrigger();
@@ -1653,6 +1656,34 @@ export class _ASRouter {
     return allowed.has(action.type);
   }
 
+  /**
+   * Returns a copy of an "action_only" message action with `promptOnly: true`
+   * set on every pinning action, including those nested in a MULTI_ACTION.
+   * With no message UI, the OS prompt is the only place the user can consent
+   * to pinning, so pinning must not fall back to APIs that pin silently.
+   *
+   * @param {object} action - The special message action.
+   * @returns {object}
+   */
+  _withPromptOnlyPinActions(action) {
+    const PIN_ACTIONS = ["PIN_FIREFOX_TO_TASKBAR", "PIN_AND_DEFAULT"];
+    if (PIN_ACTIONS.includes(action.type)) {
+      return { ...action, data: { ...action.data, promptOnly: true } };
+    }
+    if (action.type === "MULTI_ACTION") {
+      return {
+        ...action,
+        data: {
+          ...action.data,
+          actions: action.data.actions.map(nested =>
+            this._withPromptOnlyPinActions(nested)
+          ),
+        },
+      };
+    }
+    return action;
+  }
+
   routeCFRMessage(originalMessage, browser, trigger, force = false) {
     if (!originalMessage) {
       return { message: {} };
@@ -1698,7 +1729,10 @@ export class _ASRouter {
         });
         // Add local impression record, used for enforcing frequency caps.
         this.dispatchCFRAction({ type: "IMPRESSION", data: message });
-        lazy.SpecialMessageActions.handleAction(action, browser);
+        lazy.SpecialMessageActions.handleAction(
+          this._withPromptOnlyPinActions(action),
+          browser
+        );
         break;
       }
       case "infobar":

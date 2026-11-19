@@ -406,7 +406,8 @@ function run_test() {
     // Test extracting the first signature in a MAR that has only a single signature
     test_extract_sig_single: function _test_extract_sig_single() {
       let inMAR = do_get_file("data/signed_pib.mar");
-      let extractedSig = do_get_file("extracted_signature", true);
+      let extractedSig = tempDir.clone();
+      extractedSig.append("extracted_signature");
       if (extractedSig.exists()) {
         extractedSig.remove(false);
       }
@@ -421,7 +422,8 @@ function run_test() {
     test_extract_sig_multi: function _test_extract_sig_multi() {
       for (let i = 0; i < 3; i++) {
         let inMAR = do_get_file("data/multiple_signed_pib.mar");
-        let extractedSig = do_get_file("extracted_signature", true);
+        let extractedSig = tempDir.clone();
+        extractedSig.append("extracted_signature");
         if (extractedSig.exists()) {
           extractedSig.remove(false);
         }
@@ -435,7 +437,8 @@ function run_test() {
     // Test extracting a signature that is out of range fails
     test_extract_sig_out_of_range: function _test_extract_sig_out_of_range() {
       let inMAR = do_get_file("data/signed_pib.mar");
-      let extractedSig = do_get_file("extracted_signature", true);
+      let extractedSig = tempDir.clone();
+      extractedSig.append("extracted_signature");
       if (extractedSig.exists()) {
         extractedSig.remove(false);
       }
@@ -570,7 +573,8 @@ function run_test() {
     // Test extracting from a bad path fails
     test_extract_bad_path: function _test_extract_bad_path() {
       let noMAR = do_get_file("data/does_not_exist.mar", true);
-      let extractedSig = do_get_file("extracted_signature", true);
+      let extractedSig = tempDir.clone();
+      extractedSig.append("extracted_signature");
       Assert.ok(!noMAR.exists());
       if (extractedSig.exists()) {
         extractedSig.remove(false);

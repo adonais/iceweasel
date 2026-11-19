@@ -22,8 +22,8 @@ wait
 pkill -f "sh test-background-resource-usage"
 pkill -f "sh collect-proc-info-cpu"
 pkill -f "sh collect-proc-info-memory"
-rm $TESTING_DIR/test_start.signal
-rm $TESTING_DIR/test_end.signal
+rm -f $TESTING_DIR/test_start.signal
+rm -f $TESTING_DIR/test_end.signal
 pkill -f "sh main"
 
 if [ $TEST_STATUS -ne 0 ]; then

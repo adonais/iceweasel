@@ -39,7 +39,7 @@ class IPProtectionRepositoryMiddlewareTest {
         middleware.invoke(
             store = store,
             next = { nextCalled = true },
-            action = IPProtectionAction.Toggle,
+            action = IPProtectionAction.ActivationAction.Toggle,
         )
 
         assertTrue(nextCalled)
@@ -48,7 +48,7 @@ class IPProtectionRepositoryMiddlewareTest {
 
     @Test
     fun `GIVEN vpn has not been used yet WHEN action is not Toggle THEN next is called and hasAlreadyUsedVpn remains false`() {
-        val nonToggleAction = IPProtectionAction.ProxyActivationShown
+        val nonToggleAction = IPProtectionAction.ActivationAction.ProxyActivationShown
         var nextCalled = false
 
         middleware.invoke(
@@ -69,14 +69,10 @@ class IPProtectionRepositoryMiddlewareTest {
         middleware.invoke(
             store = store,
             next = { nextCalled = true },
-            action = IPProtectionAction.Toggle,
+            action = IPProtectionAction.ActivationAction.Toggle,
         )
 
         assertTrue(nextCalled)
         assertTrue(fakeRepository.hasAlreadyUsedVpn)
-    }
-
-    private class FakeIPProtectionRepository : IPProtectionRepository {
-        override var hasAlreadyUsedVpn: Boolean = false
     }
 }

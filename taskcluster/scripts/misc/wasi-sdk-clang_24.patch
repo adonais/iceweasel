@@ -1,0 +1,35 @@
+# LLVM PR 186054 is already included in clang 24.
+# Restore WASI's default rune table until LLVM PR 223129 lands.
+
+diff --git a/cmake/wasi-sdk-sysroot.cmake b/cmake/wasi-sdk-sysroot.cmake
+--- a/cmake/wasi-sdk-sysroot.cmake
++++ b/cmake/wasi-sdk-sysroot.cmake
+@@ -336,8 +336,8 @@
+ 
+   set(patches
+     ${CMAKE_SOURCE_DIR}/src/llvm-pr-168449.patch
+-    ${CMAKE_SOURCE_DIR}/src/llvm-pr-186054.patch
+     ${CMAKE_SOURCE_DIR}/src/llvm-undo-part-of-194317.patch
++    ${CMAKE_SOURCE_DIR}/src/llvm-wasi-rune-table.patch
+   )
+   list(JOIN patches " " patches)
+ 
+diff --git a/src/llvm-wasi-rune-table.patch b/src/llvm-wasi-rune-table.patch
+new file mode 100644
+--- /dev/null
++++ b/src/llvm-wasi-rune-table.patch
+@@ -0,0 +1,14 @@
++diff --git a/libcxx/include/__locale_dir/locale_base_api.h b/libcxx/include/__locale_dir/locale_base_api.h
++--- a/libcxx/include/__locale_dir/locale_base_api.h
+++++ b/libcxx/include/__locale_dir/locale_base_api.h
++@@ -111,6 +111,10 @@
++ 
++ #if _LIBCPP_HAS_LOCALIZATION
++ 
+++#  if defined(__wasi__)
+++#    define _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE 1
+++#  endif
+++
++ #  if defined(__APPLE__)
++ #    include <__locale_dir/support/apple.h>
++ #  elif defined(__FreeBSD__)

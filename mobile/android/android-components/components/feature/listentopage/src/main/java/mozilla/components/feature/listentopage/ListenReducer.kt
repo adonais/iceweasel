@@ -43,14 +43,7 @@ private fun reduceControls(state: ListenState, action: ListenAction.Controls): L
 
 private fun reduceSession(state: ListenState, action: ListenAction.Session): ListenState =
     when (action) {
-        is ListenAction.Session.ListenRequested -> {
-            ListenState(
-                tabId = action.tabId,
-                url = action.url,
-                languageTag = state.languageTag,
-                voiceState = state.voiceState,
-            )
-        }
+        is ListenAction.Session.ListenRequested -> ListenState(tabId = action.tabId, url = action.url)
 
         is ListenAction.Session.StopRequested -> {
             ListenState(tabId = null, url = null, voiceState = state.voiceState.copy())
@@ -100,6 +93,8 @@ private fun reducePlayback(state: ListenState, action: ListenAction.Playback): L
                     },
             )
         }
+
+        is VoiceChangeStarted -> state.copy(articleProgress = state.progressAtTextPosition(action.positionInArticle))
 
         ListenAction.Playback.PlaybackWaiting ->
             if (state.playbackState.phase == PlaybackPhase.Paused) {
@@ -163,6 +158,10 @@ private fun ArticleMeasurements.progressAt(
         .copy(chunkDurationsMs = mapper.chunkDurationsMs())
         .correctLength()
 }
+
+/** The progress at [textPosition], between 0 and 1 of the article's text, or none before the article is split. */
+private fun ListenState.progressAtTextPosition(textPosition: Float): ArticleProgress =
+    articleMeasurements?.getArticleProgressAtTextPosition(textPosition) ?: ArticleProgress()
 
 /** This progress at the end of the article, with the bar full, however the article got there. */
 private fun ArticleProgress.atEnd(): ArticleProgress =

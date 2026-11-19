@@ -48,21 +48,21 @@ UniquePtr<OggCodecState> OggCodecState::Create(
 
   if (body_len > 6 && rlbox::memcmp(*aSandbox, aPage_t->body + 1, "vorbis", 6u)
                               .unverified_safe_because(codec_reason) == 0) {
-    codecState = MakeUnique<VorbisState>(aSandbox, aPage, aSerial);
+    codecState = std::make_unique<VorbisState>(aSandbox, aPage, aSerial);
   } else if (body_len > 8 &&
              rlbox::memcmp(*aSandbox, aPage_t->body, "OpusHead", 8u)
                      .unverified_safe_because(codec_reason) == 0) {
-    codecState = MakeUnique<OpusState>(aSandbox, aPage, aSerial);
+    codecState = std::make_unique<OpusState>(aSandbox, aPage, aSerial);
   } else if (body_len > 8 &&
              rlbox::memcmp(*aSandbox, aPage_t->body, "fishead\0", 8u)
                      .unverified_safe_because(codec_reason) == 0) {
-    codecState = MakeUnique<SkeletonState>(aSandbox, aPage, aSerial);
+    codecState = std::make_unique<SkeletonState>(aSandbox, aPage, aSerial);
   } else if (body_len > 5 &&
              rlbox::memcmp(*aSandbox, aPage_t->body, "\177FLAC", 5u)
                      .unverified_safe_because(codec_reason) == 0) {
-    codecState = MakeUnique<FlacState>(aSandbox, aPage, aSerial);
+    codecState = std::make_unique<FlacState>(aSandbox, aPage, aSerial);
   } else {
-    // Can't use MakeUnique here, OggCodecState is protected.
+    // Can't use std::make_unique here, OggCodecState is protected.
     codecState.reset(new OggCodecState(aSandbox, aPage, aSerial, false));
   }
 
@@ -521,7 +521,7 @@ bool VorbisState::IsHeader(ogg_packet* aPacket) {
 UniquePtr<MetadataTags> VorbisState::GetTags() {
   NS_ASSERTION(mComment.user_comments, "no vorbis comment strings!");
   NS_ASSERTION(mComment.comment_lengths, "no vorbis comment lengths!");
-  auto tags = MakeUnique<MetadataTags>();
+  auto tags = std::make_unique<MetadataTags>();
   for (int i = 0; i < mComment.comments; i++) {
     AddVorbisComment(tags, mComment.user_comments[i],
                      mComment.comment_lengths[i]);
@@ -757,7 +757,7 @@ bool OpusState::DecodeHeader(OggPacketPtr aPacket) {
   switch (mPacketCount++) {
     // Parse the id header.
     case 0:
-      mParser = MakeUnique<OpusParser>();
+      mParser = std::make_unique<OpusParser>();
       if (!mParser->DecodeHeader(aPacket->packet, aPacket->bytes)) {
         return false;
       }
@@ -784,7 +784,7 @@ bool OpusState::DecodeHeader(OggPacketPtr aPacket) {
 
 /* Construct and return a tags hashmap from our internal array */
 UniquePtr<MetadataTags> OpusState::GetTags() {
-  auto tags = MakeUnique<MetadataTags>();
+  auto tags = std::make_unique<MetadataTags>();
   for (uint32_t i = 0; i < mParser->mTags.Length(); i++) {
     AddVorbisComment(tags, mParser->mTags[i].Data(),
                      mParser->mTags[i].Length());
@@ -1256,8 +1256,7 @@ bool SkeletonState::DecodeIndex(ogg_packet* aPacket) {
     return (mActive = false);
   }
 
-  UniquePtr<nsKeyFrameIndex> keyPoints =
-      std::make_unique<nsKeyFrameIndex>(startTime, endTime);
+  auto keyPoints = std::make_unique<nsKeyFrameIndex>(startTime, endTime);
 
   p = aPacket->packet + INDEX_KEYPOINT_OFFSET;
   const unsigned char* limit = aPacket->packet + aPacket->bytes;
@@ -1435,8 +1434,8 @@ bool SkeletonState::DecodeFisbone(ogg_packet* aPacket) {
                 eHeaderType, [i, msgHead, msgProbe]() {
                   uint32_t nameLen =
                       strlen(kFieldTypeMaps[i].mPatternToRecognize);
-                  return MakeUnique<nsCString>(msgHead + nameLen,
-                                               msgProbe - msgHead - nameLen);
+                  return std::make_unique<nsCString>(
+                      msgHead + nameLen, msgProbe - msgHead - nameLen);
                 });
             isContentTypeParsed = i == 0 ? true : isContentTypeParsed;
           }

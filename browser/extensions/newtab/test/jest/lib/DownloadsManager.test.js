@@ -400,6 +400,23 @@ describe("Downloads Manager", () => {
       expect(results[0].description).toBe("1.5 MB");
     });
   });
+  describe("#getSizeUnknownLabel", () => {
+    it("should use the Fluent string when DownloadsCommon.strings is gone", () => {
+      const formatValueSync = jest.fn(() => "Unknown size");
+      const restore = stubGlobals({
+        Localization: class {
+          formatValueSync = formatValueSync;
+        },
+      });
+      expect(downloadsManager.getSizeUnknownLabel()).toBe("Unknown size");
+      expect(formatValueSync).toHaveBeenCalledWith("downloads-size-unknown");
+      restore();
+    });
+    it("should fall back to DownloadsCommon.strings on older versions", () => {
+      downloadsCommon.strings = { sizeUnknown: "Unknown size" };
+      expect(downloadsManager.getSizeUnknownLabel()).toBe("Unknown size");
+    });
+  });
   describe("#onDownloadRemoved", () => {
     let newDownload;
     beforeEach(() => {

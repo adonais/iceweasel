@@ -4,10 +4,6 @@
 
 "use strict";
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
-
 let h2Port;
 let h3Port;
 let h3NoResponsePort;
@@ -65,11 +61,6 @@ add_setup(async function setup() {
       await trrServer.stop();
     }
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 
   Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRFIRST);
 });

@@ -91,8 +91,8 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
             thread, __func__,
             [self, aPromiseId, thread](RefPtr<gmp::ChromiumCDMParent> cdm) {
               // service->GetCDM succeeded
-              self->mCallback =
-                  MakeUnique<ChromiumCDMCallbackProxy>(self, self->mMainThread);
+              self->mCallback = std::make_unique<ChromiumCDMCallbackProxy>(
+                  self, self->mMainThread);
               cdm->Init(self->mCallback.get(),
                         self->mDistinctiveIdentifierRequired,
                         self->mPersistentStateRequired, self->mMainThread)

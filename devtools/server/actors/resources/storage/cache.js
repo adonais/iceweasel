@@ -65,9 +65,14 @@ class CacheStorageActor extends BaseStorageActor {
 
   getNamesForHost(host) {
     // UI code expect each name to be a JSON string of an array :/
-    return [...this.hostVsStores.get(host).keys()].map(a => {
-      return JSON.stringify([a]);
-    });
+    return Array.from(
+      this.hostVsStores
+        .get(host)
+        .keys()
+        .map(a => {
+          return JSON.stringify([a]);
+        })
+    );
   }
 
   async getValuesForHost(host, name) {

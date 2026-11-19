@@ -22,7 +22,7 @@ TASK_TYPES = {
         "mar-signing-linux64-shippable/opt",
     ],
     "linux-signing-partial": ["partials-signing-linux64-shippable/opt"],
-    "mac-signing": ["build-signing-macosx64-shippable/opt"],
+    "mac-signing": ["build-mac-signing-macosx64-shippable/opt"],
     "beetmover-candidates": ["beetmover-repackage-linux64-shippable/opt"],
     "bouncer-submit": ["release-bouncer-sub-firefox"],
     "balrog-submit": [

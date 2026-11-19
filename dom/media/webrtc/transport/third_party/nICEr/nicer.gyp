@@ -117,11 +117,8 @@
 
           'defines' : [
               'SANITY_CHECKS',
-              'USE_TURN',
-              'USE_ICE',
               'USE_RFC_3489_BACKWARDS_COMPATIBLE',
               'USE_STUN_PEDANTIC',
-              'USE_TURN',
               'NR_SOCKET_IS_VOID_PTR',
               'restrict=',
               'R_PLATFORM_INT_TYPES=<stdint.h>',
@@ -179,8 +176,6 @@
                 'defines' : [
                     'WIN32',
                     '_WINSOCK_DEPRECATED_NO_WARNINGS',
-                    'USE_ICE',
-                    'USE_TURN',
                     'USE_RFC_3489_BACKWARDS_COMPATIBLE',
                     'USE_STUN_PEDANTIC',
                     '_CRT_SECURE_NO_WARNINGS',

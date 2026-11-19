@@ -325,9 +325,9 @@ addAccessibleTask(
   async function testImplicitRoleARIAExpanded(browser) {
     await timeThis(async () => {
       info("Adding many implicit-role elements with aria-expanded");
-      await invokeContentTask(browser, [], () => {
+      await invokeContentTask(browser, [LARGE_NODE_COUNT], count => {
         const container = content.document.getElementById("container");
-        for (let c = 0; c < 10000; ++c) {
+        for (let c = 0; c < count; ++c) {
           const button = content.document.createElement("button");
           button.setAttribute("aria-expanded", "false");
           container.append(button);
@@ -335,7 +335,7 @@ addAccessibleTask(
       });
       info("Showing container");
       // We add the nodes to the container while it is hidden to
-      // ensure we produce a single show event rather than 10000.
+      // ensure we produce a single show event.
       // This makes the perf comparison more straightforward, i.e.
       // the perf cost of this test isn't drowned out by the show event cost.
       let containerShown = waitForEvent(EVENT_SHOW, "container");

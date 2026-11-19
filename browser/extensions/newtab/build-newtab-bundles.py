@@ -57,6 +57,7 @@ def _reported_inputs(objdir):
 
 def _declared_inputs(newtab_dir):
     inputs = {
+        os.path.abspath(__file__),
         os.path.join(newtab_dir, "package.json"),
         os.path.join(newtab_dir, "webpack.system-addon.config.js"),
         os.path.join(buildconfig.topsrcdir, "browser", "tools", "mozsrcUriPlugin.js"),
@@ -79,10 +80,7 @@ def _declared_inputs(newtab_dir):
     return inputs
 
 
-def hash_sources(output):
-    objdir = os.path.dirname(output.name)
-    inputs = _declared_inputs(_newtab_dir()) | _reported_inputs(objdir)
-
+def _hash_sources(inputs):
     hasher = hashlib.sha256()
     for path in sorted(inputs):
         if not os.path.isfile(path):
@@ -90,7 +88,30 @@ def hash_sources(output):
         hasher.update(path.encode("utf-8"))
         with open(path, "rb") as f:
             hasher.update(f.read())
-    output.write(hasher.digest())
+    return hasher.hexdigest()
+
+
+def _is_up_to_date(hash_file, digest, outputs):
+    """The bundles are forced in moz.build so that Make doesn't wait on a
+    separate stamp before starting them; this is what skips running webpack
+    and sass when the sources haven't changed."""
+    if not all(os.path.exists(path) for path in outputs):
+        return False
+    try:
+        with open(hash_file, encoding="utf-8") as f:
+            return f.read() == digest
+    except FileNotFoundError:
+        return False
+
+
+def _reuse_output(output):
+    with open(output.name, "rb") as f:
+        output.write(f.read())
+
+
+def _write_hash(hash_file, digest):
+    with FileAvoidWrite(hash_file) as f:
+        f.write(digest)
 
 
 def _record_reported_inputs(objdir, deps_file):
@@ -114,14 +135,22 @@ def _run(argv, newtab_dir, node_modules, extra_env=None):
         raise Exception(f"{argv[1]} failed with exit code {result.returncode}")
 
 
-def generate_js(output, sources_stamp):
+def generate_js(output):
     newtab_dir = _newtab_dir()
-    node_modules = _node_modules()
-    webpack = os.path.join(node_modules, "webpack", "bin", "webpack.js")
-
     content_dir = os.path.dirname(output.name)
     as_path = os.path.join(content_dir, "activity-stream.bundle.js")
     objdir = os.path.dirname(os.path.dirname(content_dir))
+
+    hash_file = os.path.join(objdir, "newtab-js.hash")
+    declared = _declared_inputs(newtab_dir)
+    reported = _reported_inputs(objdir)
+    digest = _hash_sources(declared | reported)
+    if _is_up_to_date(hash_file, digest, (output.name, as_path)):
+        _reuse_output(output)
+        return
+
+    node_modules = _node_modules()
+    webpack = os.path.join(node_modules, "webpack", "bin", "webpack.js")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         deps_file = os.path.join(tmpdir, "webpack-deps.txt")
@@ -148,14 +177,28 @@ def generate_js(output, sources_stamp):
 
         _record_reported_inputs(objdir, deps_file)
 
+    # The set of reported inputs is only known after webpack ran, so on a
+    # first build or when it changed, hash it now rather than have the next
+    # build see a different hash and run webpack again.
+    new_reported = _reported_inputs(objdir)
+    if new_reported != reported:
+        digest = _hash_sources(declared | new_reported)
+    _write_hash(hash_file, digest)
 
-def generate_css(output, sources_stamp):
+
+def generate_css(output):
     newtab_dir = _newtab_dir()
-    node_modules = _node_modules()
-    sass = os.path.join(node_modules, "sass", "sass.js")
-
     css_dir = os.path.dirname(output.name)
     nova_css_path = os.path.join(css_dir, "nova", "activity-stream.css")
+
+    hash_file = os.path.join(os.path.dirname(css_dir), "newtab-css.hash")
+    digest = _hash_sources(_declared_inputs(newtab_dir))
+    if _is_up_to_date(hash_file, digest, (output.name, nova_css_path)):
+        _reuse_output(output)
+        return
+
+    node_modules = _node_modules()
+    sass = os.path.join(node_modules, "sass", "sass.js")
 
     src_styles_dir = os.path.join(newtab_dir, "content-src", "styles")
 
@@ -178,3 +221,5 @@ def generate_css(output, sources_stamp):
         with FileAvoidWrite(nova_css_path, readmode="rb") as nova_output:
             with open(os.path.join(tmpdir, "nova", "activity-stream.css"), "rb") as f:
                 nova_output.write(f.read())
+
+    _write_hash(hash_file, digest)

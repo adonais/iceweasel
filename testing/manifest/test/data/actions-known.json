@@ -10,7 +10,7 @@
     "path": ".skip_fails_cache/7cf7a9720f4ead03213f1799f3dcc00a413c7a02/browser_aboutNewTab_bookmarksToolbar.js",
     "product": "",
     "revision": "7cf7a9720f4ead03213f1799f3dcc00a413c7a02",
-    "skip_if": "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt && socketprocess_networking",
+    "skip_if": "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt && swgl",
     "summary": "",
     "task_id": "BLpDT23eSfO-Xf_NLrMkCA"
   },

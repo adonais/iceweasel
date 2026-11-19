@@ -44,7 +44,7 @@ class TranslationsMenuItemProviderTest {
     fun `GIVEN the current page is not translated WHEN providing the item THEN offer translating it`() = runTest {
         val provider = provider()
 
-        assertEquals(translatePageItem(), provider.itemFlow.value)
+        assertEquals(translatePageItem(), provider.itemsFlow.value.single())
     }
 
     @Test
@@ -67,7 +67,7 @@ class TranslationsMenuItemProviderTest {
             )
         val provider = provider(browserStore = store, target = MenuTarget.CustomTab("customTabId"))
 
-        assertEquals(translatePageItem(), provider.itemFlow.value)
+        assertEquals(translatePageItem(), provider.itemsFlow.value.single())
     }
 
     @Test
@@ -83,7 +83,7 @@ class TranslationsMenuItemProviderTest {
                     badge = MenuItemBadge(text = Text.String(LANGUAGE_NAME), state = MenuItemState.ACTIVE),
                     state = MenuItemState.ACTIVE,
                 ),
-                provider.itemFlow.value,
+                provider.itemsFlow.value.single(),
             )
         }
 
@@ -92,42 +92,42 @@ class TranslationsMenuItemProviderTest {
         runTest {
             val provider = provider(browserStore = browserStore(translatedTo = "unknown language code"))
 
-            assertNull((provider.itemFlow.value as StandardMenuItem).badge)
+            assertNull((provider.itemsFlow.value.single() as StandardMenuItem).badge)
         }
 
     @Test
     fun `GIVEN reader view is active WHEN providing the item THEN show translating as not available`() = runTest {
         val provider = provider(browserStore = browserStore(isReaderViewActive = true))
 
-        assertEquals(translatePageItem(canTranslate = false), provider.itemFlow.value)
+        assertEquals(translatePageItem(canTranslate = false), provider.itemsFlow.value.single())
     }
 
     @Test
     fun `GIVEN the current page is a PDF WHEN providing the item THEN show translating as not available`() = runTest {
         val provider = provider(browserStore = browserStore(isPdf = true))
 
-        assertEquals(translatePageItem(canTranslate = false), provider.itemFlow.value)
+        assertEquals(translatePageItem(canTranslate = false), provider.itemsFlow.value.single())
     }
 
     @Test
     fun `GIVEN the engine does not support translating WHEN providing the item THEN return null`() = runTest {
         val provider = provider(browserStore = browserStore(isEngineSupported = null))
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
     fun `GIVEN translating is not available to this user WHEN providing the item THEN return null`() = runTest {
         val provider = provider(isFeatureEnabled = false)
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
     fun `GIVEN there is no page shown WHEN providing the item THEN return null`() = runTest {
         val provider = provider(browserStore = BrowserStore())
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -136,11 +136,11 @@ class TranslationsMenuItemProviderTest {
         // Translations are assumed to still be on until read, so the item is offered before that is known.
         val provider = provider(translationsSettings = TranslationsEnabledSettings.inMemory(isEnabledInitial = false))
 
-        assertEquals(translatePageItem(), provider.itemFlow.value)
+        assertEquals(translatePageItem(), provider.itemsFlow.value.single())
 
         runCurrent()
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -176,7 +176,7 @@ class TranslationsMenuItemProviderTest {
         listOf(browserStore(), browserStore(translatedTo = LANGUAGE_CODE)).forEach { store ->
             val provider = provider(browserStore = store)
 
-            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+            val events = provider.itemsFlow.value.single().reachableEvents()
 
             assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
             assertFalse(provider.handles(MenuAction.Navigate.Summarizer))

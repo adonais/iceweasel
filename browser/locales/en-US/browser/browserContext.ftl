@@ -391,6 +391,11 @@ main-context-menu-add-engine =
     .label = Add Search Engine
     .accesskey = S
 
+# Actions menu that appears when selecting text with actions like Ask AI, Search, or Copy.
+main-context-menu-turn-on-actions-menu =
+    .label = Turn On Actions Menu
+    .accesskey = A
+
 main-context-menu-link-send-to-device =
     .label = Send Link to Device
     .accesskey = n

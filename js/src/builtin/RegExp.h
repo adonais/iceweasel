@@ -68,9 +68,7 @@ JSObject* InitRegExpClass(JSContext* cx, HandleObject obj);
 
 [[nodiscard]] extern bool RegExpSearcherRaw(JSContext* cx, HandleObject regexp,
                                             HandleString input,
-                                            int32_t lastIndex,
-                                            MatchPairs* maybeMatches,
-                                            int32_t* result);
+                                            int32_t lastIndex, int32_t* result);
 
 [[nodiscard]] extern bool RegExpSearcherLastLimit(JSContext* cx, unsigned argc,
                                                   Value* vp);

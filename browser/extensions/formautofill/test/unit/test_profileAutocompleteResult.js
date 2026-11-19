@@ -476,11 +476,11 @@ let creditCardTestCases = [
         {
           value: "",
           style: "autofill",
-          label: "CVC",
+          label: "CVV",
           comment: makeCreditCardComment({
-            primary: "CVC",
+            primary: "CVV",
             secondary: "••••6785",
-            ariaLabel: "Visa CVC ••••6785",
+            ariaLabel: "Visa CVV ••••6785",
             image: "chrome://formautofill/content/third-party/cc-logo-visa.svg",
             profile: cscMatchingProfiles[0],
           }),
@@ -489,11 +489,11 @@ let creditCardTestCases = [
         {
           value: "",
           style: "autofill",
-          label: "CVC",
+          label: "CID",
           comment: makeCreditCardComment({
-            primary: "CVC",
+            primary: "CID",
             secondary: "••••1234",
-            ariaLabel: "American Express CVC ••••1234",
+            ariaLabel: "American Express CID ••••1234",
             image: "chrome://formautofill/content/third-party/cc-logo-amex.png",
             profile: cscMatchingProfiles[1],
           }),
@@ -519,11 +519,11 @@ let creditCardTestCases = [
         {
           value: "",
           style: "autofill",
-          label: "CVC",
+          label: "CVV",
           comment: makeCreditCardComment({
-            primary: "CVC",
+            primary: "CVV",
             secondary: "••••6785",
-            ariaLabel: "Visa CVC ••••6785",
+            ariaLabel: "Visa CVV ••••6785",
             image: "chrome://formautofill/content/third-party/cc-logo-visa.svg",
             profile: cscMatchingProfiles[0],
           }),
@@ -532,11 +532,11 @@ let creditCardTestCases = [
         {
           value: "",
           style: "autofill",
-          label: "CVC",
+          label: "CID",
           comment: makeCreditCardComment({
-            primary: "CVC",
+            primary: "CID",
             secondary: "••••1234",
-            ariaLabel: "American Express CVC ••••1234",
+            ariaLabel: "American Express CID ••••1234",
             image: "chrome://formautofill/content/third-party/cc-logo-amex.png",
             profile: cscMatchingProfiles[1],
           }),

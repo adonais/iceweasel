@@ -80,10 +80,6 @@
 
     &[disabled] {
       opacity: var(--toolbarbutton-opacity-disabled);
-
-      @media (forced-colors) {
-        color: var(--button-text-color-disabled);
-      }
     }
 
     &:not([disabled]):hover {

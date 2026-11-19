@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 import { INITIAL_STATE } from "common/Reducers.sys.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
 import { actionTypes as at } from "common/Actions.mjs";
@@ -512,7 +512,7 @@ describe("<Lists>", () => {
     expect(container.querySelectorAll(".lists-switcher")).toHaveLength(1);
     expect(
       container.querySelectorAll(".lists-switcher .lists-title")
-    ).toHaveLength(1);
+    ).toHaveLength(0);
     expect(
       container.querySelectorAll("moz-button.lists-switcher-button")
     ).toHaveLength(1);
@@ -521,11 +521,11 @@ describe("<Lists>", () => {
     ).toHaveLength(1);
   });
 
-  it("adds an explicit accessible name to the list switcher button", () => {
+  it("labels the list switcher button with the selected list's name", () => {
     const { container } = renderLists({
       ...mockState,
       ListsWidget: {
-        ...mockState.ListsWidget,
+        selected: "other-list",
         lists: {
           "test-list": { label: "Checklist", tasks: [], completed: [] },
           "other-list": { label: "Shopping", tasks: [], completed: [] },
@@ -533,11 +533,13 @@ describe("<Lists>", () => {
       },
     });
 
-    expect(
-      container
-        .querySelector("moz-button.lists-switcher-button")
-        .getAttribute("data-l10n-id")
-    ).toBe("newtab-widget-lists-change-list");
+    const button = container.querySelector("moz-button.lists-switcher-button");
+    expect(button.textContent).toBe("Shopping");
+    expect(button.getAttribute("type")).toBe("default");
+    expect(button.getAttribute("size")).toBe("small");
+    expect(button.getAttribute("iconposition")).toBe("end");
+    expect(button.getAttribute("menuid")).toBe("lists-switcher-panel");
+    expect(button.hasAttribute("data-l10n-id")).toBe(false);
   });
 
   it("uses the Checklist fallback title in the switcher for an unnamed selected list", () => {
@@ -556,9 +558,214 @@ describe("<Lists>", () => {
 
     expect(
       container
-        .querySelector(".lists-switcher .lists-title")
+        .querySelector("moz-button.lists-switcher-button")
         .getAttribute("data-l10n-id")
     ).toBe("newtab-widget-lists-name-default");
+  });
+
+  describe("Create a new list in the switcher", () => {
+    const twoListsState = {
+      ...mockState,
+      ListsWidget: {
+        selected: "test-list",
+        lists: {
+          "test-list": { label: "Checklist", tasks: [], completed: [] },
+          "other-list": { label: "Shopping", tasks: [], completed: [] },
+        },
+      },
+    };
+
+    it("ends the list switcher with a Create a new list item", () => {
+      const { container } = renderLists(twoListsState);
+
+      const panel = container.querySelector("panel-list#lists-switcher-panel");
+      const create = panel.lastElementChild;
+      expect(create.matches("panel-item.lists-switcher-create")).toBe(true);
+      expect(create.getAttribute("data-l10n-id")).toBe(
+        "newtab-widget-lists-menu-create"
+      );
+      expect(create.previousElementSibling.tagName).toBe("HR");
+      expect(create.hasAttribute("disabled")).toBe(false);
+    });
+
+    it("starts a new list from the list switcher", () => {
+      const { container } = renderLists(twoListsState);
+
+      fireEvent.click(
+        container.querySelector("panel-item.lists-switcher-create")
+      );
+
+      const editableInput = container.querySelector("input.edit-list");
+      expect(editableInput).toBeInTheDocument();
+      expect(editableInput.getAttribute("data-l10n-id")).toBe(
+        "newtab-widget-lists-name-placeholder-new2"
+      );
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+
+    it("disables Create a new list in the list switcher at the max lists limit", () => {
+      const { container } = renderLists({
+        ...twoListsState,
+        Prefs: {
+          ...mockState.Prefs,
+          values: {
+            ...mockState.Prefs.values,
+            "widgets.lists.maxLists": 2,
+          },
+        },
+      });
+
+      expect(
+        container
+          .querySelector("panel-item.lists-switcher-create")
+          .hasAttribute("disabled")
+      ).toBe(true);
+      expect(
+        container
+          .querySelector("panel-item.create-list")
+          .closest("#lists-panel")
+      ).not.toBeNull();
+    });
+
+    describe("focus after a new list started from the switcher", () => {
+      let focusSpy;
+
+      beforeEach(() => {
+        focusSpy = jest.spyOn(HTMLElement.prototype, "focus");
+      });
+
+      afterEach(() => {
+        focusSpy.mockRestore();
+      });
+
+      const focusedSwitcher = () =>
+        focusSpy.mock.contexts.some(el =>
+          el.matches?.("moz-button.lists-switcher-button")
+        );
+
+      it("returns focus to the switcher button on Escape", () => {
+        const { container } = renderLists(twoListsState);
+        fireEvent.click(
+          container.querySelector("panel-item.lists-switcher-create")
+        );
+        focusSpy.mockClear();
+
+        fireEvent.keyDown(container.querySelector("input.edit-list"), {
+          key: "Escape",
+        });
+
+        expect(
+          container.querySelector("input.edit-list")
+        ).not.toBeInTheDocument();
+        expect(focusedSwitcher()).toBe(true);
+      });
+
+      it("returns focus to the switcher button on the clear button", () => {
+        const { container } = renderLists(twoListsState);
+        fireEvent.click(
+          container.querySelector("panel-item.lists-switcher-create")
+        );
+        focusSpy.mockClear();
+
+        fireEvent.click(container.querySelector("moz-button.edit-list-clear"));
+
+        expect(focusedSwitcher()).toBe(true);
+      });
+
+      it("returns focus to the switcher button once the saved list is selected", () => {
+        const uuidSpy = jest
+          .spyOn(crypto, "randomUUID")
+          .mockReturnValue("new-list");
+        const { container, rerender } = renderLists(twoListsState);
+        fireEvent.click(
+          container.querySelector("panel-item.lists-switcher-create")
+        );
+        const input = container.querySelector("input.edit-list");
+        fireEvent.change(input, { target: { value: "Groceries" } });
+        focusSpy.mockClear();
+
+        fireEvent.keyDown(input, { key: "Enter" });
+        expect(focusedSwitcher()).toBe(false);
+
+        rerender(
+          <WrapWithProvider
+            state={{
+              ...twoListsState,
+              ListsWidget: {
+                selected: "new-list",
+                lists: {
+                  ...twoListsState.ListsWidget.lists,
+                  "new-list": { label: "Groceries", tasks: [], completed: [] },
+                },
+              },
+            }}
+          >
+            <Lists
+              dispatch={dispatch}
+              handleUserInteraction={handleUserInteraction}
+            />
+          </WrapWithProvider>
+        );
+
+        const switcher = container.querySelector(
+          "moz-button.lists-switcher-button"
+        );
+        expect(switcher.textContent).toBe("Groceries");
+        expect(focusSpy.mock.contexts.at(-1)).toBe(switcher);
+        uuidSpy.mockRestore();
+      });
+
+      it("leaves focus where the user moved it when an empty name is abandoned", () => {
+        const { container } = renderLists(twoListsState);
+        fireEvent.click(
+          container.querySelector("panel-item.lists-switcher-create")
+        );
+        const outside = document.createElement("button");
+        document.body.appendChild(outside);
+        focusSpy.mockClear();
+
+        act(() => {
+          outside.focus();
+        });
+
+        expect(
+          container.querySelector("input.edit-list")
+        ).not.toBeInTheDocument();
+        expect(document.activeElement).toBe(outside);
+        expect(focusedSwitcher()).toBe(false);
+        outside.remove();
+      });
+
+      it("leaves focus alone when the context menu started the new list", () => {
+        const { container } = renderLists(twoListsState);
+        fireEvent.click(container.querySelector("panel-item.create-list"));
+        focusSpy.mockClear();
+
+        fireEvent.keyDown(container.querySelector("input.edit-list"), {
+          key: "Escape",
+        });
+
+        expect(focusedSwitcher()).toBe(false);
+      });
+
+      it("leaves focus alone on a later new list started from the context menu", () => {
+        const { container } = renderLists(twoListsState);
+        fireEvent.click(
+          container.querySelector("panel-item.lists-switcher-create")
+        );
+        fireEvent.keyDown(container.querySelector("input.edit-list"), {
+          key: "Escape",
+        });
+        fireEvent.click(container.querySelector("panel-item.create-list"));
+        focusSpy.mockClear();
+
+        fireEvent.keyDown(container.querySelector("input.edit-list"), {
+          key: "Escape",
+        });
+
+        expect(focusedSwitcher()).toBe(false);
+      });
+    });
   });
 
   it("does not render compact completed preview controls in medium view", () => {

@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    run-on-repo-type: [hg]
     run-on-projects: ["trunk"]
     platform: linux64/debug
     worker-type: t-linux-docker-amd
@@ -36,6 +35,10 @@ task-defaults:
 
 tidy:
     description: Run static-analysis (clang-tidy) on C/C++ patches
+    # Review bot waits for every lint, and this one is in the long tail that often
+    # finishes last. It parallelizes well, so a 30 core worker shortens the end
+    # to end time.
+    worker-type: b-linux-docker-large-amd
     treeherder:
         symbol: cpp(clang-tidy)
     run:
@@ -55,12 +58,13 @@ tidy:
             - type: file
               name: public/code-review/clang-tidy.json
               path: /builds/worker/clang-tidy.json
-            - type: file
-              name: public/profile_resource-usage.json
-              path: /builds/worker/profile_resource-usage.json
 
 external:
     description: Run static-analysis (clang-tidy) on C/C++ patches with external checks
+    # Review bot waits for every lint, and this one is in the long tail that often
+    # finishes last. It parallelizes well, so a 30 core worker shortens the end
+    # to end time.
+    worker-type: b-linux-docker-large-amd
     treeherder:
         symbol: cpp(clang-tidy-external)
     attributes:
@@ -92,10 +96,6 @@ external:
             - type: file
               name: public/code-review/clang-tidy.json
               path: /builds/worker/clang-tidy.json
-            - type: file
-              name: public/profile_resource-usage.json
-              path: /builds/worker/profile_resource-usage.json
-
 
 unittest:
     description: Ensure static analysis works correctly

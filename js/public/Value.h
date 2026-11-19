@@ -122,7 +122,9 @@ class JS_PUBLIC_API Value;
 //    ValueLowerInclGCThingTag)
 // 4. The tags for Object and Null differ by a single flipped bit, to simplify
 //    toObjectOrNull. (See ValueObjectOrNullBit)
-// 5. In PUNBOX64, the most significant bit of every non-Double tag is always
+// 5. The tags for Null and Undefined are the only tags between 4 and 8, to
+//    simplify isNullOrUndefined. (See ValueNullOrUndefinedBits)
+// 6. In PUNBOX64, the most significant bit of every non-Double tag is always
 //    set. This is to simplify isDouble checks. Note that the highest bitstring
 //    that corresponds to a non-NaN double is -Infinity:
 //      0xfff0_0000_0000_0000
@@ -139,10 +141,10 @@ class JS_PUBLIC_API Value;
 //    left to allocate new tags.)
 //
 //    * But see JS_NONCANONICAL_HARDWARE_NAN below.
-// 6. The low two bits of the String, Object and BigInt tags are their
+// 7. The low two bits of the String, Object and BigInt tags are their
 //    JS::TraceKind, and those of the PrivateGCThing and Symbol tags are both
 //    0b11, so Value::traceKind needs a single branch. (See Value::traceKind)
-// 7. Every non-GC, non-Double type has an even type code, so on PUNBOX64 its
+// 8. Every non-GC, non-Double type has an even type code, so on PUNBOX64 its
 //    shifted tag occupies only the top 16 bits: AArch64 materializes the tag,
 //    or a Value with a small payload, without a movk for bits 32-47. The odd
 //    type codes below the GC things are unused so that these can be even.
@@ -332,6 +334,26 @@ constexpr uint64_t IsValidUserModePointer(uint64_t bits) {
 constexpr bool ValueTypeIsGCThing(JSValueType type) {
   return ValueTypeToTag(type) >= ValueLowerInclGCThingTag;
 }
+
+// Null and Undefined differ in a single bit, and theirs are the only type codes
+// between 4 and 8. When shifted right by 2, their tags share a unique
+// representation. See MacroAssembler::branchTestNullOrUndefined and
+// Value::isNullOrUndefined.
+constexpr unsigned ValueNullOrUndefinedShift = JSVAL_TAG_SHIFT + 2;
+constexpr uint32_t ValueNullOrUndefinedBits = JSVAL_TAG_NULL >> 2;
+constexpr bool MatchWhenShifted(JSValueType type, JSValueType type2) {
+  return (ValueTypeToTag(type) >> 2) == (ValueTypeToTag(type2) >> 2);
+}
+static_assert(MatchWhenShifted(JSVAL_TYPE_UNDEFINED, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_DOUBLE, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_INT32, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_BOOLEAN, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_MAGIC, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_PRIVATE_GCTHING, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_OBJECT, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_BIGINT, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_STRING, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_SYMBOL, JSVAL_TYPE_NULL));
 
 }  // namespace detail
 }  // namespace JS
@@ -818,7 +840,10 @@ class Value {
 #endif
   }
 
-  bool isNullOrUndefined() const { return isNull() || isUndefined(); }
+  bool isNullOrUndefined() const {
+    return (asBits_ >> detail::ValueNullOrUndefinedShift) ==
+           detail::ValueNullOrUndefinedBits;
+  }
 
   bool isInt32() const { return toTag() == JSVAL_TAG_INT32; }
 

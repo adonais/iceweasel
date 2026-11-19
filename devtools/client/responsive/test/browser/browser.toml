@@ -226,9 +226,6 @@ https_first_disabled = true
 https_first_disabled = true
 
 ["browser_viewport_changed_meta.js"]
-skip-if = [
-  "os == 'win' && opt && standalone", # Bug 2028517
-]
 
 ["browser_viewport_fallback_width.js"]
 

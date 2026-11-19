@@ -154,18 +154,12 @@ support-files = ["dummy_history_item.html"]
 ["browser_947914_button_zoomOut.js"]
 
 ["browser_947914_button_zoomReset.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1775671
-]
 
 ["browser_947987_removable_default.js"]
 
 ["browser_948985_non_removable_defaultArea.js"]
 
 ["browser_952963_areaType_getter_no_area.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt && socketprocess_networking && verify-standalone",
-]
 
 ["browser_956602_remove_special_widget.js"]
 
@@ -205,9 +199,6 @@ tags = "overflowable-toolbar"
 ["browser_985815_propagate_setToolbarVisibility.js"]
 
 ["browser_987177_destroyWidget_xul.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
-]
 
 ["browser_987177_xul_wrapper_updating.js"]
 

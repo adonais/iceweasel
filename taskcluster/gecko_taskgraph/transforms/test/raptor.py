@@ -525,11 +525,18 @@ def setup_autoland_retriggers(config, tasks):
 
 
 @task_transforms.add
-def set_task_label_env(config, tasks):
-    """Tell the harness which task it is running as."""
+def setup_task_env(config, tasks):
+    """Sets up the env for the tasks."""
     for task in tasks:
         env = task.setdefault("worker", {}).setdefault("env", {})
+
+        # Tell the harness which task it is running as for critical alerting
         env["RAPTOR_TASK_LABEL"] = task["label"]
+
+        # Prevent power meter reset on lambdatest tasks
+        if task["worker"]["os"] == "linux-lambda":
+            env["DISABLE_USB_POWER_METER_RESET"] = "1"
+
         yield task
 
 
@@ -552,85 +559,6 @@ def setup_internal_artifacts(config, tasks):
                 "type": "directory",
             })
         yield task
-
-
-@task_transforms.add
-def select_tasks_to_lambda(config, tasks):
-    """
-    all motionmark tests
-    speedometer3 test
-    unity-webgl test
-    all youtube-playback tests (including power)
-    all vpl (video-playback-latency) tests
-    all pageload tests (ideally fenix/CaR/ChR)
-    jetstream3 benchmarks
-    background/foreground resource tests (browsertime-power idle/idle-bg)
-    trr-* performance tests
-
-    """
-    tests_to_run_at_lambdatest = [
-        "motionmark-1-3",
-        "motionmark-htmlsuite-1-3",
-        "speedometer3",
-        "unity-webgl",
-        "video-playback-latency",
-        "youtube-playback-av1-sfr",
-        "youtube-playback-hfr",
-        "youtube-playback-vp9-sfr",
-        "youtube-playback-h264-sfr",
-        "youtube-playback-h264-720p60",
-        "youtube-playback-vp9-720p60",
-        "tp6m",
-        "jetstream3",
-        "browsertime-power",
-        "browsertime-trr-performance",
-    ]
-
-    # Bug 2017151 - newly-migrated tests run at tier 2 while stabilizing on LT
-    tests_to_force_tier2 = [
-        "youtube-playback-h264-sfr",
-        "youtube-playback-h264-720p60",
-        "youtube-playback-vp9-720p60",
-        "jetstream3",
-        "browsertime-power",
-        "browsertime-trr-performance",
-    ]
-
-    def redirect_to_lt(task):
-        task["tags"]["os"] = "linux-lambda"
-        task["worker"]["os"] = "linux-lambda"
-        task["worker-type"] = "t-lambda-perf-a55"
-        task["worker"]["env"]["TASKCLUSTER_WORKER_TYPE"] = "t-lambda-perf-a55"
-        cmds = []
-        for cmd in task["worker"]["command"]:
-            # Bug 1981862 - issues with condprof setup @ lambdatest
-            cmds.append([
-                c.replace(
-                    "/builds/taskcluster/script.py",
-                    "/home/ltuser/taskcluster/script.py",
-                )
-                for c in cmd
-                if not c.startswith("--conditioned-profile")
-            ])
-        task["worker"]["command"] = cmds
-        task["worker"]["env"]["DISABLE_USB_POWER_METER_RESET"] = "1"
-        # Bug 2017151 - newly-migrated tests run at tier 2 while stabilizing on LT
-        if any(t in task["label"] for t in tests_to_force_tier2):
-            th = task.setdefault("treeherder", {})
-            th["tier"] = max(th.get("tier", 1), 2)
-        return task
-
-    for task in tasks:
-        if not ("android" in task["label"] and "a55" in task["label"]):
-            yield task
-            continue
-        if not any(t in task["label"] for t in tests_to_run_at_lambdatest):
-            yield task
-            continue
-        if task["worker-type"] != "t-bitbar-gw-perf-a55":
-            yield task
-            continue
-        yield redirect_to_lt(task)
 
 
 @transforms.add

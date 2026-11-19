@@ -251,9 +251,9 @@ linux64-android-gradle-dependencies:
     description: "Android Gradle dependencies toolchain task"
     treeherder:
         symbol: TL(gradle-dependencies)
+    use-gradle: online
     worker:
         env:
-            GRADLE_USER_HOME: "/builds/worker/workspace/build/src/mobile/android/gradle/dotgradle-online"
             ANDROID_SDK_ROOT: "/builds/worker/fetches/android-sdk-linux"
         max-run-time: 2700
     run:
@@ -278,6 +278,7 @@ linux64-android-gradle-dependencies:
             - 'third_party/application-services/**/*.gradle'
             - 'third_party/application-services/.buildconfig-android.yml'
             - 'toolkit/moz.configure'
+            - 'widget/android/moz.build'
         toolchain-artifact: public/build/android-gradle-dependencies.tar.zst
         toolchain-alias: android-gradle-dependencies
     fetches:
@@ -297,9 +298,9 @@ linux64-android-gradle-dependencies-appservices:
     treeherder:
         symbol: TL(gradle-dependencies-as)
         tier: 3
+    use-gradle: online
     worker:
         env:
-            GRADLE_USER_HOME: "/builds/worker/workspace/build/src/mobile/android/gradle/dotgradle-online"
             ANDROID_SDK_ROOT: "/builds/worker/fetches/android-sdk-linux"
             MOZ_APPSERVICES_IN_TREE: "1"
         max-run-time: 2700
@@ -325,6 +326,7 @@ linux64-android-gradle-dependencies-appservices:
             - 'third_party/application-services/**/*.gradle'
             - 'third_party/application-services/.buildconfig-android.yml'
             - 'toolkit/moz.configure'
+            - 'widget/android/moz.build'
         toolchain-artifact: public/build/android-gradle-dependencies.tar.zst
         toolchain-alias: android-gradle-dependencies-appservices
     fetches:

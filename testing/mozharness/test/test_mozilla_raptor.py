@@ -18,6 +18,7 @@ def test_raptor_package_pins_cover_setup(tmp_path, run_local):
     harness.config = {"virtualenv_path": str(tmp_path / "venv")}
     harness.clean = False
     harness.run_local = run_local
+    harness.browsertime_visualmetrics = False
     harness.raptor_path = str(tmp_path / "raptor")
     harness.query_exe = Mock(return_value=sys.executable)
     harness.platform_name = Mock(return_value="linux")

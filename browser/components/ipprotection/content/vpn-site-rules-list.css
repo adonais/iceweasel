@@ -55,8 +55,6 @@ vpn-site-rules-list {
 }
 
 .vpn-site-rules-empty-illustration {
-  width: var(--box-icon-size);
-  height: var(--box-icon-size);
   -moz-context-properties: fill;
   fill: var(--box-icon-fill);
 }

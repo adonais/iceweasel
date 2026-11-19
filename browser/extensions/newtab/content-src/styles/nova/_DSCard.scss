@@ -14,10 +14,6 @@
 // image sizing and radius in DSCard/_DSCard.scss must be deleted when folding.
 
 .nova-enabled .ds-card-grid:not(.ds-section-grid) .ds-card {
-  &:not(.placeholder) {
-    box-shadow: var(--card-box-shadow);
-  }
-
   &:hover,
   &:active,
   &:focus-within {

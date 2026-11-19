@@ -372,17 +372,20 @@ class SidebarManager extends EventTarget {
    * Provide a system-level "backup" state to be stored for those using "Never
    * remember history" or "Clear history when browser closes".
    *
-   * If it doesn't exist or isn't parsable, return `null`.
+   * If it doesn't exist, isn't parsable or isn't an object, the pref is reset
+   * and an empty state object is returned.
    *
    * @returns {object}
    */
   getBackupState() {
     try {
-      return JSON.parse(lazy.sidebarBackupState);
-    } catch (e) {
-      Services.prefs.clearUserPref(BACKUP_STATE_PREF);
-      return null;
-    }
+      const state = JSON.parse(lazy.sidebarBackupState);
+      if (state && typeof state == "object" && !Array.isArray(state)) {
+        return state;
+      }
+    } catch (e) {}
+    Services.prefs.clearUserPref(BACKUP_STATE_PREF);
+    return {};
   }
 
   /**

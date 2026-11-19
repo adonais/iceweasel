@@ -1600,3 +1600,96 @@ add_task(async function test_remotely_deleted_also_removes_keyword() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesSyncUtils.bookmarks.reset();
 });
+
+add_task(async function test_remotely_deleted_also_removes_tags() {
+  let buf = await openMirror("remotely_deleted_removes_tags");
+
+  info("Set up tagged bookmarks through the mirror");
+  await storeRecords(buf, [
+    {
+      id: "menu",
+      parentid: "places",
+      type: "folder",
+      children: ["bookmarkAAAA", "bookmarkBBBB"],
+    },
+    {
+      id: "bookmarkAAAA",
+      parentid: "menu",
+      type: "bookmark",
+      title: "A",
+      bmkUri: "http://example.com/a",
+      tags: ["shared", "onlyA"],
+    },
+    {
+      id: "bookmarkBBBB",
+      parentid: "menu",
+      type: "bookmark",
+      title: "B",
+      bmkUri: "http://example.com/b",
+      tags: ["shared"],
+    },
+  ]);
+  await storeChangesInMirror(buf, await buf.apply());
+
+  let db = await PlacesUtils.promiseDBConnection();
+  let countUrlEntries = async url => {
+    let rows = await db.execute(
+      `SELECT count(*) FROM moz_bookmarks b
+       JOIN moz_places h ON h.id = b.fk
+       WHERE h.url = :url`,
+      { url }
+    );
+    return rows[0].getResultByIndex(0);
+  };
+  let fetchTagFolders = async () => {
+    let rows = await db.execute(
+      `SELECT b.title FROM moz_bookmarks b
+       JOIN moz_bookmarks p ON p.id = b.parent
+       WHERE p.guid = :tagsGuid
+       ORDER BY b.title`,
+      { tagsGuid: PlacesUtils.bookmarks.tagsGuid }
+    );
+    return rows.map(r => r.getResultByIndex(0));
+  };
+  Assert.equal(
+    await countUrlEntries("http://example.com/a"),
+    3,
+    "A should have a bookmark and two tag entries"
+  );
+
+  info("Make remote changes: delete A");
+  await storeRecords(buf, [
+    {
+      id: "menu",
+      parentid: "places",
+      type: "folder",
+      children: ["bookmarkBBBB"],
+    },
+    {
+      id: "bookmarkAAAA",
+      deleted: true,
+    },
+  ]);
+  let changesToUpload = await buf.apply();
+
+  await TestUtils.waitForCondition(
+    async () => !(await countUrlEntries("http://example.com/a")),
+    "Waiting for the tag entries of A to be removed"
+  );
+  Assert.equal(
+    await countUrlEntries("http://example.com/b"),
+    2,
+    "B should keep its bookmark and tag entry"
+  );
+  await TestUtils.waitForCondition(async () => {
+    let tags = await fetchTagFolders();
+    return tags.length == 1 && tags[0] == "shared";
+  }, "Waiting for the empty tag to be removed");
+
+  await storeChangesInMirror(buf, changesToUpload);
+  deepEqual(await buf.fetchUnmergedGuids(), [], "Should merge all items");
+
+  await buf.finalize();
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesSyncUtils.bookmarks.reset();
+});

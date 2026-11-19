@@ -317,7 +317,6 @@ const perfMetadata = {
 };
 
 const NAMESPACE_URI = "http://www.w3.org/2000/svg";
-const NUM_SHAPES = 2000;
 const NUM_PAN_STEPS = 20;
 // We try to distribute the shapes evenly throughout the "workspace" so each
 // pan causes the same number of new shapes to be painted.
@@ -333,7 +332,7 @@ addAccessibleTask(
      <g id="canvas"></g>
    </svg>`,
   async function testPanManySVGShapes(browser) {
-    info(`Adding ${NUM_SHAPES} shapes to the workspace`);
+    info(`Adding ${MEDIUM_NODE_COUNT} shapes to the workspace`);
     const workspaceShown = waitForEvent(EVENT_SHOW, "workspace");
     // We populate the workspace while it is hidden so that we get a single show
     // event rather than one per shape. This keeps the cost of the show events
@@ -342,7 +341,7 @@ addAccessibleTask(
       browser,
       [
         NAMESPACE_URI,
-        NUM_SHAPES,
+        MEDIUM_NODE_COUNT,
         SHAPES_PER_ROW,
         COLUMN_WIDTH,
         ROW_HEIGHT,

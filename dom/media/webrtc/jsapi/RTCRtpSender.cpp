@@ -58,6 +58,7 @@
 #include "mozilla/glean/DomMediaWebrtcMetrics.h"
 #include "mozilla/mozalloc_oom.h"
 #include "nsCOMPtr.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
@@ -222,7 +223,7 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
     promises.AppendElement(InvokeAsync(
         mPipeline->mCallThread, __func__,
         [conduit = mPipeline->mConduit, trackName]() mutable {
-          auto report = MakeUnique<dom::RTCStatsCollection>();
+          auto report = std::make_unique<dom::RTCStatsCollection>();
           Maybe<webrtc::Call::Stats> stats = conduit->GetCallStats();
           stats.apply([&](const auto aStats) {
             dom::RTCBandwidthEstimationInternal bw;
@@ -251,7 +252,7 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
        transportId = std::move(transportId),
        videoSsrcToRidMap = std::move(videoSsrcToRidMap), isSending,
        audioCodec = mAudioCodec.Ref()] {
-        auto report = MakeUnique<dom::RTCStatsCollection>();
+        auto report = std::make_unique<dom::RTCStatsCollection>();
         auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
         auto asVideo = pipeline->mConduit->AsVideoSessionConduit();
 
@@ -611,7 +612,9 @@ nsCString RTCRtpSender::GetEffectiveTLDPlus1() const {
 }
 
 already_AddRefed<Promise> RTCRtpSender::SetParameters(
-    const dom::RTCRtpSendParameters& aParameters, ErrorResult& aError) {
+    const dom::RTCRtpSendParameters& aParameters,
+    const dom::RTCSetParameterOptions& aSetParameterOptions,
+    ErrorResult& aError) {
   dom::RTCRtpSendParameters paramsCopy(aParameters);
   // When the setParameters method is called, the user agent MUST run the
   // following steps:
@@ -907,6 +910,23 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
     return p.forget();
   }
 
+  // https://w3c.github.io/webrtc-extensions/#rtcrtpsender-setparameters-keyframe
+  // If the transceiver kind of the associated transceiver is "audio", set
+  // setParameterOptions.encodingOptions to the empty list.
+  const auto& encodingOptions = aSetParameterOptions.mEncodingOptions;
+  const bool useEncodingOptions =
+      mTransceiver->IsVideo() && !encodingOptions.IsEmpty();
+  // If setParameterOptions.encodingOptions is not empty and
+  // setParameterOptions.encodingOptions.length is different from
+  // parameters.encodings.length, return a promise rejected with a newly
+  // created InvalidModificationError.
+  if (useEncodingOptions &&
+      encodingOptions.Length() != paramsCopy.mEncodings.Length()) {
+    p->MaybeRejectWithInvalidModificationError(
+        "encodingOptions must have the same length as encodings");
+    return p.forget();
+  }
+
   // If transceiver kind is "video", then for each encoding in encodings that
   // doesn't contain a scaleResolutionDownBy member, add a
   // scaleResolutionDownBy member with the value 1.0.
@@ -955,15 +975,43 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
     mVideoDegradationPreference = webrtc::DegradationPreference::DISABLED;
   }
 
+  // For each setParameterOptions.encodingOptions indexed by i, if
+  // setParameterOptions.encodingOptions[i].keyFrame is set to true, request
+  // that the encoder associated with parameters.encodings[i] generates a key
+  // frame.
+  Maybe<std::vector<std::string>> keyFrameRids;
+  if (useEncodingOptions) {
+    for (size_t i = 0; i < encodingOptions.Length(); ++i) {
+      if (!encodingOptions[i].mKeyFrame) {
+        continue;
+      }
+      if (!keyFrameRids) {
+        keyFrameRids.emplace();
+      }
+      if (paramsCopy.mEncodings[i].mRid.WasPassed()) {
+        keyFrameRids->push_back(
+            NS_ConvertUTF16toUTF8(paramsCopy.mEncodings[i].mRid.Value()).get());
+      }
+    }
+  }
+
   // If the media stack is successfully configured with parameters,
   // queue a task to run the following steps:
   GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
-      __func__,
-      [this, self = RefPtr<RTCRtpSender>(this), p, paramsCopy, serialNumber] {
+      __func__, [this, self = RefPtr<RTCRtpSender>(this), p,
+                 paramsCopy = std::move(paramsCopy), serialNumber,
+                 keyFrameRids = std::move(keyFrameRids)]() mutable {
+        // Requested here so it reaches the call thread after the new config.
+        if (keyFrameRids && mPipeline) {
+          mPipeline->mConduit->AsVideoSessionConduit().apply(
+              [&](const auto& conduit) {
+                conduit->GenerateKeyFrames(std::move(*keyFrameRids));
+              });
+        }
         // Set sender.[[LastReturnedParameters]] to null.
         mLastReturnedParameters = Nothing();
         // Set sender.[[SendEncodings]] to parameters.encodings.
-        mParameters.mEncodings = paramsCopy.mEncodings;
+        mParameters.mEncodings = std::move(paramsCopy.mEncodings);
         UpdateRestorableEncodings(mParameters.mEncodings);
         // If we had a valid degradation preference passed in store it in
         // mParameters so we can return it if needed via GetParameters calls.

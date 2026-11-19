@@ -34,6 +34,7 @@ li > ol:-moz-first-node {
 }
 
 table {
+  color: -moz-inherit-from-body;
   text-align: start;
   white-space: normal; /* compatible with IE & spec */
   line-height: normal;

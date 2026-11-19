@@ -201,7 +201,7 @@ static Result BuildCertChainForOneKeyUsage(
 }
 
 void CertVerifier::LoadKnownCTLogs() {
-  mCTVerifier = MakeUnique<MultiLogCTVerifier>();
+  mCTVerifier = std::make_unique<MultiLogCTVerifier>();
   for (const CTLogInfo& log : kCTLogList) {
     Input publicKey;
     Result rv = publicKey.Init(

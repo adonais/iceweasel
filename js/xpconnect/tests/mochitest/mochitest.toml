@@ -250,12 +250,7 @@ skip-if = [
 # The JS test component we use below is only available in debug builds.
 
 ["test_getWebIDLCaller.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_getweakmapkeys.html"]
 
@@ -266,12 +261,7 @@ skip-if = [
 ["test_nukeContentWindow.html"]
 
 ["test_paris_weakmap_keys.html"]
-skip-if = [
-  "asan",
-  "ccov",
-  "opt",
-  "tsan",
-]
+run-if = ["debug"]
 
 ["test_private_field_dom.html"]
 

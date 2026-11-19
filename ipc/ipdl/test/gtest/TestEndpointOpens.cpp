@@ -34,7 +34,7 @@ class TestEndpointOpensOpenedParent : public PTestEndpointOpensOpenedParent {
     return IPC_OK();
   }
 
-  void ActorDestroy(ActorDestroyReason why) final override {
+  void ActorDestroy(ActorDestroyReason /*why*/) final override {
     EXPECT_FALSE(NS_IsMainThread());
   }
 
@@ -65,7 +65,7 @@ class TestEndpointOpensOpenedChild : public PTestEndpointOpensOpenedChild {
     return IPC_OK();
   }
 
-  void ActorDestroy(ActorDestroyReason why) final override {
+  void ActorDestroy(ActorDestroyReason /*why*/) final override {
     EXPECT_FALSE(NS_IsMainThread());
 
     // Kick off main-thread shutdown.

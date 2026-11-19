@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #include "mozilla/RefPtr.h"
+#include "mozilla/TimeStamp.h"
 #include "nsIAlertsService.h"
 #include "nsTArray.h"
 
@@ -35,13 +36,19 @@ class MacOSNotificationCenter : public nsIAlertsService,
   void OnActivate(NSString* aAlertName,
                   NSUserNotificationActivationType aActivationType,
                   NSUserNotificationAction* aAdditionalActivationAction);
+  void OnApplicationDidBecomeActive();
 
  protected:
   virtual ~MacOSNotificationCenter();
 
+  nsIAlertCallbacks::ApplicationState GetApplicationState() const;
+
  private:
   mozNotificationCenterDelegate* mDelegate;
   nsTArray<RefPtr<MacOSNotificationInfo> > mActiveAlerts;
+  // The last time the application became active, used to determine whether
+  // the application was activated by a notification click.
+  TimeStamp mLastApplicationActivation;
   bool mSuppressForScreenSharing;
 };
 

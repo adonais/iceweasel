@@ -11,10 +11,12 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconRes
+import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.fake.FakeMenuHost
 import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
@@ -22,7 +24,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction
 class SettingsMenuItemProviderTest {
     @Test
     fun `WHEN providing the item THEN offer opening the application settings`() {
-        val provider = SettingsMenuItemProvider()
+        val provider = SettingsMenuItemProvider(target = MenuTarget.BrowserTab)
 
         assertEquals(
             StandardMenuItem(
@@ -30,7 +32,22 @@ class SettingsMenuItemProviderTest {
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_settings_24),
                 onClickEvent = MenuAction.Navigate.Settings,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
+        )
+    }
+
+    @Test
+    fun `GIVEN target is CustomizeMenu WHEN providing the item THEN offer opening settings without click event`() {
+        val provider = SettingsMenuItemProvider(target = MenuTarget.CustomizeMenu)
+
+        assertEquals(
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_settings)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_settings_24),
+                onClickEvent = null,
+                state = MenuItemState.DEFAULT,
+            ),
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -38,16 +55,16 @@ class SettingsMenuItemProviderTest {
     fun `WHEN clicking the item THEN show the settings in place of the menu`() {
         val menu = FakeMenuHost()
 
-        SettingsMenuItemProvider().onEvent(MenuAction.Navigate.Settings, menu)
+        SettingsMenuItemProvider(target = MenuTarget.BrowserTab).onEvent(MenuAction.Navigate.Settings, menu)
 
         assertEquals(NavGraphDirections.actionGlobalSettingsFragment(), menu.directions)
     }
 
     @Test
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
-        val provider = SettingsMenuItemProvider()
+        val provider = SettingsMenuItemProvider(target = MenuTarget.BrowserTab)
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.Navigate.History))

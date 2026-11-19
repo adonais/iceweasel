@@ -68,6 +68,8 @@ skip-if = [
 
 ["browser_devtools_api_destroy.js"]
 
+["browser_disabled_devtools_mini_window.js"]
+
 ["browser_dynamic_tool_enabling.js"]
 
 ["browser_front_parentFront.js"]

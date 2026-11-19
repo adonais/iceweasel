@@ -234,8 +234,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsTypeAheadFind::CollapseSelection() {
 }
 
 NS_IMETHODIMP
-nsTypeAheadFind::Observe(nsISupports* aSubject, const char* aTopic,
-                         const char16_t* aData) {
+nsTypeAheadFind::Observe(nsISupports* /*aSubject*/, const char* aTopic,
+                         const char16_t* /*aData*/) {
   if (!nsCRT::strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
     return PrefsReset();
   }
@@ -636,7 +636,7 @@ nsTypeAheadFind::GetCurrentWindow(mozIDOMWindow** aCurrentWindow) {
 
 nsresult nsTypeAheadFind::GetSearchContainers(
     nsISupports* aContainer, nsISelectionController* aSelectionController,
-    bool aIsFirstVisiblePreferred, bool aFindPrev, PresShell** aPresShell,
+    bool /*aIsFirstVisiblePreferred*/, bool aFindPrev, PresShell** aPresShell,
     nsPresContext** aPresContext) {
   NS_ENSURE_ARG_POINTER(aContainer);
   NS_ENSURE_ARG_POINTER(aPresShell);
@@ -1005,7 +1005,7 @@ nsTypeAheadFind::IsRangeVisible(dom::Range* aRange, bool aMustBeInViewPort,
 }
 
 bool nsTypeAheadFind::IsRangeVisible(dom::Range* aRange, bool aMustBeInViewPort,
-                                     bool aGetTopVisibleLeaf,
+                                     bool /*aGetTopVisibleLeaf*/,
                                      bool* aUsesIndependentSelection) {
   // We need to know if the range start is visible.
   // Otherwise, return the first visible range start in aFirstVisibleRange

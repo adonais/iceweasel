@@ -5,8 +5,10 @@
 package org.mozilla.fenix.downloads
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -23,35 +25,43 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.store.MenuAction
 
 /**
  * [MenuItemProvider] for the menu item allowing to open the downloads screen.
  *
  * @param appStore [AppStore] to observe the downloads notification status.
+ * @param target [MenuTarget] for which this menu item would be shown for.
  * @param scope [CoroutineScope] used to keep the item up to date for as long as it can be shown.
  */
 class DownloadsMenuItemProvider(
     appStore: AppStore,
+    private val target: MenuTarget,
     scope: CoroutineScope,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        appStore.stateFlow
-            .map { it.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads) }
-            .distinctUntilChanged()
-            .map { isHighlighted -> createMenuItem(isHighlighted) }
-            .stateIn(
-                scope = scope,
-                started = SharingStarted.Eagerly,
-                initialValue =
-                    createMenuItem(
-                        appStore.state.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads)
-                    ),
-            )
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM)).asStateFlow()
+        } else {
+            appStore.stateFlow
+                .map { it.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads) }
+                .distinctUntilChanged()
+                .map { isHighlighted -> listOf(createMenuItem(isHighlighted)) }
+                .stateIn(
+                    scope = scope,
+                    started = SharingStarted.Eagerly,
+                    initialValue =
+                        listOf(
+                            createMenuItem(
+                                appStore.state.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads)
+                            )
+                        ),
+                )
+        }
 
     private fun createMenuItem(isHighlighted: Boolean) =
-        StandardMenuItem(
-            title = MenuItemTitle(Text.Resource(R.string.library_downloads)),
+        DEFAULT_MENU_ITEM.copy(
             icon =
                 MenuItemIconRes(
                     iconsR.drawable.mozac_ic_download_24,
@@ -64,5 +74,13 @@ class DownloadsMenuItemProvider(
 
     override fun onEvent(event: MenuEvent, menu: MenuHost) {
         menu.navigate(NavGraphDirections.actionGlobalDownloadsFragment())
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.library_downloads)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_download_24),
+            )
     }
 }

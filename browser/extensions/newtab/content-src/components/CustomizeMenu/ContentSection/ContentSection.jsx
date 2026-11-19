@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from "react";
-import { batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { SectionsMgmtPanel } from "../SectionsMgmtPanel/SectionsMgmtPanel";
 import { ThemesManagementPanel } from "../ThemesManagementPanel/ThemesManagementPanel";
@@ -36,84 +35,82 @@ export class ContentSection extends React.PureComponent {
   }
 
   inputUserEvent(eventSource, eventValue) {
-    batch(() => {
-      this.props.dispatch(
-        ac.UserEvent({
-          event: "PREF_CHANGED",
-          source: eventSource,
-          value: { status: eventValue, menu_source: "CUSTOMIZE_MENU" },
-        })
-      );
+    this.props.dispatch(
+      ac.UserEvent({
+        event: "PREF_CHANGED",
+        source: eventSource,
+        value: { status: eventValue, menu_source: "CUSTOMIZE_MENU" },
+      })
+    );
 
-      // Dispatch unified widget telemetry for widget toggles.
-      // Map the event source from the customize panel to the widget name
-      // for the unified telemetry event.
-      let widgetName;
-      switch (eventSource) {
-        case "WEATHER":
-          widgetName = "weather";
-          break;
-        case "WIDGET_LISTS":
-          widgetName = "lists";
-          break;
-        case "WIDGET_TIMER":
-          widgetName = "focus_timer";
-          break;
-        case "WIDGET_CLOCKS":
-          widgetName = "clocks";
-          break;
-        case "WIDGET_PRIVACY":
-          widgetName = "privacy";
-          break;
-        case "WIDGET_CROSSWORD":
-          widgetName = "crossword";
-          break;
-        case "WIDGET_STOCKS":
-          widgetName = "stocks";
-          break;
-        case "WIDGET_RECENT_SEARCHES":
-          widgetName = "recent_searches";
-          break;
-        case "WIDGET_PICTURE_OF_THE_DAY":
-          widgetName = "picture_of_the_day";
-          break;
-      }
+    // Dispatch unified widget telemetry for widget toggles.
+    // Map the event source from the customize panel to the widget name
+    // for the unified telemetry event.
+    let widgetName;
+    switch (eventSource) {
+      case "WEATHER":
+        widgetName = "weather";
+        break;
+      case "WIDGET_LISTS":
+        widgetName = "lists";
+        break;
+      case "WIDGET_TIMER":
+        widgetName = "focus_timer";
+        break;
+      case "WIDGET_CLOCKS":
+        widgetName = "clocks";
+        break;
+      case "WIDGET_PRIVACY":
+        widgetName = "privacy";
+        break;
+      case "WIDGET_CROSSWORD":
+        widgetName = "crossword";
+        break;
+      case "WIDGET_STOCKS":
+        widgetName = "stocks";
+        break;
+      case "WIDGET_RECENT_SEARCHES":
+        widgetName = "recent_searches";
+        break;
+      case "WIDGET_PICTURE_OF_THE_DAY":
+        widgetName = "picture_of_the_day";
+        break;
+    }
 
-      if (widgetName) {
-        const { widgetsMaximized, widgetsMayBeMaximized } =
-          this.props.enabledWidgets;
+    if (widgetName) {
+      const { widgetsMaximized, widgetsMayBeMaximized } =
+        this.props.enabledWidgets;
 
-        let widgetSize;
-        if (widgetName === "weather") {
-          if (
-            this.props.mayHaveWeatherForecast &&
-            this.props.weatherDisplay === "detailed"
-          ) {
-            widgetSize =
-              widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
-          } else {
-            widgetSize = "small";
-          }
-        } else {
+      let widgetSize;
+      if (widgetName === "weather") {
+        if (
+          this.props.mayHaveWeatherForecast &&
+          this.props.weatherDisplay === "detailed"
+        ) {
           widgetSize =
             widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
+        } else {
+          widgetSize = "small";
         }
-
-        const data = {
-          widget_name: widgetName,
-          widget_source: "customize_panel",
-          enabled: eventValue,
-          widget_size: widgetSize,
-        };
-
-        this.props.dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_ENABLED,
-            data,
-          })
-        );
+      } else {
+        widgetSize =
+          widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
       }
-    });
+
+      const data = {
+        widget_name: widgetName,
+        widget_source: "customize_panel",
+        enabled: eventValue,
+        widget_size: widgetSize,
+      };
+
+      this.props.dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_ENABLED,
+          data,
+        })
+      );
+    }
   }
 
   onPreferenceSelect(e) {

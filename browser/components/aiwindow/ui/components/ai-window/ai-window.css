@@ -185,11 +185,11 @@
 
 /* Keep the input from moving when the suggestions list opens. */
 #ai-window-smartbar[suggestions-position="bottom"] {
-  top: 0;
+  inset-block-start: 0;
 }
 
 #ai-window-smartbar[suggestions-position="top"] {
-  bottom: 0;
+  inset-block-end: 0;
 }
 
 #smartbar-slot {
@@ -214,7 +214,7 @@ smartwindow-prompts {
   padding-block: var(--space-small);
   padding-inline: var(--space-small) var(--space-large);
   position: absolute;
-  top: 0;
+  inset-block-start: 0;
   width: 100%;
 }
 

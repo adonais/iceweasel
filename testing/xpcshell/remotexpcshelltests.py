@@ -713,20 +713,44 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         return node_env
 
     def trySetupNode(self):
-        super().trySetupNode()
-        # make node host ports visible to device
-        if "MOZHTTP2_PORT" in self.env:
-            port = "tcp:{}".format(self.env["MOZHTTP2_PORT"])
-            self.device.create_socket_connection(
-                ADBDevice.SOCKET_DIRECTION_REVERSE, port, port
-            )
-            self.log.info("reversed MOZHTTP2_PORT connection for port " + port)
-        if "MOZNODE_EXEC_PORT" in self.env:
-            port = "tcp:{}".format(self.env["MOZNODE_EXEC_PORT"])
-            self.device.create_socket_connection(
-                ADBDevice.SOCKET_DIRECTION_REVERSE, port, port
-            )
-            self.log.info("reversed MOZNODE_EXEC_PORT connection for port " + port)
+        NODE_PORT_KEYS = ["MOZHTTP2_PORT", "MOZNODE_EXEC_PORT"]
+        MAX_ATTEMPTS = 3
+        portsPreset = any(key in self.env for key in NODE_PORT_KEYS)
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            super().trySetupNode()
+            # make node host ports visible to device
+            reversedPorts = []
+            try:
+                for key in NODE_PORT_KEYS:
+                    if key in self.env:
+                        port = f"tcp:{self.env[key]}"
+                        self.device.create_socket_connection(
+                            ADBDevice.SOCKET_DIRECTION_REVERSE, port, port
+                        )
+                        reversedPorts.append(port)
+                        self.log.info(f"reversed {key} connection for port {port}")
+                return
+            except mozdevice.ADBProcessError as e:
+                # The node ports are free on the host but can be in use on the
+                # device. If we picked them, start node again on new ports.
+                if (
+                    portsPreset
+                    or self.mozHttp2Server is None
+                    or attempt == MAX_ATTEMPTS
+                    or "Address already in use" not in str(e)
+                ):
+                    raise
+                self.log.info(f"node port in use on the device, retrying: {e}")
+            for port in reversedPorts:
+                self.device.remove_socket_connections(
+                    ADBDevice.SOCKET_DIRECTION_REVERSE, port
+                )
+            super().shutdownNode()
+            # The base trySetupNode stored the ports node picked in self.env,
+            # and node listens on the ports in self.env if they are set, so
+            # remove them to have node pick new ones.
+            for key in NODE_PORT_KEYS:
+                self.env.pop(key, None)
 
     def shutdownNode(self):
         super().shutdownNode()

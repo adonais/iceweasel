@@ -894,7 +894,7 @@ add_task(async function test_migration_firefoxLabsEnrollments_idempotent() {
   const recipes = mockLabsRecipes("true");
 
   const { manager, cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       // Get the store into a partially migrated state (i.e., we have enrolled in at least one
       // experiment but the migration pref has not updated).
       NimbusTestUtils.addEnrollmentForRecipe(recipes[0], {
@@ -912,7 +912,7 @@ add_task(async function test_migration_firefoxLabsEnrollments_idempotent() {
           ],
         },
       });
-    }),
+    },
     experiments: recipes,
     migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
     migrations: {
@@ -1073,132 +1073,101 @@ add_task(async function testMigrateEnrollmentsToSql() {
     [...experiments, ...secureExperiments].map(recipe => [recipe.slug, recipe])
   );
 
-  const storePath = await NimbusTestUtils.createStoreWith(store => {
-    store.set(
-      "inactive-1",
-      NimbusTestUtils.factories.enrollment(
-        NimbusTestUtils.factories.recipe.withFeatureConfig("inactive-1", {
-          featureId: "no-feature-firefox-desktop",
-        }),
-        {
-          extra: {
-            active: false,
-            unenrollReason: "reason-1",
-          },
-        }
-      )
-    );
-    store.set(
-      "inactive-2",
-      NimbusTestUtils.factories.enrollment(
-        NimbusTestUtils.factories.recipe.withFeatureConfig("inactive-2", {
-          branchSlug: "treatment-a",
-          featureId: "no-feature-firefox-desktop",
-        }),
-        {
-          extra: {
-            active: false,
-            unenrollReason: "reason-2",
-          },
-        }
-      )
-    );
-    store.set(
-      "expired-but-active",
-      NimbusTestUtils.factories.enrollment(
-        NimbusTestUtils.factories.recipe.withFeatureConfig(
-          "expired-but-active",
-          { featureId: "no-feature-firefox-desktop" }
-        ),
-        { extra: { source: NimbusTelemetry.EnrollmentSource.RS_LOADER } }
-      )
-    );
-    store.set(
-      "experiment-1",
-      NimbusTestUtils.factories.enrollment(recipesBySlug["experiment-1"])
-    );
-    store.set(
-      "rollout-1",
-      NimbusTestUtils.factories.enrollment(recipesBySlug["rollout-1"])
-    );
-    store.set(
-      "prefFlips-experiment",
-      NimbusTestUtils.factories.enrollment(
-        recipesBySlug["prefFlips-experiment"],
-        {
-          extra: {
-            prefFlips: {
-              originalValues: {
-                "foo.bar.baz": "original-value",
-              },
+  const legacyStorePath = await NimbusTestUtils.createLegacyStore([
+    NimbusTestUtils.factories.enrollment(
+      NimbusTestUtils.factories.recipe.withFeatureConfig("inactive-1", {
+        featureId: "no-feature-firefox-desktop",
+      }),
+      {
+        extra: {
+          active: false,
+          unenrollReason: "reason-1",
+        },
+      }
+    ),
+    NimbusTestUtils.factories.enrollment(
+      NimbusTestUtils.factories.recipe.withFeatureConfig("inactive-2", {
+        branchSlug: "treatment-a",
+        featureId: "no-feature-firefox-desktop",
+      }),
+      {
+        extra: {
+          active: false,
+          unenrollReason: "reason-2",
+        },
+      }
+    ),
+    NimbusTestUtils.factories.enrollment(
+      NimbusTestUtils.factories.recipe.withFeatureConfig("expired-but-active", {
+        featureId: "no-feature-firefox-desktop",
+      }),
+      { extra: { source: NimbusTelemetry.EnrollmentSource.RS_LOADER } }
+    ),
+    NimbusTestUtils.factories.enrollment(recipesBySlug["experiment-1"]),
+    NimbusTestUtils.factories.enrollment(recipesBySlug["rollout-1"]),
+    NimbusTestUtils.factories.enrollment(
+      recipesBySlug["prefFlips-experiment"],
+      {
+        extra: {
+          prefFlips: {
+            originalValues: {
+              "foo.bar.baz": "original-value",
             },
           },
-        }
-      )
-    );
-    store.set(
-      "setPref-experiment",
-      NimbusTestUtils.factories.enrollment(
-        recipesBySlug["setPref-experiment"],
+        },
+      }
+    ),
+    NimbusTestUtils.factories.enrollment(recipesBySlug["setPref-experiment"], {
+      extra: {
+        prefs: [
+          {
+            name: "nimbus.qa.pref-1",
+            branch: "default",
+            featureId: "nimbus-qa-1",
+            variable: "value",
+            originalValue: "original-value",
+          },
+        ],
+      },
+    }),
+    NimbusTestUtils.factories.enrollment(
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        "devtools",
         {
-          extra: {
-            prefs: [
-              {
-                name: "nimbus.qa.pref-1",
-                branch: "default",
-                featureId: "nimbus-qa-1",
-                variable: "value",
-                originalValue: "original-value",
-              },
-            ],
-          },
+          branchSlug: "devtools",
+          featureId: "no-feature-firefox-desktop",
+        },
+        {
+          userFacingName: "devtools",
+          userFacingDescription: "devtools-description",
         }
-      )
-    );
-    store.set(
-      "devtools",
-      NimbusTestUtils.factories.enrollment(
-        NimbusTestUtils.factories.recipe.withFeatureConfig(
-          "devtools",
-          {
-            branchSlug: "devtools",
-            featureId: "no-feature-firefox-desktop",
-          },
-          {
-            userFacingName: "devtools",
-            userFacingDescription: "devtools-description",
-          }
-        ),
-        { extra: { source: "nimbus-devtools" } }
-      )
-    );
-    store.set(
-      "optin",
-      NimbusTestUtils.factories.enrollment(
-        NimbusTestUtils.factories.recipe.withFeatureConfig(
-          "optin",
-          {
-            branchSlug: "force-enroll",
-            featureId: "no-feature-firefox-desktop",
-          },
-          {
-            localizations: {
-              "en-US": {
-                foo: "foo",
-              },
+      ),
+      { extra: { source: "nimbus-devtools" } }
+    ),
+    NimbusTestUtils.factories.enrollment(
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        "optin",
+        {
+          branchSlug: "force-enroll",
+          featureId: "no-feature-firefox-desktop",
+        },
+        {
+          localizations: {
+            "en-US": {
+              foo: "foo",
             },
-            userFacingName: "optin",
-            userFacingDescription: "optin-description",
-          }
-        ),
-        {
-          extra: {
-            source: NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT,
           },
+          userFacingName: "optin",
+          userFacingDescription: "optin-description",
         }
-      )
-    );
-  });
+      ),
+      {
+        extra: {
+          source: NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT,
+        },
+      }
+    ),
+  ]);
 
   let importMigrationError = null;
 
@@ -1547,7 +1516,7 @@ add_task(async function testMigrateEnrollmentsToSql() {
   }
 
   const { cleanup } = await setupTest({
-    storePath,
+    legacyStorePath,
     experiments,
     secureExperiments,
     migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
@@ -1563,22 +1532,6 @@ add_task(async function testMigrateEnrollmentsToSql() {
   if (importMigrationError) {
     throw importMigrationError;
   }
-
-  Assert.deepEqual(
-    Glean.nimbusEvents.startupDatabaseConsistency
-      .testGetValue("events")
-      .map(ev => ev.extra),
-    [
-      {
-        total_db_count: "9",
-        total_store_count: "9",
-        db_active_count: "7",
-        store_active_count: "7",
-        trigger: "migration",
-        primary: "database",
-      },
-    ]
-  );
 
   await NimbusTestUtils.cleanupManager([
     "experiment-1",
@@ -1635,7 +1588,7 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
   const { cleanup, manager } = await NimbusTestUtils.setupTest({
     clearTelemetry: true,
     init: false,
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(recipe, {
         store,
         extra: {
@@ -1650,7 +1603,7 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
           ],
         },
       });
-    }),
+    },
     migrationState: NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
   });
 
@@ -1716,6 +1669,11 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
       migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
       success: "true",
       is_first_startup: "false",
+    },
+    {
+      migration_id: "remove-legacy-store",
+      is_first_startup: "false",
+      success: "true",
     },
   ]);
 
@@ -1789,6 +1747,11 @@ add_task(async function testSeparateRolloutOptOut() {
           success: "true",
           is_first_startup: "false",
         },
+        {
+          migration_id: "remove-legacy-store",
+          is_first_startup: "false",
+          success: "true",
+        },
       ]);
 
       Assert.equal(
@@ -1853,7 +1816,7 @@ add_task(async function testGraduateFirefoxLabsJPEGXL() {
   const { cleanup, manager } = await NimbusTestUtils.setupTest({
     clearTelemetry: true,
     init: false,
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(recipe, {
         store,
         extra: {
@@ -1868,7 +1831,7 @@ add_task(async function testGraduateFirefoxLabsJPEGXL() {
           ],
         },
       });
-    }),
+    },
     migrationState: NimbusTestUtils.migrationState.SEPARATE_ROLLOUT_OPT_OUT,
   });
 
@@ -1925,6 +1888,11 @@ add_task(async function testGraduateFirefoxLabsJPEGXL() {
       success: "true",
       is_first_startup: "false",
     },
+    {
+      migration_id: "remove-legacy-store",
+      is_first_startup: "false",
+      success: "true",
+    },
   ]);
   Assert.deepEqual(
     Glean.nimbusEvents.unenrollment
@@ -1970,7 +1938,7 @@ add_task(async function testGraduateFirefoxLabsAllChannelsJPEGXL() {
     const { cleanup, manager } = await NimbusTestUtils.setupTest({
       clearTelemetry: true,
       init: false,
-      storePath: await NimbusTestUtils.createStoreWith(store => {
+      populateStore: store => {
         NimbusTestUtils.addEnrollmentForRecipe(recipe, {
           store,
           extra: {
@@ -1985,7 +1953,7 @@ add_task(async function testGraduateFirefoxLabsAllChannelsJPEGXL() {
             ],
           },
         });
-      }),
+      },
       migrationState: NimbusTestUtils.migrationState.PREFFLIPS_RESTORED,
     });
 
@@ -2028,6 +1996,11 @@ add_task(async function testGraduateFirefoxLabsAllChannelsJPEGXL() {
       },
       {
         migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
+        success: "true",
+        is_first_startup: "false",
+      },
+      {
+        migration_id: "remove-legacy-store",
         success: "true",
         is_first_startup: "false",
       },
@@ -2150,6 +2123,11 @@ add_task(async function testRemoveNormandyDatabases() {
       success: "true",
       is_first_startup: "false",
     },
+    {
+      is_first_startup: "false",
+      migration_id: "remove-legacy-store",
+      success: "true",
+    },
   ]);
 
   Assert.deepEqual(
@@ -2195,6 +2173,11 @@ add_task(async function testRemoveNormandyDatabasesNoDatabases() {
       success: "true",
       is_first_startup: "false",
     },
+    {
+      is_first_startup: "false",
+      migration_id: "remove-legacy-store",
+      success: "true",
+    },
   ]);
 
   await cleanup();
@@ -2223,6 +2206,11 @@ add_task(async function testRemoveNormandyDatabasesBlocked() {
       success: "true",
       is_first_startup: "false",
     },
+    {
+      is_first_startup: "false",
+      migration_id: "remove-legacy-store",
+      success: "true",
+    },
   ]);
 
   Assert.deepEqual(
@@ -2232,6 +2220,168 @@ add_task(async function testRemoveNormandyDatabasesBlocked() {
   );
 
   shield.close();
+
+  await cleanup();
+});
+
+add_task(async function testRemoveLegacyStoreUnmigrated() {
+  const recipe = NimbusTestUtils.factories.recipe.withFeatureConfig("foo", {
+    featureId: "no-feature-firefox-desktop",
+  });
+  const legacyStorePath = await NimbusTestUtils.createLegacyStore([
+    NimbusTestUtils.factories.enrollment(recipe),
+    NimbusTestUtils.factories.enrollment(
+      NimbusTestUtils.factories.recipe.withFeatureConfig("bar", {
+        featureId: "no-feature-firefox-desktop",
+      })
+    ),
+  ]);
+
+  Assert.ok(await IOUtils.exists(legacyStorePath), "legacy store created");
+
+  const { manager, store, cleanup } = await setupTest({
+    legacyStorePath,
+    migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
+    experiments: [recipe],
+  });
+
+  Assert.ok(
+    !(await IOUtils.exists(legacyStorePath)),
+    "legacy store is deleted by the migration"
+  );
+
+  Assert.ok(!!store.get("foo"), "Enrollment foo exists");
+  Assert.ok(store.get("foo").active, "Enrollment foo active");
+
+  Assert.ok(!!store.get("bar"), "Enrollment bar exists");
+  Assert.ok(!store.get("bar").active, "Enrollment bar inactive");
+  Assert.equal(
+    store.get("bar").unenrollReason,
+    "recipe-not-seen",
+    "Unenroll reason correct"
+  );
+
+  manager.unenroll("foo", "test");
+
+  Assert.deepEqual(getMigrationEvents(), [
+    {
+      success: "true",
+      migration_id: "multi-phase-migrations",
+      is_first_startup: "false",
+    },
+    {
+      migration_id: "separate-rollout-opt-out",
+      success: "true",
+      is_first_startup: "false",
+    },
+    {
+      migration_id: "remove-normandy-databases",
+      success: "true",
+      is_first_startup: "false",
+    },
+    { migration_id: "noop", is_first_startup: "false", success: "true" },
+    { migration_id: "noop", success: "true", is_first_startup: "false" },
+    {
+      is_first_startup: "false",
+      success: "true",
+      migration_id: "import-enrollments-to-sql",
+    },
+    {
+      is_first_startup: "false",
+      migration_id: "graduate-firefox-labs-auto-pip",
+      success: "true",
+    },
+    {
+      success: "true",
+      is_first_startup: "false",
+      migration_id: "graduate-firefox-labs-jpeg-xl",
+    },
+    {
+      migration_id: "bug-2054546-mitigation",
+      is_first_startup: "false",
+      success: "true",
+    },
+    {
+      success: "true",
+      is_first_startup: "false",
+      migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
+    },
+    {
+      is_first_startup: "false",
+      migration_id: "remove-legacy-store",
+      success: "true",
+    },
+    {
+      migration_id: "firefox-labs-enrollments",
+      is_first_startup: "false",
+      success: "true",
+    },
+  ]);
+
+  await cleanup();
+});
+
+add_task(async function testRemoveLegacyStoreFirstRun() {
+  const { cleanup } = await setupTest({
+    migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
+  });
+
+  // Nothing to do except assert the migration ran successfully.
+
+  Assert.deepEqual(getMigrationEvents(), [
+    {
+      success: "true",
+      migration_id: "multi-phase-migrations",
+      is_first_startup: "false",
+    },
+    {
+      migration_id: "separate-rollout-opt-out",
+      success: "true",
+      is_first_startup: "false",
+    },
+    {
+      migration_id: "remove-normandy-databases",
+      success: "true",
+      is_first_startup: "false",
+    },
+    { migration_id: "noop", is_first_startup: "false", success: "true" },
+    { migration_id: "noop", success: "true", is_first_startup: "false" },
+    {
+      is_first_startup: "false",
+      success: "true",
+      migration_id: "import-enrollments-to-sql",
+    },
+    {
+      is_first_startup: "false",
+      migration_id: "graduate-firefox-labs-auto-pip",
+      success: "true",
+    },
+    {
+      success: "true",
+      is_first_startup: "false",
+      migration_id: "graduate-firefox-labs-jpeg-xl",
+    },
+    {
+      migration_id: "bug-2054546-mitigation",
+      is_first_startup: "false",
+      success: "true",
+    },
+    {
+      success: "true",
+      is_first_startup: "false",
+      migration_id: "graduate-firefox-labs-jpeg-xl-all-channels",
+    },
+    {
+      is_first_startup: "false",
+      migration_id: "remove-legacy-store",
+      success: "true",
+    },
+    {
+      migration_id: "firefox-labs-enrollments",
+      is_first_startup: "false",
+      success: "true",
+    },
+  ]);
 
   await cleanup();
 });

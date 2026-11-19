@@ -25,9 +25,6 @@ run-if = [
 ["browser_throttle_heuristics.js"]
 
 ["browser_trrSelect.js"]
-skip-if = [
-  "socketprocess_networking && verify-standalone",
-]
 
 ["browser_trrSelection_disable.js"]
 

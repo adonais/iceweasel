@@ -804,6 +804,7 @@ add_task(async function test_chat_tool_call_reads_smartpage_and_sets_flags() {
       ],
     });
 
+    const followup = await mockEngine.captureRequest({ purpose: "chat" });
     const toolMessage = await TestUtils.waitForCondition(
       () =>
         conversation.messages.find(
@@ -817,7 +818,6 @@ add_task(async function test_chat_tool_call_reads_smartpage_and_sets_flags() {
       "The tool result contains text extracted from the stored page"
     );
 
-    const followup = await mockEngine.captureRequest({ purpose: "chat" });
     Assert.equal(
       conversation.securityProperties.privateData,
       true,

@@ -19,7 +19,8 @@
   visibility: hidden;
 }
 
-:host(:not([open])) {
+:host(:not([open])),
+:host([popover]:not(:popover-open, [showing])) {
   display: none;
 }
 

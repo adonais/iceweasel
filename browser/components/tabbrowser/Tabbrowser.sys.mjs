@@ -63,6 +63,8 @@ const lazy = XPCOMUtils.declareLazy({
   SponsorProtection:
     "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
+  TabGroupsToolbarButton:
+    "moz-src:///browser/components/tabbrowser/TabGroupsToolbarButton.sys.mjs",
   tabLocalization: () =>
     new Localization(
       [
@@ -261,6 +263,7 @@ export class Tabbrowser {
     this.documentGlobal.addEventListener("deactivate", this);
     this.documentGlobal.addEventListener("TabGroupCollapse", this);
     this.documentGlobal.addEventListener("TabGroupCreateByUser", this);
+    this.documentGlobal.addEventListener("TabGroupCreateDone", this);
     this.documentGlobal.addEventListener("TabGrouped", this);
     this.documentGlobal.addEventListener("TabUngrouped", this);
     this.documentGlobal.addEventListener("TabSplitViewActivate", this);
@@ -336,10 +339,19 @@ export class Tabbrowser {
     ALL_DUPLICATES: 7,
   };
 
-  /** @type {WeakMap<MozTabbrowserTab, TabProgressListener>} */
+  /**
+   * Static because swapping browsers between windows reads the other window's
+   * entries.
+   *
+   * @type {WeakMap<MozTabbrowserTab, TabProgressListener>}
+   */
   static #tabListeners = new WeakMap();
 
-  /** @type {WeakMap<MozTabbrowserTab, BrowserStatusFilter>} */
+  /**
+   * Static for the same reason as #tabListeners.
+   *
+   * @type {WeakMap<MozTabbrowserTab, BrowserStatusFilter>}
+   */
   static #tabFilters = new WeakMap();
 
   /** @type {WeakMap<MozTabbrowserTab, [boolean, boolean]>} */
@@ -407,7 +419,8 @@ export class Tabbrowser {
   _tabLayerCache = [];
 
   /**
-   * Binding from browser to tab
+   * Binding from browser to tab. Per window, because callers of
+   * getTabForBrowser treat a miss as the browser belonging to another window.
    */
   #tabForBrowser = new WeakMap();
 
@@ -1561,6 +1574,9 @@ export class Tabbrowser {
   }
 
   getTabDialogBox(aBrowser) {
+    // Must not use `this`: ContentDispatchChooser reads this method off
+    // window.gBrowser and calls it without a receiver.
+
     if (!aBrowser) {
       throw new Error("aBrowser is required");
     }
@@ -3535,10 +3551,31 @@ export class Tabbrowser {
     await lazy.TabStateFlusher.flush(browser);
   }
 
-  discardBrowser(aTab, aForceDiscard) {
+  /**
+   * Discard (unload) the given tab, making it lazy again.
+   *
+   * @param {MozTabbrowserTab} aTab
+   * @param {object} [options]
+   * @param {boolean} [options.forceDiscard=false]
+   *   Force discarding the tab, even if it means dismissing dialogs.
+   * @param {boolean} [options.renderDiscarded=options.forceDiscard]
+   *   Style the tab differently to indicate that it was unloaded.
+   * @param {boolean} [options.skipOnClose=options.forceDiscard]
+   *   Skip the tab (if possible) when deciding which tab to switch to, when the
+   *   active tab is closed.
+   * @returns {boolean}
+   */
+  discardBrowser(
+    aTab,
+    {
+      forceDiscard = false,
+      renderDiscarded = forceDiscard,
+      skipOnClose = forceDiscard,
+    } = {}
+  ) {
     let browser = aTab.linkedBrowser;
 
-    if (!this.#mayDiscardBrowser(aTab, aForceDiscard)) {
+    if (!this.#mayDiscardBrowser(aTab, forceDiscard)) {
       return false;
     }
 
@@ -3560,11 +3597,15 @@ export class Tabbrowser {
     });
 
     lazy.SessionStore.resetBrowserToLazyState(aTab);
-    // Indicate that this tab was explicitly unloaded (i.e. not
-    // from a session restore) in case we want to style that
-    // differently.
-    if (aForceDiscard) {
+
+    // If this tab was explicitly unloaded (i.e. not from a session restore). It
+    // might need styling differently, or to be skipped when switching from a
+    // closed tab.
+    if (renderDiscarded) {
       aTab.toggleAttribute("discarded", true);
+    }
+    if (skipOnClose) {
+      aTab.toggleAttribute("discarded-skip-on-close", true);
     }
 
     // Remove the tab's filter and progress listener.
@@ -4402,7 +4443,7 @@ export class Tabbrowser {
           // If this group is currently saved, it's being removed as part of a
           // save & close operation. We need to forget the saved group
           // if the close is canceled.
-          lazy.SessionStore.forgetSavedTabGroup(group.id);
+          lazy.SessionStore.forgetSavedTabGroup(group.id, "save-canceled");
         }
         return;
       }
@@ -5196,34 +5237,32 @@ export class Tabbrowser {
 
       tabs.push(tab);
 
+      // A tab whose group is not in the window's groups list is restored
+      // ungrouped: appending it to the top-level fragment is what gives it a
+      // position.
+      let tabGroup = tabGroupWorkingData.get(tabData.groupId);
+
       if (tabData.pinned) {
         this.pinTab(tab);
         // Then ensure all the tab open/pinning information is sent.
         this.#fireTabOpen(tab, {});
-      } else if (tabData.groupId) {
-        let { groupId } = tabData;
-        const tabGroup = tabGroupWorkingData.get(groupId);
-        // if a tab refers to a tab group we don't know, skip any group
-        // processing
+      } else if (tabGroup) {
+        if (!splitView) {
+          tabGroup.containingTabsFragment.appendChild(tab);
+        } else if (splitView?.node) {
+          tabGroup.containingTabsFragment.appendChild(splitView.node);
+        }
 
-        if (tabGroup) {
-          if (!splitView) {
-            tabGroup.containingTabsFragment.appendChild(tab);
-          } else if (splitView?.node) {
-            tabGroup.containingTabsFragment.appendChild(splitView.node);
-          }
-
-          // if this is the first time encountering a tab group, create its
-          // DOM node once and place it in the tabs bar fragment
-          if (!tabGroup.node) {
-            tabGroup.node = this.#createTabGroup(
-              tabGroup.stateData.id,
-              tabGroup.stateData.color,
-              tabGroup.stateData.collapsed,
-              tabGroup.stateData.name
-            );
-            tabsFragment.appendChild(tabGroup.node);
-          }
+        // if this is the first time encountering a tab group, create its
+        // DOM node once and place it in the tabs bar fragment
+        if (!tabGroup.node) {
+          tabGroup.node = this.#createTabGroup(
+            tabGroup.stateData.id,
+            tabGroup.stateData.color,
+            tabGroup.stateData.collapsed,
+            tabGroup.stateData.name
+          );
+          tabsFragment.appendChild(tabGroup.node);
         }
       } else {
         if (tab.hidden) {
@@ -5545,6 +5584,14 @@ export class Tabbrowser {
           previousTab.pinned
         ) {
           elementIndex = Infinity;
+        } else if (!previousTab.hidden && previousTab.group?.collapsed) {
+          // Most tabs in a collapsed group aren't in dragAndDropElements, so
+          // look up the position among all tabs instead.
+          elementIndex = undefined;
+          tabIndex =
+            this.tabs.indexOf(
+              previousTab.splitview?.tabs.at(-1) ?? previousTab
+            ) + 1;
         } else if (previousTab.visible && previousTab.splitview) {
           elementIndex =
             this.tabContainer.dragAndDropElements.indexOf(
@@ -5609,8 +5656,9 @@ export class Tabbrowser {
 
     if (tabGroup) {
       if (
-        (Tabbrowser.isTab(itemAfter) && itemAfter.group == tabGroup) ||
-        Tabbrowser.isSplitViewWrapper(itemAfter)
+        (Tabbrowser.isTab(itemAfter) ||
+          Tabbrowser.isSplitViewWrapper(itemAfter)) &&
+        itemAfter.group == tabGroup
       ) {
         // Place at the front of, or between tabs in, the same tab group
         this.tabContainer.insertBefore(tab, itemAfter);
@@ -6002,12 +6050,12 @@ export class Tabbrowser {
       selectedTabs = this.selectedTabs.filter(tab => !tab.pinned);
       this.removeTabs(selectedTabs, { metricsContext });
       this.clearMultiSelectedTabs();
-      if (
-        this.selectedTab.pinned &&
-        this.visibleTabs.length > this.pinnedTabCount
-      ) {
+      if (this.selectedTab.pinned) {
         // Select first unpinned tab if the selected tab is pinned.
-        this.tabContainer.selectedIndex = this.pinnedTabCount;
+        let firstVisibleUnpinnedTab = this.visibleTabs.find(tab => !tab.pinned);
+        if (firstVisibleUnpinnedTab) {
+          this.selectedTab = firstVisibleUnpinnedTab;
+        }
       }
     } else {
       this.removeTabs(selectedTabs, { metricsContext });
@@ -6277,12 +6325,10 @@ export class Tabbrowser {
       (closeWindowWithLastTab ??
         Services.prefs.getBoolPref("browser.tabs.closeWindowWithLastTab"))
     ) {
-      this.documentGlobal.closeWindow(
-        true,
+      this.#closeWindowForLastTabs(
         suppressWarnAboutClosingWindow
           ? null
-          : this.documentGlobal.warnAboutClosingWindow,
-        "close-last-tab"
+          : this.documentGlobal.warnAboutClosingWindow
       );
       return;
     }
@@ -6643,6 +6689,29 @@ export class Tabbrowser {
     return true;
   }
 
+  /**
+   * Closes the window because the user closed its last tabs.
+   *
+   * @param {Function|null} promptFunction
+   *   Passed to closeWindow() to warn about closing the window.
+   * @returns {boolean}
+   *   `true` if the window closed.
+   */
+  #closeWindowForLastTabs(promptFunction) {
+    let win = this.documentGlobal;
+    // If the user explicitly closes the last tabs in the window close remaining tabs. Bug 490136
+    // Closing the last window doesn't quit the application on OS X.
+    let dontRestoreTabs = AppConstants.platform != "macosx";
+    if (dontRestoreTabs) {
+      lazy.SessionStore.maybeDontRestoreTabs(win);
+    }
+    let closed = win.closeWindow(true, promptFunction, "close-last-tab");
+    if (dontRestoreTabs && !closed) {
+      lazy.SessionStore.clearMaybeDontRestoreTabs(win);
+    }
+    return closed;
+  }
+
   static #hasBeforeUnload(aTab) {
     let browser = aTab.linkedBrowser;
     if (browser.isRemoteBrowser && browser.frameLoader) {
@@ -6771,10 +6840,8 @@ export class Tabbrowser {
       if (closeWindow && closeWindowFastpath && !this._removingTabs.size) {
         // This call actually closes the window, unless the user
         // cancels the operation.  We are finished here in both cases.
-        this.#windowIsClosing = this.documentGlobal.closeWindow(
-          true,
-          this.documentGlobal.warnAboutClosingWindow,
-          "close-last-tab"
+        this.#windowIsClosing = this.#closeWindowForLastTabs(
+          this.documentGlobal.warnAboutClosingWindow
         );
         return false;
       }
@@ -7050,10 +7117,8 @@ export class Tabbrowser {
     }
 
     if (aCloseWindow) {
-      this.#windowIsClosing = this.documentGlobal.closeWindow(
-        true,
-        this.documentGlobal.warnAboutClosingWindow,
-        "close-last-tab"
+      this.#windowIsClosing = this.#closeWindowForLastTabs(
+        this.documentGlobal.warnAboutClosingWindow
       );
     }
   }
@@ -7165,7 +7230,9 @@ export class Tabbrowser {
     await Promise.all(tabs.map(tab => this.prepareDiscardBrowser(tab)));
 
     for (let tab of tabs) {
-      numberOfTabsUnloaded += this.discardBrowser(tab, true) ? 1 : 0;
+      numberOfTabsUnloaded += this.discardBrowser(tab, { forceDiscard: true })
+        ? 1
+        : 0;
     }
     let timeElapsed = Math.floor(
       this.documentGlobal.performance.now() - timeBeforeUnload
@@ -7250,7 +7317,7 @@ export class Tabbrowser {
     // tabs left
     const nonDiscardedTabs = Array.prototype.filter.call(
       remainingTabs,
-      tab => !tab.hasAttribute("discarded")
+      tab => !tab.hasAttribute("discarded-skip-on-close")
     );
     if (nonDiscardedTabs.length) {
       remainingTabs = nonDiscardedTabs;
@@ -7412,6 +7479,10 @@ export class Tabbrowser {
     if (aOtherTab.hasAttribute("discarded")) {
       aOurTab.toggleAttribute("discarded", true);
       modifiedAttrs.push("discarded");
+    }
+    if (aOtherTab.hasAttribute("discarded-skip-on-close")) {
+      aOurTab.toggleAttribute("discarded-skip-on-close", true);
+      modifiedAttrs.push("discarded-skip-on-close");
     }
     if (aOtherTab.hasAttribute("undiscardable")) {
       aOurTab.toggleAttribute("undiscardable", true);
@@ -9500,6 +9571,10 @@ export class Tabbrowser {
 
   on_TabGroupCreateByUser(aEvent) {
     this.tabGroupMenu.openCreateModal(aEvent.target);
+  }
+
+  on_TabGroupCreateDone() {
+    lazy.TabGroupsToolbarButton.maybeAddTabGroupsButton();
   }
 
   on_TabGrouped(aEvent) {

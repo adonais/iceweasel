@@ -15,7 +15,7 @@ bool ScrollLinkedEffectDetector::sFoundScrollLinkedEffect = false;
 
 /* static */
 void ScrollLinkedEffectDetector::PositioningPropertyMutated() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (sDepth > 0) {
     // We are inside a scroll event dispatch
@@ -26,7 +26,7 @@ void ScrollLinkedEffectDetector::PositioningPropertyMutated() {
 ScrollLinkedEffectDetector::ScrollLinkedEffectDetector(
     dom::Document* aDoc, const TimeStamp& aTimeStamp)
     : mDocument(aDoc), mTimeStamp(aTimeStamp) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   sDepth++;
 }
 

@@ -80,11 +80,18 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
     # This allows ./mach format and similar mechanisms to work correctly.
     if not lintargs.get("formatonly", False):
         exclude_args = []
-        for path in config.get("exclude", []):
-            exclude_args.extend([
-                "--ignore-pattern",
-                os.path.relpath(path, lintargs["root"]),
-            ])
+        for path in config.get("global_exclude", []):
+            exclude_args.extend(["--ignore-pattern", path])
+        if lintargs.get("use_filters", True):
+            for name in (
+                ".stylelintignore",
+                "tools/rewriting/ThirdPartyPaths.txt",
+                "tools/rewriting/Generated.txt",
+            ):
+                exclude_args.extend([
+                    "--ignore-path",
+                    os.path.join(lintargs["root"], name),
+                ])
 
         # Default to $topsrcdir/.stylelintrc.js, but allow override in stylelint.yml
         stylelint_rc = config.get("stylelint-rc", ".stylelintrc.js")
@@ -152,15 +159,11 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
 
 
 def run(cmd_args, config, fix, env):
-    shell = False
-    if prettier_utils.is_windows():
-        # The stylelint binary needs to be run from a shell with msys
-        shell = True
     encoding = "utf-8"
 
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
     proc = subprocess.Popen(
-        cmd_args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+        cmd_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
     )
     signal.signal(signal.SIGINT, orig)
 

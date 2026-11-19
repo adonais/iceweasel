@@ -83,18 +83,9 @@ decorate_task(
     await loadPromise;
 
     const location = gBrowser.currentURI.spec;
-    // The Settings Redesign LegacyPaneMappings shim routes "privacy-reports"
-    // (the friendly category openDataPreferences passes to openPreferences())
-    // to the permissionsData pane instead.
-    const expectedLocation = Services.prefs.getBoolPref(
-      "browser.settings-redesign.enabled",
-      false
-    )
-      ? "about:preferences#permissionsData"
-      : "about:preferences#privacy";
     is(
       location,
-      expectedLocation,
+      "about:preferences#permissionsData",
       "Clicking Update Preferences opens the privacy section of the new about:preferences."
     );
 

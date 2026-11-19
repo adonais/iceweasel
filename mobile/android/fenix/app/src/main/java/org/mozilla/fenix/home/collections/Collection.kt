@@ -142,7 +142,7 @@ fun Collection(
                             contentDescription = stringResource(string.collection_menu_button_content_description),
                         ) {
                             Icon(
-                                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                                painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                                 contentDescription = null,
                             )
 

@@ -29,8 +29,13 @@ PuppeteerVendor.md
 ### Marionette
 
 Marionette is used both by internal tools and testing solutions, but also by
-geckodriver to implement the [WebDriver (HTTP) specification]. The documentation
-for Marionette can be found under [testing/marionette].
+geckodriver to implement the [WebDriver (HTTP) specification].
+
+```{toctree}
+:maxdepth: 1
+
+marionette/index
+```
 
 (webdriver-bidi-header)=
 
@@ -43,16 +48,19 @@ extends WebDriver HTTP to add bidirectional communication.
 :maxdepth: 1
 
 webdriver-bidi/Extensions.md
-marionette/index
-messagehandler/index
 ```
 
 ## Architecture
 
 ### Message Handler
 
-The documentation for the framework used to build WebDriver BiDi modules can be
-found at [remote/messagehandler].
+The documentation for the framework used to build WebDriver BiDi modules:
+
+```{toctree}
+:maxdepth: 1
+
+messagehandler/index
+```
 
 ## Bugs
 
@@ -65,6 +73,4 @@ See [Communication] on [our project wiki].
 [communication]: https://wiki.mozilla.org/Remote#Communication
 [our project wiki]: https://wiki.mozilla.org/Remote
 [remote protocol product]: https://bugzilla.mozilla.org/describecomponents.cgi?product=Remote%20Protocol
-[remote/messagehandler]: messagehandler/index.md
-[testing/marionette]: marionette/index.md
 [webdriver (http) specification]: https://w3c.github.io/webdriver/

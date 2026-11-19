@@ -7,7 +7,7 @@
 
 #include "HttpLog.h"
 #include "mozilla/Components.h"
-#include "mozilla/net/NeckoChannelParams.h"  // For HttpActivityArgs.
+#include "mozilla/net/HttpActivityArgs.h"
 #include "nsAHttpConnection.h"
 #include "nsHttp.h"
 #include "nsHttpHandler.h"
@@ -119,9 +119,9 @@ void NullHttpTransaction::OnTransportStatus(nsITransport* transport,
 
   if (mActivityDistributor) {
     (void)mActivityDistributor->ObserveActivityWithArgs(
-        HttpActivity(mConnectionInfo->GetOrigin(),
-                     mConnectionInfo->OriginPort(),
-                     mConnectionInfo->EndToEndSSL()),
+        HttpActivityArgs(HttpActivity(mConnectionInfo->GetOrigin(),
+                                      mConnectionInfo->OriginPort(),
+                                      mConnectionInfo->EndToEndSSL())),
         NS_HTTP_ACTIVITY_TYPE_SOCKET_TRANSPORT, static_cast<uint32_t>(status),
         PR_Now(), progress, ""_ns);
   }
@@ -169,9 +169,9 @@ const nsHttpRequestHead* NullHttpTransaction::RequestHead() {
         nsCString reqHeaderBuf;
         mRequestHead->Flatten(reqHeaderBuf, false);
         (void)mActivityDistributor->ObserveActivityWithArgs(
-            HttpActivity(mConnectionInfo->GetOrigin(),
-                         mConnectionInfo->OriginPort(),
-                         mConnectionInfo->EndToEndSSL()),
+            HttpActivityArgs(HttpActivity(mConnectionInfo->GetOrigin(),
+                                          mConnectionInfo->OriginPort(),
+                                          mConnectionInfo->EndToEndSSL())),
             NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
             NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_HEADER, PR_Now(), 0, reqHeaderBuf);
       }
@@ -200,9 +200,9 @@ void NullHttpTransaction::Close(nsresult reason) {
   if (mActivityDistributor) {
     // Report that this transaction is closing.
     (void)mActivityDistributor->ObserveActivityWithArgs(
-        HttpActivity(mConnectionInfo->GetOrigin(),
-                     mConnectionInfo->OriginPort(),
-                     mConnectionInfo->EndToEndSSL()),
+        HttpActivityArgs(HttpActivity(mConnectionInfo->GetOrigin(),
+                                      mConnectionInfo->OriginPort(),
+                                      mConnectionInfo->EndToEndSSL())),
         NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
         NS_HTTP_ACTIVITY_SUBTYPE_TRANSACTION_CLOSE, PR_Now(), 0, ""_ns);
   }

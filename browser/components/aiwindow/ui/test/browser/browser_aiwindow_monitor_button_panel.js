@@ -1109,7 +1109,7 @@ add_task(async function test_monitor_panel_create_seeds_current_page() {
   };
 
   const pageChips = form =>
-    form.shadowRoot.querySelectorAll(".page-pills-row ai-website-chip");
+    form.shadowRoot.querySelectorAll(".page-pills-row smartwindow-chip");
 
   try {
     await promiseNavigateAndLoad(
@@ -1174,7 +1174,7 @@ add_task(async function test_monitor_panel_create_chip_shows_page_title() {
     const form = contents.shadowRoot.querySelector("agent-monitor-item");
 
     const chip = () =>
-      form.shadowRoot.querySelector(".page-pills-row ai-website-chip");
+      form.shadowRoot.querySelector(".page-pills-row smartwindow-chip");
     await TestUtils.waitForCondition(
       () => chip()?.label === openTitle,
       "Waiting for the page title to reach the seeded chip"

@@ -207,6 +207,7 @@ and, click on `Trigger X new jobs` (located on the top of the job).
 configuration
 selectors/index
 presets
+existing-tasks
 tasks
 ```
 

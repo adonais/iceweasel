@@ -37,6 +37,11 @@ SpeechIPC
 # can hang forever, so the thread is abandoned at shutdown rather than joined.
 # (See bug 2080829.)
 WinWorkspaceID
+# The Windows JumpListBuilder needs two dedicated threads to assign to its own
+# single-threaded apartments.  Background threads must be (implicitly)
+# in the multi-threaded apartment, and therefore cannot be used.
+Jump List
+Jump List (PB)
 
 ######
 # Thunderbird-only thread names

@@ -1897,10 +1897,7 @@ already_AddRefed<Attr> Element::RemoveAttributeNode(Attr& aAttribute,
     return nullptr;
   }
 
-  nsAutoString nameSpaceURI;
-  aAttribute.NodeInfo()->GetNamespaceURI(nameSpaceURI);
-  return Attributes()->RemoveNamedItemNS(
-      nameSpaceURI, aAttribute.NodeInfo()->LocalName(), aError);
+  return Attributes()->RemoveNamedItem(aAttribute.NodeInfo(), aError);
 }
 
 void Element::GetAttributeNS(const nsAString& aNamespaceURI,
@@ -3501,6 +3498,12 @@ nsChangeHint Element::GetAttributeChangeHint(const nsAtom* aAttribute,
   return nsChangeHint(0);
 }
 
+void Element::DoScheduleForPresAttrEvaluation() {
+  MOZ_ASSERT(IsPendingMappedAttributeEvaluation());
+  MOZ_ASSERT(IsInComposedDoc());
+  OwnerDoc()->ScheduleForPresAttrEvaluation(this);
+}
+
 void Element::SetMappedDeclarationBlock(
     already_AddRefed<StyleLockedDeclarationBlock> aDeclarations) {
   MOZ_ASSERT(IsPendingMappedAttributeEvaluation());
@@ -3789,7 +3792,8 @@ nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
       aNamespaceID, aName, aPrefix, valueForComparison, aSubjectPrincipal,
       aNotify,
       [&](nsAttrValue& attrValue) {
-        if (!ParseAttribute(aNamespaceID, aName, aValue, aSubjectPrincipal,
+        if (!aName->IsStatic() ||
+            !ParseAttribute(aNamespaceID, aName, aValue, aSubjectPrincipal,
                             attrValue)) {
           attrValue.SetTo(aValue);
         }
@@ -3840,7 +3844,8 @@ nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
       aNamespaceID, aName, aPrefix, valueForComparison, aSubjectPrincipal,
       aNotify,
       [&](nsAttrValue& attrValue) {
-        if (!ParseAttribute(aNamespaceID, aName, valueString, aSubjectPrincipal,
+        if (!aName->IsStatic() ||
+            !ParseAttribute(aNamespaceID, aName, valueString, aSubjectPrincipal,
                             attrValue)) {
           attrValue.SetTo(aValue);
         }
@@ -4037,12 +4042,12 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
             const char16_t* strPtr = valueAtom->GetUTF16String();
             char16_t c = *strPtr;
             if (c >= u'0' && c <= u'9') {
-              nsString str;  // Deliberately not Auto
-              valueAtom->ToString(str);
               // See https://bugzilla.mozilla.org/show_bug.cgi?id=2043161 about
               // possibly introducing a `ParseAttribute` overload for taking
               // value as atom.
-              if (ParseAttribute(kNameSpaceID_None, namePtr, str, nullptr,
+              if (namePtr->IsStatic() &&
+                  ParseAttribute(kNameSpaceID_None, namePtr,
+                                 nsDependentAtomString(valueAtom), nullptr,
                                  value)) {
                 valueAtom = nullptr;
               } else if (namePtr == nsGkAtoms::selected &&
@@ -4077,7 +4082,8 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
     }
     nsString str;          // Deliberately not Auto
     aValue.ToString(str);  // Deliberately not move
-    if (!ParseAttribute(kNameSpaceID_None, namePtr, str, nullptr, value)) {
+    if (!namePtr->IsStatic() ||
+        !ParseAttribute(kNameSpaceID_None, namePtr, str, nullptr, value)) {
       if (aValue.IsStringBuffer()) {
         MOZ_ASSERT(!(NS_IS_ATOM_ARRAY_ATTRIBUTE(namePtr) ||
                      NS_IS_ATOM_ARRAY_ATTRIBUTE_HTML(namePtr) ||
@@ -4167,12 +4173,8 @@ nsresult Element::SetAttrAndNotify(
     MOZ_TRY(SetAndSwapAttr(ni, aParsedValue, &oldValueSet, aIsKnownNew));
   }
 
-  if (IsAttrMapped(aNamespaceID, aName) &&
-      !IsPendingMappedAttributeEvaluation()) {
-    mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
-    if (Document* doc = GetComposedDoc()) {
-      doc->ScheduleForPresAttrEvaluation(this);
-    }
+  if (IsAttrMapped(aNamespaceID, aName)) {
+    ScheduleForPresAttrEvaluationIfNeeded();
   }
 
   // If the old value owns its own data, we know it is OK to keep using it.
@@ -4258,10 +4260,7 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                              const nsAString& aValue,
                              nsIPrincipal* aMaybeScriptedPrincipal,
                              nsAttrValue& aResult) {
-  if (!aAttribute->IsStatic()) {
-    return false;
-  }
-
+  MOZ_ASSERT(aAttribute->IsStatic());
   if (aAttribute == nsGkAtoms::lang) {
     aResult.ParseAtom(aValue);
     return true;
@@ -4518,10 +4517,14 @@ int32_t Element::FindAttrValueIn(int32_t aNameSpaceID, const nsAtom* aName,
   return mAttrs.FindAttrValueIn(aNameSpaceID, aName, aValues, aCaseSensitive);
 }
 
-nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
+nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify,
+                            bool* aHadValue) {
   NS_ASSERTION(nullptr != aName, "must have attribute name");
 
   int32_t index = mAttrs.IndexOfAttr(aName, aNameSpaceID);
+  if (aHadValue) {
+    *aHadValue = index >= 0;
+  }
   if (index < 0) {
     return NS_OK;
   }
@@ -4541,7 +4544,8 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
   // Clear the attribute out from attribute map.
   nsDOMSlots* slots = GetExistingDOMSlots();
   if (slots && slots->mAttributeMap) {
-    slots->mAttributeMap->DropAttribute(aNameSpaceID, aName);
+    slots->mAttributeMap->DropAttribute(aNameSpaceID, aName,
+                                        mAttrs.AttrAt(index));
   }
 
   // The id-handling code, and in the future possibly other code, need to
@@ -4556,12 +4560,8 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
     hadDirAuto = HasDirAuto();  // already takes bdi into account
   }
 
-  if (IsAttrMapped(aNameSpaceID, aName) &&
-      !IsPendingMappedAttributeEvaluation()) {
-    mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
-    if (Document* doc = GetComposedDoc()) {
-      doc->ScheduleForPresAttrEvaluation(this);
-    }
+  if (IsAttrMapped(aNameSpaceID, aName)) {
+    ScheduleForPresAttrEvaluationIfNeeded();
   }
 
   nsAttrValue oldValue;
@@ -4779,9 +4779,7 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
     case eFocus: {
       InternalFocusEvent* focusEvent = aVisitor.mEvent->AsFocusEvent();
       if (!focusEvent || !focusEvent->mIsRefocus) {
-        nsAutoString target;
-        GetLinkTarget(target);
-        nsContentUtils::TriggerLinkMouseOver(this, absURI, target);
+        nsContentUtils::TriggerLinkMouseOver(this, absURI);
         // Make sure any ancestor links don't also TriggerLink
         aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
       }
@@ -5085,7 +5083,7 @@ nsresult Element::CopyInnerTo(Element* aDst) {
   // that CloneAndAdopt can use it for definition lookup.
   if (CustomElementData* data = GetCustomElementData()) {
     if (nsAtom* typeAtom = data->GetCustomElementType()) {
-      aDst->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
+      aDst->SetCustomElementData(std::make_unique<CustomElementData>(typeAtom));
     }
   }
 
@@ -5709,6 +5707,8 @@ void Element::SetInnerHTML(const TrustedHTMLOrNullIsEmptyString& aInnerHTML,
                            nsIPrincipal* aSubjectPrincipal,
                            ErrorResult& aError) {
   constexpr nsLiteralString sink = u"Element innerHTML"_ns;
+  // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aInnerHTML.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
@@ -5737,6 +5737,8 @@ void Element::SetOuterHTML(const TrustedHTMLOrNullIsEmptyString& aOuterHTML,
                            nsIPrincipal* aSubjectPrincipal,
                            ErrorResult& aError) {
   constexpr nsLiteralString sink = u"Element outerHTML"_ns;
+  // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aOuterHTML.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
@@ -5810,6 +5812,8 @@ void Element::InsertAdjacentHTML(
   // 1. "Let compliantString be the result of invoking the get trusted type
   //    compliant string algorithm..."
   constexpr nsLiteralString kSink = u"Element insertAdjacentHTML"_ns;
+  // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aTrustedHTMLOrString.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
@@ -6180,7 +6184,9 @@ void Element::ClearServoData(Document* aDoc) {
   if (HasServoData()) {
     Servo_Element_ClearData(this);
   } else {
-    UnsetFlags(kAllServoDescendantBits | NODE_NEEDS_FRAME);
+    // NOTE: Matches the flags cleared in GeckoElement::clear_data.
+    UnsetFlags(ELEMENT_HAS_SNAPSHOT | ELEMENT_HANDLED_SNAPSHOT |
+               kAllServoDescendantBits | NODE_NEEDS_FRAME);
   }
   // Since this element is losing its servo data, nothing under it may have
   // servo data either, so we can forget restyles rooted at this element. This
@@ -6253,14 +6259,14 @@ ElementAnimationData& Element::CreateAnimationData() {
   MOZ_ASSERT(!GetAnimationData());
   SetMayHaveAnimations();
   auto* slots = ExtendedDOMSlots();
-  slots->mAnimations = MakeUnique<ElementAnimationData>();
+  slots->mAnimations = std::make_unique<ElementAnimationData>();
   return *slots->mAnimations;
 }
 
 PopoverData& Element::CreatePopoverData() {
   MOZ_ASSERT(!GetPopoverData());
   auto* slots = ExtendedDOMSlots();
-  slots->mPopoverData = MakeUnique<PopoverData>();
+  slots->mPopoverData = std::make_unique<PopoverData>();
   return *slots->mPopoverData;
 }
 

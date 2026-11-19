@@ -173,6 +173,7 @@ add_task(
         ["dom.webnotifications.requireuserinteraction", false],
         ["permissions.fullscreen.allowed", false],
         ["security.notification_enable_delay", TEST_SECURITY_DELAY],
+        ["ui.prefersReducedMotion", 0],
         // macOS is not affected by the sec delay bug because it uses the native
         // macOS full screen API. Revert back to legacy behavior so we can also
         // test on macOS. If this pref is removed in the future we can consider
@@ -282,5 +283,81 @@ add_task(
     await SpecialPowers.popPrefEnv();
     // Remove the granted notification permission.
     Services.perms.removeAll();
+  }
+);
+
+add_task(
+  async function test_permission_prompt_security_delay_with_reduced_motion() {
+    const TEST_SECURITY_DELAY = 5000;
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["dom.webnotifications.requireuserinteraction", false],
+        ["permissions.fullscreen.allowed", false],
+        ["security.notification_enable_delay", TEST_SECURITY_DELAY],
+        ["ui.prefersReducedMotion", 1],
+        ["full-screen-api.macos-native-full-screen", false],
+      ],
+    });
+
+    await BrowserTestUtils.withNewTab("https://example.com", async browser => {
+      await TestUtils.waitForCondition(
+        () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      );
+      let transitionStartCount = 0;
+      let startObserver = () => transitionStartCount++;
+      Services.obs.addObserver(startObserver, "fullscreen-transition-start");
+      let principal = browser.contentPrincipal;
+      registerCleanupFunction(() => {
+        Services.obs.removeObserver(
+          startObserver,
+          "fullscreen-transition-start"
+        );
+        Services.perms.removeFromPrincipal(principal, "desktop-notification");
+      });
+      await DOMFullscreenTestUtils.changeFullscreen(browser, true);
+      let popupShown = BrowserTestUtils.waitForPopupEvent(
+        PopupNotifications.panel,
+        "shown"
+      );
+      let fullscreenExited = DOMFullscreenTestUtils.waitForFullScreenState(
+        browser,
+        false
+      );
+      let permissionResult = requestNotificationPermission(browser);
+      await Promise.all([popupShown, fullscreenExited]);
+
+      is(transitionStartCount, 0, "Reduced motion suppresses fullscreen fades");
+      let notification = PopupNotifications.getNotification(
+        "web-notifications",
+        browser
+      );
+      ok(notification, "The permission notification is shown");
+      Assert.lessOrEqual(
+        notification.timeShown,
+        ChromeUtils.now(),
+        "Without a fade, the notification does not need an extended delay"
+      );
+
+      triggerMainCommand(PopupNotifications.panel);
+      ok(
+        PopupNotifications.isPanelOpen && !notification.dismissed,
+        "The normal security delay still blocks the permission button"
+      );
+      is(
+        PopupNotifications.getNotification("web-notifications", browser),
+        notification,
+        "The permission request remains pending during the security delay"
+      );
+
+      notification.timeShown = ChromeUtils.now() - TEST_SECURITY_DELAY - 500;
+      let popupHidden = BrowserTestUtils.waitForPopupEvent(
+        PopupNotifications.panel,
+        "hidden"
+      );
+      triggerMainCommand(PopupNotifications.panel);
+      await popupHidden;
+      is(await permissionResult, "granted", "The button works after the delay");
+    });
+    await SpecialPowers.popPrefEnv();
   }
 );

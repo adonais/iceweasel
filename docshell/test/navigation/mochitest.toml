@@ -284,7 +284,8 @@ skip-if = [
 
 ["test_reserved.html"]
 skip-if = [
-  "debug", # bug 1263213
+  "debug && http2", # bug 1263213
+  "debug && http3", # bug 1263213
 ]
 
 ["test_same_url.html"]

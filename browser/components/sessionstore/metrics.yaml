@@ -197,6 +197,35 @@ session_restore:
           in which no session is ever restored
         type: boolean
 
+  startup_session_outcome:
+    type: event
+    description: >
+      Recorded once per startup, when Session Restore has finished acting on
+      the decision reported by startup_session_decision. Pairing the two will
+      pick out a restore action that did not complete to plan.
+      No event is recorded if we never got that far, because the browser was
+      shut down, crashed, or hung part way through restoring. Only the restore
+      at startup is reported. If the session was held back for a later window,
+      whether it was eventually restored is not reported here.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080961
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080961
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      outcome:
+        description: >
+          The outcome of the restore action. One of "restored" (windows were
+          opened from the session state), "deferred_to_window" (the first
+          window was private or a taskbar tab, so the session was held back to
+          restore into an ordinary window later), "no_windows" (there was
+          session state, and closed window data may have been restored from it,
+          but it held no windows to open) or "nothing" (there was no session
+          state to restore)
+        type: string
+
   shutdown_success_session_startup:
     type: event
     description: >
@@ -626,13 +655,19 @@ session_restore:
 
       This metric was generated to correspond to the Legacy Telemetry
       exponential histogram FX_SESSION_RESTORE_NUMBER_OF_TABS_RESTORED.
-    range_min: 1
+
+      As of bug 2071519, 0 is recorded and will land in the underflow bucket.
+      Before that, a restore that produced no eagerly-restored tab recorded
+      nothing at all, so data from earlier versions excludes those startups
+      and reads higher than it should.
+    range_min: 0
     range_max: 500
     bucket_count: 20
     histogram_type: exponential
     unit: tabs
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2071519
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
     notification_emails:
@@ -648,12 +683,17 @@ session_restore:
 
       This metric was generated to correspond to the Legacy Telemetry enumerated
       histogram FX_SESSION_RESTORE_NUMBER_OF_WINDOWS_RESTORED.
+
+      As of bug 2071519 this is recorded on every restore attempt, including
+      attempts that produced no eagerly-restored tab. Data from earlier
+      versions excludes those startups.
     range_min: 0
     range_max: 50
     bucket_count: 51
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2071519
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
     notification_emails:
@@ -669,12 +709,17 @@ session_restore:
 
       This metric was generated to correspond to the Legacy Telemetry enumerated
       histogram FX_SESSION_RESTORE_NUMBER_OF_EAGER_TABS_RESTORED.
+
+      As of bug 2071519 this is recorded on every restore attempt, including
+      attempts that produced no eagerly-restored tab. Data from earlier
+      versions excludes those startups.
     range_min: 0
     range_max: 50
     bucket_count: 51
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2071519
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
     notification_emails:

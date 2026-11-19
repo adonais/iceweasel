@@ -631,7 +631,8 @@ static void NormalizeAndPrintAsWatts(char* aBuf, double& aValue_J) {
   }
 }
 
-static void SigAlrmHandler(int aSigNum, siginfo_t* aInfo, void* aContext) {
+static void SigAlrmHandler(int /*aSigNum*/, siginfo_t* /*aInfo*/,
+                           void* /*aContext*/) {
   static int sampleNumber = 1;
 
   double pkg_J, cores_J, gpu_J, ram_J;
@@ -731,7 +732,8 @@ static void Finish() {
   exit(0);
 }
 
-static void SigIntHandler(int aSigNum, siginfo_t* aInfo, void* aContext) {
+static void SigIntHandler(int /*aSigNum*/, siginfo_t* /*aInfo*/,
+                          void* /*aContext*/) {
   Finish();
 }
 

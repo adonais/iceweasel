@@ -16,6 +16,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrincipalsCollector: "resource://gre/modules/PrincipalsCollector.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
+  TabStateFlusher:
+    "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs",
 });
 
 var logConsole;
@@ -145,20 +150,16 @@ export var Sanitizer = {
    *        using the clear on shutdown (clearOnShutdown) settings option
    *        in about:preferences or in a clear site data context (clearSiteData)
    * @param {object} [options]
-   * @param {boolean} [options.closeWindowsWithHistory] - If the user chooses
-   *        to clear history, also close every browser window and open a new
-   *        one, as part of the same sanitization.
    * @param {string} [options.entryPoint] - What the user used to open the
    *        dialog, one of DIALOG_ENTRY_POINTS, recorded in its telemetry.
+   * @param {Event} [options.triggeringEvent] - The event that made the user
+   *        open the dialog. If it came from the keyboard, the dialog's initial
+   *        focus shows a focus ring.
    * @returns {"accept" | "cancel"} - The selected dialog box option.
    *
    * @throws if parentWindow is undefined or doesn't have a gDialogBox.
    */
-  async showUI(
-    parentWindow,
-    mode,
-    { closeWindowsWithHistory = false, entryPoint } = {}
-  ) {
+  async showUI(parentWindow, mode, { entryPoint, triggeringEvent } = {}) {
     // Treat the hidden window as not being a parent window:
     if (
       parentWindow?.document.documentURI ==
@@ -171,14 +172,17 @@ export var Sanitizer = {
     let deferred = Promise.withResolvers();
 
     if (parentWindow?.gDialogBox) {
-      parentWindow.gDialogBox.open(`chrome://browser/content/${dialogFile}`, {
-        inBrowserWindow: true,
-        mode,
-        closeWindowsWithHistory,
-        entryPoint,
-        onAccept: () => deferred.resolve("accept"),
-        onCancel: () => deferred.resolve("cancel"),
-      });
+      parentWindow.gDialogBox.open(
+        `chrome://browser/content/${dialogFile}`,
+        {
+          inBrowserWindow: true,
+          mode,
+          entryPoint,
+          onAccept: () => deferred.resolve("accept"),
+          onCancel: () => deferred.resolve("cancel"),
+        },
+        triggeringEvent
+      );
     } else {
       Services.ww.openWindow(
         parentWindow,
@@ -188,7 +192,6 @@ export var Sanitizer = {
         {
           needNativeUI: true,
           mode,
-          closeWindowsWithHistory,
           entryPoint,
           onAccept: () => deferred.resolve("accept"),
           onCancel: () => deferred.resolve("cancel"),
@@ -348,6 +351,10 @@ export var Sanitizer = {
    *         - range (default: null): array-tuple of [from, to] timestamps
    *         - privateStateForNewWindow (default: "non-private"): when clearing
    *           open windows, defines the private state for the newly opened window.
+   *         - keepPinnedTabs (default: false): when clearing open windows, add
+   *           the pinned tabs of the non-private windows to the new window
+   *           once everything else is cleared, unloaded, on their current page
+   *           only and without site data.
    *         - progress: object to record the sanitization progress in. If
    *           closing the open windows was refused, for example from a
    *           beforeunload prompt, its openWindows property is "aborted" and
@@ -384,11 +391,7 @@ export var Sanitizer = {
     try {
       await promise;
     } finally {
-      Services.obs.notifyObservers(
-        null,
-        "sanitizer-sanitization-complete",
-        progress.openWindows == "aborted" ? "aborted" : null
-      );
+      Services.obs.notifyObservers(null, "sanitizer-sanitization-complete");
     }
     return progress;
   },
@@ -761,9 +764,115 @@ export var Sanitizer = {
           win.skipNextCanClose = false;
         }
       },
-      async clear(range, { privateStateForNewWindow = "non-private" }) {
+      /**
+       * Session store states of the pinned tabs of the non-private windows, in
+       * window order, scrubbed by _scrubTabState, so that they can be added
+       * back to the new window.
+       *
+       * @param {Window[]} windowList
+       * @returns {object[]}
+       */
+      _collectPinnedTabs(windowList) {
+        return windowList
+          .filter(win => !lazy.PrivateBrowsingUtils.isWindowPrivate(win))
+          .flatMap(win => win.gBrowser.tabs.filter(tab => tab.pinned))
+          .map(tab =>
+            this._scrubTabState(JSON.parse(lazy.SessionStore.getTabState(tab)))
+          );
+      },
+      /**
+       * Remove the data that sanitizing should delete from a tab state, so
+       * that only the tab's current page is kept.
+       *
+       * @param {object} state - A tab state from SessionStore.getTabState.
+       * @returns {object} The same state object.
+       */
+      _scrubTabState(state) {
+        // Keep only the current entry, which state.index points to (1-based).
+        // It can be missing or out of range, so fall back to the last entry.
+        let index = Math.min(
+          Math.max(state.index || state.entries.length, 1),
+          state.entries.length
+        );
+        state.entries = state.entries.slice(index - 1, index);
+        for (let entry of state.entries) {
+          for (let key of [
+            // Entries of the subframes.
+            "children",
+            // Scroll positions and layout state.
+            "presState",
+            "scroll",
+            // history.state.
+            "structuredCloneState",
+            "structuredCloneVersion",
+          ]) {
+            delete entry[key];
+          }
+        }
+        state.index = state.entries.length;
+        delete state.requestedIndex;
+        for (let key of [
+          // Data extensions attached to the tab.
+          "extData",
+          // Form field values.
+          "formdata",
+          // Scroll positions.
+          "scroll",
+          // The search mode of the address bar and what was typed in it.
+          "searchMode",
+          "userTypedClear",
+          "userTypedValue",
+          // sessionStorage.
+          "storage",
+        ]) {
+          delete state[key];
+        }
+        return state;
+      },
+      /**
+       * Add pinned tabs collected by _collectPinnedTabs to a window. Called
+       * once all the other data has been cleared, so that the tabs can't load
+       * anything before. They stay unloaded until selected. A tab that fails
+       * to restore is skipped.
+       *
+       * @param {Window} win
+       * @param {object[]} pinnedTabs
+       */
+      _restorePinnedTabs(win, pinnedTabs) {
+        for (let state of pinnedTabs) {
+          try {
+            let tab = win.gBrowser.addTrustedTab(
+              state.entries[0]?.url ?? "about:blank",
+              {
+                createLazyBrowser: true,
+                pinned: true,
+                skipAnimation: true,
+                userContextId: state.userContextId,
+              }
+            );
+            if (tab) {
+              lazy.SessionStore.setTabState(tab, state);
+            }
+          } catch (ex) {
+            console.error(ex);
+          }
+        }
+      },
+      async clear(
+        range,
+        { privateStateForNewWindow = "non-private", keepPinnedTabs = false }
+      ) {
         // NB: this closes all *browser* windows, not other windows like the library, about window,
         // browser console, etc.
+
+        if (keepPinnedTabs) {
+          // Recently changed tabs may not be in the session store yet.
+          await Promise.all(
+            Array.from(Services.wm.getEnumerator("navigator:browser"), win =>
+              lazy.TabStateFlusher.flushWindow(win)
+            )
+          );
+        }
 
         // Keep track of the time in case we get stuck in la-la-land because of onbeforeunload
         // dialogs
@@ -792,12 +901,16 @@ export var Sanitizer = {
         }
 
         if (!windowList.length) {
-          return;
+          return null;
         }
 
         // If/once we get here, we should actually be able to close all windows.
 
         let timerId = Glean.browserSanitizer.openwindows.start();
+
+        let pinnedTabs = keepPinnedTabs
+          ? this._collectPinnedTabs(windowList)
+          : [];
 
         // First create a new window. We do this first so that on non-mac, we don't
         // accidentally close the app by closing all the windows.
@@ -886,6 +999,8 @@ export var Sanitizer = {
         }
         newWindow.focus();
         await promiseReady;
+        // Restored by sanitizeInternal once everything else is cleared.
+        return pinnedTabs.length ? { newWindow, pinnedTabs } : null;
       },
     },
 
@@ -1015,10 +1130,12 @@ async function sanitizeInternal(items, aItemsToClear, options) {
   // can cancel the whole thing if the user selects to keep a window open
   // from a beforeunload prompt.
   let openWindowsIndex = itemsToClear.indexOf("openWindows");
+  // The pinned tabs to add back to the new window, if any.
+  let keptPinnedTabs = null;
   if (openWindowsIndex != -1) {
     itemsToClear.splice(openWindowsIndex, 1);
     try {
-      await items.openWindows.clear(
+      keptPinnedTabs = await items.openWindows.clear(
         null,
         Object.assign(options, { progress: progress.openWindowsProgress })
       );
@@ -1089,6 +1206,12 @@ async function sanitizeInternal(items, aItemsToClear, options) {
 
   log("All sanitizations are complete");
   Glean.browserSanitizer.total.stopAndAccumulate(timerId);
+  if (keptPinnedTabs && !keptPinnedTabs.newWindow.closed) {
+    items.openWindows._restorePinnedTabs(
+      keptPinnedTabs.newWindow,
+      keptPinnedTabs.pinnedTabs
+    );
+  }
   if (!progress.isShutdown) {
     removePendingSanitization(uid);
   }

@@ -36,7 +36,6 @@ class SframeEncryptor : public SframeMediaEncryptorInterface {
  public:
   // Creates a new SframeEncryptor. This factory method never fails.
   static absl_nonnull scoped_refptr<SframeEncryptor> Create(
-      SframeMode mode,
       SframeCipherSuite cipher_suite);
 
   ~SframeEncryptor() override;
@@ -52,17 +51,14 @@ class SframeEncryptor : public SframeMediaEncryptorInterface {
 
   size_t GetMaxCiphertextByteSize(size_t frame_size) override;
 
-  SframeMode mode() const override { return mode_; }
-
  protected:
-  SframeEncryptor(SframeMode mode, SframeCipherSuite cipher_suite);
+  explicit SframeEncryptor(SframeCipherSuite cipher_suite);
 
  private:
   // Callers must use this object from a single sequence. Today that sequence
   // is the media-pipeline (worker) thread reached via the signaling thread.
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
 
-  const SframeMode mode_;
   std::unique_ptr<sframe::Context> context_ RTC_GUARDED_BY(sequence_checker_);
   std::optional<uint64_t> active_key_id_ RTC_GUARDED_BY(sequence_checker_);
 };

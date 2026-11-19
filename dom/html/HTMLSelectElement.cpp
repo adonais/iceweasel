@@ -12,6 +12,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
@@ -293,6 +294,11 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(
     HTMLSelectElement, nsGenericHTMLFormControlElementWithState)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mValidity)
+  // NOTE(emilio): Unlinking mOptions is not quite needed to break the cycle
+  // (the own content list unlink removes the root node, and unlinking would
+  // force a bunch of null-checks). However, we mark it dirty so that the list
+  // is not in an inconsistent state.
+  tmp->mOptions->SetDirty();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectedOptions)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mListBoxSelection.mStart)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mListBoxSelection.mEnd)
@@ -1020,7 +1026,7 @@ bool HTMLSelectElement::IsHTMLFocusable(IsFocusableFlags aFlags,
     return true;
   }
 
-  *aIsFocusable = !IsDisabled();
+  *aIsFocusable = (aFlags & IsFocusableFlags::IgnoreDisabled) || !IsDisabled();
 
   return false;
 }
@@ -1360,7 +1366,7 @@ bool HTMLSelectElement::RestoreState(PresState* aState) {
 void HTMLSelectElement::RestoreStateTo(const SelectContentData& aNewSelected) {
   if (!mIsDoneAddingChildren) {
     // Make a copy of the state for us to restore from in the future.
-    mRestoreState = MakeUnique<SelectContentData>(aNewSelected);
+    mRestoreState = std::make_unique<SelectContentData>(aNewSelected);
     return;
   }
 

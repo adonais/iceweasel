@@ -53,8 +53,10 @@ class NotificationCallbacks final : public NotificationCallbacksCommon {
     return NS_OK;
   }
 
-  NS_IMETHODIMP OnAlertClick(nsIAlertAction* aAction) override {
-    MOZ_TRY(NotificationCallbacksCommon::OnAlertClick(aAction));
+  NS_IMETHODIMP OnAlertClick(
+      nsIAlertAction* aAction,
+      nsIAlertCallbacks::ApplicationState aState) override {
+    MOZ_TRY(NotificationCallbacksCommon::OnAlertClick(aAction, aState));
     nsCOMPtr<nsIURI> navigate;
     if (StaticPrefs::dom_webnotifications_navigate_enabled()) {
       if (aAction) {

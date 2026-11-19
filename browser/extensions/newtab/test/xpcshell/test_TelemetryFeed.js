@@ -4342,6 +4342,120 @@ add_task(async function test_handleSpacesUserEvent() {
   );
 });
 
+add_task(async function test_recordHomeWidgets() {
+  info(
+    "recordHomeWidgets should list the widgets Home shows, only where users pin widgets to Home"
+  );
+  Services.fog.testResetFOG();
+
+  const spaces = {
+    order: ["home", "widgets"],
+    default: "home",
+    spaces: {
+      home: { label: "Home", widgets: ["lists"] },
+      widgets: { label: "Widgets" },
+    },
+  };
+  const values = {
+    "pageLayouts.variant": "spaces-thematic-v1",
+    trainhopConfig: { spaces },
+    "widgets.system.enabled": true,
+    "widgets.enabled": true,
+    "widgets.home": '["focusTimer","lists","clocks","stocks"]',
+  };
+  for (const id of ["lists", "focusTimer", "clocks", "stocks"]) {
+    values[`widgets.system.${id}.enabled`] = true;
+    values[`widgets.${id}.enabled`] = true;
+  }
+  values["widgets.focusTimer.enabled"] = false;
+
+  let instance = new TelemetryFeed();
+  instance.store = { getState: () => ({ Prefs: { values } }) };
+
+  instance.recordHomeWidgets();
+  Assert.equal(
+    Glean.newtab.widgetsHomeList.testGetValue(),
+    null,
+    "widgetsHomeList is not set without a widget library"
+  );
+
+  values.trainhopConfig = { spaces: { ...spaces, widgetLibrary: "widgets" } };
+  instance.recordEnabledWidgets();
+  Assert.deepEqual(
+    Glean.newtab.widgetsHomeList.testGetValue().sort(),
+    ["clocks", "lists", "stocks"],
+    "widgetsHomeList lists every pinned widget that is turned on, with no limit"
+  );
+
+  values["widgets.home"] = "[]";
+  instance.onAction({
+    type: actionTypes.PREF_CHANGED,
+    data: { name: "widgets.home", value: "[]" },
+  });
+  Assert.deepEqual(
+    Glean.newtab.widgetsHomeList.testGetValue(),
+    [],
+    "widgetsHomeList is re-recorded as empty when Home is emptied"
+  );
+});
+
+add_task(async function test_widget_events_carry_widget_location() {
+  info(
+    "widgets_impression and widgets_user_event should pass widget_location through only when it is set"
+  );
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  const session = instance.addSession("foo", "about:newtab");
+  const meta = { fromTarget: "foo" };
+
+  instance.handleUnifiedWidgetImpression({
+    data: {
+      widget_name: "lists",
+      widget_size: "medium",
+      widget_location: "home_space",
+    },
+    meta,
+  });
+  instance.handleUnifiedWidgetUserEvent({
+    data: {
+      widget_name: "lists",
+      widget_source: "widget",
+      user_action: "list_create",
+      widget_location: "sidebar",
+    },
+    meta,
+  });
+  instance.handleUnifiedWidgetImpression({
+    data: { widget_name: "clocks", widget_size: "medium" },
+    meta,
+  });
+
+  const impressions = Glean.newtab.widgetsImpression.testGetValue();
+  Assert.deepEqual(
+    impressions.map(e => e.extra),
+    [
+      {
+        newtab_visit_id: session.session_id,
+        widget_name: "lists",
+        widget_size: "medium",
+        widget_location: "home_space",
+      },
+      {
+        newtab_visit_id: session.session_id,
+        widget_name: "clocks",
+        widget_size: "medium",
+      },
+    ],
+    "widget_location is recorded when given and left out otherwise"
+  );
+  Assert.equal(
+    Glean.newtab.widgetsUserEvent.testGetValue()[0].extra.widget_location,
+    "sidebar",
+    "widgets_user_event carries widget_location"
+  );
+});
+
 add_task(async function test_handleSpacesUserEvent_no_session() {
   info("handleSpacesUserEvent should record nothing without a session");
   Services.fog.testResetFOG();
@@ -4357,6 +4471,59 @@ add_task(async function test_handleSpacesUserEvent_no_session() {
     Glean.newtab.spacesSwitch.testGetValue(),
     null,
     "no event should be recorded for an unknown port"
+  );
+});
+
+add_task(async function test_handleUnifiedWidget_widget_variant() {
+  info("The four unified widget handlers should pass widget_variant through");
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  const session = instance.addSession("foo", "about:newtab");
+  const meta = { fromTarget: "foo" };
+  const base = { widget_name: "privacy", widget_size: "medium" };
+  const withVariant = { ...base, widget_variant: "no_trackers_blocked" };
+
+  instance.handleUnifiedWidgetImpression({ data: withVariant, meta });
+  instance.handleUnifiedWidgetUserEvent({
+    data: { ...withVariant, user_action: "learn_more" },
+    meta,
+  });
+  instance.handleUnifiedWidgetEnabled({
+    data: { ...withVariant, enabled: false },
+    meta,
+  });
+  instance.handleUnifiedWidgetError({
+    data: { ...withVariant, error_type: "load_error" },
+    meta,
+  });
+  instance.handleUnifiedWidgetImpression({
+    data: { widget_name: "lists", widget_size: "large" },
+    meta,
+  });
+
+  for (const metric of [
+    "widgetsImpression",
+    "widgetsUserEvent",
+    "widgetsEnabled",
+    "widgetsError",
+  ]) {
+    const [event] = Glean.newtab[metric].testGetValue();
+    Assert.equal(
+      event.extra.widget_variant,
+      "no_trackers_blocked",
+      `${metric} should carry widget_variant`
+    );
+    Assert.equal(event.extra.newtab_visit_id, session.session_id);
+  }
+  Assert.deepEqual(
+    Glean.newtab.widgetsImpression.testGetValue()[1].extra,
+    {
+      newtab_visit_id: session.session_id,
+      widget_name: "lists",
+      widget_size: "large",
+    },
+    "a widget that sends no variant should record no widget_variant"
   );
 });
 

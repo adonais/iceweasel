@@ -56,7 +56,7 @@ task-defaults:
                 default:
                     - raptor/android_hw_config.py
         extra-options:
-            # Bug 1635749, disable window recorder temporarily
+            # Unstable on Android (bug 1635749); adb records the screen instead
             - --browsertime-no-ffwindowrecorder
     optimization:
         perf-cadence-android: null
@@ -125,8 +125,6 @@ browsertime-tp6m:
         mozharness:
             extra-options:
                 - --chimera
-                # Bug 1884667 - Fresh profiles cause high frequency intermittents
-                - --conditioned-profile=settled
         tier:
             by-app:
                 geckoview: 1
@@ -135,7 +133,7 @@ browsertime-tp6m:
                 default: 3
         treeherder-symbol: Btime(tp6m)
     raptor:
-        apps: [geckoview, fenix, chrome-m, refbrow, cstm-car-m]
+        apps: [geckoview, fenix, refbrow]
         run-visual-metrics: true
         test: tp6m
         subtests:
@@ -169,7 +167,7 @@ browsertime-tp6m:
 browsertime-tp6m-essential:
     <<: *tp6m-defaults
     raptor:
-        apps: [geckoview, fenix, chrome-m, refbrow, cstm-car-m]
+        apps: [geckoview, fenix, refbrow]
         run-visual-metrics: true
         test: tp6m
         subtests:
@@ -213,26 +211,25 @@ browsertime-tp6m-webextensions:
     fetches:
         fetch:
             - firefox-addons
-    run-on-projects:
-        by-app:
-            fenix:
-                by-test-platform:
-                    android-hw-a55.*shippable.*: [mozilla-central]
-                    default: []
-            default: []
+    run-on-projects: []
     # TODO(Bug 1867781): promote to tier 2 after confirming no issue have been caught while runing as tier 3.
     tier: 3
 
 browsertime-youtube-playback-mobile:
     description: Browsertime YouTube Playback on Android
     treeherder-symbol: Btime(ytp)
+    limit-platforms:
+        by-app:
+            fenix: []
+            default:
+                - android-hw.*
     raptor:
         apps: [fenix, geckoview, refbrow]
         subtests:
             by-app:
                 fenix:
                     by-test-platform:
-                        android-hw-a55.*:
+                        (android-hw-a55|android-em-14-arm64).*:
                             - [youtube-playback-av1-sfr, ytp-av1-sfr]
                             - [youtube-playback-hfr, ytp-hfr]
                             - [youtube-playback-vp9-sfr, ytp-vp9-sfr]
@@ -256,7 +253,7 @@ browsertime-youtube-playback-mobile:
                     23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38
                 youtube-playback-hfr:
                     by-test-platform:
-                        android-hw-a55.*:  # remove VP9(1-34) and AV1(51-74) tests
+                        (android-hw-a55|android-em-14-arm64).*:  # remove VP9(1-34) and AV1(51-74) tests
                             exclude=1,2,
                             3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,
                             51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74
@@ -273,13 +270,17 @@ browsertime-youtube-playback-mobile:
             fenix:
                 by-test-platform:
                     android-hw-a55.*shippable.*: [mozilla-central]
+                    android-em-14-arm64.*shippable.*: [autoland]
                     default: []
             geckoview: []
             default: []
     tier:
-        by-app:
-            fenix: 1
-            default: 3
+        by-test-platform:
+            android-em-14-arm64.*: 3
+            default:
+                by-app:
+                    fenix: 1
+                    default: 3
     max-run-time: 3600
 
 browsertime-youtube-playback-power-mobile:
@@ -287,7 +288,11 @@ browsertime-youtube-playback-power-mobile:
     treeherder-symbol: Btime(ytp)
     tier:
         by-app:
-            fenix: 1
+            fenix:
+                by-test-platform:
+                    # Bug 2017151 - run at tier 2 while stabilizing on LT
+                    android-hw-a55.*: 2
+                    default: 1
             geckoview: 2
             default: 3
     raptor:
@@ -311,7 +316,7 @@ browsertime-youtube-playback-power-mobile:
 browsertime-tp6m-live:
     <<: *tp6m-defaults
     raptor:
-        apps: [chrome-m, fenix, geckoview]
+        apps: [fenix, geckoview]
         run-visual-metrics: true
         test: tp6m
         subtests:
@@ -650,3 +655,22 @@ browsertime-hev3-connection-m:
             default: []
     tier: 3
     treeherder-symbol: Btime(hev3connm)
+
+browsertime-nav-bench-m:
+    raptor:
+        apps: [fenix]
+        subtests: [[nav-bench-m, navb-m]]
+        run-visual-metrics: true
+    description: Raptor (browsertime) mobile navigation benchmark
+    run-on-projects:
+        by-test-platform:
+            android-hw-a55.*shippable.*: [autoland]
+            android-hw-a55.*nightlyasrelease.*: [autoland]
+            default: []
+    tier: 3
+    treeherder-symbol: Btime(navb-m)
+    mozharness:
+        extra-options:
+            # Bug 2011884 - annotate the videos.
+            - --browsertime-arg=videoParams.convert=true
+            - --browsertime-arg=videoParams.addTimer=true

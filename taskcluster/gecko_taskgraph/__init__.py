@@ -7,6 +7,7 @@ import os
 import yaml
 from android_taskgraph import register as register_android_taskgraph
 from mozilla_taskgraph import register as register_mozilla_taskgraph
+from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 from taskgraph import config as taskgraph_config
 from taskgraph import generator
 from taskgraph import morph as taskgraph_morph
@@ -47,10 +48,23 @@ docker.RUN_TASK_FILES = {
 docker.RUN_TASK_FILES["run-task/run-task-setup.py"] = os.path.join(
     GECKO, "taskcluster", "scripts", "run-task-setup.py"
 )
+docker.RUN_TASK_FILES["run-task/run_task_resource_monitor.py"] = os.path.join(
+    GECKO, "taskcluster", "scripts", "run_task_resource_monitor.py"
+)
+docker.RUN_TASK_FILES["run-task/resourcemonitor.py"] = os.path.join(
+    GECKO,
+    "testing",
+    "mozbase",
+    "mozsystemmonitor",
+    "mozsystemmonitor",
+    "resourcemonitor.py",
+)
 docker.RUN_TASK_SNIPPET = [
     "COPY run-task/run-task /builds/worker/bin/run-task-git\n",
     "COPY run-task/fetch-content /builds/worker/bin/fetch-content\n",
     "COPY run-task/run-task-setup.py /builds/worker/bin/run-task-setup.py\n",
+    "COPY run-task/run_task_resource_monitor.py /builds/worker/bin/run_task_resource_monitor.py\n",
+    "COPY run-task/resourcemonitor.py /builds/worker/bin/mozsystemmonitor/resourcemonitor.py\n",
 ]
 
 # Don't use any of the upstream morphs.
@@ -80,6 +94,14 @@ del payload_builders["docker-worker"]
 del payload_builders["generic-worker"]
 
 
+def record_phase_marker(name, start, end):
+    """Record a taskgraph generation phase in the resource usage profile. The
+    name of a phase that raised is None."""
+    SystemResourceMonitor.record_marker(
+        "Taskgraph", start, end, {"type": "Text", "text": name or "failed phase"}
+    )
+
+
 def register(graph_config):
     """Used to register Gecko specific extensions.
 
@@ -96,13 +118,20 @@ def register(graph_config):
     from gecko_taskgraph.util import (
         dependencies,  # noqa - trigger group_by registration
     )
-    from gecko_taskgraph.util.verify import verifications
+    from gecko_taskgraph.kind import ProfiledKind
+    from gecko_taskgraph.util.verify import profiled_verifications
 
     register_mozilla_taskgraph(graph_config)
     register_android_taskgraph(graph_config)
 
     # Don't use the upstream verifications, and replace them with our own.
     # TODO Investigate merging our verifications with upstream.
-    generator.verifications = verifications
+    generator.verifications = profiled_verifications
+
+    # Workers loading kinds in parallel find ProfiledKind.load_tasks through
+    # the kind instances they are sent, even when not forked.
+    generator.Kind = ProfiledKind
+
+    generator.phase_finished = record_phase_marker
 
     register_parameters()

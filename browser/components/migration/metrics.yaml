@@ -354,6 +354,53 @@ browser.migration:
         type: quantity
     telemetry_mirror: BrowserMigration_MigrationFinished_Wizard
 
+  resource_migrated:
+    type: event
+    description: >
+      Recorded once for each resource type when a migration from another
+      browser finishes migrating that resource type. Reports how many items
+      the other browser had available and how many were actually migrated.
+      Not recorded when copying data from another Firefox profile, such as
+      for profile refreshes.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080904
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080904
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mconley@mozilla.com
+      - gijs@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    extra_keys:
+      migrator_key:
+        description: >
+          The key of the migrator that performed the migration, for example
+          "chrome" or "safari".
+        type: string
+      entrypoint:
+        description: >
+          Where the migration wizard was opened from. One of the values of
+          MigrationUtils.MIGRATION_ENTRYPOINTS, for example "aboutwelcome",
+          "preferences" or "file_menu".
+        type: string
+      resource_type:
+        description: >
+          The resource type that was migrated. One of "history", "formdata",
+          "passwords", "bookmarks", "payment_methods" or "extensions".
+        type: string
+      available:
+        description: >
+          The number of items of this resource type that the other browser
+          had available to migrate. Not set if the migrator cannot count them.
+        type: quantity
+      migrated:
+        description: >
+          The number of items of this resource type that were actually
+          migrated.
+        type: quantity
+
   entry_point_categorical:
     type: labeled_counter
     description: >
@@ -595,6 +642,91 @@ browser.migration:
       - mconley@mozilla.com
     expires: never
     telemetry_mirror: FX_MIGRATION_EXTENSIONS_QUANTITY
+
+  bookmarks_import_duration:
+    type: labeled_timing_distribution
+    description: >
+      How long it took to import bookmarks from another browser, keyed by the
+      key of the migrator that performed the migration. Each resource of this
+      type is timed separately.
+    time_unit: millisecond
+    bugs:
+      - https://bugzil.la/2080907
+    data_reviews:
+      - https://bugzil.la/2080907
+    notification_emails:
+      - mconley@mozilla.com
+      - nbaumgardner@mozilla.com
+      - jhirsch@mozilla.com
+    expires: never
+
+  history_import_duration:
+    type: labeled_timing_distribution
+    description: >
+      How long it took to import history from another browser, keyed by the
+      key of the migrator that performed the migration. Each resource of this
+      type is timed separately.
+    time_unit: millisecond
+    bugs:
+      - https://bugzil.la/2080907
+    data_reviews:
+      - https://bugzil.la/2080907
+    notification_emails:
+      - mconley@mozilla.com
+      - nbaumgardner@mozilla.com
+      - jhirsch@mozilla.com
+    expires: never
+
+  logins_import_duration:
+    type: labeled_timing_distribution
+    description: >
+      How long it took to import logins (passwords) from another browser,
+      keyed by the key of the migrator that performed the migration. Each
+      resource of this type is timed separately.
+    time_unit: millisecond
+    bugs:
+      - https://bugzil.la/2080907
+    data_reviews:
+      - https://bugzil.la/2080907
+    notification_emails:
+      - mconley@mozilla.com
+      - nbaumgardner@mozilla.com
+      - jhirsch@mozilla.com
+    expires: never
+
+  cards_import_duration:
+    type: labeled_timing_distribution
+    description: >
+      How long it took to import credit card entries from another browser,
+      keyed by the key of the migrator that performed the migration. Each
+      resource of this type is timed separately.
+    time_unit: millisecond
+    bugs:
+      - https://bugzil.la/2080907
+    data_reviews:
+      - https://bugzil.la/2080907
+    notification_emails:
+      - mconley@mozilla.com
+      - nbaumgardner@mozilla.com
+      - jhirsch@mozilla.com
+    expires: never
+
+  extensions_import_duration:
+    type: labeled_timing_distribution
+    description: >
+      How long it took to import extensions from another browser, keyed by
+      the key of the migrator that performed the migration. Each resource of
+      this type is timed separately.
+    time_unit: millisecond
+    bugs:
+      - https://bugzil.la/2080907
+    data_reviews:
+      - https://bugzil.la/2080907
+    notification_emails:
+      - mconley@mozilla.com
+      - nbaumgardner@mozilla.com
+      - jhirsch@mozilla.com
+    expires: never
 
 migration:
   uninstaller_profile_refresh:

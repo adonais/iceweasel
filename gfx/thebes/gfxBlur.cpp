@@ -36,7 +36,7 @@ UniquePtr<gfxContext> gfxGaussianBlur::Init(
     return nullptr;
   }
 
-  auto context = MakeUnique<gfxContext>(dt);
+  auto context = std::make_unique<gfxContext>(dt);
   context->SetMatrix(Matrix::Translation(-mBlur.GetRect().TopLeft()));
   return context;
 }
@@ -404,7 +404,7 @@ static void CacheBlur(DrawTarget* aDT, const IntSize& aMinSize,
                       const RectCornerRadii* aCornerRadii,
                       const sRGBColor& aShadowColor,
                       const IntMargin& aBlurMargin, SourceSurface* aBoxShadow) {
-  gBlurCache->RegisterEntry(MakeUnique<BlurCacheData>(
+  gBlurCache->RegisterEntry(std::make_unique<BlurCacheData>(
       aBoxShadow, aBlurMargin,
       BlurCacheKey(aMinSize, aBlurRadius, aCornerRadii, aShadowColor,
                    aDT->GetBackendType())));
@@ -959,7 +959,7 @@ static void CacheInsetBlur(const IntSize& aMinOuterSize,
   IntMargin blurMargin(0, 0, 0, 0);
 
   gBlurCache->RegisterEntry(
-      MakeUnique<BlurCacheData>(aBoxShadow, blurMargin, std::move(key)));
+      std::make_unique<BlurCacheData>(aBoxShadow, blurMargin, std::move(key)));
 }
 
 already_AddRefed<SourceSurface> gfxGaussianBlur::GetInsetBlur(

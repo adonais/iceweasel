@@ -22,6 +22,12 @@ let filterActionsMode = action =>
   action.source != UrlbarShared.RESULT_SOURCE.ACTIONS;
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.unifiedSearchButton.always", false],
+      ["browser.urlbar.unifiedSearchButton.historyInSearchMode", false],
+    ],
+  });
   gMaxResults = Services.prefs.getIntPref("browser.urlbar.maxRichResults");
 
   // Add a search suggestion engine and move it to the front so that it appears
@@ -36,9 +42,6 @@ add_setup(async function () {
       ["browser.search.separatePrivateDefault.featureGate", false],
       ["browser.urlbar.suggest.quickactions", false],
       ["browser.urlbar.scotchBonnet.enableOverride", false],
-      // Force settings redesign to false, so that `hideOneOffButton` will correctly
-      // work for the time being.
-      ["browser.settings-redesign.enabled", false],
     ],
   });
 
@@ -445,49 +448,6 @@ add_task(async function oneOffReturn() {
   await hidePopup();
 });
 
-// When all engines and local shortcuts are hidden except for the current
-// engine, the one-offs container should be hidden.
-add_task(async function allOneOffsHiddenExceptCurrentEngine() {
-  // Disable all the engines but the current one, check the oneoffs are
-  // hidden and that moving up selects the last match.
-  let defaultEngine = await SearchService.getDefault();
-  let engines = (await SearchService.getVisibleEngines()).filter(
-    e => e.name != defaultEngine.name
-  );
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ...UrlbarShared.LOCAL_SEARCH_MODES.map(m => [
-        `browser.urlbar.${m.pref}`,
-        false,
-      ]),
-    ],
-  });
-  engines.forEach(e => {
-    e.hideOneOffButton = e.name !== defaultEngine.name;
-  });
-
-  let typedValue = "foo";
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: typedValue,
-    fireInputEvent: true,
-  });
-  await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  assertState(0, -1);
-  Assert.equal(
-    UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
-    false,
-    "The one-off buttons should be hidden"
-  );
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  assertState(0, -1);
-  await hidePopup();
-  await SpecialPowers.popPrefEnv();
-  engines.forEach(e => {
-    e.hideOneOffButton = false;
-  });
-});
-
 // The one-offs should be hidden when searching with an "@engine" search engine
 // alias.
 add_task(async function hiddenWhenUsingSearchAlias() {
@@ -693,103 +653,6 @@ add_task(async function localShortcutEmptySearchString() {
   await hidePopup();
 });
 
-// Trigger SearchOneOffs.willHide() outside of SearchOneOffs.__rebuild(). Ensure
-// that we always show the correct engines in the one-offs. This effectively
-// tests SearchOneOffs._engineInfo.domWasUpdated.
-add_task(async function avoidWillHideRace() {
-  // We set maxHistoricalSearchSuggestions to 0 since this test depends on
-  // UrlbarView calling SearchOneOffs.willHide(). That only happens when the
-  // Urlbar is in search mode after a query that returned no results.
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.maxHistoricalSearchSuggestions", 0]],
-  });
-
-  oneOffSearchButtons.invalidateCache();
-
-  // Accel+K triggers SearchOneOffs.willHide() from UrlbarView instead of from
-  // SearchOneOffs.__rebuild.
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  EventUtils.synthesizeKey("k", { accelKey: true });
-  await searchPromise;
-  Assert.ok(
-    UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
-    "One-offs should be visible"
-  );
-  await UrlbarTestUtils.promisePopupClose(window);
-
-  info("Hide all engines but the test engine.");
-  let oldDefaultEngine = await SearchService.getDefault();
-  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
-  let engines = (await SearchService.getVisibleEngines()).filter(
-    e => e.name != engine.name
-  );
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ...UrlbarShared.LOCAL_SEARCH_MODES.map(m => [
-        `browser.urlbar.${m.pref}`,
-        false,
-      ]),
-    ],
-  });
-  engines.forEach(e => {
-    e.hideOneOffButton = true;
-  });
-  Assert.ok(
-    !oneOffSearchButtons._engineInfo,
-    "_engineInfo should be nulled out."
-  );
-
-  // This call to SearchOneOffs.willHide() should repopulate _engineInfo but not
-  // rebuild the one-offs. _engineInfo.willHide will be true and thus UrlbarView
-  // will not open.
-  EventUtils.synthesizeKey("k", { accelKey: true });
-  // We can't wait for UrlbarTestUtils.promiseSearchComplete here since we
-  // expect the popup will not open. We wait for _engineInfo to be populated
-  // instead.
-  await TestUtils.waitForCondition(
-    () => !!oneOffSearchButtons._engineInfo,
-    "_engineInfo is set."
-  );
-  Assert.ok(!UrlbarTestUtils.isPopupOpen(window), "The UrlbarView is closed.");
-  Assert.equal(
-    oneOffSearchButtons._engineInfo.willHide,
-    true,
-    "_engineInfo should be repopulated and willHide should be true."
-  );
-  Assert.equal(
-    oneOffSearchButtons._engineInfo.domWasUpdated,
-    undefined,
-    "domWasUpdated should not be populated since we haven't yet tried to rebuild the one-offs."
-  );
-
-  // Now search. The view will open and the one-offs will rebuild, although
-  // the one-offs will not be shown since there is only one engine.
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "test",
-  });
-  Assert.equal(
-    oneOffSearchButtons._engineInfo.domWasUpdated,
-    true,
-    "domWasUpdated should be true"
-  );
-  Assert.ok(
-    !UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
-    "One-offs should be hidden since there is only one engine."
-  );
-  await UrlbarTestUtils.promisePopupClose(window);
-
-  await SpecialPowers.popPrefEnv();
-  await SearchService.setDefault(
-    oldDefaultEngine,
-    SearchService.CHANGE_REASON.UNKNOWN
-  );
-  await SpecialPowers.popPrefEnv();
-  engines.forEach(e => {
-    e.hideOneOffButton = false;
-  });
-});
-
 // Hides each of the local shortcuts one at a time.  The search buttons should
 // automatically rebuild themselves.
 add_task(async function individualLocalShortcutsHidden() {
@@ -879,49 +742,6 @@ add_task(async function allLocalShortcutsHidden() {
 
   await hidePopup();
   await SpecialPowers.popPrefEnv();
-});
-
-// Hides all the engines but none of the local shortcuts.
-add_task(async function localShortcutsShownWhenEnginesHidden() {
-  let engines = await SearchService.getVisibleEngines();
-
-  engines.forEach(e => {
-    e.hideOneOffButton = true;
-  });
-
-  let rebuildPromise = BrowserTestUtils.waitForEvent(
-    oneOffSearchButtons,
-    "rebuild"
-  );
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "",
-  });
-  await rebuildPromise;
-
-  Assert.equal(
-    UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
-    true,
-    "One-offs are visible"
-  );
-
-  Assert.equal(
-    oneOffSearchButtons.localButtons.length,
-    UrlbarShared.LOCAL_SEARCH_MODES.filter(filterActionsMode).length,
-    "All local shortcuts are visible"
-  );
-
-  Assert.equal(
-    oneOffSearchButtons.getSelectableButtons(false).filter(b => b.engine)
-      .length,
-    0,
-    "All engine one-offs are hidden"
-  );
-
-  await hidePopup();
-  engines.forEach(e => {
-    e.hideOneOffButton = false;
-  });
 });
 
 /**

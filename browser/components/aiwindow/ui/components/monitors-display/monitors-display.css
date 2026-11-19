@@ -7,8 +7,7 @@
 }
 
 .monitors-section h3 {
-  margin-top: 0;
-  margin-bottom: var(--space-large);
+  margin-block: 0 var(--space-large);
   font-size: var(--font-size-large);
 }
 
@@ -21,7 +20,7 @@
 .monitors-count {
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
-  margin-bottom: var(--space-large);
+  margin-block-end: var(--space-large);
 }
 
 .no-monitors-wrapper {
@@ -44,7 +43,7 @@
 .no-monitors-container {
   h2 {
     text-align: center;
-    margin-bottom: 0;
+    margin-block-end: 0;
   }
   p {
     color: var(--text-color-deemphasized);

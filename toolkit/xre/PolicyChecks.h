@@ -10,6 +10,11 @@
 #  include <windows.h>
 #  include "mozilla/Maybe.h"
 
+// MOZ_APP_BASENAME is not a global define.
+#  ifndef MOZ_APP_BASENAME
+#    error "MOZ_APP_BASENAME must be defined in moz.build to use this header"
+#  endif
+
 #  define POLICY_REGKEY_NAME L"SOFTWARE\\Policies\\Mozilla\\" MOZ_APP_BASENAME
 
 // NB: This code must be able to run apart from XPCOM

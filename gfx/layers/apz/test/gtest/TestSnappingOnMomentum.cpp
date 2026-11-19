@@ -38,8 +38,8 @@ TEST_F(APZCSnappingOnMomentumTesterMock, Snap_On_Momentum) {
     aSm.SetSnapInfo(ScrollSnapInfo(snap));
   });
 
-  UniquePtr<ScopedLayerTreeRegistration> registration =
-      MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  auto registration =
+      std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);

@@ -426,9 +426,6 @@ skip-if = [
 ["test_bug1649005.html"]
 
 ["test_bug1659276.html"]
-skip-if = [
-  "standalone", # Bug 2026600
-]
 
 ["test_bug1704381.html"]
 
@@ -510,6 +507,8 @@ skip-if = [
 ["test_inlineTableEditing.html"]
 
 ["test_inline_style_cache.html"]
+
+["test_insert_composition_before_unnecessary_linebreak.html"]
 
 ["test_insertHTML_caret_position_after_replaced_element.html"]
 

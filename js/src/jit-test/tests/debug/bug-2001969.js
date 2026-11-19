@@ -1,4 +1,4 @@
-// |jit-test| --fuzzing-safe; --ion-offthread-compile=off; --baseline-warmup-threshold=0; error: ReferenceError
+// |jit-test| --ion-offthread-compile=off; --baseline-warmup-threshold=0; error: ReferenceError
 
 gczeal(2, 5);
 function assertOffsetColumns(code) {

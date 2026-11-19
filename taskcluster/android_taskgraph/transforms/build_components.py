@@ -50,9 +50,10 @@ def resolve_keys(config, tasks):
             "include-coverage",
             "run-on-projects",
             "shipping-phase",
+            "use-gradle-cache",
             "run.gradlew",
             "treeherder.symbol",
-            "dependencies.build-fat-aar",
+            "dependencies.geckoview",
         ):
             resolve_keyed_by(
                 task,
@@ -84,13 +85,11 @@ def add_robolectric_jars(config, tasks):
 @transforms.add
 def handle_update_channel(config, tasks):
     for task in tasks:
-        build_fat_aar = config.kind_dependencies_tasks[
-            task["dependencies"]["build-fat-aar"]
-        ]
-        if build_fat_aar.attributes.get("shippable"):
+        geckoview = config.kind_dependencies_tasks[task["dependencies"]["geckoview"]]
+        if geckoview.attributes.get("shippable"):
             task["worker"].setdefault("env", {}).setdefault(
                 "MOZ_UPDATE_CHANNEL",
-                build_fat_aar.attributes.get("update-channel", "default"),
+                geckoview.attributes.get("update-channel", "default"),
             )
         yield task
 

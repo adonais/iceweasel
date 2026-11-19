@@ -54,11 +54,17 @@
         "parameters": [{ "name": "domain", "type": "string" }]
       },
       {
-        "name": "isIPPActive",
+        "name": "isIPPActiveForTab",
         "type": "function",
-        "description": "Return whether IPP connection is active.",
+        "description": "Return whether IPP is active and proxying the page currently loaded in the given tab.",
         "async": true,
-        "parameters": []
+        "parameters": [
+          {
+            "name": "tabId",
+            "type": "integer",
+            "description": "The tab to check."
+          }
+        ]
       },
       {
         "name": "getRegion",
@@ -124,20 +130,13 @@
     ],
     "events": [
       {
-        "name": "onIPPActivated",
+        "name": "onIPPProxyChanged",
         "type": "function",
-        "description": "Fired when IPProtectionService dispatches 'IPProtectionService:Started'. The listener receives the current active state.",
+        "description": "Fired when the IPP proxy state, proxy mode or site rules change, any of which can change whether a page is proxied.",
         "parameters": [
           {
             "name": "listener",
-            "type": "function",
-            "parameters": [
-              {
-                "name": "active",
-                "type": "boolean",
-                "description": "Whether the IPP connection is currently active."
-              }
-            ]
+            "type": "function"
           }
         ]
       },

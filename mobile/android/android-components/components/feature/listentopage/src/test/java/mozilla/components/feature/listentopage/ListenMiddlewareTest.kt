@@ -31,7 +31,8 @@ import mozilla.components.browser.state.state.ReaderState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.listentopage.content.Content
-import mozilla.components.feature.listentopage.content.ContentProvider
+import mozilla.components.feature.listentopage.content.ContentExtractor
+import mozilla.components.feature.listentopage.content.LanguageSource
 import mozilla.components.feature.listentopage.content.TextChunker
 import mozilla.components.feature.listentopage.facts.ListenToPageFacts
 import mozilla.components.feature.listentopage.fakes.FakeAudioFileCache
@@ -44,6 +45,7 @@ import mozilla.components.feature.listentopage.playback.DirectoryAudioFileCache
 import mozilla.components.feature.listentopage.playback.PlaybackController
 import mozilla.components.feature.listentopage.playback.SEEK_BACK_INCREMENT_MS
 import mozilla.components.feature.listentopage.playback.SEEK_FORWARD_INCREMENT_MS
+import mozilla.components.feature.listentopage.settings.ListenEnabledState
 import mozilla.components.feature.listentopage.settings.ListenSettings
 import mozilla.components.feature.listentopage.synthesis.NoOfflineVoiceAvailableException
 import mozilla.components.feature.listentopage.synthesis.SpeechSynthesisException
@@ -449,6 +451,28 @@ class ListenMiddlewareTest {
         assertNull(playback.displayDataList.first().site)
     }
 
+    @Test
+    fun `test that an article from a private tab is described as private`() = runTest {
+        val playback = FakePlaybackController()
+        val privateTab = createTab(url = URL, id = TAB_ID, title = "An article", private = true)
+        val store =
+            storeWith(
+                playbackController = playback,
+                browserStore = BrowserStore(BrowserState(tabs = listOf(privateTab), selectedTabId = TAB_ID)),
+            ) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+
+        assertEquals(
+            ArticleDisplayData(title = "An article", site = "example.org", isPrivate = true),
+            playback.displayDataList.first(),
+        )
+        assertEquals("An article", store.state.title)
+        assertEquals("example.org", store.state.site)
+    }
+
     // Reported as having no title rather than given one, so that whatever reads this knows the page itself was
     // untitled. The notification shows the app's name in that case, and puts it on in ListenPlaybackController.
     @Test
@@ -524,6 +548,26 @@ class ListenMiddlewareTest {
         // played until the whole of it had been synthesized.
         assertEquals("Sentence 1 is right here.", synthesizer.requests.first())
         assertTrue(article.length > synthesizer.requests.first().length * 50)
+    }
+
+    @Test
+    fun `test that the article language source is reported with the content`() = runTest {
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(recordInto = actions) {
+                Result.success(
+                    Content(
+                        text = "An article in the fallback language.",
+                        languageTag = "en-US",
+                        languageSource = LanguageSource.Fallback,
+                    )
+                )
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+
+        val ready = actions.filterIsInstance<ListenAction.Content.ContentReady>().single()
+        assertEquals(LanguageSource.Fallback, ready.languageSource)
     }
 
     // The engine offers a voice here, so the synthesis is reached and it is the synthesis that fails.
@@ -1050,27 +1094,50 @@ class ListenMiddlewareTest {
     }
 
     @Test
-    fun `test that a request in place of a live session throws away only that session's audio`() = runTest {
+    fun `test that a request in place of a live session ends that session as a stop would`() = runTest {
         val cache = FakeAudioFileCache()
-        val synthesizer = FakeSpeechSynthesizer()
+        val playback = FakePlaybackController()
+        val engines = mutableListOf<FakeSpeechSynthesizer>()
         val store =
-            storeWith(synthesizerProvider = { synthesizer }, audioCache = cache) {
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer().also { engines.add(it) } },
+                playbackController = playback,
+                audioCache = cache,
+            ) {
                 Result.success(Content(text = longArticle(), languageTag = "en-US"))
             }
         store.listenAndPlay(TAB_ID, URL)
         advanceUntilIdle()
-
-        // A session replacing another keeps the engine, so this one fake writes for both and its files stay uniquely
-        // named across them. Everything it wrote up to here belongs to the article the reader is leaving.
-        val leftBehind = synthesizer.files.toList()
-
         store.listenAndPlay(OTHER_TAB_ID, URL)
         advanceUntilIdle()
 
-        assertTrue("Nothing was made to delete", leftBehind.isNotEmpty())
-        assertEquals(leftBehind.toSet(), cache.deleted.toSet())
-        assertFalse(cache.cleared)
+        assertTrue(playback.released)
+        assertTrue(cache.cleared)
+        assertTrue(engines.first().closed)
     }
+
+    @Test
+    fun `test that a request in place of a live session stops its audio even when the new one cannot be read`() =
+        runTest {
+            val playback = FakePlaybackController()
+            // The second session's engine has no voice for its article, so its opening is never handed to the player.
+            val engines = ArrayDeque(listOf(FakeSpeechSynthesizer(), FakeSpeechSynthesizer(voices = emptyList())))
+            val store =
+                storeWith(synthesizerProvider = { engines.removeFirst() }, playbackController = playback) { tabId ->
+                    if (tabId == TAB_ID) {
+                        Result.success(Content(text = "Article text.", languageTag = "en-US"))
+                    } else {
+                        Result.success(Content(text = "Texte de l'article.", languageTag = "fr-FR"))
+                    }
+                }
+            store.listenAndPlay(TAB_ID, URL)
+            advanceUntilIdle()
+            store.listenAndPlay(OTHER_TAB_ID, URL)
+            advanceUntilIdle()
+
+            assertEquals(ListenError.NoOfflineVoice, store.state.error)
+            assertTrue(playback.released)
+        }
 
     @Test
     fun `test that a session starting while the last one is still ending keeps its own audio`() = runTest {
@@ -1249,7 +1316,8 @@ class ListenMiddlewareTest {
         store.listenAndPlay(TAB_ID, URL)
         advanceUntilIdle()
 
-        assertFalse(audioCache.cleared)
+        // Starting a session ends whatever came before it, which empties the cache too.
+        audioCache.cleared = false
 
         store.dispatch(ListenAction.Session.StopRequested())
         advanceUntilIdle()
@@ -1489,26 +1557,150 @@ class ListenMiddlewareTest {
     }
 
     @Test
-    fun `test that picking a voice resumes from where the article had got to`() = runTest {
-        val playback = FakePlaybackController(positionMs = 12_000L)
-        val store =
-            storeWith(
-                synthesizerProvider = {
-                    FakeSpeechSynthesizer(voices = listOf(Voice("a", Locale.US), Voice("b", Locale.UK)))
-                },
-                playbackController = playback,
-            ) {
-                Result.success(Content(text = "Article text.", languageTag = "en-US"))
-            }
-        store.listenAndPlay(TAB_ID, URL)
-        advanceUntilIdle()
+    fun `test that picking a voice stops the voice before at once and carries on from the same place in the text`() =
+        runTest {
+            val playback = FakePlaybackController()
+            // Every chunk after the opening reads slower than the opening, so it measures longer than estimated.
+            val synthesizer =
+                FakeSpeechSynthesizer(
+                    voices = listOf(Voice("a", Locale.US), Voice("b", Locale.UK)),
+                    audioDirectory = temporaryFolder.root,
+                    audioDurationOf = { text ->
+                        (text.length * if (text.startsWith("Sentence 1 ")) 50 else 75).milliseconds
+                    },
+                )
+            val store = storeReadingHalfway(playback, synthesizer)
+            val before = store.state.articleProgress
+            val textShareBefore =
+                store.state.articleMeasurements!!.getTextPositionAfterVoiceChanged(
+                    before.positionMs,
+                    before.chunkDurationsMs,
+                )!!
 
-        assertEquals(listOf(0L), playback.startPositionsMs)
+            store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "b", locale = Locale.UK)))
+            advanceUntilIdle()
+
+            val after = store.state.articleProgress
+            val textShareAfter =
+                store.state.articleMeasurements!!.getTextPositionAfterVoiceChanged(
+                    after.positionMs,
+                    after.chunkDurationsMs,
+                )!!
+            assertTrue("the voice before read on", before.positionMs in playback.stopAndBufferPositionsMs)
+            assertEquals(textShareBefore, textShareAfter, 0.0001f)
+            assertEquals(
+                "playback restarted away from where it is shown",
+                after.positionMs,
+                playback.restartedPositionsMs.last(),
+            )
+            assertEquals("the article was started again from its top", 1, playback.articlesStarted)
+        }
+
+    @Test
+    fun `test that picking a voice while the article is paused leaves it paused`() = runTest {
+        val playback = FakePlaybackController()
+        val store = storeReadingHalfway(playback)
+        playback.status.value = playback.status.value.copy(phase = PlaybackPhase.Paused)
+        advanceUntilIdle()
+        val restartsBefore = playback.restartedPositionsMs.size
 
         store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "b", locale = Locale.UK)))
         advanceUntilIdle()
 
-        assertEquals(listOf(0L, 12_000L), playback.startPositionsMs)
+        assertEquals(restartsBefore + 1, playback.restartedPositionsMs.size)
+        assertEquals(0, playback.resumed)
+        assertEquals(PlaybackPhase.Paused, store.state.playbackState.phase)
+    }
+
+    @Test
+    fun `test that the times shown for a paused article change only once when the voice is picked`() = runTest {
+        val playback = FakePlaybackController()
+        val synthesizer =
+            FakeSpeechSynthesizer(
+                voices = listOf(Voice("a", Locale.US), Voice("b", Locale.UK)),
+                audioDirectory = temporaryFolder.root,
+                timePerRequest = 1.seconds,
+            )
+        val store = storeReadingHalfway(playback, synthesizer)
+        playback.status.value = playback.status.value.copy(phase = PlaybackPhase.Paused)
+        advanceUntilIdle()
+        val restartsBefore = playback.restartedPositionsMs.size
+
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "b", locale = Locale.UK)))
+        while (playback.restartedPositionsMs.size == restartsBefore) advanceTimeBy(100.milliseconds)
+        runCurrent()
+        val shown = store.state.articleProgress
+
+        // The paused player reports where the new playlist starts, before the chunks around it are made.
+        playback.status.value =
+            PlaybackState(
+                phase = PlaybackPhase.Paused,
+                chunk = ChunkState(index = playback.restartedChunks.last()),
+                positionMs = playback.restartedPositionsMs.last(),
+            )
+        runCurrent()
+
+        assertEquals("the elapsed time changed again", shown.positionMs, store.state.articleProgress.positionMs)
+        assertEquals("the estimate changed again", shown.durationMs, store.state.articleProgress.durationMs)
+    }
+
+    @Test
+    fun `test that the article moves on with the audio after switching to another voice and back`() = runTest {
+        val playback = FakePlaybackController()
+        val store = storeReadingHalfway(playback)
+
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "b", locale = Locale.UK)))
+        advanceUntilIdle()
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "a", locale = Locale.US)))
+        advanceUntilIdle()
+        val restartedMs = playback.restartedPositionsMs.last()
+        playback.status.value =
+            PlaybackState(
+                phase = PlaybackPhase.Playing,
+                chunk = ChunkState(index = playback.restartedChunks.last()),
+                positionMs = restartedMs,
+            )
+        advanceUntilIdle()
+        val restartedAtMs = store.state.articleProgress.positionMs
+
+        playback.status.value = playback.status.value.copy(positionMs = restartedMs + 1_000)
+        advanceUntilIdle()
+
+        assertTrue("the progress stopped", store.state.articleProgress.positionMs > restartedAtMs)
+    }
+
+    /** A store reading a long article with two voices to pick from, halfway through it in the first. */
+    private fun TestScope.storeReadingHalfway(
+        playback: FakePlaybackController,
+        synthesizer: FakeSpeechSynthesizer =
+            FakeSpeechSynthesizer(
+                voices = listOf(Voice("a", Locale.US), Voice("b", Locale.UK)),
+                audioDirectory = temporaryFolder.root,
+            ),
+    ): ListenStore {
+        val store =
+            storeWith(
+                synthesizerProvider = { synthesizer },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Playing, positionMs = 2_000)
+        advanceUntilIdle()
+
+        store.dispatch(ListenAction.Playback.SeekRequested(0.5f))
+        advanceUntilIdle()
+        playback.status.value =
+            PlaybackState(
+                phase = PlaybackPhase.Playing,
+                chunk = ChunkState(index = playback.restartedChunks.last()),
+                positionMs = playback.restartedPositionsMs.last(),
+            )
+        advanceUntilIdle()
+
+        return store
     }
 
     // Binding an engine with no session would leave it bound for the life of the process, because only a session
@@ -1549,10 +1741,10 @@ class ListenMiddlewareTest {
     }
 
     @Test
-    fun `test that a session on an article in the same language does not ask the engine again`() = runTest {
-        val synthesizer = FakeSpeechSynthesizer()
+    fun `test that a session replacing another in the same language gives its own engine a voice`() = runTest {
+        val engines = mutableListOf<FakeSpeechSynthesizer>()
         val store =
-            storeWith(synthesizerProvider = { synthesizer }) {
+            storeWith(synthesizerProvider = { FakeSpeechSynthesizer().also { engines.add(it) } }) {
                 Result.success(Content(text = "Article text.", languageTag = "en-US"))
             }
         store.listenAndPlay(TAB_ID, URL)
@@ -1560,7 +1752,9 @@ class ListenMiddlewareTest {
         store.listenAndPlay(OTHER_TAB_ID, URL)
         advanceUntilIdle()
 
-        assertEquals(listOf("en-US"), synthesizer.voiceRequests)
+        assertEquals(2, engines.size)
+        assertEquals(listOf("en-US"), engines[1].voiceRequests)
+        assertTrue(engines[1].voicesSet.isNotEmpty())
     }
 
     @Test
@@ -1705,6 +1899,104 @@ class ListenMiddlewareTest {
     }
 
     @Test
+    fun `test that the playback ending outside the app stops the session and releases the playback`() = runTest {
+        val playback = FakePlaybackController()
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(playbackController = playback, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+
+        playback.sessionEnded.emit(Unit)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                ListenAction.Session.ListenRequested(TAB_ID, URL),
+                ListenAction.Session.StopRequested(ListenAction.Session.StopSource.MediaSessionEndedOutsideApp),
+            ),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+        assertNull(store.state.tabId)
+        assertTrue(playback.released)
+    }
+
+    @Test
+    fun `test that turning the feature off stops the session and releases the playback`() = runTest {
+        val playback = FakePlaybackController()
+        val settings = ListenSettings.inMemory(enabled = ListenEnabledState.Enabled)
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(playbackController = playback, settings = settings, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+
+        settings.setEnabled(false)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                ListenAction.Session.ListenRequested(TAB_ID, URL),
+                ListenAction.Session.StopRequested(ListenAction.Session.StopSource.FeatureDisabled),
+            ),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+        assertNull(store.state.tabId)
+        assertTrue(playback.released)
+    }
+
+    @Test
+    fun `test that turning the feature off after the session was stopped does not stop it again`() = runTest {
+        val settings = ListenSettings.inMemory(enabled = ListenEnabledState.Enabled)
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(settings = settings, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+        store.dispatch(ListenAction.Session.StopRequested())
+        advanceUntilIdle()
+
+        settings.setEnabled(false)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(ListenAction.Session.ListenRequested(TAB_ID, URL), ListenAction.Session.StopRequested()),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+    }
+
+    @Test
+    fun `test that the playback ending after the session was stopped does not stop it again`() = runTest {
+        val playback = FakePlaybackController()
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(playbackController = playback, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+        store.dispatch(ListenAction.Session.StopRequested())
+        advanceUntilIdle()
+
+        playback.sessionEnded.emit(Unit)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                ListenAction.Session.ListenRequested(TAB_ID, URL),
+                ListenAction.Session.StopRequested(),
+            ),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+    }
+
+    @Test
     fun `test that closing another tab does not stop the session`() = runTest {
         val browserStore = browserStoreWithOpenTabs()
         val actions = mutableListOf<ListenAction>()
@@ -1724,9 +2016,8 @@ class ListenMiddlewareTest {
         )
     }
 
-    // Listening outlives the reader view it was started from: only closing the tab ends the session.
     @Test
-    fun `test that leaving reader mode does not stop the session`() = runTest {
+    fun `test that leaving reader mode stops the session`() = runTest {
         val browserStore = browserStoreWithOpenTabs()
         val actions = mutableListOf<ListenAction>()
         val store =
@@ -1737,6 +2028,29 @@ class ListenMiddlewareTest {
         advanceUntilIdle()
 
         browserStore.dispatch(ReaderAction.UpdateReaderActiveAction(TAB_ID, false))
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                ListenAction.Session.ListenRequested(TAB_ID, URL),
+                ListenAction.Session.StopRequested(ListenAction.Session.StopSource.ReaderModeClosed),
+            ),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+    }
+
+    @Test
+    fun `test that leaving reader mode on another tab does not stop the session`() = runTest {
+        val browserStore = browserStoreWithOpenTabs()
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(browserStore = browserStore, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.listenAndPlay(TAB_ID, URL)
+        advanceUntilIdle()
+
+        browserStore.dispatch(ReaderAction.UpdateReaderActiveAction(OTHER_TAB_ID, false))
         advanceUntilIdle()
 
         assertEquals(
@@ -3487,7 +3801,7 @@ class ListenMiddlewareTest {
         browserStore: BrowserStore = browserStoreWithOpenTabs(),
         recordInto: MutableList<ListenAction>? = null,
         recordPositionsInto: MutableList<Long>? = null,
-        contentProvider: ContentProvider,
+        contentExtractor: ContentExtractor,
     ): ListenStore {
         val middlewareScope = CoroutineScope(StandardTestDispatcher(testScheduler))
         middlewareScopes.add(middlewareScope)
@@ -3501,7 +3815,7 @@ class ListenMiddlewareTest {
                     recordPositionsInto?.let(::positionRecordingMiddleware),
                     ListenMiddleware(
                         browserStore = browserStore,
-                        contentProvider = contentProvider,
+                        contentExtractor = contentExtractor,
                         synthesizerProvider = synthesizerProvider,
                         audioCache = audioCache,
                         playbackController = playbackController,

@@ -10,6 +10,7 @@
 interface NavigationTransition {
   [UseCounter] readonly attribute NavigationType navigationType;
   [UseCounter] readonly attribute NavigationHistoryEntry from;
+  [UseCounter] readonly attribute NavigationDestination to;
   [UseCounter] readonly attribute Promise<undefined> committed;
   [UseCounter] readonly attribute Promise<undefined> finished;
 };

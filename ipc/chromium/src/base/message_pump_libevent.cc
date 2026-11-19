@@ -198,7 +198,7 @@ bool MessagePumpLibevent::WatchFileDescriptor(int fd, bool persistent,
   if (evt.get() == nullptr) {
     should_delete_event = false;
     // Ownership is transferred to the controller.
-    evt = mozilla::MakeUnique<event>();
+    evt = std::make_unique<event>();
   } else {
     // It's illegal to use this function to listen on 2 separate fds with the
     // same |controller|.

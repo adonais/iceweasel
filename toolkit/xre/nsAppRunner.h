@@ -46,7 +46,6 @@ extern nsXREDirProvider* gDirServiceProvider;
 // NOTE: gAppData will be null in embedded contexts.
 extern const mozilla::XREAppData* gAppData;
 extern bool gSafeMode;
-extern bool gFxREmbedded;
 
 extern int gArgc;
 extern char** gArgv;
@@ -115,6 +114,12 @@ mozilla::Maybe<mozilla::PathString> GenerateDowngradeTelemetry(
 
 bool BuildDowngradePingUrl(const nsACString& aPingId,
                            const nsACString& aChannel, nsACString& aUrlOut);
+
+/**
+ * Gets a hash of an identifier unique to this machine. Never send this in
+ * telemetry.
+ */
+nsresult GetMachineId(nsACString& aMachineId);
 #endif
 
 /**

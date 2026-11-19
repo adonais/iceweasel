@@ -65,10 +65,15 @@ class TestProcessReader(unittest.TestCase):
         self.reader.thread.join()
         self.assertTrue(self.finished)
 
+    def run_sleeping_python(self):
+        proc = run_python("import time; time.sleep(10)")
+        self.addCleanup(lambda: (proc.kill(), proc.wait()))
+        return proc
+
     def test_timeout(self):
         self.reader.timeout = 0.05
         self.assertFalse(self.timeout)
-        proc = run_python("import time; time.sleep(0.1)")
+        proc = self.run_sleeping_python()
         self.reader.start(proc)
         self.reader.thread.join()
         self.assertTrue(self.timeout)
@@ -77,7 +82,7 @@ class TestProcessReader(unittest.TestCase):
     def test_output_timeout(self):
         self.reader.output_timeout = 0.05
         self.assertFalse(self.timeout)
-        proc = run_python("import time; time.sleep(0.1)")
+        proc = self.run_sleeping_python()
         self.reader.start(proc)
         self.reader.thread.join()
         self.assertTrue(self.timeout)

@@ -13,7 +13,7 @@
 
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
 
 /**

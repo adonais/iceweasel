@@ -796,26 +796,6 @@ void SetRemoteDataDecoderSandbox(int aBroker) {
   SetCurrentProcessSandbox(GetDecoderSandboxPolicy(sBroker));
 }
 
-void SetSocketProcessSandbox(SocketProcessSandboxParams&& aParams) {
-  if (!SandboxInfo::Get().Test(SandboxInfo::kHasSeccompBPF) ||
-      PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS_SANDBOX")) {
-    return;
-  }
-
-  gSandboxReporterClient = new SandboxReporterClient(
-      SandboxReport::ProcType::SOCKET_PROCESS, TakeSandboxReporterFd());
-
-  // FIXME(bug 1513773): merge this with the ones for content and RDD?
-  static SandboxBrokerClient* sBroker;
-  MOZ_ASSERT(!sBroker);  // This should only ever be called once.
-  if (aParams.mBroker) {
-    sBroker = new SandboxBrokerClient(aParams.mBroker.release());
-  }
-
-  SetCurrentProcessSandbox(
-      GetSocketProcessSandboxPolicy(sBroker, std::move(aParams)));
-}
-
 void SetUtilitySandbox(int aBroker, ipc::SandboxingKind aKind) {
   if (!SandboxInfo::Get().Test(SandboxInfo::kHasSeccompBPF) ||
       !IsUtilitySandboxEnabled(aKind)) {

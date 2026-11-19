@@ -440,7 +440,7 @@ TEST_F(ImageAnimationFrameBuffer, StartAfterBeginningAndReset) {
 static void TestDiscardingQueueLoop(AnimationFrameDiscardingQueue& aQueue,
                                     const imgFrame* aFirstFrame,
                                     size_t aThreshold, size_t aBatch,
-                                    size_t aStartFrame) {
+                                    size_t /*aStartFrame*/) {
   // We should be advanced right up to the last decoded frame.
   EXPECT_TRUE(aQueue.MayDiscard());
   EXPECT_FALSE(aQueue.SizeKnown());
@@ -583,7 +583,7 @@ TEST_F(ImageAnimationFrameBuffer, RecyclingLoop) {
 static void TestDiscardingQueueReset(AnimationFrameDiscardingQueue& aQueue,
                                      const imgFrame* aFirstFrame,
                                      size_t aThreshold, size_t aBatch,
-                                     size_t aStartFrame) {
+                                     size_t /*aStartFrame*/) {
   // We should be advanced right up to the last decoded frame.
   EXPECT_TRUE(aQueue.MayDiscard());
   EXPECT_FALSE(aQueue.SizeKnown());

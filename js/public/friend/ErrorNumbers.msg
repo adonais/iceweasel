@@ -509,6 +509,8 @@ MSG_DEF(JSMSG_WASM_MEMORY_NOT_RESIZABLE,      0, JSEXN_TYPEERR,  "WebAssembly me
 MSG_DEF(JSMSG_WASM_ESM_RESERVED_MODULE_NAME,  1, JSEXN_WASMLINKERROR, "module import name '{0}' is reserved")
 MSG_DEF(JSMSG_WASM_ESM_RESERVED_FIELD_NAME,   1, JSEXN_WASMLINKERROR, "field import name '{0}' is reserved")
 MSG_DEF(JSMSG_WASM_ESM_RESERVED_EXPORT_NAME,  1, JSEXN_WASMLINKERROR, "export name '{0}' is reserved")
+MSG_DEF(JSMSG_WASM_ESM_NOT_INSTANTIATED,      0, JSEXN_WASMLINKERROR, "imported wasm module has not been instantiated")
+MSG_DEF(JSMSG_WASM_ESM_IMPORT_TYPE,           2, JSEXN_WASMLINKERROR, "incompatible type for import '{0}.{1}'")
 
 // Wasm deprecation warnings
 MSG_DEF(JSMSG_WASM_LEGACY_EXCEPTIONS_DEPRECATED, 0, JSEXN_WARN, "The WebAssembly exception handling 'try' instruction is deprecated and should no longer be used. Please recompile to use the 'try_table' instruction instead.")
@@ -596,7 +598,6 @@ MSG_DEF(JSMSG_DEBUG_WRAPPER_IN_WAY,    3, JSEXN_TYPEERR, "{0} is {1}{2}a global 
 MSG_DEF(JSMSG_DEBUGGEE_WOULD_RUN,      2, JSEXN_DEBUGGEEWOULDRUN, "debuggee '{0}:{1}' would run")
 MSG_DEF(JSMSG_NOT_CALLABLE_OR_UNDEFINED, 0, JSEXN_TYPEERR, "value is not a function or undefined")
 MSG_DEF(JSMSG_NOT_TRACKING_ALLOCATIONS, 1, JSEXN_ERR, "Cannot call {0} without setting trackingAllocationSites to true")
-MSG_DEF(JSMSG_OBJECT_METADATA_CALLBACK_ALREADY_SET, 0, JSEXN_ERR, "Cannot track object allocation, because other tools are already doing so")
 MSG_DEF(JSMSG_QUERY_INNERMOST_WITHOUT_LINE_URL, 0, JSEXN_TYPEERR, "findScripts query object with 'innermost' property must have 'line', or 'start' and 'end', and either 'displayURL', 'url', or 'source'")
 MSG_DEF(JSMSG_QUERY_LINE_WITHOUT_URL, 1, JSEXN_TYPEERR, "findScripts query object has {0}, but no 'displayURL', 'url', or 'source' property")
 MSG_DEF(JSMSG_QUERY_USE_START_AND_END_TOGETHER, 0, JSEXN_ERR, "findScripts query object's 'start' and 'end' properties must be used together")
@@ -775,7 +776,6 @@ MSG_DEF(JSMSG_DYNAMIC_IMPORT_NOT_SUPPORTED, 0, JSEXN_TYPEERR, "Dynamic import no
 MSG_DEF(JSMSG_BAD_MODULE_TYPE,              0, JSEXN_TYPEERR, "invalid module type")
 MSG_DEF(JSMSG_ABSTRACT_MODULE_SOURCE_CTOR,  0, JSEXN_TYPEERR, "AbstractModuleSource cannot be constructed directly")
 MSG_DEF(JSMSG_MODULE_SOURCE_NOT_AVAILABLE,  0, JSEXN_SYNTAXERR, "Source phase imports not supported for this module type")
-MSG_DEF(JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED, 0, JSEXN_SYNTAXERR, "Evaluation phase imports of wasm modules are unsupported")
 MSG_DEF(JSMSG_MODULE_SYNC_EVALUATION_NOT_READY, 0, JSEXN_TYPEERR, "Deferred module is not ready for synchronous evaluation")
 
 // Import maps

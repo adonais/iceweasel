@@ -234,3 +234,24 @@ if (is_ios) {
     outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
   }
 }
+
+rtc_unittests_resources = [
+  "ConferenceMotion_1280_720_50.yuv",
+  "FourPeople_1280x720_30.yuv",
+  "difficult_photo_1850_1110.yuv",
+  "presentation_1850_1110.yuv",
+  "reference_less_video_test_file.y4m",
+  "reference_video_640x360_30fps.y4m",
+  "web_screenshot_1850_1110.yuv",
+]
+
+group("rtc_unittests_data") {
+  data = rtc_unittests_resources
+}
+if (is_ios) {
+  bundle_data("rtc_unittests_bundle_data") {
+    testonly = true
+    sources = rtc_unittests_resources
+    outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
+  }
+}

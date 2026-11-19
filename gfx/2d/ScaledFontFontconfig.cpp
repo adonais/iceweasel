@@ -527,18 +527,21 @@ bool ScaledFontFontconfig::HasVariationSettings() {
                       ->GetFace();
 }
 
-already_AddRefed<UnscaledFont> UnscaledFontFontconfig::CreateFromFontDescriptor(
-    const uint8_t* aData, uint32_t aDataLength, uint32_t aIndex) {
-  if (aDataLength == 0) {
+bool UnscaledFontFontconfig::ValidateFontDescriptor(const uint8_t* aName,
+                                                    size_t aNameLength,
+                                                    std::string& aResultName,
+                                                    uint32_t& aIndex) {
+  if (aNameLength == 0) {
     gfxWarning() << "Fontconfig font descriptor is truncated.";
-    return nullptr;
+    return false;
   }
-  nsCString path((const char*)aData, aDataLength);
+
+  std::string path((const char*)aName, aNameLength);
 
   // Use the given pathname/index in a fontconfig lookup to confirm this is a
   // known font file; if not, we'll use whatever fallback it provides instead.
   FcPattern* pattern = FcPatternCreate();
-  FcPatternAddString(pattern, FC_FILE, (const FcChar8*)path.BeginReading());
+  FcPatternAddString(pattern, FC_FILE, (const FcChar8*)path.c_str());
   FcPatternAddInteger(pattern, FC_INDEX, aIndex);
   FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
   FcDefaultSubstitute(pattern);
@@ -546,16 +549,17 @@ already_AddRefed<UnscaledFont> UnscaledFontFontconfig::CreateFromFontDescriptor(
   FcPattern* match = FcFontMatch(nullptr, pattern, &result);
   FcPatternDestroy(pattern);
   if (!match || result != FcResultMatch) {
+    FcPatternDestroy(match);
     gfxWarning() << "FcFontMatch failed.";
-    return nullptr;
+    return false;
   }
 
   // Get the file that fontconfig returned.
   // If it didn't use the requested file, log a warning and update path/index.
   char* file = nullptr;
   result = FcPatternGetString(match, FC_FILE, 0, (FcChar8**)&file);
-  if (result == FcResultMatch && !path.Equals(file)) {
-    gfxWarning() << "Font path " << path.get() << " invalid, using " << file;
+  if (result == FcResultMatch && path != file) {
+    gfxWarning() << "Font path " << path << " invalid, using " << file;
     path = file;
     int index = 0;
     result = FcPatternGetInteger(match, FC_INDEX, 0, &index);
@@ -565,8 +569,19 @@ already_AddRefed<UnscaledFont> UnscaledFontFontconfig::CreateFromFontDescriptor(
       aIndex = index & 0xffff;
     }
   }
+  FcPatternDestroy(match);
 
-  return MakeAndAddRef<UnscaledFontFontconfig>(path.BeginReading(), aIndex);
+  aResultName = std::move(path);
+  return true;
+}
+
+already_AddRefed<UnscaledFont> UnscaledFontFontconfig::CreateFromFontDescriptor(
+    const uint8_t* aData, uint32_t aDataLength, uint32_t aIndex) {
+  std::string path;
+  if (!ValidateFontDescriptor(aData, aDataLength, path, aIndex)) {
+    return nullptr;
+  }
+  return MakeAndAddRef<UnscaledFontFontconfig>(std::move(path), aIndex);
 }
 
 }  // namespace mozilla::gfx

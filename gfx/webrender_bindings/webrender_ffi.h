@@ -48,7 +48,8 @@ bool gecko_profiler_thread_is_being_profiled();
   comma_like_delim macro(backdrop_capture)                   \
   comma_like_delim macro(backdrop_render)                    \
   comma_like_delim macro(polyon)                             \
-  comma_like_delim macro(box_shadow)
+  comma_like_delim macro(box_shadow)                         \
+  comma_like_delim macro(path)
 
 // Prelude of types necessary before including webrender_ffi_generated.h
 namespace mozilla {

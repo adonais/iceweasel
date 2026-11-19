@@ -37,4 +37,5 @@ components/sessionstore/index
 actors/actors/picture-in-picture-child-video-wrapper-api
 components/captchadetection/captcha-detection/index
 components/contentrelevancy/index
+mozapps/pushnotificationhelper/index
 ```

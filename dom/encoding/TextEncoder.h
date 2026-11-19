@@ -20,7 +20,7 @@ class TextEncoder final : public NonRefcountedDOMObject {
   // The WebIDL constructor.
 
   static UniquePtr<TextEncoder> Constructor(const GlobalObject& aGlobal) {
-    return MakeUnique<TextEncoder>();
+    return std::make_unique<TextEncoder>();
   }
 
   TextEncoder() = default;

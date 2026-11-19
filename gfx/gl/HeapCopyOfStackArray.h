@@ -21,7 +21,7 @@ class HeapCopyOfStackArray {
  public:
   template <size_t N>
   MOZ_IMPLICIT HeapCopyOfStackArray(const ElemType (&array)[N])
-      : mArrayLength(N), mArrayData(MakeUnique<ElemType[]>(N)) {
+      : mArrayLength(N), mArrayData(std::make_unique<ElemType[]>(N)) {
     memcpy(mArrayData.get(), &array[0], N * sizeof(ElemType));
   }
 

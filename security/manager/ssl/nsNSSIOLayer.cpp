@@ -24,13 +24,14 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/net/SSLTokensCache.h"
-#include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/psm/EnabledSignatureSchemes.h"
-#include "mozilla/psm/IPCClientCertsChild.h"
-#include "mozilla/psm/PIPCClientCertsChild.h"
+#include "mozilla/psm/PSMIPCTypes.h"
+#include "mozilla/psm/PSMIPCUtils.h"
 #include "mozilla/psm/mozilla_abridged_certs_generated.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
@@ -41,6 +42,7 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "nsClientAuthRemember.h"
 #include "nsContentUtils.h"
+#include "nsIObserverService.h"
 #include "nsISocketProvider.h"
 #include "nsIWebProgressListener.h"
 #include "nsNSSComponent.h"
@@ -1772,6 +1774,9 @@ nsresult nsSSLIOLayerAddToSocket(int32_t family, const char* host, int32_t port,
                      originAttributes.IsPrivateBrowsing();
     sslIOLayerHelpers =
         isPrivate ? PrivateSSLIOLayerHelpers() : PublicSSLIOLayerHelpers();
+    if (!sslIOLayerHelpers) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
   }
 
   RefPtr<NSSSocketControl> infoObject(new NSSSocketControl(
@@ -1887,174 +1892,48 @@ nsresult nsSSLIOLayerAddToSocket(int32_t family, const char* host, int32_t port,
   return NS_OK;
 }
 
-extern "C" {
-
-const uint8_t kIPCClientCertsObjectTypeCert = 1;
-const uint8_t kIPCClientCertsObjectTypeRSAKey = 2;
-const uint8_t kIPCClientCertsObjectTypeECKey = 3;
-
-using FindObjectsCallback = void (*)(uint8_t type, size_t id_len,
-                                     const uint8_t* id, size_t data_len,
-                                     const uint8_t* data, void* ctx);
-using SignCallback = void (*)(size_t data_len, const uint8_t* data, void* ctx);
-
-// This function is provided to the IPC client certs module so it can cause the
-// parent process to find certificates and keys and send identifying
-// information about them over IPC.
-void DoFindObjects(FindObjectsCallback cb, void* ctx) {
-  net::SocketProcessChild* socketChild =
-      net::SocketProcessChild::GetSingleton();
-  if (!socketChild) {
-    return;
-  }
-
-  RefPtr<IPCClientCertsChild> ipcClientCertsActor(
-      socketChild->GetIPCClientCertsActor());
-  if (!ipcClientCertsActor) {
-    return;
-  }
-  nsTArray<IPCClientCertObject> objects;
-  if (!ipcClientCertsActor->SendFindObjects(&objects)) {
-    return;
-  }
-  for (const auto& object : objects) {
-    switch (object.type()) {
-      case IPCClientCertObject::TECKey:
-        cb(kIPCClientCertsObjectTypeECKey, object.get_ECKey().params().Length(),
-           object.get_ECKey().params().Elements(),
-           object.get_ECKey().cert().Length(),
-           object.get_ECKey().cert().Elements(), ctx);
-        break;
-      case IPCClientCertObject::TRSAKey:
-        cb(kIPCClientCertsObjectTypeRSAKey,
-           object.get_RSAKey().modulus().Length(),
-           object.get_RSAKey().modulus().Elements(),
-           object.get_RSAKey().cert().Length(),
-           object.get_RSAKey().cert().Elements(), ctx);
-        break;
-      case IPCClientCertObject::TCertificate:
-        cb(kIPCClientCertsObjectTypeCert,
-           object.get_Certificate().der().Length(),
-           object.get_Certificate().der().Elements(), 0, nullptr, ctx);
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("unhandled IPCClientCertObject type");
-        break;
-    }
-  }
-}
-
-// This function is provided to the IPC client certs module so it can cause the
-// parent process to sign the given data using the key corresponding to the
-// given certificate, using the given parameters.
-void DoSign(size_t cert_len, const uint8_t* cert, size_t data_len,
-            const uint8_t* data, size_t params_len, const uint8_t* params,
-            SignCallback cb, void* ctx) {
-  net::SocketProcessChild* socketChild =
-      net::SocketProcessChild::GetSingleton();
-  if (!socketChild) {
-    return;
-  }
-
-  RefPtr<IPCClientCertsChild> ipcClientCertsActor(
-      socketChild->GetIPCClientCertsActor());
-  if (!ipcClientCertsActor) {
-    return;
-  }
-  ByteArray certBytes(nsTArray<uint8_t>(cert, cert_len));
-  ByteArray dataBytes(nsTArray<uint8_t>(data, data_len));
-  ByteArray paramsBytes(nsTArray<uint8_t>(params, params_len));
-  ByteArray signature;
-  if (!ipcClientCertsActor->SendSign(certBytes, dataBytes, paramsBytes,
-                                     &signature)) {
-    return;
-  }
-  cb(signature.data().Length(), signature.data().Elements(), ctx);
-}
-
-#ifdef MOZ_WIDGET_ANDROID
-// Similar to `DoFindObjects`, this function implements searching for client
-// authentication certificates on Android. When a TLS server requests a client
-// auth certificate, the backend will forward that request to the frontend,
-// which calls KeyChain.choosePrivateKeyAlias. The user can choose a
-// certificate, which causes it to become available for use. The
-// `ClientAuthCertificateManager` singleton keeps track of these certificates.
-// This function is called by osclientcerts when the backend looks for new
-// certificates and keys. It gets a list of all known client auth certificates
-// from `ClientAuthCertificateManager` and returns them via the callback.
-void AndroidDoFindObjects(FindObjectsCallback cb, void* ctx) {
-  if (!jni::IsAvailable()) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("AndroidDoFindObjects: JNI not available"));
-    return;
-  }
-  jni::ObjectArray::LocalRef clientAuthCertificates =
-      java::ClientAuthCertificateManager::GetClientAuthCertificates();
-  for (size_t i = 0; i < clientAuthCertificates->Length(); i++) {
-    java::ClientAuthCertificateManager::ClientAuthCertificate::LocalRef
-        clientAuthCertificate = clientAuthCertificates->GetElement(i);
-    jni::ByteArray::LocalRef der = clientAuthCertificate->GetCertificateBytes();
-    jni::ByteArray::LocalRef keyParameters =
-        clientAuthCertificate->GetKeyParameters();
-    cb(kIPCClientCertsObjectTypeCert, der->Length(),
-       reinterpret_cast<uint8_t*>(der->GetElements().Elements()), 0, nullptr,
-       ctx);
-    cb(clientAuthCertificate->GetType(), keyParameters->Length(),
-       reinterpret_cast<uint8_t*>(keyParameters->GetElements().Elements()),
-       der->Length(), reinterpret_cast<uint8_t*>(der->GetElements().Elements()),
-       ctx);
-    jni::ObjectArray::LocalRef issuersBytes =
-        clientAuthCertificate->GetIssuersBytes();
-    if (issuersBytes) {
-      for (size_t i = 0; i < issuersBytes->Length(); i++) {
-        jni::ByteArray::LocalRef issuer = issuersBytes->GetElement(i);
-        cb(kIPCClientCertsObjectTypeCert, issuer->Length(),
-           reinterpret_cast<uint8_t*>(issuer->GetElements().Elements()), 0,
-           nullptr, ctx);
-      }
-    }
-  }
-}
-
-// Similar to `DoSign`, this function implements signing for client
-// authentication certificates on Android. `ClientAuthCertificateManager` keeps
-// track of any available client auth certificates and does the actual work of
-// signing - this function just passes in the appropriate parameters.
-void AndroidDoSign(size_t certLen, const uint8_t* cert, size_t dataLen,
-                   const uint8_t* data, const char* algorithm, SignCallback cb,
-                   void* ctx) {
-  if (!jni::IsAvailable()) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("AndroidDoSign: JNI not available"));
-    return;
-  }
-  jni::ByteArray::LocalRef certBytes =
-      jni::ByteArray::New(reinterpret_cast<const int8_t*>(cert), certLen);
-  jni::ByteArray::LocalRef dataBytes =
-      jni::ByteArray::New(reinterpret_cast<const int8_t*>(data), dataLen);
-  jni::String::LocalRef algorithmStr = jni::StringParam(algorithm);
-  jni::ByteArray::LocalRef signature = java::ClientAuthCertificateManager::Sign(
-      certBytes, dataBytes, algorithmStr);
-  if (signature) {
-    cb(signature->Length(),
-       reinterpret_cast<const uint8_t*>(signature->GetElements().Elements()),
-       ctx);
-  }
-}
-#endif  // MOZ_WIDGET_ANDROID
-
-// Similar to `DoFindObjects`, this function implements searching for
-// certificates stored on remote PKCS#11 tokens.
-void RemoteCertsDoFindObjects(SearchingFor searchingFor, FindObjectsCallback cb,
-                              void* ctx) {
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+struct RemoteCryptokiState {
+  TimeStamp mLastUpdate;
+  nsTArray<CryptokiObject> mCryptokiObjects;
+};
+
+constinit static StaticDataMutex<Maybe<RemoteCryptokiState>>
+    sRemoteClientCertificatesState("sRemoteClientCertificatesState");
+
+constinit static StaticDataMutex<Maybe<RemoteCryptokiState>>
+    sRemoteCACertificatesState("sRemoteCACertificatesState");
+
+auto LockRemoteCryptokiState(SearchingFor searchingFor) {
+  switch (searchingFor) {
+    case SearchingFor::ClientCertificates:
+      return sRemoteClientCertificatesState.Lock();
+    case SearchingFor::CACertificates:
+      return sRemoteCACertificatesState.Lock();
+  }
+  MOZ_RELEASE_ASSERT(false);
+}
+
+void CacheRemoteCryptokiObjects(SearchingFor searchingFor) {
   MOZ_ASSERT(!NS_IsMainThread());
   if (NS_IsMainThread()) {
     return;
   }
 
+  // If a search of the desired type has been performed within the last scan
+  // delay, use the cached results.
+  auto remoteCryptokiState(LockRemoteCryptokiState(searchingFor));
+  if (remoteCryptokiState->isSome() &&
+      TimeStamp::Now() - (*remoteCryptokiState)->mLastUpdate <
+          TimeDuration::FromMilliseconds(
+              StaticPrefs::
+                  security_utility_pkcs11_module_process_scan_delay_ms())) {
+    return;
+  }
+
   Monitor monitor{__func__};
   bool done = false;
-  nsTArray<IPCClientCertObject> objects;
+  nsTArray<CryptokiObject> objects;
   nsresult rv = NS_DispatchToMainThread(NS_NewRunnableFunction(
       __func__, [searchingFor, &monitor, &done, &objects] {
         RefPtr<PKCS11ModuleDB> pkcs11ModuleDB(PKCS11ModuleDB::GetSingleton());
@@ -2081,44 +1960,151 @@ void RemoteCertsDoFindObjects(SearchingFor searchingFor, FindObjectsCallback cb,
     return;
   }
 
-  MonitorAutoLock lock(monitor);
-  while (!done) {
-    lock.Wait();
+  {
+    MonitorAutoLock lock(monitor);
+    while (!done) {
+      lock.Wait();
+    }
+  }
+
+  remoteCryptokiState->reset();
+  remoteCryptokiState->emplace(
+      RemoteCryptokiState{TimeStamp::Now(), std::move(objects)});
+}
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
+
+extern "C" {
+
+#if defined(MOZ_WIDGET_ANDROID) || \
+    (defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS))
+const uint8_t kCryptokiObjectTypeCert = 1;
+#endif
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+const uint8_t kCryptokiObjectTypeRSAKey = 2;
+const uint8_t kCryptokiObjectTypeECKey = 3;
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
+
+using FindObjectsCallback = void (*)(uint8_t type, size_t id_len,
+                                     const uint8_t* id, size_t data_len,
+                                     const uint8_t* data, void* ctx);
+using SignCallback = void (*)(size_t data_len, const uint8_t* data, void* ctx);
+
+#ifdef MOZ_WIDGET_ANDROID
+// This function implements searching for client authentication certificates on
+// Android. When a TLS server requests a client
+// auth certificate, the backend will forward that request to the frontend,
+// which calls KeyChain.choosePrivateKeyAlias. The user can choose a
+// certificate, which causes it to become available for use. The
+// `ClientAuthCertificateManager` singleton keeps track of these certificates.
+// This function is called by osclientcerts when the backend looks for new
+// certificates and keys. It gets a list of all known client auth certificates
+// from `ClientAuthCertificateManager` and returns them via the callback.
+void AndroidDoFindObjects(FindObjectsCallback cb, void* ctx) {
+  if (!jni::IsAvailable()) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("AndroidDoFindObjects: JNI not available"));
+    return;
+  }
+  jni::ObjectArray::LocalRef clientAuthCertificates =
+      java::ClientAuthCertificateManager::GetClientAuthCertificates();
+  for (size_t i = 0; i < clientAuthCertificates->Length(); i++) {
+    java::ClientAuthCertificateManager::ClientAuthCertificate::LocalRef
+        clientAuthCertificate = clientAuthCertificates->GetElement(i);
+    jni::ByteArray::LocalRef der = clientAuthCertificate->GetCertificateBytes();
+    jni::ByteArray::LocalRef keyParameters =
+        clientAuthCertificate->GetKeyParameters();
+    cb(kCryptokiObjectTypeCert, der->Length(),
+       reinterpret_cast<uint8_t*>(der->GetElements().Elements()), 0, nullptr,
+       ctx);
+    cb(clientAuthCertificate->GetType(), keyParameters->Length(),
+       reinterpret_cast<uint8_t*>(keyParameters->GetElements().Elements()),
+       der->Length(), reinterpret_cast<uint8_t*>(der->GetElements().Elements()),
+       ctx);
+    jni::ObjectArray::LocalRef issuersBytes =
+        clientAuthCertificate->GetIssuersBytes();
+    if (issuersBytes) {
+      for (size_t i = 0; i < issuersBytes->Length(); i++) {
+        jni::ByteArray::LocalRef issuer = issuersBytes->GetElement(i);
+        cb(kCryptokiObjectTypeCert, issuer->Length(),
+           reinterpret_cast<uint8_t*>(issuer->GetElements().Elements()), 0,
+           nullptr, ctx);
+      }
+    }
+  }
+}
+
+// This function implements signing for client
+// authentication certificates on Android. `ClientAuthCertificateManager` keeps
+// track of any available client auth certificates and does the actual work of
+// signing - this function just passes in the appropriate parameters.
+void AndroidDoSign(size_t certLen, const uint8_t* cert, size_t dataLen,
+                   const uint8_t* data, const char* algorithm, SignCallback cb,
+                   void* ctx) {
+  if (!jni::IsAvailable()) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("AndroidDoSign: JNI not available"));
+    return;
+  }
+  jni::ByteArray::LocalRef certBytes =
+      jni::ByteArray::New(reinterpret_cast<const int8_t*>(cert), certLen);
+  jni::ByteArray::LocalRef dataBytes =
+      jni::ByteArray::New(reinterpret_cast<const int8_t*>(data), dataLen);
+  jni::String::LocalRef algorithmStr = jni::StringParam(algorithm);
+  jni::ByteArray::LocalRef signature = java::ClientAuthCertificateManager::Sign(
+      certBytes, dataBytes, algorithmStr);
+  if (signature) {
+    cb(signature->Length(),
+       reinterpret_cast<const uint8_t*>(signature->GetElements().Elements()),
+       ctx);
+  }
+}
+#endif  // MOZ_WIDGET_ANDROID
+
+// This function implements searching for certificates stored on remote PKCS#11
+// tokens.
+void RemoteCertsDoFindObjects(SearchingFor searchingFor, FindObjectsCallback cb,
+                              void* ctx) {
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  nsTArray<CryptokiObject> objects;
+  {
+    auto remoteCryptokiState(LockRemoteCryptokiState(searchingFor));
+    // CacheRemoteCryptokiObjects should have run at least once at this point.
+    MOZ_ASSERT(remoteCryptokiState->isSome());
+    if (remoteCryptokiState->isSome()) {
+      objects.Assign((*remoteCryptokiState)->mCryptokiObjects.Clone());
+    }
   }
   for (const auto& object : objects) {
     switch (object.type()) {
-      case IPCClientCertObject::TECKey:
-        cb(kIPCClientCertsObjectTypeECKey, object.get_ECKey().params().Length(),
+      case CryptokiObject::TECKey:
+        cb(kCryptokiObjectTypeECKey, object.get_ECKey().params().Length(),
            object.get_ECKey().params().Elements(),
            object.get_ECKey().cert().Length(),
            object.get_ECKey().cert().Elements(), ctx);
         break;
-      case IPCClientCertObject::TRSAKey:
-        cb(kIPCClientCertsObjectTypeRSAKey,
-           object.get_RSAKey().modulus().Length(),
+      case CryptokiObject::TRSAKey:
+        cb(kCryptokiObjectTypeRSAKey, object.get_RSAKey().modulus().Length(),
            object.get_RSAKey().modulus().Elements(),
            object.get_RSAKey().cert().Length(),
            object.get_RSAKey().cert().Elements(), ctx);
         break;
-      case IPCClientCertObject::TCertificate: {
+      case CryptokiObject::TCertificate: {
         uint8_t serverAuthTrustAnchor =
             object.get_Certificate().serverAuthTrustAnchor() ? 1 : 0;
-        cb(kIPCClientCertsObjectTypeCert,
-           object.get_Certificate().der().Length(),
+        cb(kCryptokiObjectTypeCert, object.get_Certificate().der().Length(),
            object.get_Certificate().der().Elements(), 1, &serverAuthTrustAnchor,
            ctx);
         break;
       }
       default:
-        MOZ_ASSERT_UNREACHABLE("unhandled IPCClientCertObject type");
+        MOZ_ASSERT_UNREACHABLE("unhandled CryptokiObject type");
         break;
     }
   }
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 }
 
-// Similar to `DoSign`, this function implements signing using private keys
-// stored on remote PKCS#11 tokens.
+// This function implements signing using private keys stored on remote PKCS#11
+// tokens.
 void RemoteCertsDoSign(size_t certLen, const uint8_t* cert, size_t dataLen,
                        const uint8_t* data, size_t paramsLen,
                        const uint8_t* params, SignCallback cb, void* ctx) {

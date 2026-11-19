@@ -38,31 +38,13 @@ SECStatus AuthCertificateHookWithInfo(
     Maybe<nsTArray<nsTArray<uint8_t>>>& stapledOCSPResponses,
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension, uint32_t providerFlags);
 
-// Base class for dispatching the certificate verification result.
-class BaseSSLServerCertVerificationResult {
- public:
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
-  [[nodiscard]] virtual nsresult Dispatch(
-      nsTArray<nsTArray<uint8_t>>&& aBuiltChain,
-      nsTArray<nsTArray<uint8_t>>&& aPeerCertChain,
-      uint16_t aCertificateTransparencyStatus, EVStatus aEVStatus,
-      bool aSucceeded, PRErrorCode aFinalError,
-      nsITransportSecurityInfo::OverridableErrorCategory
-          aOverridableErrorCategory,
-      bool aIsBuiltCertChainRootBuiltInRoot, uint32_t aProviderFlags,
-      bool aMadeOCSPRequests) = 0;
-};
-
 // Dispatched to the STS thread to notify the infoObject of the verification
 // result.
 //
 // This will cause the PR_Poll in the STS thread to return, so things work
 // correctly even if the STS thread is blocked polling (only) on the file
 // descriptor that is waiting for this result.
-class SSLServerCertVerificationResult final
-    : public BaseSSLServerCertVerificationResult,
-      public Runnable {
+class SSLServerCertVerificationResult final : public Runnable {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIRUNNABLE
@@ -77,7 +59,7 @@ class SSLServerCertVerificationResult final
       nsITransportSecurityInfo::OverridableErrorCategory
           aOverridableErrorCategory,
       bool aIsBuiltCertChainRootBuiltInRoot, uint32_t aProviderFlags,
-      bool aMadeOCSPRequests) override;
+      bool aMadeOCSPRequests);
 
  private:
   ~SSLServerCertVerificationResult() = default;
@@ -109,7 +91,7 @@ class SSLServerCertVerificationJob : public Runnable {
                             Maybe<DelegatedCredentialInfo>& dcInfo,
                             uint32_t providerFlags, Time time,
                             uint32_t certVerifierFlags,
-                            BaseSSLServerCertVerificationResult* aResultTask);
+                            SSLServerCertVerificationResult* aResultTask);
 
  private:
   NS_DECL_NSIRUNNABLE
@@ -124,7 +106,7 @@ class SSLServerCertVerificationJob : public Runnable {
                                Maybe<DelegatedCredentialInfo>& dcInfo,
                                uint32_t providerFlags, Time time,
                                uint32_t certVerifierFlags,
-                               BaseSSLServerCertVerificationResult* aResultTask)
+                               SSLServerCertVerificationResult* aResultTask)
       : Runnable("psm::SSLServerCertVerificationJob"),
         mAddrForLogging(addrForLogging),
         mPinArg(aPinArg),
@@ -152,7 +134,7 @@ class SSLServerCertVerificationJob : public Runnable {
   Maybe<nsTArray<uint8_t>> mStapledOCSPResponse;
   Maybe<nsTArray<uint8_t>> mSCTsFromTLSExtension;
   Maybe<DelegatedCredentialInfo> mDCInfo;
-  RefPtr<BaseSSLServerCertVerificationResult> mResultTask;
+  RefPtr<SSLServerCertVerificationResult> mResultTask;
 };
 
 }  // namespace psm

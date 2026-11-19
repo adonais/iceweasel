@@ -66,16 +66,7 @@ const EDIT_ADDRESS_DIALOG_URL =
   "chrome://formautofill/content/editAddress.xhtml";
 const EDIT_CREDIT_CARD_DIALOG_URL =
   "chrome://formautofill/content/editCreditCard.xhtml";
-// FormAutofill's autocomplete footer + prompts open
-// openPreferences("privacy-payment-methods-autofill"/"privacy-address-autofill"),
-// which the Settings Redesign LegacyPaneMappings shim routes to the
-// passwordsAutofill pane. Pick the matching URL for the active mode.
-const PRIVACY_PREF_URL = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-)
-  ? "about:preferences#passwordsAutofill"
-  : "about:preferences#privacy";
+const PRIVACY_PREF_URL = "about:preferences#passwordsAutofill";
 
 const HTTP_TEST_PATH = "/browser/browser/extensions/formautofill/test/browser/";
 const BASE_URL = "http://mochi.test:8888" + HTTP_TEST_PATH;
@@ -175,6 +166,8 @@ const SAME_ORIGIN_CC_EXP =
   TOP_LEVEL_URL + "../fixtures/autocomplete_cc_exp_embeded.html";
 const SAME_ORIGIN_CC_TYPE =
   TOP_LEVEL_URL + "../fixtures/autocomplete_cc_type_embeded.html";
+const SAME_ORIGIN_CC_CSC =
+  TOP_LEVEL_URL + "../fixtures/autocomplete_cc_csc_embeded.html";
 
 const SAME_SITE_ALL_FIELDS =
   SAME_SITE_URL + "../fixtures/autocomplete_cc_mandatory_embeded.html";
@@ -197,6 +190,8 @@ const CROSS_ORIGIN_CC_EXP =
   CROSS_ORIGIN_URL + "../fixtures/autocomplete_cc_exp_embeded.html";
 const CROSS_ORIGIN_CC_TYPE =
   CROSS_ORIGIN_URL + "../fixtures/autocomplete_cc_type_embeded.html";
+const CROSS_ORIGIN_CC_CSC =
+  CROSS_ORIGIN_URL + "../fixtures/autocomplete_cc_csc_embeded.html";
 
 const CROSS_ORIGIN_2_ALL_FIELDS =
   CROSS_ORIGIN_2_URL +
@@ -1190,10 +1185,17 @@ function normalizeAddressFields(record) {
   return normalized;
 }
 
+/**
+ * @param {object} browser
+ * @param {boolean} forceClose Close the hint instead of waiting for it to hide
+ * @param {string} [anchorID] Id of the element the hint is anchored to
+ * @param {string} [expectedL10nId] If set, the l10n id of the hint message
+ */
 async function verifyConfirmationHint(
   browser,
   forceClose,
-  anchorID = "identity-icon-box"
+  anchorID = "identity-icon-box",
+  expectedL10nId = null
 ) {
   let hintElem = browser.documentGlobal.ConfirmationHint._panel;
   let popupshown = BrowserTestUtils.waitForPopupEvent(hintElem, "shown");
@@ -1215,6 +1217,16 @@ async function verifyConfirmationHint(
       anchorID,
       "Hint should be anchored on the expected notification icon"
     );
+    if (expectedL10nId) {
+      const { ConfirmationHint } = browser.documentGlobal;
+      Assert.equal(
+        ConfirmationHint._message.ownerDocument.l10n.getAttributes(
+          ConfirmationHint._message
+        ).id,
+        expectedL10nId,
+        "Hint shows the expected message"
+      );
+    }
     info("verifyConfirmationHint, hint is shown and has its anchorNode");
     if (forceClose) {
       await closePopup(hintElem);

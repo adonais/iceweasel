@@ -68,8 +68,8 @@ clear-time-duration-value-since-midnight =
 clear-time-duration-value-today =
     .label = Today
 
-clear-time-duration-value-everything =
-    .label = Everything
+clear-time-duration-value-all-time =
+    .label = All time
 
 clear-time-duration-suffix =
     .value = { "" }
@@ -79,11 +79,12 @@ clear-time-duration-suffix =
 
 history-section-label = History
 
-item-history-and-downloads =
-    .label = Browsing & download history
+item-history-and-downloads2 =
+    .label = Browsing and downloads history
     .accesskey = B
 
-item-history-and-downloads-description2 = Clears site and download history
+# Description for the "Browsing and downloads history" item, which can be selected for deletion
+item-history-and-downloads-description3 = Visited sites and downloads list
 
 item-cookies =
     .label = Cookies
@@ -100,7 +101,8 @@ item-cookies-site-data =
     .label = Cookies and site data
     .accesskey = e
 
-item-cookies-site-data-description = May sign you out of sites or empty shopping carts
+# Description for the "Cookies and site data" item, which can be selected for deletion
+item-cookies-site-data-description2 = Signs you out and may clear shopping carts
 
 item-active-logins =
     .label = Active logins
@@ -113,15 +115,16 @@ item-cache =
 # Variables:
 #   $amount (Number) - Amount of cached data
 #   $unit (String) - Abbreviation of the unit that $amount is in, e.g. "MB"
-item-cached-content-with-size =
-    .label = Temporary cached files and pages ({ $amount } { $unit })
+item-cached-content-with-size2 =
+    .label = Temporary files ({ $amount } { $unit })
     .accesskey = f
 
-item-cached-content =
-    .label = Temporary cached files and pages
+item-cached-content2 =
+    .label = Temporary files
     .accesskey = f
 
-item-cached-content-description = Clears items that help sites load faster
+# Description for the "Temporary files" item, which can be selected for deletion
+item-cached-content-description2 = Helps sites load faster
 
 item-form-search-history =
     .label = Form & search history
@@ -135,9 +138,11 @@ item-formdata-prefs =
     .label = Saved form info
     .accesskey = o
 
-item-formdata-description = Clears things like names, emails, and other items you enter in forms
+# Description for the "Saved form info" item, which can be selected for deletion
+item-formdata-description2 = Names, emails, and form entries
 
-item-site-prefs-description = Resets your permissions and site preferences to original settings
+# Description for the "Site settings" item, which can be selected for deletion
+item-site-prefs-description2 = Website permissions and preferences
 
 data-section-label = Data
 
@@ -149,7 +154,7 @@ item-offline-apps =
     .label = Offline website data
     .accesskey = O
 
-sanitize-everything-undo-warning = This action cannot be undone.
+sanitize-everything-undo-warning2 = This can’t be undone.
 
 window-close =
     .key = w

@@ -24,6 +24,11 @@ class WebTransportChild : public PWebTransportChild {
 
   void Shutdown(bool aClose);
 
+  void SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+      const Nullable<uint16_t>& aValue);
+  void SetAnticipatedConcurrentIncomingBidirectionalStreams(
+      const Nullable<uint16_t>& aValue);
+
   ::mozilla::ipc::IPCResult RecvCloseAll(CloseAllResolver&& aResolver);
 
   ::mozilla::ipc::IPCResult RecvRemoteClosed(

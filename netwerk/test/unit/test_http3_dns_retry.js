@@ -27,15 +27,6 @@ add_setup(async function setup() {
 
   trr_test_setup();
 
-  if (mozinfo.socketprocess_networking) {
-    Cc["@mozilla.org/network/protocol;1?name=http"].getService(
-      Ci.nsIHttpProtocolHandler
-    );
-    Services.dns; // Needed to trigger socket process.
-    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-
   Services.prefs.setIntPref("network.trr.mode", 2); // TRR first
   Services.prefs.setBoolPref("network.http.http3.enable", true);
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);

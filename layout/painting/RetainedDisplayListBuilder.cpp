@@ -1013,18 +1013,11 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
 
     if (CanStoreDisplayListBuildingRect(aBuilder, currentFrame)) {
       CRR_LOG("Frame belongs to stacking context frame %p\n", currentFrame);
-      // If we found an intermediate stacking context with an existing display
-      // item then we can store the dirty rect there and stop. If we couldn't
-      // find one then we need to keep bubbling up to the next stacking context.
-      nsDisplayItem* wrapperItem =
-          GetFirstDisplayItemWithChildren(currentFrame);
-      if (!wrapperItem) {
-        continue;
-      }
-
       // Store the stacking context relative dirty area such
       // that display list building will pick it up when it
-      // gets to it.
+      // gets to it. This is needed even if we don't stop here, since display
+      // list building treats a missing rect on such a frame as meaning that
+      // nothing in its subtree needs to be rebuilt.
       nsDisplayListBuilder::DisplayListBuildingData* data =
           currentFrame->GetProperty(
               nsDisplayListBuilder::DisplayListBuildingRect());
@@ -1041,6 +1034,15 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
 
       if (!aStopAtStackingContext) {
         // Continue ascending the frame tree until we reach aStopAtFrame.
+        continue;
+      }
+
+      // If we found an intermediate stacking context with an existing display
+      // item then we can stop here. If we couldn't find one then we need to
+      // keep bubbling up to the next stacking context.
+      nsDisplayItem* wrapperItem =
+          GetFirstDisplayItemWithChildren(currentFrame);
+      if (!wrapperItem) {
         continue;
       }
 

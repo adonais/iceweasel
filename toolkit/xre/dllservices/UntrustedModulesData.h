@@ -429,7 +429,7 @@ struct ParamTraits<mozilla::UntrustedModulesData> {
     for (uint32_t curEventIdx = 0; curEventIdx < aResult->mNumEvents;
          ++curEventIdx) {
       auto newEvent =
-          mozilla::MakeUnique<mozilla::ProcessedModuleLoadEventContainer>();
+          std::make_unique<mozilla::ProcessedModuleLoadEventContainer>();
       if (!ReadEvent(aReader, &newEvent->mEvent, aResult->mModules)) {
         return false;
       }

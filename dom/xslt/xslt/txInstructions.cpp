@@ -20,7 +20,6 @@
 #include "txTextHandler.h"
 #include "txXSLTNumber.h"
 
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 
 nsresult txApplyDefaultElementTemplate::execute(txExecutionState& aEs) {
@@ -547,7 +546,7 @@ nsresult txPushNewContext::execute(txExecutionState& aEs) {
   rv = sorter.sortNodeSet(nodes, &aEs, getter_AddRefs(sortedNodes));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  auto context = MakeUnique<txNodeSetContext>(sortedNodes, &aEs);
+  auto context = std::make_unique<txNodeSetContext>(sortedNodes, &aEs);
   context->next();
 
   aEs.pushEvalContext(context.release());

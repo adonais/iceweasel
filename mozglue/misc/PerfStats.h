@@ -54,10 +54,6 @@ extern "C" bool NS_IsMainThread();
   MACRO(HttpChannelResponseStartParentToContent)  \
   MACRO(HttpChannelResponseEndParentToContent)    \
   MACRO(HttpTransactionWaitTime)                  \
-  MACRO(ResponseEndSocketToParent)                \
-  MACRO(OnStartRequestSocketToParent)             \
-  MACRO(OnDataAvailableSocketToParent)            \
-  MACRO(OnStopRequestSocketToParent)              \
   MACRO(OnStartRequestToContent)                  \
   MACRO(OnDataAvailableToContent)                 \
   MACRO(OnStopRequestToContent)                   \

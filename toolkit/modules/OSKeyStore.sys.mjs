@@ -43,12 +43,6 @@ export var OSKeyStore = {
   STORE_LABEL: AppConstants.MOZ_APP_BASENAME + " Encrypted Storage",
 
   /**
-   * Notified once isLoggedIn turns true, for a caller that has to wait for the
-   * store to be usable without prompting rather than make it so.
-   */
-  UNLOCKED_TOPIC: "oskeystore-unlocked",
-
-  /**
    * Consider the module is initialized as locked. OS might unlock without a
    * prompt.
    *
@@ -273,12 +267,7 @@ export var OSKeyStore = {
       reauthResult => {
         lazy.log.debug("ensureLoggedIn: Logged in");
         this._pendingUnlockPromise = null;
-        // Every encrypt and decrypt comes through here, so only the first
-        // one after the store was locked is an unlock.
-        if (this._isLocked) {
-          this._isLocked = false;
-          Services.obs.notifyObservers(null, this.UNLOCKED_TOPIC);
-        }
+        this._isLocked = false;
 
         return reauthResult;
       },

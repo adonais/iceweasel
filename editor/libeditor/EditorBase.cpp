@@ -977,6 +977,18 @@ nsresult EditorBase::GetSelection(SelectionType aSelectionType,
   return NS_WARN_IF(!*aSelection) ? NS_ERROR_FAILURE : NS_OK;
 }
 
+Selection* EditorBase::GetExistingSelection(
+    SelectionType aSelectionType) const {
+  if (aSelectionType == SelectionType::eNormal && IsEditActionDataAvailable()) {
+    return &SelectionRef();
+  }
+  nsISelectionController* sc = GetSelectionController();
+  if (!sc) {
+    return nullptr;
+  }
+  return sc->GetExistingSelection(ToRawSelectionType(aSelectionType));
+}
+
 nsFrameSelection* EditorBase::GetEditableFrameSelection() const {
   EditContext* editContext = GetEditActionEditContext();
   return editContext && editContext->IsCanvas()

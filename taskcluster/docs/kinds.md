@@ -84,6 +84,10 @@ to exercise the localized repack logic in CI.
 Tests the Firefox Linux installer script (``browser/installer/linux/script/install-firefox.sh``)
 across distros, install methods, channels, locales, and architectures.
 
+## install-script-signing
+
+Signs ``install-firefox.sh`` with autograph GPG, producing a detached ``.asc`` signature.
+
 ## shippable-l10n
 
 The nightly l10n kind repacks a shippable build (from the same source code)
@@ -113,6 +117,15 @@ endpoint for notarizing apps.
 
 Downstream tasks switch to build-mac-signing in non-shippable builds or level 1
 environments.
+
+## source-artifact
+
+Exposes files from the source tree as artifacts for other tasks. Each task fetches
+its files from GitHub at the revision being built, without a checkout, and publishes
+them under ``public/build`` so downstream tasks can sign, test or publish them.
+
+For example, ``install-firefox.sh`` is fetched here, then signed by
+``install-script-signing`` and published by ``beetmover-install-script``.
 
 ## source-test
 
@@ -282,6 +295,12 @@ promotion.
 ## beetmover-source
 
 Beetmover-source publishes release source. This is part of release promotion.
+
+## beetmover-install-script
+
+Publishes the signed ``install-firefox.sh`` (and its detached signature) to the
+bucket backing ``linux.firefox.com``. Runs automatically on mozilla-central; the
+staging variant only runs via an explicit try selection.
 
 ## beetmover-geckoview
 

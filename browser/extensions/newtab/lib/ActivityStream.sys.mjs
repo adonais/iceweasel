@@ -57,6 +57,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://newtab/lib/Widgets/RecentSearchesFeed.sys.mjs",
   PictureOfTheDayFeed:
     "resource://newtab/lib/Widgets/PictureOfTheDayFeed.sys.mjs",
+  FramedWidgetsFeed: "resource://newtab/lib/Widgets/FramedWidgetsFeed.sys.mjs",
   StartupCacheInit: "resource://newtab/lib/StartupCacheInit.sys.mjs",
   Store: "resource://newtab/lib/Store.sys.mjs",
   SystemTickFeed: "resource://newtab/lib/SystemTickFeed.sys.mjs",
@@ -210,6 +211,7 @@ export const WEATHER_OPTIN_REGIONS = [
   "DE", // Germany
   "GB", // United Kingdom
   "GR", // Greece
+  "GL", // Greenland
   "HU", // Hungary
   "IS", // Iceland
   "IE", // Ireland
@@ -217,6 +219,7 @@ export const WEATHER_OPTIN_REGIONS = [
   "LV", // Latvia
   "LI", // Liechtenstein
   "LT", // Lithuania
+  "LU", // Luxembourg
   "MT", // Malta
   "NL", // Netherlands
   "NO", // Norway
@@ -926,7 +929,7 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Whether the Picture of the day 'Set as wallpaper' feature/CTA is enabled",
-      value: false,
+      value: true,
     },
   ],
   [
@@ -996,12 +999,7 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Group pinned Top Sites into a contiguous block with restricted drag-and-drop reordering",
-      // Channel-derived (resolves on the host), so it's on in Nightly and Beta
-      // but stays dark after the XPI train-hops to Release. A literal true would
-      // ride inside the XPI and wrongly activate.
-      value:
-        AppConstants.NIGHTLY_BUILD ||
-        AppConstants.MOZ_UPDATE_CHANNEL === "beta",
+      value: true,
     },
   ],
   [
@@ -1061,7 +1059,7 @@ export const PREFS_CONFIG = new Map([
     "section.highlights.rows",
     {
       title: "Number of rows of Highlights to display",
-      value: 1,
+      value: 2,
     },
   ],
   [
@@ -1927,6 +1925,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.wrexhamAFC.enabled",
+    {
+      title: "Enables the Wrexham AFC widget",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      getValue: () => !marketGateEnabled(),
+    },
+  ],
+  [
     "widgets.pictureOfTheDay.enabled",
     {
       title: "Enables the picture of the day widget",
@@ -1977,6 +1983,14 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.solitaire.enabled",
     {
       title: "Enables the solitaire widget experiment in Nimbus",
+      // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.wrexhamAFC.enabled",
+    {
+      title: "Enables the Wrexham AFC widget experiment in Nimbus",
       // Off everywhere. To release organically: add locale-config to firefox.js, switch to marketGate.
       value: false,
     },
@@ -2130,6 +2144,21 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.wrexhamAFC.size",
+    {
+      title: "Size of the Wrexham AFC widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.wrexhamAFC.view",
+    {
+      title:
+        "View shown by the Wrexham AFC widget (matches, table or fixtures)",
+      value: "",
+    },
+  ],
+  [
     "widgets.recentSearches.tab",
     {
       title:
@@ -2152,12 +2181,35 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "widgets.crossword.endpoint",
+    "widgets.framed.endpoint.prod",
     {
       title:
-        "The Merino endpoint that serves the crossword bundle rendered in the widget iframe",
-      value:
-        "https://prod-games-particle.merino.prod.webservices.mozgcp.net/index.html",
+        "The prod Merino endpoint serving the document URL and enabled state of every framed widget",
+      value: "https://merino.services.mozilla.com/api/v1/widgets/framed",
+    },
+  ],
+  [
+    "widgets.framed.endpoint.stage",
+    {
+      title:
+        "The stage Merino endpoint serving the document URL and enabled state of every framed widget",
+      value: "https://merino.services.allizom.org/api/v1/widgets/framed",
+    },
+  ],
+  [
+    "widgets.framed.allowedHostSuffixes",
+    {
+      title:
+        "Host suffixes (comma-separated) framed widget documents may load from; the frame-src CSP must allow them too",
+      value: ".mozgcp.net,.mozilla.com",
+    },
+  ],
+  [
+    "widgets.framed.environment",
+    {
+      title:
+        "Which framed widgets endpoint framed widgets load from (prod or stage)",
+      value: "prod",
     },
   ],
   [
@@ -2179,6 +2231,14 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Widget display order as a comma-separated list of widget IDs. Empty string means use the default registry order.",
+      value: "",
+    },
+  ],
+  [
+    "widgets.home",
+    {
+      title:
+        "JSON array of the widget IDs the user has on the Home space, when the thematic spaces config names a widgetLibrary. Empty string means use the config's widgets for the default space.",
       value: "",
     },
   ],
@@ -2759,6 +2819,12 @@ const FEEDS_DATA = [
     name: "pictureofthedayfeed",
     factory: () => new lazy.PictureOfTheDayFeed(),
     title: "Handles fetching and caching the daily Picture of the day",
+    value: true,
+  },
+  {
+    name: "framedwidgetsfeed",
+    factory: () => new lazy.FramedWidgetsFeed(),
+    title: "Handles fetching and caching the Merino framed widgets manifest",
     value: true,
   },
   {

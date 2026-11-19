@@ -8,7 +8,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -38,7 +37,7 @@ class ReaderViewMenuItemProviderTest {
     fun `GIVEN reader view is not active WHEN building the menu item THEN return null`() = runTest {
         val provider = provider(browserStore(isReaderViewActive = false))
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -51,7 +50,7 @@ class ReaderViewMenuItemProviderTest {
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_tool_24),
                 onClickEvent = MenuAction.CustomizeReaderView,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -59,7 +58,7 @@ class ReaderViewMenuItemProviderTest {
     fun `GIVEN there is no selected tab WHEN building the menu item THEN return null`() = runTest {
         val provider = provider(BrowserStore())
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -76,7 +75,7 @@ class ReaderViewMenuItemProviderTest {
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() = runTest {
         val provider = provider(browserStore(isReaderViewActive = true))
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.FindInPage))

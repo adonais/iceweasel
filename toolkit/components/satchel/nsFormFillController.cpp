@@ -124,7 +124,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void nsFormFillController::AttributeChanged(mozilla::dom::Element* aElement,
                                             int32_t aNameSpaceID,
                                             nsAtom* aAttribute, AttrModType,
-                                            const nsAttrValue* aOldValue) {
+                                            const nsAttrValue* /*aOldValue*/) {
   if ((aAttribute == nsGkAtoms::type || aAttribute == nsGkAtoms::readonly ||
        aAttribute == nsGkAtoms::autocomplete) &&
       aNameSpaceID == kNameSpaceID_None) {
@@ -301,7 +301,7 @@ nsFormFillController::GetPopup(nsIAutoCompletePopup** aPopup) {
 }
 
 NS_IMETHODIMP
-nsFormFillController::GetPopupElement(Element** aPopup) {
+nsFormFillController::GetPopupElement(Element** /*aPopup*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -435,7 +435,7 @@ NS_IMETHODIMP nsFormFillController::SetTimeout(uint32_t aTimeout) {
 }
 
 NS_IMETHODIMP
-nsFormFillController::SetSearchParam(const nsAString& aSearchParam) {
+nsFormFillController::SetSearchParam(const nsAString& /*aSearchParam*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -464,7 +464,7 @@ nsFormFillController::GetSearchCount(uint32_t* aSearchCount) {
 }
 
 NS_IMETHODIMP
-nsFormFillController::GetSearchAt(uint32_t index, nsACString& _retval) {
+nsFormFillController::GetSearchAt(uint32_t /*index*/, nsACString& _retval) {
   MOZ_LOG(sLogger, LogLevel::Debug,
           ("GetSearchAt: form-fill-controller field"));
 
@@ -537,13 +537,13 @@ NS_IMETHODIMP
 nsFormFillController::OnSearchComplete() { return NS_OK; }
 
 NS_IMETHODIMP
-nsFormFillController::OnTextEntered(Event* aEvent) {
+nsFormFillController::OnTextEntered(Event* /*aEvent*/) {
   NS_ENSURE_TRUE(mControlledElement, NS_OK);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsFormFillController::OnTextReverted(bool* _retval) {
+nsFormFillController::OnTextReverted(bool* /*_retval*/) {
   mPasswordPopupAutomaticallyOpened = false;
   return NS_OK;
 }
@@ -602,8 +602,8 @@ nsFormFillController::GetInvalidatePreviousResult(
 
 NS_IMETHODIMP
 nsFormFillController::StartSearch(const nsAString& aSearchString,
-                                  const nsAString& aSearchParam,
-                                  nsIAutoCompleteResult* aPreviousResult,
+                                  const nsAString& /*aSearchParam*/,
+                                  nsIAutoCompleteResult* /*aPreviousResult*/,
                                   nsIAutoCompleteObserver* aListener) {
   MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch for %p", mControlledElement));
 
@@ -700,7 +700,7 @@ nsFormFillController::OnSearchCompletion(nsIAutoCompleteResult* aResult) {
 
 NS_IMETHODIMP
 nsFormFillController::Observe(nsISupports* aSubject, const char* aTopic,
-                              const char16_t* aData) {
+                              const char16_t* /*aData*/) {
   if (!nsCRT::strcmp(aTopic, "chrome-event-target-created")) {
     if (RefPtr<EventTarget> eventTarget = do_QueryObject(aSubject)) {
       AttachListeners(eventTarget);
@@ -932,8 +932,8 @@ nsresult nsFormFillController::HandleFocus(Element* aElement) {
 
 void nsFormFillController::WaitForPromise(bool showPopup) {
   mFocusPendingPromise->AddCallbacksWithCycleCollectedArgs(
-      [showPopup](JSContext* aCx, JS::Handle<JS::Value> aValue,
-                  ErrorResult& aRv) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+      [showPopup](JSContext* /*aCx*/, JS::Handle<JS::Value> /*aValue*/,
+                  ErrorResult& /*aRv*/) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
         RefPtr<nsFormFillController> controller =
             nsFormFillController::GetSingleton();
         controller->mFocusPendingPromise = nullptr;
@@ -941,7 +941,8 @@ void nsFormFillController::WaitForPromise(bool showPopup) {
           controller->ShowPopup();
         }
       },
-      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv) {
+      [](JSContext* aCx, JS::Handle<JS::Value> /*aValue*/,
+         ErrorResult& /*aRv*/) {
         RefPtr<nsFormFillController> controller =
             nsFormFillController::GetSingleton();
         controller->mFocusPendingPromise = nullptr;

@@ -385,7 +385,7 @@ void RequestWorkerRunnable::SerializeArgs(JSContext* aCx,
     return;
   }
 
-  mArgsHolder = Some(MakeUnique<dom::StructuredCloneHolder>(
+  mArgsHolder = Some(std::make_unique<dom::StructuredCloneHolder>(
       dom::StructuredCloneHolder::CloningSupported,
       dom::StructuredCloneHolder::TransferringNotSupported,
       JS::StructuredCloneScope::SameProcess));
@@ -580,7 +580,7 @@ bool RequestWorkerRunnable::ProcessHandlerResult(
       // errors),
       //   previously converted into a CloneErrorHolder
       IgnoredErrorResult rv;
-      mResultHolder = Some(MakeUnique<dom::StructuredCloneHolder>(
+      mResultHolder = Some(std::make_unique<dom::StructuredCloneHolder>(
           dom::StructuredCloneHolder::CloningSupported,
           dom::StructuredCloneHolder::TransferringNotSupported,
           JS::StructuredCloneScope::SameProcess));

@@ -23,8 +23,6 @@ add_setup(async function () {
     set: [
       ["browser.smartwindow.firstrun.modelChoice", DEFAULT_MODEL_CHOICE_ID],
       ["places.semanticHistory.smartwindow.featureGate", false],
-      // TODO: Bug 2053495 - Refactor tests upon pref removal
-      ["browser.smartwindow.mistralRelease", false],
     ],
   });
 });
@@ -81,7 +79,10 @@ async function getCheckedModelChoiceIds(browser) {
         const iconSrc = item
           .querySelector(".model-item-icon")
           .getAttribute("src");
-        checkedIds.push(iconSrc.match(/model-choice-(\d+)\.svg/)?.[1]);
+        const iconName = iconSrc.match(/model-choice-(.+)\.svg/)?.[1];
+        checkedIds.push(
+          { 0: "0", gemini: "1", qwen: "2", mistral: "3" }[iconName]
+        );
       }
     }
 
@@ -130,8 +131,8 @@ add_task(async function test_smartbar_model_select_panel_shows_default_badge() {
 
     const defaultItemHasBadge = await SpecialPowers.spawn(
       browser,
-      [DEFAULT_MODEL_CHOICE_ID],
-      async defaultModelChoiceId => {
+      [FALLBACK_MODELS[DEFAULT_MODEL_CHOICE_ID].brandName.toLowerCase()],
+      async iconName => {
         const aiWindowElement = content.document.querySelector("ai-window");
         const smartbar = aiWindowElement.shadowRoot.querySelector(
           "#ai-window-smartbar"
@@ -149,7 +150,7 @@ add_task(async function test_smartbar_model_select_panel_shows_default_badge() {
         );
 
         const defaultItem = panelList.querySelector(
-          `button.model-item:has(.model-item-icon[src*="model-choice-${defaultModelChoiceId}.svg"])`
+          `button.model-item:has(.model-item-icon[src*="model-choice-${iconName}.svg"])`
         );
         return !!defaultItem.querySelector("moz-badge");
       }
@@ -227,6 +228,115 @@ add_task(
     }
   }
 );
+
+add_task(async function test_smartbar_model_select_shows_custom_model_name() {
+  const fullName = "hf.co/bartowski/Llama-3.2-1B-Instruct-GGUF:Q4_K_M";
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.customEndpoint", "https://custom.endpoint/v1"],
+      ["browser.smartwindow.model", fullName],
+      ["browser.smartwindow.firstrun.modelChoice", "0"],
+    ],
+  });
+
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: null,
+  });
+
+  try {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    const getCustomModelLabels = () =>
+      SpecialPowers.spawn(browser, [], async () => {
+        const aiWindowElement = content.document.querySelector("ai-window");
+        const smartbar = aiWindowElement.shadowRoot.querySelector(
+          "#ai-window-smartbar"
+        );
+        const modelSelect = smartbar.querySelector("input-model-select");
+        await ContentTaskUtils.waitForCondition(
+          () => modelSelect.shadowRoot.querySelector("moz-button"),
+          "Model select button should render"
+        );
+        await modelSelect.updateComplete;
+        const button = modelSelect.shadowRoot.querySelector("moz-button");
+        const customItemLabel = modelSelect.shadowRoot.querySelector(
+          "button.model-item:has(.model-item-icon--custom) .model-item-label"
+        );
+        return {
+          buttonLabel: button.getAttribute("label"),
+          buttonTitle: button.shadowRoot
+            .querySelector("button")
+            .getAttribute("title"),
+          buttonL10nId: button.getAttribute("data-l10n-id"),
+          itemLabel: customItemLabel.textContent.trim(),
+          itemL10nId: customItemLabel.getAttribute("data-l10n-id"),
+        };
+      });
+
+    let labels = await getCustomModelLabels();
+    Assert.equal(
+      labels.buttonLabel,
+      "Llama",
+      "Button should show the first word of the custom model name"
+    );
+    Assert.equal(
+      labels.buttonTitle,
+      fullName,
+      "Button tooltip should show the full custom model name"
+    );
+    Assert.equal(
+      labels.itemLabel,
+      fullName,
+      "Menu item should show the full custom model name"
+    );
+
+    for (const [name, expected] of [
+      ["/models/Qwen2.5-7B-Instruct-Q4_K_M.gguf", "Qwen2.5"],
+      ["meta-llama/Llama-3.1-8B-Instruct", "Llama"],
+      ["llama3.2:3b", "llama3.2"],
+      ["gpt-oss-120b", "gpt"],
+      ["mistral", "mistral"],
+    ]) {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.model", name]],
+      });
+      labels = await getCustomModelLabels();
+      Assert.equal(
+        labels.buttonLabel,
+        expected,
+        `Button should shorten "${name}" to "${expected}"`
+      );
+      await SpecialPowers.popPrefEnv();
+    }
+
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.model", ""]],
+    });
+    labels = await getCustomModelLabels();
+    Assert.equal(
+      labels.buttonL10nId,
+      "aiwindow-input-model-select-button-label-custom",
+      "Button should fall back to the Custom label without a model name"
+    );
+    Assert.equal(
+      labels.buttonTitle,
+      null,
+      "Button should have no tooltip without a model name"
+    );
+    Assert.equal(
+      labels.itemL10nId,
+      "aiwindow-input-model-select-button-label-custom",
+      "Menu item should fall back to the Custom label without a model name"
+    );
+    await SpecialPowers.popPrefEnv();
+
+    await BrowserTestUtils.closeWindow(win);
+  } finally {
+    await restore();
+    await SpecialPowers.popPrefEnv();
+  }
+});
 
 add_task(
   async function test_smartbar_model_select_hides_custom_model_without_custom_endpoint() {

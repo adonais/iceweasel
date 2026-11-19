@@ -130,8 +130,8 @@ export class ChatConversation extends Conversation {
 
   /**
    * Transient (not persisted): where the most recent user submission asked
-   * for an AI Tab page from (tab_list or tab_group), or null when it was typed
-   * in the chat. Reported by AI Tab telemetry.
+   * for an AI Tab page from (tab_list, tab_group or fxms), or null when it
+   * was typed in the chat. Reported by AI Tab telemetry.
    *
    * @type {?string}
    */
@@ -537,6 +537,28 @@ export class ChatConversation extends Conversation {
   }
 
   /**
+   * Finds a pending confirmation in the trailing batch of tool messages.
+   *
+   * @param {string} toolCallId - The tool call to look up.
+   * @returns {ChatMessage|undefined} The pending confirmation, if found.
+   */
+  getPendingToolConfirmation(toolCallId) {
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+      const message = this.messages[i];
+      if (message.role !== MESSAGE_ROLE.TOOL) {
+        break;
+      }
+      if (
+        message.content?.tool_call_id === toolCallId &&
+        message.content?.body?.pending
+      ) {
+        return message;
+      }
+    }
+    return undefined;
+  }
+
+  /**
    * Resolves the pending tool-confirmation message for UI actions.
    * Called by ToolUI when the user confirms or cancels via the UI.
    *
@@ -545,14 +567,9 @@ export class ChatConversation extends Conversation {
    * @returns {boolean} True if a pending message was resolved.
    */
   resolvePendingToolConfirmation(outcomeBody, toolCallId) {
-    const message = this.messages.at(-1);
+    const message = this.getPendingToolConfirmation(toolCallId);
 
-    const isResolvableToolMessage =
-      message?.role === MESSAGE_ROLE.TOOL &&
-      message.content?.tool_call_id === toolCallId &&
-      message.content?.body?.pending;
-
-    if (!isResolvableToolMessage) {
+    if (!message) {
       return false;
     }
 
@@ -971,9 +988,11 @@ export class ChatConversation extends Conversation {
    * @returns {URL|null}
    */
   getMostRecentPageVisited() {
-    const sites = this.getSitesList();
+    const message = this.messages.findLast(m =>
+      m.pageUrl?.protocol.startsWith("http")
+    );
 
-    return sites.length ? sites.pop() : null;
+    return message?.pageUrl ?? null;
   }
 
   /**

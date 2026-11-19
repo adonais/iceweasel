@@ -24,6 +24,8 @@ skip-if = [
 
 ["browser_passwords_multiple_windows.js"]
 
+["browser_passwords_per_device_sync.js"]
+
 ["browser_passwords_policy_disable_reveal.js"]
 
 ["browser_passwords_primary_password.js"]

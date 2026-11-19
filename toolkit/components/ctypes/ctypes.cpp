@@ -69,8 +69,8 @@ static bool InitCTypesClassAndSetCallbacks(JSContext* cx,
 }
 
 NS_IMETHODIMP
-Module::Call(nsIXPConnectWrappedNative* wrapper, JSContext* cx, JSObject* obj,
-             const JS::CallArgs& args, bool* retval) {
+Module::Call(nsIXPConnectWrappedNative* /*wrapper*/, JSContext* cx,
+             JSObject* /*obj*/, const JS::CallArgs& args, bool* retval) {
   if (!args.get(0).isObject()) {
     JS_ReportErrorASCII(cx, "Argument must be an object");
     return NS_ERROR_FAILURE;

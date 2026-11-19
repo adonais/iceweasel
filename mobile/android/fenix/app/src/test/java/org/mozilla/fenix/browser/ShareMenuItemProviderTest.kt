@@ -21,6 +21,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconRes
+import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
@@ -49,7 +50,22 @@ class ShareMenuItemProviderTest {
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_share_android_24),
                 onClickEvent = MenuAction.Navigate.Share,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
+        )
+    }
+
+    @Test
+    fun `GIVEN target is CustomizeMenu WHEN building the share menu item THEN return menu item without click event`() {
+        val provider = createProvider(target = MenuTarget.CustomizeMenu)
+
+        assertEquals(
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_share)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_share_android_24),
+                onClickEvent = null,
+                state = MenuItemState.DEFAULT,
+            ),
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -160,7 +176,7 @@ class ShareMenuItemProviderTest {
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
         val provider = createProvider()
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.Navigate.Settings))

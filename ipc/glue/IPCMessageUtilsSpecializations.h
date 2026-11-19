@@ -487,7 +487,7 @@ struct ParamTraits<mozilla::Variant<Ts...>> {
   // a matching tag.
   template <typename dummy>
   struct VariantReader<0, dummy> {
-    static ReadResult<paramType> Read(MessageReader* reader, Tag tag) {
+    static ReadResult<paramType> Read(MessageReader* /*reader*/, Tag /*tag*/) {
       return {};
     }
   };

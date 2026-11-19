@@ -9,6 +9,7 @@
 #include "StyleInfo.h"
 #include "gfxTextRun.h"
 #include "mozilla/AppUnits.h"
+#include "mozilla/dom/Element.h"
 #include "nsAccUtils.h"
 #include "nsContainerFrame.h"
 #include "nsCoreUtils.h"

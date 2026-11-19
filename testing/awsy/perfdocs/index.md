@@ -4,9 +4,7 @@ Are We Slim Yet project (commonly known as AWSY) tracks memory usage across buil
 
 On treeherder, the AWSY builds are listed in subgroups of `SY`.
 
-AWSY tests consist of three types: TP5\*, TP6, and Base Memory Usage.
-
-*\*TP5 tests are out of date and no longer maintained. These tests are scheduled to be removed:* <https://bugzilla.mozilla.org/show_bug.cgi?id=1712406>
+AWSY tests consist of two types: TP6 and Base Memory Usage.
 
 {documentation}
 
@@ -17,14 +15,6 @@ as the test output is only reported as raw JSON. The CLI is documented via:
 
 ```bash
 ./mach awsy-test --help
-```
-
-*Currently all tests will download TP5 even if it is not used, see:* <https://bugzilla.mozilla.org/show_bug.cgi?id=1683920>
-
-### TP5 tests
-
-```bash
-./mach awsy-test --tp5
 ```
 
 ### TP6 tests
@@ -47,17 +37,14 @@ AWSY runs can be generated through the mach try fuzzy finder:
 ./mach try fuzzy
 ```
 
-A query for "awsy" will return all AWSY tests. The default test is TP5, TP6 and Base test names will contain `tp6` and `base`, respectively.
+A query for "awsy" will return all AWSY tests. TP6 and Base test names will contain `tp6` and `base`, respectively.
 
 The following documents all tests we currently run for AWSY.
-*The following content was migrated from* <https://wiki.mozilla.org/AWSY/Tests> *and will be updated to clarify TP5/TP6 tests vs Base tests:* <https://bugzilla.mozilla.org/show_bug.cgi?id=1714600>
+*The following content was migrated from* <https://wiki.mozilla.org/AWSY/Tests> *and will be updated to clarify TP6 tests vs Base tests:* <https://bugzilla.mozilla.org/show_bug.cgi?id=1714600>
 
-## TP5/TP6 Tests
+## TP6 Tests
 
-The following tests exist for both TP5 and TP6. Running `./mach awsy-test` by default will run TP6 tests\*.
-To run TP5 tests, add the `--tp5` flag: `./mach awsy-test --tp5`
-
-*\*TP5 tests are out of date and no longer maintained. These tests are scheduled to be removed:* <https://bugzilla.mozilla.org/show_bug.cgi?id=1712406>
+Running `./mach awsy-test` by default will run TP6 tests.
 
 ### Explicit Memory
 

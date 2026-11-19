@@ -204,7 +204,7 @@ pub extern "C" fn fuzz_rkv_calls(raw_data: *const u8, size: libc::size_t) -> lib
             Some(key) => key,
             None => return,
         };
-        let value = match get_any_data(fuzz, std::usize::MAX) {
+        let value = match get_any_data(fuzz, usize::MAX) {
             Some(value) => value,
             None => return,
         };

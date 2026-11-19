@@ -14,6 +14,7 @@ var { AppConstants } = ChromeUtils.importESModule(
 var {
   uploadProfileArtifact,
   installProfilerDumpAndQuit,
+  saveProfileToUploadDir,
   shouldSaveFailureProfile,
 } = ChromeUtils.importESModule(
   "resource://testing-common/TestProfilerArtifact.sys.mjs"
@@ -103,6 +104,66 @@ var TabDestroyObserver = {
   },
 };
 
+// The windows leaked in content processes, with their retention paths, as
+// reported by their ShutdownLeaksCollector after the shutdown collections.
+// Debug builds only.
+var ContentLeakReports = {
+  // The message managers of the content processes running a collector, until
+  // they report or exit.
+  pending: new Set(),
+  leaks: [],
+  requested: false,
+  onDone: null,
+
+  init() {
+    Services.ppmm.addMessageListener("browser-test:collector-ready", this);
+    Services.ppmm.addMessageListener("browser-test:collect-done", this);
+    Services.obs.addObserver(this, "message-manager-disconnect");
+  },
+  destroy() {
+    Services.ppmm.removeMessageListener("browser-test:collector-ready", this);
+    Services.ppmm.removeMessageListener("browser-test:collect-done", this);
+    Services.obs.removeObserver(this, "message-manager-disconnect");
+  },
+  receiveMessage(message) {
+    if (message.name === "browser-test:collector-ready") {
+      this.pending.add(message.target);
+      return;
+    }
+    if (this.pending.has(message.target)) {
+      this.leaks.push(...message.data.leaks);
+      this.done(message.target);
+    }
+  },
+  observe(messageManager) {
+    this.done(messageManager);
+  },
+  done(messageManager) {
+    if (this.pending.delete(messageManager) && !this.pending.size) {
+      this.onDone?.();
+    }
+  },
+  collect() {
+    this.requested = true;
+    Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
+  },
+  // Waits for the content processes to report, but not forever: a hung
+  // content process must not keep the harness from finishing. Capturing a CC
+  // graph to find the leak paths can take tens of seconds.
+  async wait() {
+    if (this.requested && this.pending.size) {
+      let timeout;
+      await new Promise(resolve => {
+        this.onDone = resolve;
+        timeout = setTimeout(resolve, 120000);
+      });
+      clearTimeout(timeout);
+      this.pending.clear();
+    }
+    return this.leaks;
+  },
+};
+
 var DOMWindowTracker = {
   // Map<serial, {serial, address, type, test, time}>
   liveWindows: new Map(),
@@ -116,6 +177,15 @@ var DOMWindowTracker = {
   destroy() {
     Services.obs.removeObserver(this, "debug-domwindow-created");
     Services.obs.removeObserver(this, "debug-domwindow-destroyed");
+  },
+  // Content processes attribute their windows to tests too, see
+  // ShutdownLeaksCollector.sys.mjs.
+  setCurrentTest(test) {
+    this.currentTest = test;
+    if (AppConstants.DEBUG) {
+      Services.ppmm.sharedData.set("browser-test:current-test", test);
+      Services.ppmm.sharedData.flush();
+    }
   },
   snapshotInitialWindows() {
     for (let key of this.liveWindows.keys()) {
@@ -222,6 +292,9 @@ function testInit() {
       Services.prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
     }
 
+    if (AppConstants.DEBUG) {
+      ContentLeakReports.init();
+    }
     Services.mm.loadFrameScript(
       "chrome://mochikit/content/shutdown-leaks-collector.js",
       true
@@ -863,6 +936,24 @@ Tester.prototype = {
         dump("ShutdownLeakPathFinder failed: " + ex + "\n");
       }
     }
+
+    let tests = new Set(leaked.map(info => info.test));
+    for (let data of await ContentLeakReports.wait()) {
+      tests.add(data.test);
+      this.structuredLogger.logData("test_status", data);
+    }
+    if (tests.size && shouldSaveFailureProfile()) {
+      let message = await saveProfileToUploadDir([...tests][0]);
+      for (let test of tests) {
+        this.structuredLogger.logData("test_status", {
+          test,
+          subtest: "Shutdown",
+          status: "FAIL",
+          expected: "PASS",
+          message,
+        });
+      }
+    }
   },
 
   finish: function Tester_finish() {
@@ -875,6 +966,9 @@ Tester.prototype = {
 
     TabDestroyObserver.destroy();
     DOMWindowTracker.destroy();
+    if (AppConstants.DEBUG && gConfig.e10s) {
+      ContentLeakReports.destroy();
+    }
     Services.console.unregisterListener(this);
 
     this.ClickChecks.uninit();
@@ -1566,7 +1660,7 @@ Tester.prototype = {
         "finished in " + time + "ms"
       );
       this.currentTest.setDuration(time);
-      DOMWindowTracker.currentTest = null;
+      DOMWindowTracker.setCurrentTest(null);
 
       if (this.runUntilFailure && this.currentTest.failCount > 0) {
         this.haltTests();
@@ -1629,7 +1723,7 @@ Tester.prototype = {
         );
 
         barrier.wait().then(() => {
-          Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
+          ContentLeakReports.collect();
 
           this._collectAndCheckForLeakedWindows().then(() => this.finish());
         });
@@ -1775,9 +1869,8 @@ Tester.prototype = {
   },
 
   execTest: function Tester_execTest() {
-    DOMWindowTracker.currentTest = this.currentTest.path.replace(
-      "chrome://mochitests/content/browser/",
-      ""
+    DOMWindowTracker.setCurrentTest(
+      this.currentTest.path.replace("chrome://mochitests/content/browser/", "")
     );
     this.structuredLogger.testStart(this.currentTest.path);
 

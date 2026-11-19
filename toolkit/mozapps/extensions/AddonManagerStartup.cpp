@@ -589,13 +589,7 @@ nsresult AddonManagerStartup::DecodeBlob(JS::Handle<JS::Value> value,
   auto holder = MakeRefPtr<StructuredCloneData>(
       JS::StructuredCloneScope::DifferentProcess,
       dom::StructuredCloneHolder::TransferringNotSupported);
-  // FIXME: This currently assumes the data on disk was serialized with the same
-  // JS_STRUCTURED_CLONE_VERSION as the current binary. This should probably be
-  // improved to avoid migration issues if JS_STRUCTURED_CLONE_VERSION is bumped
-  // in the future.
-  // See https://bugzilla.mozilla.org/show_bug.cgi?id=2014441
-  bool ok = holder->CopyExternalData(data.get(), data.Length(),
-                                     JS_STRUCTURED_CLONE_VERSION);
+  bool ok = holder->CopyExternalData(data.get(), data.Length());
   NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
 
   ErrorResult rv;

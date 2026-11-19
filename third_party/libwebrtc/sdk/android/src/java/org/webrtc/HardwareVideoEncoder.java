@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.ThreadUtils.ThreadChecker;
@@ -128,6 +129,9 @@ class HardwareVideoEncoder implements VideoEncoder {
   @Nullable private MediaCodecWrapper codec;
   // Thread that delivers encoded frames to the user callback.
   @Nullable private Thread outputThread;
+  // Counted down by the output thread once it has stopped delivering frames, i.e. before it starts
+  // releasing the MediaCodec. Set on the encoder thread together with `outputThread`.
+  @Nullable private CountDownLatch outputThreadDeliveryStopped;
 
   // EGL base wrapping the shared texture context.  Holds hooks to both the shared context and the
   // input surface.  Making this base current allows textures from the context to be drawn onto the
@@ -300,7 +304,8 @@ class HardwareVideoEncoder implements VideoEncoder {
 
     running = true;
     outputThreadChecker.detachThread();
-    outputThread = createOutputThread();
+    outputThreadDeliveryStopped = new CountDownLatch(1);
+    outputThread = createOutputThread(codec, outputThreadDeliveryStopped);
     outputThread.start();
 
     return VideoCodecStatus.OK;
@@ -316,6 +321,13 @@ class HardwareVideoEncoder implements VideoEncoder {
     } else {
       // The outputThread actually stops and releases the codec once running is false.
       running = false;
+      // release() returns only after frame delivery has stopped. Only the release of the
+      // MediaCodec, which occasionally hangs, is subject to a timeout.
+      if (!ThreadUtils.awaitUninterruptibly(
+              outputThreadDeliveryStopped, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+        Logging.e(TAG, "Output thread slow to stop delivering frames", new RuntimeException());
+        ThreadUtils.awaitUninterruptibly(outputThreadDeliveryStopped);
+      }
       if (!ThreadUtils.joinUninterruptibly(outputThread, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
         Logging.e(TAG, "Media encoder release timeout");
         returnValue = VideoCodecStatus.TIMEOUT;
@@ -342,6 +354,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
     codec = null;
     outputThread = null;
+    outputThreadDeliveryStopped = null;
 
     // Allow changing thread after release.
     encodeThreadChecker.detachThread();
@@ -561,14 +574,22 @@ class HardwareVideoEncoder implements VideoEncoder {
     lastKeyFrameNs = presentationTimestampNs;
   }
 
-  private Thread createOutputThread() {
+  // `threadCodec` is the codec that the output thread releases when done. It is passed explicitly
+  // since the `codec` member may be reset (or reassigned) while the release is still in progress.
+  private Thread createOutputThread(
+      final MediaCodecWrapper threadCodec, final CountDownLatch deliveryStopped) {
     return new Thread() {
       @Override
       public void run() {
-        while (running) {
-          deliverEncodedImage();
+        try {
+          while (running) {
+            deliverEncodedImage();
+          }
+        } finally {
+          // No more frames will be delivered from this thread.
+          deliveryStopped.countDown();
         }
-        releaseCodecOnOutputThread();
+        releaseCodecOnOutputThread(threadCodec);
       }
     };
   }
@@ -670,17 +691,17 @@ class HardwareVideoEncoder implements VideoEncoder {
     }
   }
 
-  private void releaseCodecOnOutputThread() {
+  private void releaseCodecOnOutputThread(MediaCodecWrapper threadCodec) {
     outputThreadChecker.checkIsOnValidThread();
     Logging.d(TAG, "Releasing MediaCodec on output thread");
     outputBuffersBusyCount.waitForZero();
     try {
-      codec.stop();
+      threadCodec.stop();
     } catch (Exception e) {
       Logging.e(TAG, "Media encoder stop failed", e);
     }
     try {
-      codec.release();
+      threadCodec.release();
     } catch (Exception e) {
       Logging.e(TAG, "Media encoder release failed", e);
       // Propagate exceptions caught during release back to the main thread.

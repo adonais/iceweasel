@@ -334,7 +334,7 @@ nsresult CacheFileMetadata::WriteMetadata(
   UniquePtr<char[]> scratch;
   char* content;
   if (encrypted) {
-    scratch = MakeUnique<char[]>(contentLen);
+    scratch = std::make_unique<char[]>(contentLen);
     content = scratch.get();
   } else {
     content = mWriteBuf;

@@ -8,11 +8,11 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/dom/PMediaTransport.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/dom/TypedArray.h"
 #include "nsID.h"
+#include "transport/MediaTransportTypes.h"
 
 namespace mozilla {
 class DataChannel;

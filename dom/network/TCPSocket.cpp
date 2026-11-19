@@ -968,10 +968,11 @@ nsresult TCPSocket::ResolveProxy() {
     return NS_ERROR_OUT_OF_MEMORY;
   }
   if (maybeIPv6) spec.Append(']');
-  rv = NS_MutateURI(NS_STANDARDURLMUTATOR_CONTRACTID)
-           .SetSpec(spec)
-           .SetPort(mPort)
-           .Finalize(uri);
+  rv = NS_NewURI(getter_AddRefs(uri), spec);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  rv = NS_MutateURI(uri).SetPort(mPort).Finalize(uri);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

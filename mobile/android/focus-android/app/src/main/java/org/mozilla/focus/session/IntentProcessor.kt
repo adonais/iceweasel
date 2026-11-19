@@ -40,6 +40,7 @@ class IntentProcessor(
 
     private val tabIntentProcessor =
         TabIntentProcessor(
+            context.components.store,
             tabsUseCases,
             searchUseCases.newPrivateTabSearch,
             isPrivate = true,

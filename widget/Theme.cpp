@@ -32,6 +32,7 @@
 #include "nsDeviceContext.h"
 #include "nsIScrollbarMediator.h"
 #include "nsLayoutUtils.h"
+#include "nsProgressFrame.h"
 #include "nsRangeFrame.h"
 #include "nsScrollbarFrame.h"
 
@@ -144,7 +145,7 @@ already_AddRefed<nsITheme> do_GetNativeThemeDoNotUseDirectly() {
 
 already_AddRefed<nsITheme> do_GetRDMThemeDoNotUseDirectly() {
   if (MOZ_UNLIKELY(!gRDMInstance)) {
-    gRDMInstance = new Theme(MakeUnique<ScrollbarDrawingAndroid>());
+    gRDMInstance = new Theme(std::make_unique<ScrollbarDrawingAndroid>());
     ClearOnShutdown(&gRDMInstance);
   }
   return do_AddRef(gRDMInstance);
@@ -996,16 +997,20 @@ void Theme::PaintProgress(nsIFrame* aFrame, PaintBackendData& aPaintData,
       }
       return progress->Position();
     }();
+    const Side startSide = nsProgressFrame::PhysicalStartSide(
+        !isHorizontal, aFrame->GetWritingMode());
     if (isHorizontal) {
       double clipWidth = rect.width * position;
       clipRect.width = clipWidth;
-      if (IsFrameRTL(aFrame)) {
+      if (startSide == eSideRight) {
         clipRect.x += rect.width - clipWidth;
       }
     } else {
       double clipHeight = rect.height * position;
       clipRect.height = clipHeight;
-      clipRect.y += rect.height - clipHeight;
+      if (startSide == eSideBottom) {
+        clipRect.y += rect.height - clipHeight;
+      }
     }
   }
 
@@ -1482,30 +1487,30 @@ CSSCoord Theme::GetCheckboxRadioPrefSize() { return kCheckboxRadioSize; }
 UniquePtr<ScrollbarDrawing> Theme::ScrollbarStyle() {
   switch (StaticPrefs::widget_non_native_theme_scrollbar_style()) {
     case 1:
-      return MakeUnique<ScrollbarDrawingCocoa>();
+      return std::make_unique<ScrollbarDrawingCocoa>();
     case 2:
-      return MakeUnique<ScrollbarDrawingGTK>();
+      return std::make_unique<ScrollbarDrawingGTK>();
     case 3:
-      return MakeUnique<ScrollbarDrawingAndroid>();
+      return std::make_unique<ScrollbarDrawingAndroid>();
     case 4:
-      return MakeUnique<ScrollbarDrawingWin>();
+      return std::make_unique<ScrollbarDrawingWin>();
     case 5:
-      return MakeUnique<ScrollbarDrawingWin11>();
+      return std::make_unique<ScrollbarDrawingWin11>();
     default:
       break;
   }
     // Default to native scrollbar style for each platform.
 #ifdef XP_WIN
   if (IsWin11OrLater()) {
-    return MakeUnique<ScrollbarDrawingWin11>();
+    return std::make_unique<ScrollbarDrawingWin11>();
   }
-  return MakeUnique<ScrollbarDrawingWin>();
+  return std::make_unique<ScrollbarDrawingWin>();
 #elif defined(MOZ_WIDGET_COCOA) || defined(MOZ_WIDGET_UIKIT)
-  return MakeUnique<ScrollbarDrawingCocoa>();
+  return std::make_unique<ScrollbarDrawingCocoa>();
 #elif MOZ_WIDGET_GTK
-  return MakeUnique<ScrollbarDrawingGTK>();
+  return std::make_unique<ScrollbarDrawingGTK>();
 #elif ANDROID
-  return MakeUnique<ScrollbarDrawingAndroid>();
+  return std::make_unique<ScrollbarDrawingAndroid>();
 #else
 #  error "Unknown platform, need scrollbar implementation."
 #endif

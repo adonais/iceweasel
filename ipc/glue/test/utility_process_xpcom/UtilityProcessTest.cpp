@@ -149,7 +149,7 @@ UtilityProcessTest::StartProcess(const nsTArray<nsCString>& aActorsToRegister,
               promise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
             }
           },
-          [promise](LaunchError aError) {
+          [promise](LaunchError /*aError*/) {
             MOZ_ASSERT_UNREACHABLE(
                 "UtilityProcessTest; failure to get Utility process");
             promise->MaybeReject(NS_ERROR_FAILURE);
@@ -167,7 +167,8 @@ UtilityProcessTest::NoteIntentionalCrash(uint32_t aPid) {
 
 NS_IMETHODIMP
 UtilityProcessTest::UntilChildProcessDead(
-    uint32_t pid, JSContext* cx, ::mozilla::dom::Promise** aOutPromise) {
+    [[maybe_unused]] uint32_t pid, [[maybe_unused]] JSContext* cx,
+    ::mozilla::dom::Promise** aOutPromise) {
   NS_ENSURE_ARG(aOutPromise);
   *aOutPromise = nullptr;
 

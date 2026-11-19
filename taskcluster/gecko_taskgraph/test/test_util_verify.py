@@ -13,10 +13,15 @@ import os.path
 
 import pytest
 from mozunit import main
+from taskgraph.task import Task
 
 import gecko_taskgraph.util.verify
 from gecko_taskgraph import GECKO
-from gecko_taskgraph.util.verify import DocPaths, verify_docs
+from gecko_taskgraph.util.verify import (
+    DocPaths,
+    verify_docs,
+    verify_shipping_no_gradle_cache,
+)
 
 FF_DOCS_BASE = os.path.join(GECKO, "taskcluster", "docs")
 EXTRA_DOCS_BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "docs"))
@@ -142,6 +147,46 @@ class PyTestTwoDocPaths:
                 identifiers=["base_repository", "head_repository", "badvalue"],
                 appearing_as="inline-literal",
             )
+
+
+@pytest.mark.parametrize(
+    "attributes,cache,raises",
+    (
+        pytest.param(
+            {"shippable": True},
+            "gecko-level-3-gradle-user-home-v3-abc",
+            True,
+            id="shippable",
+        ),
+        pytest.param(
+            {"shipping_phase": "promote"},
+            "gecko-level-3-gradle-user-home-v3-abc",
+            True,
+            id="shipping-phase",
+        ),
+        pytest.param(
+            {"shippable": True},
+            "gecko-level-3-checkouts-v3-abc",
+            False,
+            id="shippable-other-cache",
+        ),
+        pytest.param(
+            {}, "gecko-level-3-gradle-user-home-v3-abc", False, id="not-shipping"
+        ),
+    ),
+)
+def test_verify_shipping_no_gradle_cache(attributes, cache, raises):
+    task = Task(
+        kind="build",
+        label="build-android",
+        attributes=attributes,
+        task={"payload": {"cache": {cache: "/builds/worker/gradle-user-home"}}},
+    )
+    if raises:
+        with pytest.raises(Exception, match="cannot use the Gradle user home cache"):
+            verify_shipping_no_gradle_cache(task, None, None, None, None)
+    else:
+        verify_shipping_no_gradle_cache(task, None, None, None, None)
 
 
 if __name__ == "__main__":

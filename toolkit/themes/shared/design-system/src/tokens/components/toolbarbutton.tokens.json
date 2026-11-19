@@ -70,8 +70,8 @@
     "fill": {
       "@base": {
         "value": {
-          "light": "{color.gray.70}",
-          "dark": "{color.gray.0}",
+          "light": "color-mix(in srgb, currentColor 69%, transparent)",
+          "dark": "currentColor",
           "nativeTheme": "currentColor",
           "forcedColors": "{button.text.color.@base}"
         }

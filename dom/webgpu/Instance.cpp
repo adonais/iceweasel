@@ -31,21 +31,29 @@ GPU_IMPL_CYCLE_COLLECTION(WGSLLanguageFeatures, mParent)
 
 GPU_IMPL_CYCLE_COLLECTION(Instance, mGlobal, mWgslLanguageFeatures)
 
-/* static */ bool Instance::PrefEnabled() {
+/* static */ const char* Instance::DisabledByPrefWithExplanation() {
   if (!StaticPrefs::dom_webgpu_enabled()) {
-    return false;
+    return "WebGPU is disabled because the `dom.webgpu.enabled` pref "
+           "is set to `false`.";
   }
 
   if (NS_IsMainThread()) {
-    return true;
+    return nullptr;
   }
 
   dom::WorkerPrivate* wp = dom::GetCurrentThreadWorkerPrivate();
-  if (wp && wp->IsServiceWorker()) {
-    return StaticPrefs::dom_webgpu_service_workers_enabled();
+  if (wp && wp->IsServiceWorker() &&
+      !StaticPrefs::dom_webgpu_service_workers_enabled()) {
+    return "WebGPU is disabled because the "
+           "`dom.webgpu.service-workers-enabled` pref "
+           "is set to `false`.";
   }
 
-  return true;
+  return nullptr;
+}
+
+/* static */ bool Instance::PrefEnabled() {
+  return !DisabledByPrefWithExplanation();
 }
 
 /* static */ bool Instance::ExternalTexturePrefEnabled(JSContext* aCx,
@@ -125,23 +133,20 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
     }
   };
 
-  rejectIf(!gfx::gfxVars::AllowWebGPU(), "WebGPU is disabled by blocklist.");
-  rejectIf(!StaticPrefs::dom_webgpu_enabled(),
-           "WebGPU is disabled because the `dom.webgpu.enabled` pref. is set "
-           "to `false`.");
-#ifndef HAVE_64BIT_BUILD
-  rejectIf(true, "WebGPU is only available on 64-bit architectures.");
-#endif
+  rejectIf(
+      !gfx::gfxVars::AllowWebGPU(),
+      "WebGPU is disabled. Search for `WEBGPU` in `about:support` for details");
 
-#ifdef WIN32
-#  ifndef MOZ_DXCOMPILER
-  rejectIf(true,
-           "WebGPU is disabled because dxcompiler is unavailable with this "
-           "build configuration");
-#  endif
-#endif
+  // Check the basic `dom.webgpu.enabled` prefs.
+  auto explanation = DisabledByPrefWithExplanation();
+  rejectIf(explanation, explanation);
 
   // Check if WebGPU is blocked for this global's domain.
+  //
+  // This is useful for managing web compatibility problems, but since the base
+  // URI is under content control, this is not suitable for blocking hostile
+  // sites. For that reason this check is not re-applied in the GPU process (and
+  // would be tricky to get the right URI there anyway).
   {
     const auto prefLock = mozilla::StaticPrefs::dom_webgpu_blocked_domains();
     rejectIf(nsContentUtils::IsURIInList(mGlobal->GetBaseURI(), *prefLock),

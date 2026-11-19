@@ -1,7 +1,7 @@
 License information for hyph_de-1996.dic:
 
 This file is based on the TeX hyphenation patterns distributed under the
-LaTeX Project Public License (LPPL) as part of the hyph-utf8 package.
+MIT License as part of the hyph-utf8 package.
 
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -10,46 +10,76 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-At the time this file was first modified, a complete, unmodified copy of
-the LPPL Work was available from:
-http://tug.org/svn/texhyphen/trunk/hyph-utf8/tex/generic/hyph-utf8/patterns/?pathrev=580
+At the time this file was last modified, a complete, unmodified copy of
+the MIT Work was available from:
+https://github.com/hyphenation/tex-hyphen/blob/5684c0f51c0b81133db2efbe60a408b4155a3ff5/hyph-utf8/tex/generic/hyph-utf8/patterns/tex/hyph-de-1996.tex
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Portions of this file were originally made available under the following license
-(copied verbatim from hyph-de-1996.lic.txt in the original work):
+(copied verbatim from hyph-de-1996.tex in the original work):
 
-German hyphenation patterns (reformed orthography)
-
-(more info about the licence to be added later)
-
-% dehyphn-x-2011-06-01.pat
-
-\message{German Hyphenation Patterns (Reformed Orthography, 2006) `dehyphn-x' 2011-06-01 (WL)}
-
-% TeX-Trennmuster für die reformierte (2006) deutsche Rechtschreibung
+% title: German Hyphenation Patterns (Reformed Orthography, 2006)
 %
+% notice: TeX-Trennmuster für die reformierte (2006) deutsche Rechtschreibung
 %
-% Copyright (C) 2007, 2008, 2009, 2011 Werner Lemberg <wl@gnu.org>
+% version: 2024-02-28
 %
-% This program can be redistributed and/or modified under the terms
-% of the LaTeX Project Public License Distributed from CTAN
-% archives in directory macros/latex/base/lppl.txt; either
-% version 1 of the License, or any later version.
+% authors:
+%   -
+%     name:    Deutschsprachige Trennmustermannschaft
+%     contact: trennmuster@dante.de
 %
+% copyright: Copyright (c) 2013-2024
+%            Stephan Hennig, Werner Lemberg, Günter Milde,
+%            Sander van Geloven, Georg Pfeiffer, Gisbert W. Selke,
+%            Tobias Wendorf, Keno Wehr
 %
-% The word list is available from
+% licence:
+%     name: MIT
+%     url:  https://opensource.org/licenses/mit-license.php
+%     text: >
+%           Permission is hereby granted, free of charge, to any person
+%           obtaining a copy of this software and associated documentation
+%           files (the “Software”), to deal in the Software without
+%           restriction, including without limitation the rights to use,
+%           copy, modify, merge, publish, distribute, sublicense, and/or
+%           sell copies of the Software, and to permit persons to whom the
+%           Software is furnished to do so, subject to the following
+%           conditions:
 %
-%   http://repo.or.cz/w/wortliste.git?a=commit;h=2d246449f5c4f570f4d735d3ad091f6ad70f6972
+%           The above copyright notice and this permission notice shall be
+%           included in all copies or substantial portions of the Software.
 %
-% The used patgen parameters are
+%           THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+%           EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+%           OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+%           NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+%           HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+%           WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+%           FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+%           OTHER DEALINGS IN THE SOFTWARE.
 %
-%   1 1 | 2 5 | 1 1 1
-%   2 2 | 2 5 | 1 2 1
-%   3 3 | 2 6 | 1 1 1
-%   4 4 | 2 6 | 1 4 1
-%   5 5 | 2 7 | 1 1 1
-%   6 6 | 2 7 | 1 6 1
-%   7 7 | 2 13 | 1 4 1
-%   8 8 | 2 13 | 1 8 1
-
+% source: https://repo.or.cz/w/wortliste.git?a=commit;h=304aaa2188a75e57afe36bad0443d90a9c715b8e
+%
+% language:
+%     name: German, reformed spelling
+%     tag:  de-1996
+%
+% hyphenmins:
+%     generation:
+%         left:  2
+%         right: 2
+%     typesetting:
+%         left:  2
+%         right: 2
+%
+% texlive:
+%     encoding: ec
+%     babelname: ngerman
+%     use_old_patterns_comment: Kept for the sake of backward compatibility, but newer and better patterns by WL are available.
+%     legacy_patterns: dehyphn.tex
+%     message: German hyphenation patterns (reformed orthography)
+%     package: german
+%
+% ===========================================================================

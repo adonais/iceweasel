@@ -101,6 +101,16 @@ ______________________________________________________________________
   - *Reference:*
     [Abseil Container Guide](https://abseil.io/docs/cpp/guides/container)
 
+### Type Casting and Conversions
+
+- **Prefer Braced Initialization for Non-Narrowing Conversions:** Prefer braced
+  initialization (`Type{value}`) over `static_cast<Type>(value)` when converting
+  constants or values where narrowing is not intended.
+  - *Correct:* `if (temporal_index >= int{kMaxTemporalStreams})`
+  - *Incorrect:* `if (temporal_index >= static_cast<int>(kMaxTemporalStreams))`
+  - *Reference:*
+    [Google C++ Style Guide - Casting](https://google.github.io/styleguide/cppguide.html#Casting)
+
 ### Move Semantics
 
 - **Move First, Dereference After (for std::optional):** For `std::optional`, it

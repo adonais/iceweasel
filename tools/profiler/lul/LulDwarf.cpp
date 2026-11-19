@@ -2407,8 +2407,8 @@ fail:
   return -1;
 }
 
-bool DwarfCFIToModule::Entry(size_t offset, uint64 address, uint64 length,
-                             uint8 version, const string& augmentation,
+bool DwarfCFIToModule::Entry(size_t /*offset*/, uint64 address, uint64 length,
+                             uint8 /*version*/, const string& /*augmentation*/,
                              unsigned return_address) {
   if (DEBUG_DWARF) {
     char buf[100];
@@ -2553,7 +2553,7 @@ bool DwarfCFIToModule::End() {
 }
 
 void DwarfCFIToModule::Reporter::UndefinedNotSupported(
-    size_t offset, const UniqueString* reg) {
+    size_t /*offset*/, const UniqueString* /*reg*/) {
   char buf[300];
   SprintfLiteral(buf, "DwarfCFIToModule::Reporter::UndefinedNotSupported()\n");
   log_(buf);
@@ -2575,7 +2575,7 @@ static bool is_power_of_2(uint64_t n) {
 }
 
 void DwarfCFIToModule::Reporter::ExpressionCouldNotBeSummarised(
-    size_t offset, const UniqueString* reg) {
+    size_t /*offset*/, const UniqueString* /*reg*/) {
   static uint64_t n_complaints = 0;  // This isn't threadsafe
   n_complaints++;
   if (!is_power_of_2(n_complaints)) return;

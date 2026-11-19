@@ -17,6 +17,10 @@ support-files = [
   "file_stalled_load.sjs",
 ]
 
+["browser_bouncetracking_bfcache_finalhost.js"]
+
+["browser_bouncetracking_bfcache_restore_redirect.js"]
+
 ["browser_bouncetracking_clearingPurgeLogCrash.js"]
 
 ["browser_bouncetracking_cookie_behavior.js"]

@@ -136,7 +136,7 @@ static void EnsureAppLockerCacheIsWarm(const wchar_t* aWidePath) {
   }
 
   DWORD ioctlSize = kSrpHeaderSize + ntPath.LengthInBytes();
-  auto buf = MakeUnique<uint8_t[]>(ioctlSize);
+  auto buf = std::make_unique<uint8_t[]>(ioctlSize);
   auto* srp = reinterpret_cast<SrpIoctlBuffer*>(buf.get());
 
   // ULONG_PTR is pointer-sized (4 bytes on x86, 8 on x64). Casting to uint64_t
@@ -187,7 +187,7 @@ bool GMPLoader::Load(const char* aUTF8LibPath, uint32_t aUTF8LibPathLen,
     return false;
   }
 
-  auto widePath = MakeUnique<wchar_t[]>(pathLen);
+  auto widePath = std::make_unique<wchar_t[]>(pathLen);
   if (MultiByteToWideChar(CP_UTF8, 0, aUTF8LibPath, -1, widePath.get(),
                           pathLen) == 0) {
     MOZ_CRASH("Cannot convert path to wide char!");
@@ -270,7 +270,7 @@ class LinuxSandboxStarter : public mozilla::gmp::SandboxStarter {
  public:
   static UniquePtr<SandboxStarter> Make() {
     if (mozilla::SandboxInfo::Get().CanSandboxMedia()) {
-      return MakeUnique<LinuxSandboxStarter>();
+      return std::make_unique<LinuxSandboxStarter>();
     }
     // Sandboxing isn't possible, but the parent has already
     // checked that this plugin doesn't require it.  (Bug 1074561)
@@ -287,7 +287,7 @@ class LinuxSandboxStarter : public mozilla::gmp::SandboxStarter {
 
 static UniquePtr<SandboxStarter> MakeSandboxStarter() {
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  return mozilla::MakeUnique<WinSandboxStarter>();
+  return std::make_unique<WinSandboxStarter>();
 #elif defined(XP_LINUX) && defined(MOZ_SANDBOX)
   return LinuxSandboxStarter::Make();
 #else

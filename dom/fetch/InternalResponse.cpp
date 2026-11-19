@@ -84,7 +84,7 @@ template <typename T>
   response->InitChannelInfo(aIPCResponse.metadata().securityInfo());
 
   if (aIPCResponse.metadata().principalInfo()) {
-    response->SetPrincipalInfo(MakeUnique<mozilla::ipc::PrincipalInfo>(
+    response->SetPrincipalInfo(std::make_unique<mozilla::ipc::PrincipalInfo>(
         aIPCResponse.metadata().principalInfo().ref()));
   }
 
@@ -145,32 +145,6 @@ void InternalResponse::ToChildToParentInternalResponse(
     ChildToParentInternalResponse* aIPCResponse) {
   *aIPCResponse = ChildToParentInternalResponse(GetMetadata(), Nothing(),
                                                 UNKNOWN_BODY_SIZE, Nothing());
-}
-
-void InternalResponse::SerializeChildToParentInternalResponseBody(
-    ChildToParentInternalResponse* aIPCResponse) {
-  nsCOMPtr<nsIInputStream> body;
-  int64_t bodySize;
-  GetUnfilteredBody(getter_AddRefs(body), &bodySize);
-
-  if (body) {
-    aIPCResponse->body().emplace(ChildToParentStream());
-    aIPCResponse->bodySize() = bodySize;
-
-    DebugOnly<bool> ok = mozilla::ipc::SerializeIPCStream(
-        body.forget(), aIPCResponse->body()->stream(), /* aAllowLazy */ false);
-    MOZ_ASSERT(ok);
-  }
-
-  nsCOMPtr<nsIInputStream> alternativeBody = TakeAlternativeBody();
-  if (alternativeBody) {
-    aIPCResponse->alternativeBody().emplace(ChildToParentStream());
-
-    DebugOnly<bool> ok = mozilla::ipc::SerializeIPCStream(
-        alternativeBody.forget(), aIPCResponse->alternativeBody()->stream(),
-        /* aAllowLazy */ false);
-    MOZ_ASSERT(ok);
-  }
 }
 
 ParentToParentInternalResponse
@@ -400,7 +374,7 @@ SafeRefPtr<InternalResponse> InternalResponse::OpaqueResponse() {
   response->mChannelInfo = mChannelInfo;
   if (mPrincipalInfo) {
     response->mPrincipalInfo =
-        MakeUnique<mozilla::ipc::PrincipalInfo>(*mPrincipalInfo);
+        std::make_unique<mozilla::ipc::PrincipalInfo>(*mPrincipalInfo);
   }
   response->mWrappedResponse = SafeRefPtrFromThis();
   return response;
@@ -425,7 +399,7 @@ SafeRefPtr<InternalResponse> InternalResponse::CreateIncompleteCopy() {
   copy->mChannelInfo = mChannelInfo;
   if (mPrincipalInfo) {
     copy->mPrincipalInfo =
-        MakeUnique<mozilla::ipc::PrincipalInfo>(*mPrincipalInfo);
+        std::make_unique<mozilla::ipc::PrincipalInfo>(*mPrincipalInfo);
   }
   return copy;
 }

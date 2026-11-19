@@ -341,16 +341,6 @@ interface nsIIOService : nsISupports
                                                in nsContentPolicyType aContentPolicyType);
 
     /**
-     * Return true if socket process is launched.
-     */
-    readonly attribute boolean socketProcessLaunched;
-
-    /**
-     * The pid for socket process.
-     */
-    readonly attribute unsigned long long socketProcessId;
-
-    /**
      * Register a protocol handler at runtime, given protocol flags and a
      * default port.
      *

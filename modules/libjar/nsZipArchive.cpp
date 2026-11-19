@@ -262,7 +262,7 @@ nsresult nsZipHandle::Init(nsZipArchive* zip, const nsACString& entry,
     }
   }
 
-  handle->mBuf = MakeUnique<nsZipItemPtr<uint8_t>>(zip, entry);
+  handle->mBuf = std::make_unique<nsZipItemPtr<uint8_t>>(zip, entry);
   if (!handle->mBuf) return NS_ERROR_OUT_OF_MEMORY;
 
   if (!handle->mBuf->Buffer()) return NS_ERROR_UNEXPECTED;

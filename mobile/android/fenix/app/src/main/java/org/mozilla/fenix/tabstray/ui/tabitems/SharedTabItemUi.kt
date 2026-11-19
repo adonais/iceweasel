@@ -285,7 +285,7 @@ fun TabGroupMenuButton(
         colors = IconButtonDefaults.iconButtonColors(contentColor = LocalContentColor.current),
     ) {
         Icon(
-            painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_more_vertical_round_24),
             contentDescription = null,
         )
 

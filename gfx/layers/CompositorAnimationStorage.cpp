@@ -159,8 +159,8 @@ void CompositorAnimationStorage::SetAnimatedValue(
   if (!aPreviousValue) {
     MOZ_ASSERT(!mAnimatedValues.Contains(aId));
     mAnimatedValues.InsertOrUpdate(
-        aId,
-        MakeUnique<AnimatedValue>(aFrameTransform, aData, std::move(aValue)));
+        aId, std::make_unique<AnimatedValue>(aFrameTransform, aData,
+                                             std::move(aValue)));
     return;
   }
   MOZ_ASSERT(aPreviousValue->Is<AnimationTransform>());
@@ -176,7 +176,8 @@ void CompositorAnimationStorage::SetAnimatedValue(uint64_t aId,
 
   if (!aPreviousValue) {
     MOZ_ASSERT(!mAnimatedValues.Contains(aId));
-    mAnimatedValues.InsertOrUpdate(aId, MakeUnique<AnimatedValue>(aColor));
+    mAnimatedValues.InsertOrUpdate(aId,
+                                   std::make_unique<AnimatedValue>(aColor));
     return;
   }
 
@@ -192,7 +193,8 @@ void CompositorAnimationStorage::SetAnimatedValue(uint64_t aId,
 
   if (!aPreviousValue) {
     MOZ_ASSERT(!mAnimatedValues.Contains(aId));
-    mAnimatedValues.InsertOrUpdate(aId, MakeUnique<AnimatedValue>(aOpacity));
+    mAnimatedValues.InsertOrUpdate(aId,
+                                   std::make_unique<AnimatedValue>(aOpacity));
     return;
   }
 

@@ -109,6 +109,13 @@ interface nsISelectionController : nsISelectionDisplay
   Selection getDOMSelection(in short aType);
 
   /**
+   * Like getDOMSelection(), but returns null for selections that weren't
+   * created yet instead of creating them.
+   */
+  [noscript,nostdcall,notxpcom,binaryname(GetExistingSelection)]
+  Selection getExistingDOMSelection(in short aType);
+
+  /**
    * Called when the selection controller should take the focus.
    *
    * This will take care to hide the previously-focused selection, show this

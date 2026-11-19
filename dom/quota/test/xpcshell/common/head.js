@@ -186,6 +186,18 @@ function initTemporaryStorage(callback) {
   return request;
 }
 
+async function initStorageAndTemporaryStorage() {
+  info("Initializing");
+
+  let request = init();
+  await requestFinished(request);
+
+  info("Initializing temporary storage");
+
+  request = initTemporaryStorage();
+  await requestFinished(request);
+}
+
 function initPersistentOrigin(principal, callback) {
   let request =
     SpecialPowers._getQuotaManager().initializePersistentOrigin(principal);
@@ -373,6 +385,37 @@ function getCachedOriginUsage(principal) {
   let request = Services.qms.getCachedUsageForPrincipal(principal);
 
   return request;
+}
+
+/**
+ * Overwrites the cached usage of an origin in the storage.sqlite origin table.
+ * Storage must not be initialized (e.g. after a reset).
+ *
+ * @param {string} origin The origin, e.g. "http://example.com".
+ * @param {number} usage The new origin usage.
+ * @param {string} clientUsagesText The new serialized client usages, e.g. "L0".
+ */
+function setCachedOriginUsage(origin, usage, clientUsagesText) {
+  const connection = Services.storage.openUnsharedDatabase(
+    getRelativeFile("storage.sqlite")
+  );
+  try {
+    const stmt = connection.createStatement(
+      "UPDATE origin SET usage = :usage, client_usages = :clientUsages " +
+        "WHERE origin = :origin"
+    );
+    try {
+      stmt.params.usage = usage;
+      stmt.params.clientUsages = clientUsagesText;
+      stmt.params.origin = origin;
+      stmt.execute();
+    } finally {
+      stmt.finalize();
+    }
+    Assert.equal(connection.affectedRows, 1, "Should have updated the origin");
+  } finally {
+    connection.close();
+  }
 }
 
 function getCurrentUsage(usageHandler) {

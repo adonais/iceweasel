@@ -15,7 +15,7 @@ import mozilla.components.compose.menu.ui.MenuItemState.DISABLED
 import mozilla.components.compose.menu.ui.MenuItemState.WARNING
 
 /** Alpha applied to the content of a [DISABLED] menu item or menu item element. */
-private const val DISABLED_ALPHA = 0.38f
+internal const val DISABLED_ALPHA = 0.38f
 
 /** Color of the primary content - titles and badge labels - of a menu item element in this state. */
 internal val MenuItemState.contentColor: Color

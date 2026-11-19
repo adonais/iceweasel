@@ -37,32 +37,147 @@ add_task(function test_containsSensitiveInfo_ssn() {
     !detector.containsSensitiveInfo(invalidSSN),
     "Does not flag invalid SSN format (missing digit)"
   );
+
+  Assert.ok(
+    detector.containsSensitiveInfo("My SSN is 123 45 6789"),
+    "Detects SSN with spaces"
+  );
+
+  for (const text of [
+    "000-12-3456",
+    "666-12-3456",
+    "912-34-5678",
+    "123-00-4567",
+    "123-45-0000",
+    "123-45 6789",
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag unissuable or mixed-separator SSN: ${text}`
+    );
+  }
 });
 
 add_task(function test_containsSensitiveInfo_sin() {
   const detector = new SensitiveInfoDetector();
 
-  const withSIN = "My SIN is 123-456-789 for taxes.";
+  const withSIN = "My SIN is 130-692-544 for taxes.";
   Assert.ok(
     detector.containsSensitiveInfo(withSIN),
     "Detects Canadian Social Insurance Number"
   );
 
+  Assert.ok(
+    detector.containsSensitiveInfo("My SIN is 130 692 544"),
+    "Detects SIN with spaces"
+  );
+
   const withoutSIN = "The number is 123-45-6789";
   Assert.ok(
     detector.containsSensitiveInfo(withoutSIN),
-    "SSN detected (different format)"
+    "Detects a 3-2-4 SSN-formatted number via the SSN pattern"
   );
+
+  for (const text of ["123-456-789", "046-454-286", "130-692 544"]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag invalid SIN: ${text}`
+    );
+  }
 });
 
 add_task(function test_containsSensitiveInfo_insee() {
   const detector = new SensitiveInfoDetector();
 
-  const withINSEE = "My INSEE is 1 90 05 75 101 022 45.";
+  const withINSEE = "My INSEE is 1 90 05 75 101 022 49.";
   Assert.ok(
     detector.containsSensitiveInfo(withINSEE),
     "Detects French National ID Number"
   );
+
+  Assert.ok(
+    detector.containsSensitiveInfo("My INSEE is 2 90 05 2A 101 022 56"),
+    "Detects French National ID Number from Corsica"
+  );
+
+  for (const text of [
+    "My INSEE is 1 90 05 75 101 022 45", // Wrong key, should be 49
+    "Nutella EAN 3017620422003", // 13-digit barcode, no key
+    "Order 1712345678901", // 13-digit order number, no key
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag invalid INSEE: ${text}`
+    );
+  }
+});
+
+add_task(function test_containsSensitiveInfo_gb_nino() {
+  const detector = new SensitiveInfoDetector();
+
+  for (const nino of ["AB 12 34 56 C", "JG103759A", "ab123456c"]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(`My NI number is ${nino}`),
+      `Detects UK National Insurance number: ${nino}`
+    );
+  }
+
+  for (const text of [
+    "Card shows AB 12 34 56 C",
+    "AB123456C is my national insurance number",
+    "NINO: JG103759A",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(text),
+      `Detects UK National Insurance number: ${text}`
+    );
+  }
+
+  for (const text of [
+    "QQ 12 34 56 C", // Q is never used as a prefix letter
+    "GB 12 34 56 A", // GB prefix is never issued
+    "AB 12 34 56 E", // Suffix must be A-D
+    "AB 12 3456 C", // Inconsistent spacing
+    "SKU HP123456A in stock", // Compact form needs a keyword nearby
+    "Part number AB123456C", // Compact form needs a keyword nearby
+    "Northern Ireland NI office ref AB123456C", // "NI" alone isn't a keyword
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag invalid National Insurance number: ${text}`
+    );
+  }
+});
+
+add_task(function test_containsSensitiveInfo_gb_nhs() {
+  const detector = new SensitiveInfoDetector();
+
+  for (const nhsNumber of [
+    "401 023 2137",
+    "601-112-3457",
+    "120 385 1235",
+    "290-112-3457",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(`My NHS number is ${nhsNumber}`),
+      `Detects UK NHS number: ${nhsNumber}`
+    );
+  }
+
+  for (const text of [
+    "401 023 2138", // Wrong check digit, should be 7
+    "450 101 2345", // Check digit would be 10, never issued
+    "501 023 2138", // Valid check digit, but 5xx is a test range
+    "121 385 1238", // Valid check digit, but CHI month 13
+    "000 185 1233", // Valid check digit, but CHI day 00
+    "401 023-2137", // Mixed separators
+    "4010232137", // No separators
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag invalid NHS number: ${text}`
+    );
+  }
 });
 
 add_task(function test_containsSensitiveInfo_email() {
@@ -87,28 +202,34 @@ add_task(function test_containsSensitiveInfo_email() {
 add_task(function test_containsSensitiveInfo_phone() {
   const detector = new SensitiveInfoDetector();
 
-  const withPhone1 = "Call me at 555-123-4567";
+  const withPhone1 = "Call me at 202-555-0123";
   Assert.ok(
     detector.containsSensitiveInfo(withPhone1),
     "Detects phone with dashes"
   );
 
-  const withPhone2 = "My number is (555) 123-4567";
+  const withPhone2 = "My number is (202) 555-0123";
   Assert.ok(
     detector.containsSensitiveInfo(withPhone2),
     "Detects phone with parentheses"
   );
 
-  const withPhone3 = "Dial +1-555-123-4567 for support";
+  const withPhone3 = "Dial +1-202-555-0123 for support";
   Assert.ok(
     detector.containsSensitiveInfo(withPhone3),
     "Detects phone with country code"
   );
 
-  const withPhone4 = "Phone: 555.123.4567";
+  const withPhone4 = "Phone: 202.555.0123";
   Assert.ok(
     detector.containsSensitiveInfo(withPhone4),
     "Detects phone with dots"
+  );
+
+  const withPhone5 = "My number is (202)5550123";
+  Assert.ok(
+    detector.containsSensitiveInfo(withPhone5),
+    "Detects phone with parentheses and no other separators"
   );
 
   const shortNumber = "Call 911 for emergency";
@@ -116,6 +237,19 @@ add_task(function test_containsSensitiveInfo_phone() {
     !detector.containsSensitiveInfo(shortNumber),
     "Does not flag short numbers"
   );
+
+  for (const text of [
+    "Order #4829173650 confirmed", // 10 digits without separators or +1
+    "Account 123-555-0123", // Area code can't start with 0 or 1
+    "Account 202-123-4567", // Exchange can't start with 0 or 1
+    "202) 555-0123", // Unbalanced parenthesis
+    "SKU 202-5550123", // 3-7 split without parentheses looks like ranges and IDs
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag non-phone number: ${text}`
+    );
+  }
 });
 
 add_task(function test_containsSensitiveInfo_french_phone() {
@@ -133,11 +267,60 @@ add_task(function test_containsSensitiveInfo_french_phone() {
     "Detects French phone numbers with the leading country code and different format"
   );
 
-  const phoneWithoutCountryCode = "Dial 0033 1 94 24 99 99";
+  const phoneWithInternationalPrefix = "Dial 0033 1 94 24 99 99";
+  Assert.ok(
+    detector.containsSensitiveInfo(phoneWithInternationalPrefix),
+    "Detects French phone numbers with the 00 international prefix"
+  );
+
+  const phoneWithoutCountryCode = "Dial 06 12 34 56 78";
   Assert.ok(
     detector.containsSensitiveInfo(phoneWithoutCountryCode),
     "Detects French phone numbers without the leading country code"
   );
+
+  Assert.ok(
+    !detector.containsSensitiveInfo("Ref 33123456789"),
+    "Does not flag numbers starting with 33 without a + or 00 prefix"
+  );
+});
+
+add_task(function test_containsSensitiveInfo_gb_phone() {
+  const detector = new SensitiveInfoDetector();
+
+  for (const phone of [
+    "07700 900123",
+    "020 7946 0958",
+    "0161 496 0123",
+    "+44 7700 900123",
+    "+44 (0)20 7946 0958",
+    "07700-900-123",
+    "+447700900123",
+    "0044 20 7946 0958",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(`Call me on ${phone}`),
+      `Detects UK phone number: ${phone}`
+    );
+  }
+
+  for (const text of [
+    "Freephone 0800 123 4567", // 08 is a non-personal range
+    "Ref 0123 456789", // 10 digits, UK numbers have 11
+    "Order 01234 5678", // 9 digits, UK numbers have 11
+    "Ref 0123 4567 8901", // 12 digits, UK numbers have 11
+    "Ref 0161 496 0123 456", // Digits continue past 11
+    "07700900123", // Domestic numbers need a separator
+    "+44 20 7946 095", // 9 national digits, UK numbers have 10
+    "+44 7700 9001234", // 11 national digits, UK numbers have 10
+    "07700 900 1 23", // Groups after the first need 3 or more digits
+    "+44 77 00 90 01 23", // Groups after the first need 3 or more digits
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag non-phone number: ${text}`
+    );
+  }
 });
 
 add_task(function test_containsSensitiveInfo_creditCard() {
@@ -257,6 +440,54 @@ add_task(function test_containsSensitiveInfo_streetAddress() {
     !detector.containsSensitiveInfo(noStreet),
     "Does not flag generic text with street words"
   );
+
+  for (const address of [
+    "221B Baker Street",
+    "350 5th Avenue",
+    "i live at 123 main street",
+    "456 oak ave",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(address),
+      `Detects street address: ${address}`
+    );
+  }
+
+  for (const text of [
+    "Buying a 2 TB external drive", // Generic suffix needs a capitalised name
+    "1 test drive", // Generic suffix needs a capitalised name
+    "I saw 2 patients with Dr Smith", // Contains a function word
+    "Spent 3 hours on the road", // Contains function words
+    "Lived 3 blocks down the street", // Contains function words
+    "Won 3 cases in court", // Contains a function word
+    "Top 5 Tips For The Road", // Contains function words
+    "5 ways to find the best way", // More than 3 words between
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag prose with street words: ${text}`
+    );
+  }
+});
+
+add_task(function test_containsSensitiveInfo_gb_streetAddress() {
+  const detector = new SensitiveInfoDetector();
+
+  for (const address of [
+    "742 Evergreen Terrace",
+    "12 Hawthorn Close",
+    "742 evergreen terrace",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(address),
+      `Detects UK street address: ${address}`
+    );
+  }
+
+  Assert.ok(
+    !detector.containsSensitiveInfo("Visited 2 botanical gardens"),
+    "Does not flag prose with UK street words (generic suffix needs a capitalised name)"
+  );
 });
 
 add_task(function test_containsSensitiveInfo_fr_streetAddress() {
@@ -266,10 +497,61 @@ add_task(function test_containsSensitiveInfo_fr_streetAddress() {
     "5 Av. Anatole France",
     "12 Rue de la Paix",
     "29 Boulevard Haussmann",
+    "12 bis rue d'Alésia",
+    "3 place de la Concorde",
+    "8 RUE DE LA PAIX",
+    "12 rue de la paix",
   ]) {
     Assert.ok(
       detector.containsSensitiveInfo(address),
       `Detects French street address: ${address}`
+    );
+  }
+
+  for (const text of [
+    "5 square meters", // Generic street type needs a capitalised name
+    "J'ai 2 cours de maths demain", // Generic street type needs a capitalised name
+    "3 rue the day", // Function word
+    "Top 3 Route Options", // English-word street type without a particle
+    "2 Square Feet", // English-word street type without a particle
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag English text with French street words: ${text}`
+    );
+  }
+});
+
+add_task(function test_containsSensitiveInfo_gb_postcode() {
+  const detector = new SensitiveInfoDetector();
+
+  for (const postcode of [
+    "SW1A 1AA",
+    "M1 1AE",
+    "CR2 6XH",
+    "DN55 1PT",
+    "sw1a 1aa",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(`I live at ${postcode}`),
+      `Detects UK postcode: ${postcode}`
+    );
+  }
+
+  for (const text of [
+    "Selling my AA1 1AA", // AA isn't a postcode area
+    "Buying the PS5 2ND edition", // PS isn't a postcode area
+    "BMW M3 2ND GEN", // Ends in an ordinal
+    "bmw m3 2nd gen", // Ends in an ordinal
+    "Postcode is SW1A1AA", // No space between the two halves
+    "MacBook Air M2 1TB", // Ends in a storage size
+    "MacBook Pro M3 2TB SSD", // Ends in a storage size
+    "Galaxy S3 1GB RAM", // Ends in a storage size
+    "macbook m4 8gb", // Ends in a storage size
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag non-postcode: ${text}`
     );
   }
 });
@@ -299,24 +581,55 @@ add_task(function test_containsSensitiveInfo_routingNumber() {
     "Detects valid routing number"
   );
 
-  const invalidRouting = "Number: 123456789";
+  const invalidRouting = "Routing number: 123456789";
   Assert.ok(
     !detector.containsSensitiveInfo(invalidRouting),
     "Does not flag invalid routing number (fails checksum)"
   );
 
-  const shortNumber = "Code: 12345678";
+  const shortNumber = "Routing number: 12345678";
   Assert.ok(
     !detector.containsSensitiveInfo(shortNumber),
     "Does not flag 8-digit number"
   );
+
+  for (const text of [
+    "My routing number is 021000021",
+    "Routing no. 111000025",
+    "ABA routing number, which is 021000021",
+    "021000021 is my routing number",
+    "Mon numéro de routage est le 021000021",
+    "N° ABA : 021000021",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(text),
+      `Detects routing number with keyword: ${text}`
+    );
+  }
+
+  for (const text of [
+    "Order 021000021", // No routing keyword
+    "https://shop.example/item/021000021", // No routing keyword
+    "Order routing failed for order 021000021", // "routing" without "number"
+    "021000021 routing notes", // "no" is part of a longer word
+    "Suivi du routage du colis 021000021", // "routage" without "numéro"
+    "My routing number is with Chase. Order 021000021", // Different sentence
+    "Routing number\n021000021", // Different line
+    "The routing number is 2 digits longer than 021000021", // Gap contains a number
+    "Routing number for the joint checking account we opened is 021000021", // More than 5 words between
+  ]) {
+    Assert.ok(
+      !detector.containsSensitiveInfo(text),
+      `Does not flag routing number without keyword nearby: ${text}`
+    );
+  }
 });
 
 add_task(function test_containsSensitiveInfo_multipleTypes() {
   const detector = new SensitiveInfoDetector();
 
   const multipleTypes =
-    "Email user@example.com and call 555-123-4567 at 123 Main St.";
+    "Email user@example.com and call 202-555-0123 at 123 Main St.";
   Assert.ok(
     detector.containsSensitiveInfo(multipleTypes),
     "Detects text with multiple sensitive info types"
@@ -405,6 +718,11 @@ add_task(function test_containsSensitiveKeywords_medical() {
   );
 
   Assert.ok(
+    detector.containsSensitiveKeywords("Booking an NHS dentist appointment"),
+    "Detects en-GB medical keyword: NHS"
+  );
+
+  Assert.ok(
     detector.containsSensitiveKeywords(
       "Options de traitement contre le cancer"
     ),
@@ -458,6 +776,21 @@ add_task(function test_containsSensitiveKeywords_finance() {
   );
 
   Assert.ok(
+    detector.containsSensitiveKeywords("When does my next pay cheque arrive"),
+    "Detects en-GB finance keyword: pay cheque"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Paycheque arrived late this month"),
+    "Detects en-GB finance keyword: paycheque"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Where do I find my sort code"),
+    "Detects en-GB finance keyword: sort code"
+  );
+
+  Assert.ok(
     detector.containsSensitiveKeywords("Déclaration d'impôt sur le revenu"),
     "Detects French finance keyword: impôt"
   );
@@ -497,6 +830,11 @@ add_task(function test_containsSensitiveKeywords_legal() {
   );
 
   Assert.ok(
+    detector.containsSensitiveKeywords("Hiring a solicitor to buy a house"),
+    "Detects en-GB legal keyword: solicitor"
+  );
+
+  Assert.ok(
     detector.containsSensitiveKeywords("Demande de divorce en France"),
     "Detects French legal keyword: divorce"
   );
@@ -528,6 +866,11 @@ add_task(function test_containsSensitiveKeywords_political() {
   Assert.ok(
     detector.containsSensitiveKeywords("Liberal vs conservative viewpoints"),
     "Detects political keyword: liberal"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Tories lose seats in the north"),
+    "Detects en-GB political keyword: tories"
   );
 
   Assert.ok(

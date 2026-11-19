@@ -788,28 +788,45 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   }
 }
 
-static void GeneratePrototypeHoleGuards(CacheIRWriter& writer,
+// Guard that the prototype chain of |obj| has no indexed properties. Prototypes
+// are shape guarded and, if |allowDenseElements| is false, guarded to have no
+// dense elements. If a prototype is covered by one of the no-indexed-properties
+// fuses, we guard on that fuse instead and stop.
+static void GuardProtoChainHasNoIndexedProps(JSContext* cx,
+                                             CacheIRWriter& writer,
+                                             NativeObject* obj,
+                                             ObjOperandId objId,
+                                             bool allowDenseElements) {
+  JSObject* pobj = obj->staticPrototype();
+  while (pobj) {
+    MOZ_ASSERT(pobj->is<NativeObject>());
+
+    auto fuseIndex = MaybeGetHasNoIndexedPropsFuseIndex(cx->global(), pobj);
+    if (fuseIndex.isSome() &&
+        cx->realm()->realmFuses.getFuseByIndex(*fuseIndex)->intact()) {
+      writer.guardFuse(*fuseIndex);
+      return;
+    }
+
+    ObjOperandId protoId = writer.loadProtoObject(pobj, objId);
+    writer.guardShape(protoId, pobj->shape());
+    if (!allowDenseElements) {
+      writer.guardNoDenseElements(protoId);
+    }
+
+    pobj = pobj->staticPrototype();
+  }
+}
+
+static void GeneratePrototypeHoleGuards(JSContext* cx, CacheIRWriter& writer,
                                         NativeObject* obj, ObjOperandId objId,
                                         bool alwaysGuardFirstProto) {
   if (alwaysGuardFirstProto) {
     GuardReceiverProto(writer, obj, objId);
   }
 
-  JSObject* pobj = obj->staticPrototype();
-  while (pobj) {
-    ObjOperandId protoId = writer.loadObject(pobj);
-
-    // Make sure the shape matches, to ensure the proto is unchanged and to
-    // avoid non-dense elements or anything else that is being checked by
-    // CanAttachDenseElementHole.
-    MOZ_ASSERT(pobj->is<NativeObject>());
-    writer.guardShape(protoId, pobj->shape());
-
-    // Also make sure there are no dense elements.
-    writer.guardNoDenseElements(protoId);
-
-    pobj = pobj->staticPrototype();
-  }
+  GuardProtoChainHasNoIndexedProps(cx, writer, obj, objId,
+                                   /* allowDenseElements = */ false);
 }
 
 // Similar to |TestMatchingReceiver|, but for the holder object (when it
@@ -2797,18 +2814,30 @@ AttachDecision GetPropIRGenerator::tryAttachStringChar(ValOperandId valId,
     return AttachDecision::NoAction;
   }
 
-  // Can't attach for out-of-bounds access without guarding that indexed
-  // properties aren't present along the prototype chain of |String.prototype|.
-  if (attach == AttachStringChar::OutOfBounds) {
+  // We can optimize out-of-bounds reads if there are no indexed properties on
+  // String.prototype and idVal_ >= 0. Negative integers aren't array indices
+  // and aren't covered by StringProtoHasNoIndexedPropsFuse.
+  if (attach == AttachStringChar::OutOfBounds &&
+      (idVal_.toInt32() < 0 ||
+       !cx_->realm()->realmFuses.stringProtoHasNoIndexedPropsFuse.intact())) {
     return AttachDecision::NoAction;
   }
 
   StringOperandId strId = writer.guardToString(valId);
   Int32OperandId int32IndexId = EmitGuardToInt32Index(writer, idVal_, indexId);
-  if (attach == AttachStringChar::Linearize) {
+
+  if (attach == AttachStringChar::OutOfBounds) {
+    writer.guardInt32IsNonNegative(int32IndexId);
+    writer.guardFuse(RealmFuses::FuseIndex::StringProtoHasNoIndexedPropsFuse);
+    // LoadStringAtResult with |handleOOB| requires a linear string.
     strId = writer.linearizeForCharAccess(strId, int32IndexId);
+    writer.loadStringAtResult(strId, int32IndexId, /* handleOOB = */ true);
+  } else {
+    if (attach == AttachStringChar::Linearize) {
+      strId = writer.linearizeForCharAccess(strId, int32IndexId);
+    }
+    writer.loadStringCharResult(strId, int32IndexId, /* handleOOB = */ false);
   }
-  writer.loadStringCharResult(strId, int32IndexId, /* handleOOB = */ false);
 
   trackAttached("GetProp.StringChar");
   return AttachDecision::Attach;
@@ -2945,7 +2974,7 @@ AttachDecision GetPropIRGenerator::tryAttachArgumentsObjectArgHole(
     writer.guardClass(objId, GuardClassKind::UnmappedArguments);
   }
 
-  GeneratePrototypeHoleGuards(writer, args, objId,
+  GeneratePrototypeHoleGuards(cx_, writer, args, objId,
                               /* alwaysGuardFirstProto = */ true);
 
   writer.loadArgumentsObjectArgHoleResult(objId, indexId);
@@ -3027,7 +3056,7 @@ AttachDecision GetPropIRGenerator::tryAttachDenseElementHole(
 
   // Guard on the shape, to prevent non-dense elements from appearing.
   TestMatchingNativeReceiver(writer, nobj, objId);
-  GeneratePrototypeHoleGuards(writer, nobj, objId,
+  GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                               /* alwaysGuardFirstProto = */ false);
   writer.loadDenseElementHoleResult(objId, indexId);
 
@@ -3099,7 +3128,7 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
   // Shape guard the prototype chain to avoid shadowing indexes from appearing.
   // The helper function also ensures that the index does not appear within the
   // dense element set of the prototypes.
-  GeneratePrototypeHoleGuards(writer, nobj, objId,
+  GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                               /* alwaysGuardFirstProto = */ true);
 
   // At this point, we are guaranteed that the indexed property will not
@@ -3875,7 +3904,7 @@ AttachDecision HasPropIRGenerator::tryAttachDenseHole(HandleObject obj,
   // Generate prototype guards if needed. This includes monitoring that
   // properties were not added in the chain.
   if (!hasOwn) {
-    GeneratePrototypeHoleGuards(writer, nobj, objId,
+    GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                                 /* alwaysGuardFirstProto = */ false);
   }
 
@@ -3909,7 +3938,7 @@ AttachDecision HasPropIRGenerator::tryAttachSparse(HandleObject obj,
   // Generate prototype guards if needed. This includes monitoring that
   // properties were not added in the chain.
   if (!hasOwn) {
-    GeneratePrototypeHoleGuards(writer, nobj, objId,
+    GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                                 /* alwaysGuardFirstProto = */ true);
   }
 
@@ -3949,7 +3978,7 @@ AttachDecision HasPropIRGenerator::tryAttachArgumentsObjectArg(
   }
 
   if (!hasOwn) {
-    GeneratePrototypeHoleGuards(writer, args, objId,
+    GeneratePrototypeHoleGuards(cx_, writer, args, objId,
                                 /* alwaysGuardFirstProto = */ true);
   }
 
@@ -4847,6 +4876,24 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
   return AttachDecision::Attach;
 }
 
+// Guard that the prototype chain of |obj| doesn't have indexed properties that
+// would affect adding an element to |obj|.
+static void GuardProtoChainForAddElement(JSContext* cx, CacheIRWriter& writer,
+                                         NativeObject* obj,
+                                         ObjOperandId objId) {
+  // Note: unlike GeneratePrototypeHoleGuards, we don't need to guard that the
+  // prototype chain has no dense elements. Only two kinds of properties on a
+  // prototype object can prevent adding an element:
+  //
+  // - Accessor properties: never stored in dense elements.
+  // - Non-writable properties (can't be shadowed through SetElem): only stored
+  //   in dense elements when ObjectFlag::FrozenElements is set.
+  //
+  // See also CanAttachAddElement.
+  GuardProtoChainHasNoIndexedProps(cx, writer, obj, objId,
+                                   /* allowDenseElements = */ true);
+}
+
 static bool CanAttachAddElement(NativeObject* obj, bool isInit,
                                 AllowIndexedReceiver allowIndexedReceiver) {
   MOZ_ASSERT(!obj->is<TypedArrayObject>());
@@ -4970,9 +5017,9 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
 
   TestMatchingNativeReceiver(writer, nobj, objId);
 
-  // Also shape guard the proto chain, unless this is an InitElem.
+  // Also guard the proto chain, unless this is an InitElem.
   if (IsPropertySetOp(op)) {
-    ShapeGuardProtoChain(writer, nobj, objId);
+    GuardProtoChainForAddElement(cx_, writer, nobj, objId);
   }
 
   writer.storeDenseElementHole(objId, indexId, rhsId, isAdd);
@@ -5061,7 +5108,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   // only be data properties, so our specialized Set handler is ok to bind
   // to them.
   if (IsPropertySetOp(op)) {
-    ShapeGuardProtoChain(writer, nobj, objId);
+    GuardProtoChainForAddElement(cx_, writer, nobj, objId);
   }
 
   // Ensure that if we're adding an element to the object, the object's
@@ -6697,8 +6744,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
   // Guard that the shape matches.
   TestMatchingNativeReceiver(writer, thisarray, thisObjId);
 
-  // Guard proto chain shapes.
-  ShapeGuardProtoChain(writer, thisarray, thisObjId);
+  // Guard the proto chain.
+  GuardProtoChainForAddElement(cx_, writer, thisarray, thisObjId);
 
   // arr.push(x) is equivalent to arr[arr.length] = x for regular arrays.
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
@@ -7264,16 +7311,16 @@ AttachDecision InlinableNativeIRGenerator::tryAttachUnsafeGetReservedSlot(
 
   switch (native) {
     case InlinableNative::IntrinsicUnsafeGetReservedSlot:
-      writer.loadFixedSlotResult(objId, offset);
+      writer.loadReservedFixedSlotResult(objId, offset);
       break;
     case InlinableNative::IntrinsicUnsafeGetObjectFromReservedSlot:
-      writer.loadFixedSlotTypedResult(objId, offset, ValueType::Object);
+      writer.loadReservedFixedSlotTypedResult(objId, offset, ValueType::Object);
       break;
     case InlinableNative::IntrinsicUnsafeGetInt32FromReservedSlot:
-      writer.loadFixedSlotTypedResult(objId, offset, ValueType::Int32);
+      writer.loadReservedFixedSlotTypedResult(objId, offset, ValueType::Int32);
       break;
     case InlinableNative::IntrinsicUnsafeGetStringFromReservedSlot:
-      writer.loadFixedSlotTypedResult(objId, offset, ValueType::String);
+      writer.loadReservedFixedSlotTypedResult(objId, offset, ValueType::String);
       break;
     default:
       MOZ_CRASH("unexpected native");
@@ -11031,8 +11078,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime() {
   ObjOperandId objId = writer.guardToObject(thisValId);
   emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Date);
 
-  writer.loadFixedSlotTypedResult(objId, DateObject::offsetOfUTCTimeSlot(),
-                                  ValueType::Double);
+  writer.loadReservedFixedSlotTypedResult(
+      objId, DateObject::offsetOfUTCTimeSlot(), ValueType::Double);
 
   trackAttached("DateGetTime");
   return AttachDecision::Attach;
@@ -12413,7 +12460,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
 
 #ifdef DEBUG
     writer.assertNoAllocationMetadataBuilder(
-        cx_->realm()->addressOfMetadataBuilder());
+        cx_->realm()->addressOfHasAllocationMetadataBuilder());
 #endif
     writer.newPlainObjectResult(numFixedSlots, numDynamicSlots, allocKind,
                                 shape, site);
@@ -16944,7 +16991,7 @@ AttachDecision NewArrayIRGenerator::tryAttachArrayObject() {
 
 #ifdef DEBUG
   writer.assertNoAllocationMetadataBuilder(
-      cx_->realm()->addressOfMetadataBuilder());
+      cx_->realm()->addressOfHasAllocationMetadataBuilder());
 #endif
 
   gc::AllocSite* site = maybeCreateAllocSite();
@@ -17023,7 +17070,7 @@ AttachDecision NewObjectIRGenerator::tryAttachPlainObject() {
 
 #ifdef DEBUG
   writer.assertNoAllocationMetadataBuilder(
-      cx_->realm()->addressOfMetadataBuilder());
+      cx_->realm()->addressOfHasAllocationMetadataBuilder());
 #endif
   writer.newPlainObjectResult(numFixedSlots, numDynamicSlots, allocKind, shape,
                               site);
@@ -17075,7 +17122,7 @@ AttachDecision LambdaIRGenerator::tryAttachFunctionClone() {
 
 #ifdef DEBUG
   writer.assertNoAllocationMetadataBuilder(
-      cx_->realm()->addressOfMetadataBuilder());
+      cx_->realm()->addressOfHasAllocationMetadataBuilder());
 #endif
 
   gc::AllocKind allocKind = canonicalFunction_->getAllocKind();

@@ -165,8 +165,7 @@ static void TestIterate(HolderKind kind) {
   Vector<UniquePtr<MyHolder>, 0, InfallibleAllocPolicy> holders;
   bool seen[count] = {};
   for (size_t i = 1; i < count; i++) {
-    MOZ_ALWAYS_TRUE(
-        holders.emplaceBack(mozilla::MakeUnique<MyHolder>(kind, i)));
+    MOZ_ALWAYS_TRUE(holders.emplaceBack(std::make_unique<MyHolder>(kind, i)));
     Put(container, holders.back().get(), ZoneForKind(kind));
   }
   for (iter.emplace(container); !iter->Done(); iter->Next()) {
@@ -197,7 +196,7 @@ static void TestAddRemoveMany(HolderKind kind, size_t count) {
 
   Vector<UniquePtr<MyHolder>, 0, InfallibleAllocPolicy> holders;
   for (size_t i = 0; i < count; i++) {
-    MOZ_ALWAYS_TRUE(holders.emplaceBack(mozilla::MakeUnique<MyHolder>(kind)));
+    MOZ_ALWAYS_TRUE(holders.emplaceBack(std::make_unique<MyHolder>(kind)));
   }
 
   for (size_t i = 0; i < count; i++) {
@@ -232,7 +231,7 @@ static void TestRemoveWhileIterating(HolderKind kind, size_t count) {
   Maybe<typename Container::Iter> iter;
 
   for (size_t i = 0; i < count; i++) {
-    MOZ_ALWAYS_TRUE(holders.emplaceBack(MakeUnique<MyHolder>(kind)));
+    MOZ_ALWAYS_TRUE(holders.emplaceBack(std::make_unique<MyHolder>(kind)));
   }
 
   // Iterate a container with one entry but remove it before we get to it.

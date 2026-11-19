@@ -13,10 +13,12 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconRes
+import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.fake.FakeMenuHost
 import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
@@ -27,7 +29,7 @@ class FindInPageMenuItemProviderTest {
 
     @Test
     fun `WHEN building the menu item THEN provide the item for searching the current page`() {
-        val provider = FindInPageMenuItemProvider(appStore)
+        val provider = FindInPageMenuItemProvider(appStore, target = MenuTarget.BrowserTab)
 
         assertEquals(
             StandardMenuItem(
@@ -35,13 +37,28 @@ class FindInPageMenuItemProviderTest {
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_search_24),
                 onClickEvent = MenuAction.FindInPage,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
+        )
+    }
+
+    @Test
+    fun `GIVEN target is CustomizeMenu WHEN building the menu item THEN provide item without click event`() {
+        val provider = FindInPageMenuItemProvider(appStore, target = MenuTarget.CustomizeMenu)
+
+        assertEquals(
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_find_in_page)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_search_24),
+                onClickEvent = null,
+                state = MenuItemState.DEFAULT,
+            ),
+            provider.itemsFlow.value.single(),
         )
     }
 
     @Test
     fun `WHEN clicking the item THEN close the menu and start searching the current page`() {
-        val provider = FindInPageMenuItemProvider(appStore)
+        val provider = FindInPageMenuItemProvider(appStore, target = MenuTarget.BrowserTab)
 
         provider.onEvent(MenuAction.FindInPage, menu)
 
@@ -51,9 +68,9 @@ class FindInPageMenuItemProviderTest {
 
     @Test
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
-        val provider = FindInPageMenuItemProvider(appStore)
+        val provider = FindInPageMenuItemProvider(appStore, target = MenuTarget.BrowserTab)
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.CustomizeReaderView))

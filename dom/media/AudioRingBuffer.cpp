@@ -399,7 +399,7 @@ class AudioRingBuffer::AudioRingBufferPrivate {
 };
 
 AudioRingBuffer::AudioRingBuffer(uint32_t aSizeInBytes)
-    : mPtr(MakeUnique<AudioRingBufferPrivate>()) {
+    : mPtr(std::make_unique<AudioRingBufferPrivate>()) {
   mPtr->mBackingBuffer.emplace(aSizeInBytes);
   MOZ_ASSERT(mPtr->mBackingBuffer);
 }

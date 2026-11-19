@@ -283,7 +283,8 @@ class AudioProxyThread {
     // Resample to an acceptable sample-rate for the sending side
     if (!mAudioConverter || mAudioConverter->InputConfig() != inputConfig ||
         mAudioConverter->OutputConfig() != outputConfig) {
-      mAudioConverter = MakeUnique<AudioConverter>(inputConfig, outputConfig);
+      mAudioConverter =
+          std::make_unique<AudioConverter>(inputConfig, outputConfig);
     }
 
     int16_t* processedAudio = nullptr;
@@ -319,9 +320,9 @@ class AudioProxyThread {
       // It's the right thing to drop the bit of audio still in the packetizer:
       // we don't want to send to the conduit audio that has two different
       // rates while telling it that it has a constante rate.
-      mPacketizer =
-          MakeUnique<AudioPacketizer<int16_t, int16_t>>(audio_10ms, aChannels);
-      mPacket = MakeUnique<int16_t[]>(audio_10ms * aChannels);
+      mPacketizer = std::make_unique<AudioPacketizer<int16_t, int16_t>>(
+          audio_10ms, aChannels);
+      mPacket = std::make_unique<int16_t[]>(audio_10ms * aChannels);
     }
 
     // aFrameCount is one graph iteration's worth and the packetizer is drained
@@ -388,7 +389,7 @@ MediaPipeline::MediaPipeline(const std::string& aPc,
       mRtpBytesSent(0),
       mRtpBytesReceived(0),
       mPc(aPc),
-      mRtpHeaderExtensionMap(MakeUnique<webrtc::RtpHeaderExtensionMap>()),
+      mRtpHeaderExtensionMap(std::make_unique<webrtc::RtpHeaderExtensionMap>()),
       mPacketDumper(PacketDumper::GetPacketDumper(mPc)) {
   if (mDirection == DirectionType::TRANSMIT) {
     mRtpSendEventListener = mConduit->SenderRtpSendEvent().Connect(

@@ -97,12 +97,13 @@ nsresult SharedPlanarYCbCrImage::CopyData(const PlanarYCbCrData& aData) {
 
   TextureClientAutoLock autoLock(mTextureClient, OpenMode::OPEN_WRITE_ONLY);
   if (!autoLock.Succeeded()) {
-    MOZ_ASSERT(false, "Failed to lock the texture.");
+    MOZ_RELEASE_ASSERT(false, "Failed to lock the texture.");
     return NS_ERROR_UNEXPECTED;
   }
 
   if (!UpdateYCbCrTextureClient(mTextureClient, aData)) {
-    MOZ_ASSERT(false, "Failed to copy YCbCr data into the TextureClient");
+    MOZ_RELEASE_ASSERT(false,
+                       "Failed to copy YCbCr data into the TextureClient");
     return NS_ERROR_UNEXPECTED;
   }
   mTextureClient->MarkImmutable();
@@ -110,7 +111,7 @@ nsresult SharedPlanarYCbCrImage::CopyData(const PlanarYCbCrData& aData) {
 }
 
 nsresult SharedPlanarYCbCrImage::AdoptData(const Data& aData) {
-  MOZ_ASSERT(false, "This shouldn't be used.");
+  MOZ_RELEASE_ASSERT(false, "This shouldn't be used.");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -121,7 +122,7 @@ bool SharedPlanarYCbCrImage::IsValid() const {
 nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
     const PlanarYCbCrData& aData, const gfx::IntSize& aYSize,
     const gfx::IntSize& aCbCrSize) {
-  MOZ_ASSERT(!mTextureClient, "This image already has allocated data");
+  MOZ_RELEASE_ASSERT(!mTextureClient, "This image already has allocated data");
 
   if (!aData.GetPlaneSizes()) {
     return NS_ERROR_INVALID_ARG;

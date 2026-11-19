@@ -50,8 +50,8 @@ nsSystemAlertsService::~nsSystemAlertsService() = default;
 
 nsresult nsSystemAlertsService::Init() { return NS_OK; }
 
-NS_IMETHODIMP nsSystemAlertsService::ShowAlert(nsIAlertNotification* aAlert,
-                                               nsIObserver* aAlertListener) {
+NS_IMETHODIMP nsSystemAlertsService::ShowAlert(
+    nsIAlertNotification* /*aAlert*/, nsIObserver* /*aAlertListener*/) {
   return NS_ERROR_NOT_IMPLEMENTED;  // Implemented in nsAlertsService
 }
 
@@ -77,7 +77,7 @@ NS_IMETHODIMP nsSystemAlertsService::ShowAlertWithCallbacks(
 }
 
 NS_IMETHODIMP nsSystemAlertsService::CloseAlert(const nsAString& aAlertName,
-                                                bool aContextClosed) {
+                                                bool /*aContextClosed*/) {
   RefPtr<nsAlertsIconListener> listener = mActiveListeners.Get(aAlertName);
   if (!listener) {
     return NS_OK;
@@ -86,7 +86,8 @@ NS_IMETHODIMP nsSystemAlertsService::CloseAlert(const nsAString& aAlertName,
   return listener->Close();
 }
 
-NS_IMETHODIMP nsSystemAlertsService::GetHistory(nsTArray<nsString>& aResult) {
+NS_IMETHODIMP nsSystemAlertsService::GetHistory(
+    nsTArray<nsString>& /*aResult*/) {
   // Neither org.freedesktop.Notifications nor
   // org.freedesktop.portal.Notification supports getting the previous
   // notifications
@@ -95,11 +96,12 @@ NS_IMETHODIMP nsSystemAlertsService::GetHistory(nsTArray<nsString>& aResult) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
-NS_IMETHODIMP nsSystemAlertsService::GetManualDoNotDisturb(bool* aRetVal) {
+NS_IMETHODIMP nsSystemAlertsService::GetManualDoNotDisturb(bool* /*aRetVal*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP nsSystemAlertsService::SetManualDoNotDisturb(bool aDoNotDisturb) {
+NS_IMETHODIMP nsSystemAlertsService::SetManualDoNotDisturb(
+    bool /*aDoNotDisturb*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

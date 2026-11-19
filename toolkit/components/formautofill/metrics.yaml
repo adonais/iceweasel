@@ -25,6 +25,88 @@ formautofill.creditcards:
       - autofill@lists.mozilla.org
       - passwords-dev@mozilla.org
     expires: never
+  saved_count:
+    type: quantity
+    unit: credit cards
+    lifetime: application
+    description: >
+      The number of credit cards saved in the store serving them. Read when the
+      store loads at startup and after every change, so it is sent on every
+      metrics ping, unlike autofill_profiles_count, which is only set when a
+      card is added or edited.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2086210
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2086210
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+  saved_cvv_count:
+    type: quantity
+    unit: credit cards
+    lifetime: application
+    description: >
+      The number of saved credit cards that have a security code (CVV) saved.
+      Read and sent like saved_count. Reports only the count, never the code
+      or its length.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2086210
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2086210
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+  cvv_saving_toggled:
+    type: event
+    description: >
+      Recorded when the user turns saving security codes (CVV) on or off,
+      from the "Save security codes" setting or from the toggle on a card
+      doorhanger.
+    bugs:
+      - https://bugzil.la/2086225
+    data_reviews:
+      - https://bugzil.la/2086225
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+    extra_keys:
+      enabled:
+        description: The new state, true when saving security codes is on.
+        type: boolean
+      source:
+        description: >
+          Where it was changed: "settings" (the Settings checkbox),
+          "save_prompt" (the toggle on the save doorhanger for a new card) or
+          "update_prompt" (the toggle on the "Save security code?" doorhanger
+          for a saved card).
+        type: string
+      had_saved_cvv:
+        description: >
+          Whether at least one saved card had a security code when the setting
+          changed.
+        type: boolean
+  cvv_saving_enabled:
+    type: boolean
+    lifetime: application
+    description: >
+      Whether saving security codes (CVV) is turned on. Set at startup, so it
+      is sent on every metrics ping. Only set when security codes are
+      supported.
+    bugs:
+      - https://bugzil.la/2086225
+    data_reviews:
+      - https://bugzil.la/2086225
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
   migrate_to_rust:
     type: event
     description: >
@@ -37,8 +119,10 @@ formautofill.creditcards:
       - technical
     bugs:
       - https://bugzil.la/2068982
+      - https://bugzil.la/2085806
     data_reviews:
       - https://bugzil.la/2068982
+      - https://bugzil.la/2085806
     notification_emails:
       - autofill@lists.mozilla.org
     expires: never
@@ -60,14 +144,17 @@ formautofill.creditcards:
           How many launches had already tried and failed before this one, 0 on
           the first. A retry emits an otherwise identical event, so this is
           what separates a profile that failed once from one failing every
-          time. The migrator gives up after 3.
+          time. The migrator gives up after 10. Always 0 for "to_json", which
+          is not limited.
         type: quantity
       result:
         description: >
           "ok" when the store copied into ended up holding exactly what the
           source holds -- every record arrived and nothing the source lacks
           survived, compared by guid rather than by count -- so the profile
-          could be handed to it; otherwise "error".
+          could be handed to it; otherwise "error". A "to_json" copy hands the
+          profile back to the JSON store either way, so an "error" there means
+          some records did not make it back.
         type: string
       source_total:
         description: >
@@ -117,9 +204,11 @@ formautofill.creditcards:
         type: quantity
       error_code:
         description: >
-          The UniFFI error variant when the migration threw, for grouping.
-          Absent otherwise, including when records were rejected or came up
-          short: the counts already describe that.
+          The UniFFI error variant when the migration threw, for grouping, or
+          "SourceChanged" when the JSON store was written to while it was
+          copied into the Rust store, which fails the run. Absent otherwise,
+          including when records were rejected or came up short: the counts
+          already describe that.
         type: string
       error_message:
         description: >
@@ -208,6 +297,129 @@ formautofill.creditcards:
           read. Absent when there are none.
         type: string
 
+  cvv_manage_action:
+    type: event
+    description: >
+      Recorded when the user saves a card from the card editor in Settings
+      (Manage payment methods > Add or Edit) and the security code (CVV)
+      changed. Not recorded when the security code is unchanged or the dialog
+      is cancelled. Only the kind of change is recorded, never the code.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/2086229
+    data_reviews:
+      - https://bugzil.la/2086229
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+    extra_keys:
+      action:
+        description: >
+          "add": a code is saved for a card that had none. "edit": the stored
+          code is changed. "clear": the stored code is removed.
+        type: string
+
+  cvv_prompt_shown:
+    type: event
+    description: >
+      Recorded when the credit card doorhanger offers to save a security code
+      the user entered in the form: the save doorhanger for a new card
+      submitted with a security code, or the update doorhanger for a saved card
+      submitted with a new or changed security code.
+    bugs:
+      - https://bugzil.la/2086203
+    data_reviews:
+      - https://bugzil.la/2086203
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      prompt_type: &cvv_prompt_type
+        description: >
+          "new_card" for the save doorhanger of a new card, "existing_card" for
+          the update doorhanger offering to add a security code to a saved
+          card.
+        type: string
+      flow_id: &cvv_prompt_flow_id
+        description: >
+          Flow id of the interaction session with the credit card form, shared
+          with the credit card form events.
+        type: string
+
+  cvv_prompt_action:
+    type: event
+    description: >
+      Recorded when the user responds to a doorhanger recorded by
+      cvv_prompt_shown, or when it is closed without a response. A button
+      clicked after reopening a closed doorhanger is still recorded.
+    bugs:
+      - https://bugzil.la/2086203
+    data_reviews:
+      - https://bugzil.la/2086203
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      prompt_type: *cvv_prompt_type
+      action:
+        description: >
+          "save" when the card is saved or updated, "save_new" when an existing
+          card is saved as a new payment method, "not_now" (new_card) or
+          "no_thanks" (existing_card) when the Dismiss button is clicked,
+          "never_save" when the user stops saving cards, and "closed", recorded
+          once, when the doorhanger is closed without a button being clicked,
+          for example with Esc or by closing the tab.
+        type: string
+      cvv_saving_enabled:
+        description: >
+          Whether saving security codes was turned on when the user responded.
+        type: boolean
+      flow_id: *cvv_prompt_flow_id
+
+  store_error:
+    type: event
+    description: >
+      Recorded when adding, updating or reading (decrypting) a card, or
+      clearing its security code (CVV), fails in the credit card store. Not
+      recorded when the card does not exist. Only the error category is
+      recorded, never the code or any other card value.
+    data_sensitivity:
+      - technical
+    bugs:
+      - https://bugzil.la/2086894
+    data_reviews:
+      - https://bugzil.la/2086894
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+    extra_keys:
+      operation:
+        description: >
+          "add": a new card was being saved. "update": a stored card was being
+          changed. "clear": a stored card's security code was being removed.
+          "read": one or all stored cards were being read.
+        type: string
+      error_type:
+        description: >
+          The UniFFI error variant the store threw, e.g. "CryptoError" or
+          "SqlError". "PrimaryPasswordLocked" when the user declined or has not
+          entered the primary password; filter it out to count real failures.
+          "Unknown" for any other error.
+        type: string
+      has_cvv:
+        description: >
+          Whether a security code was involved: the card being written carried
+          one, the code being cleared, or a card being read has one. Absent
+          when a failed read could not tell.
+        type: boolean
+
 
 formautofill:
   form_submission_heuristic:
@@ -278,6 +490,59 @@ formautofill:
           String that contains a comma-separated list of fields located in a sandbox
           iframe.
         type: string
+
+  dropdown_suppressed:
+    type: event
+    description: >
+      Recorded when the autocomplete dropdown is withheld on a field because
+      the field's autocomplete attribute holds a value that cannot be parsed
+      into a known field name (only while
+      extensions.formautofill.suppressUnrecognizedAutocomplete.enabled is on).
+      Recorded at most once each time the field is focused.
+    bugs:
+      - https://bugzil.la/2081405
+    data_reviews:
+      - https://bugzil.la/2081405
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      category:
+        description: >
+          Autofill category of the field: "address", "creditCard" or
+          "passport".
+        type: string
+      field_name:
+        description: >
+          The field name the field was classified as before its autocomplete
+          attribute changed, such as "address-line1".
+        type: string
+
+  dropdown_suppressed_total:
+    type: event
+    description: >
+      The number of dropdown_suppressed events recorded on the fields of a
+      form. Recorded once per form, when the form is submitted or the page is
+      left, and only if the dropdown was withheld at least once.
+    bugs:
+      - https://bugzil.la/2081405
+    data_reviews:
+      - https://bugzil.la/2081405
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - autofill@lists.mozilla.org
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      count:
+        description: >
+          How many times the dropdown was withheld on the form's fields,
+          counted at most once per field focus.
+        type: quantity
 
   availability:
     type: boolean
@@ -1358,8 +1623,10 @@ creditcard:
       creditcard.detected#cc_form_v2.
     bugs: &creditcard_detected_bugs
       - https://bugzil.la/1757731
+      - https://bugzil.la/2086235
     data_reviews: &creditcard_detected_data_reviews
       - https://bugzil.la/1757731
+      - https://bugzil.la/2086235
     notification_emails: &creditcard_detected_emails
       - autofill@lists.mozilla.org
       - passwords-dev@mozilla.org
@@ -1394,6 +1661,10 @@ creditcard:
       cc_exp_year:
         description: >
           credit card expiration year
+        type: string
+      cc_csc:
+        description: >
+          credit card security code (CVV) field result
         type: string
       field_name:
         description: >
@@ -1436,8 +1707,10 @@ creditcard:
       - interaction
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1837161
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2086235
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1837161
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2086235
     notification_emails:
       - autofill@lists.mozilla.org
     expires: never
@@ -1462,6 +1735,9 @@ creditcard:
         type: string
       cc_exp_year:
         description: Credit card expiration year result
+        type: string
+      cc_csc:
+        description: Credit card security code (CVV) field result
         type: string
 
   filled_modified_cc_form_v2:
@@ -1866,8 +2142,10 @@ formautofill.addresses:
       - technical
     bugs:
       - https://bugzil.la/2058441
+      - https://bugzil.la/2085806
     data_reviews:
       - https://bugzil.la/2058441
+      - https://bugzil.la/2085806
     notification_emails:
       - autofill@lists.mozilla.org
     expires: never
@@ -1889,14 +2167,17 @@ formautofill.addresses:
           How many launches had already tried and failed before this one, 0 on
           the first. A retry emits an otherwise identical event, so this is
           what separates a profile that failed once from one failing every
-          time. The migrator gives up after 3.
+          time. The migrator gives up after 10. Always 0 for "to_json", which
+          is not limited.
         type: quantity
       result:
         description: >
           "ok" when the store copied into ended up holding exactly what the
           source holds -- every record arrived and nothing the source lacks
           survived, compared by guid rather than by count -- so the profile
-          could be handed to it; otherwise "error".
+          could be handed to it; otherwise "error". A "to_json" copy hands the
+          profile back to the JSON store either way, so an "error" there means
+          some records did not make it back.
         type: string
       source_total:
         description: >
@@ -1946,9 +2227,11 @@ formautofill.addresses:
         type: quantity
       error_code:
         description: >
-          The UniFFI error variant when the migration threw, for grouping.
-          Absent otherwise, including when records were rejected or came up
-          short: the counts already describe that.
+          The UniFFI error variant when the migration threw, for grouping, or
+          "SourceChanged" when the JSON store was written to while it was
+          copied into the Rust store, which fails the run. Absent otherwise,
+          including when records were rejected or came up short: the counts
+          already describe that.
         type: string
       error_message:
         description: >

@@ -6,7 +6,8 @@ It used the same
 infrastructure as
 [about:memory](about_colon_memory.md) to measure
 memory usage on a predefined snapshot of Alexa top 100 pages known as
-tp5.
+tp5. AWSY now measures memory with the recorded tp6 pageset or with
+blank tabs (base memory usage).
 
 Since Firefox transitioned to using multiple processes by default, we
 [moved AWSY into the

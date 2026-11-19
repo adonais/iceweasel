@@ -322,6 +322,19 @@ class ScrollTimeline : public AnimationTimeline,
     nscoord mPosition = 0;
     nscoord mStart = 0;
     nscoord mEnd = 0;
+
+    Maybe<double> CalculateProgress() const {
+      // Note: It's possible to get a zero "cover" range for ViewTimeline
+      // because its range depends on layout. We should avoid the division by
+      // zero here.
+      // FIXME: Scroll offsets on the RTL container is complicated specifically
+      // on mobile, see https://github.com/w3c/csswg-drafts/issues/12893. For
+      // now, we use the absoluate value to make things simple.
+      return mStart == mEnd
+                 ? Nothing()
+                 : Some(static_cast<double>(std::abs(mPosition) - mStart) /
+                        static_cast<double>(mEnd - mStart));
+    }
   };
   virtual Maybe<ComputedTimelineData> ComputeTimelineData() const;
 

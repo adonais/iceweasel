@@ -34,5 +34,5 @@ data class TabGroup(
     val theme: String,
     val closed: Boolean = false,
     val lastModified: Long,
-    val tabIds: List<String>,
+    val tabIds: List<String> = emptyList(),
 )

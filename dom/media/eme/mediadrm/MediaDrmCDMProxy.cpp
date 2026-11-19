@@ -75,7 +75,7 @@ void MediaDrmCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
               }
             }
 
-            self->mCDM = mozilla::MakeUnique<MediaDrmProxySupport>(
+            self->mCDM = std::make_unique<MediaDrmProxySupport>(
                 self->mKeySystem, originID);
 
             nsCOMPtr<nsIRunnable> task(NewRunnableMethod<uint32_t>(

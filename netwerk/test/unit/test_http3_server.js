@@ -11,9 +11,6 @@ let trrServer;
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
 ].getService(Ci.nsICertOverrideService);
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
 
 const { NodeHTTPServer } = ChromeUtils.importESModule(
   "resource://testing-common/NodeServer.sys.mjs"
@@ -40,11 +37,6 @@ add_setup(async function setup() {
     Services.prefs.clearUserPref("network.dns.disablePrefetch");
     await trrServer.stop();
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns;
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 });
 
 function makeChan(url) {

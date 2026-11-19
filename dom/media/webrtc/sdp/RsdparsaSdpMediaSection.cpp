@@ -142,8 +142,8 @@ void RsdparsaSdpMediaSection::LoadFormats() {
 
 UniquePtr<SdpConnection> convertRustConnection(const RustSdpConnection conn) {
   auto address = convertExplicitlyTypedAddress(conn.addr);
-  return MakeUnique<SdpConnection>(address.first, address.second, conn.ttl,
-                                   conn.amount);
+  return std::make_unique<SdpConnection>(address.first, address.second,
+                                         conn.ttl, conn.amount);
 }
 
 void RsdparsaSdpMediaSection::LoadConnection() {

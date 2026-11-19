@@ -76,9 +76,6 @@ NS_IMETHODIMP SandboxReportWrapper::GetProcType(nsACString& aProcType) {
     case SandboxReport::ProcType::RDD:
       aProcType.AssignLiteral("dataDecoder");
       return NS_OK;
-    case SandboxReport::ProcType::SOCKET_PROCESS:
-      aProcType.AssignLiteral("socketProcess");
-      return NS_OK;
     case SandboxReport::ProcType::UTILITY:
       aProcType.AssignLiteral("utility");
       return NS_OK;

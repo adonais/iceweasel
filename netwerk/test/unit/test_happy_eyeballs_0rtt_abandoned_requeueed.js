@@ -205,10 +205,7 @@ function fetchNoThrow(url) {
 add_task(
   {
     skip_if: () =>
-      AppConstants.MOZ_SYSTEM_NSS ||
-      !gServerStarted ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+      AppConstants.MOZ_SYSTEM_NSS || !gServerStarted || mozinfo.os == "android",
   },
   async function test_abandoned_0rtt_hca_requeuees_real_transaction() {
     const host = "0rtt-accept-h2.example.com";

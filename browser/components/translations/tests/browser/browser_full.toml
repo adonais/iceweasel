@@ -51,9 +51,6 @@ prefs = [
 ["browser_translations_full_page_moz_extension.js"]
 
 ["browser_translations_full_page_multiple_windows.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1893021
-]
 
 ["browser_translations_full_page_panel_a11y_focus.js"]
 
@@ -90,9 +87,6 @@ skip-if = [
 ["browser_translations_full_page_panel_engine_destroy.js"]
 
 ["browser_translations_full_page_panel_engine_destroy_pending.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1893021
-]
 
 ["browser_translations_full_page_panel_engine_unsupported.js"]
 
@@ -136,5 +130,7 @@ skip-if = [
 ["browser_translations_full_page_panel_unsupported_lang.js"]
 
 ["browser_translations_full_page_panel_weblanguage_differs_from_app.js"]
+
+["browser_translations_full_page_pdf_is_restricted.js"]
 
 ["browser_translations_full_page_reader_mode.js"]

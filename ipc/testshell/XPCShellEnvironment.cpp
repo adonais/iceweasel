@@ -134,7 +134,7 @@ static bool Load(JSContext* cx, unsigned argc, JS::Value* vp) {
   return true;
 }
 
-static bool Quit(JSContext* cx, unsigned argc, JS::Value* vp) {
+static bool Quit(JSContext* cx, unsigned /*argc*/, JS::Value* /*vp*/) {
   Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
   XPCShellEnvironment* env = Environment(global);
   env->SetIsQuitting();

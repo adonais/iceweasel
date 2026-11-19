@@ -1,0 +1,103 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test how the html copy encoder handles opacity in the inline style attribute</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2002879">Mozilla Bug 2002879</a>
+<p id="display"></p>
+<div id="content" style="display: none">
+</div>
+<div id="container"></div>
+<script>
+
+const de = SpecialPowers.Ci.nsIDocumentEncoder;
+
+const TESTS = [
+  // opacity is dropped, other declarations are kept.
+  {
+    innerHTML: `<span style="opacity: 0; color: red;">hidden</span>`,
+    normalizedResult: `<span style="color: red;">hidden</span>`,
+    description: "opacity should be dropped from the style attribute"
+  },
+  // The style attribute is dropped when opacity was its only declaration.
+  {
+    innerHTML: `<span style="opacity: 0;">hidden</span>`,
+    normalizedResult: `<span>hidden</span>`,
+    description: "the style attribute should be dropped when opacity was its only property"
+  },
+  // opacity is dropped regardless of its importance.
+  {
+    innerHTML: `<span style="color: red; opacity: 0 !important;">hidden</span>`,
+    normalizedResult: `<span style="color: red;">hidden</span>`,
+    description: "important opacity should also be dropped"
+  },
+  // opacity is dropped regardless of its value.
+  {
+    innerHTML: `<span style="opacity: 0.5;">hidden</span>`,
+    normalizedResult: `<span>hidden</span>`,
+    description: "opacity should be dropped whatever its value"
+  },
+  // The remaining declarations keep their original order.
+  {
+    innerHTML: `<span style="color: red; opacity: 0; font-weight: bold;">hidden</span>`,
+    normalizedResult: `<span style="color: red; font-weight: bold;">hidden</span>`,
+    description: "declarations around a dropped opacity should keep their order"
+  },
+  // opacity is dropped even when its value is a var() reference.
+  {
+    innerHTML: `<span style="--opacity: 0; opacity: var(--opacity)">hidden</span>`,
+    normalizedResult: `<span style="--opacity: 0;">hidden</span>`,
+    description: "opacity using var() should be dropped"
+  },
+  // Descendants are normalized as well.
+  {
+    innerHTML: `<div style="opacity: 0"><span style="opacity: 0.5; color:red">hidden</span></div>`,
+    normalizedResult: `<div><span style="color: red;">hidden</span></div>`,
+    description: "descendants should be normalized as well"
+  },
+];
+
+function encodeNode(aNode) {
+  const encoder = SpecialPowers.Cu.createHTMLCopyEncoder();
+  // Use the OutputLFLineBreak flag to avoid the platform's default line break
+  // in the result, so the test can pass on all platforms.
+  encoder.init(
+    document,
+    "text/html",
+    de.OutputLFLineBreak | de.OutputSelectionOnly
+  );
+  encoder.setNode(aNode);
+  return encoder.encodeToString();
+}
+
+add_setup(async function init() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.serializer.normalize_inline_style_when_copying.enabled", false]],
+  });
+});
+
+[true, false].forEach((pref) => {
+  TESTS.forEach((test) => {
+    add_task(async function test_inline_style() {
+      info(`Testing ${JSON.stringify(test.innerHTML)} with pref ${ pref ? "enabled" : "disabled" }`);
+      await SpecialPowers.pushPrefEnv({
+        set: [["dom.serializer.normalize_inline_style_when_copying.enabled", pref]],
+      });
+
+      const container = document.getElementById("container");
+      container.innerHTML = test.innerHTML;
+
+      is(
+        encodeNode(container.firstChild),
+        pref ? test.normalizedResult : test.innerHTML,
+        test.description);
+    });
+  });
+});
+
+</script>
+</body>
+</html>

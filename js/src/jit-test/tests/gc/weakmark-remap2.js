@@ -4,7 +4,7 @@ var g1 = newGlobal({ sameZoneAs: this });
 
 // Turn on the object metadata builder because it will create internal weakmap
 // entries for all objects created from here on.
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 
 // Construct a pair of error objects. Perhaps this fills out the metadata table?
 new Error();

@@ -7,6 +7,7 @@
 use api::{ColorU, DebugFlags, ImageFormat, ImageBufferKind, ImageRendering, TextureCacheCategory};
 use api::units::*;
 use crate::composite::{ClipRadius, CompositorConfig, CompositorKind, CompositorSurfaceTransform};
+use super::layer_tree::{self, LayerMode, LayerTree};
 use crate::composite::{NativeSurfaceId, NativeTileId};
 use crate::debug_colors;
 use crate::debug_font_data;
@@ -514,6 +515,7 @@ pub fn update_debug_overlay(
 pub fn bind_debug_overlay(
     device: &mut Device,
     compositor_config: &mut CompositorConfig,
+    layer_tree: &mut LayerTree,
     compositor_kind: CompositorKind,
     state: &DebugOverlayState,
     device_size: DeviceIntSize,
@@ -553,32 +555,35 @@ pub fn bind_debug_overlay(
 
                 Some(draw_target)
             }
-            CompositorKind::Layer { .. } => {
-                let compositor = compositor_config.layer_compositor().unwrap();
-                compositor.bind_layer(state.layer_index, &[]);
+            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
+                match layer_tree::layer_mode(compositor_kind) {
+                    LayerMode::Swapchains => {
+                        layer_tree.bind_layer(compositor_config, state.layer_index, &[]);
 
-                let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
-                device.begin_render_pass(&RenderPassDescriptor {
-                    target: draw_target,
-                    render_area: None,
-                    color_load: LoadOp::Clear([0.0, 0.0, 0.0, 0.0]),
-                    depth_load: LoadOp::DontCare,
-                });
+                        let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
+                        device.begin_render_pass(&RenderPassDescriptor {
+                            target: draw_target,
+                            render_area: None,
+                            color_load: LoadOp::Clear([0.0, 0.0, 0.0, 0.0]),
+                            depth_load: LoadOp::DontCare,
+                        });
 
-                Some(draw_target)
-            }
-            CompositorKind::Draw { .. } => {
-                // If we're not using the native compositor, the overlay is drawn
-                // over the frame in the default frame buffer.
-                let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
-                device.begin_render_pass(&RenderPassDescriptor {
-                    target: draw_target,
-                    render_area: None,
-                    color_load: LoadOp::Load,
-                    depth_load: LoadOp::DontCare,
-                });
+                        Some(draw_target)
+                    }
+                    LayerMode::Framebuffer => {
+                        // If we're not using the native compositor, the overlay is drawn
+                        // over the frame in the default frame buffer.
+                        let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
+                        device.begin_render_pass(&RenderPassDescriptor {
+                            target: draw_target,
+                            render_area: None,
+                            color_load: LoadOp::Load,
+                            depth_load: LoadOp::DontCare,
+                        });
 
-                Some(draw_target)
+                        Some(draw_target)
+                    }
+                }
             }
         }
     } else {
@@ -589,6 +594,7 @@ pub fn bind_debug_overlay(
 /// Unbind the draw target for debug / profiler overlays, if required.
 pub fn unbind_debug_overlay(
     compositor_config: &mut CompositorConfig,
+    layer_tree: &mut LayerTree,
     compositor_kind: CompositorKind,
     state: &DebugOverlayState,
 ) {
@@ -613,10 +619,13 @@ pub fn unbind_debug_overlay(
                     ClipRadius::EMPTY,
                 );
             }
-            CompositorKind::Draw { .. } => {}
-            CompositorKind::Layer { .. } => {
-                let compositor = compositor_config.layer_compositor().unwrap();
-                compositor.present_layer(state.layer_index, &[]);
+            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
+                match layer_tree::layer_mode(compositor_kind) {
+                    LayerMode::Swapchains => {
+                        layer_tree.present_layer(compositor_config, state.layer_index, &[]);
+                    }
+                    LayerMode::Framebuffer => {}
+                }
             }
         }
     }

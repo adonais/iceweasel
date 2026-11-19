@@ -25,8 +25,8 @@ nsHtml5Highlighter::nsHtml5Highlighter(nsAHtml5TreeOpSink* aOpSink)
       mCurrentRun(nullptr),
       mAmpersand(nullptr),
       mSlash(nullptr),
-      mHandles(
-          MakeUnique<nsIContent*[]>(NS_HTML5_HIGHLIGHTER_HANDLE_ARRAY_LENGTH)),
+      mHandles(std::make_unique<nsIContent*[]>(
+          NS_HTML5_HIGHLIGHTER_HANDLE_ARRAY_LENGTH)),
       mHandlesUsed(0),
       mSeenBase(false) {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
@@ -659,8 +659,8 @@ void nsHtml5Highlighter::CompletedNamedCharacterReference() {
 nsIContent** nsHtml5Highlighter::AllocateContentHandle() {
   if (mHandlesUsed == NS_HTML5_HIGHLIGHTER_HANDLE_ARRAY_LENGTH) {
     mOldHandles.AppendElement(std::move(mHandles));
-    mHandles =
-        MakeUnique<nsIContent*[]>(NS_HTML5_HIGHLIGHTER_HANDLE_ARRAY_LENGTH);
+    mHandles = std::make_unique<nsIContent*[]>(
+        NS_HTML5_HIGHLIGHTER_HANDLE_ARRAY_LENGTH);
     mHandlesUsed = 0;
   }
 #ifdef DEBUG

@@ -21,15 +21,6 @@ let serverPort;
 add_setup(async function setup() {
   trr_test_setup();
 
-  if (mozinfo.socketprocess_networking) {
-    Cc["@mozilla.org/network/protocol;1?name=http"].getService(
-      Ci.nsIHttpProtocolHandler
-    );
-    Services.dns; // Needed to trigger socket process.
-    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-
   Services.prefs.setBoolPref("network.http.http3.enable", true);
   Services.prefs.setBoolPref(
     "network.http.http3.block_loopback_ipv6_addr",

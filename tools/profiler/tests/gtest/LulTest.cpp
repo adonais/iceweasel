@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/UniquePtr.h"
-
 #include "gtest/gtest.h"
 #include "LulMain.h"
 #include "GeckoProfiler.h"       // for TracingKind
 #include "platform-linux-lul.h"  // for read_procmaps
 
 #include <cstring>
+#include <memory>
 
 // Set this to 0 to make LUL be completely silent during tests.
 // Set it to 1 to get logging output from LUL, presumably for
@@ -109,7 +108,7 @@ TEST(LulIntegration, frame_chasing_spidermonkey_layout)
   constexpr uintptr_t nativePC = 0x4440;
   constexpr uintptr_t olderNativePC = 0x5550;
 
-  auto stackImg = mozilla::MakeUnique<lul::StackImage>();
+  auto stackImg = std::make_unique<lul::StackImage>();
   stackImg->mStartAvma = stackBase;
   stackImg->mLen = 0x200;
 

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "SMILCSSProperty.h"
 #include "SMILCompositor.h"
@@ -292,8 +293,18 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   nsTArray<RefPtr<SVGAnimationElement>> animElems;
 
   for (SVGAnimationElement* animElem : mAnimationElementTable.Keys()) {
+    const auto key = GetTargetIdentifierForAnimation(animElem);
+    // An animation with nothing to animate only needs sampling when its timing
+    // model can advance (to fire events, notify dependents and so on), and
+    // that only happens at milestones or when finishing a seek. Skipping it
+    // otherwise avoids walking up to its time container on every tick. If it
+    // later gains a target, the attribute change requests a resample.
+    if (!key && animElem->TimedElement().IsTimingSettled()) {
+      continue;
+    }
     SampleTimedElement(animElem, &activeContainers);
-    if (AddAnimationToCompositorTable(animElem, currentCompositorTable.get())) {
+    if (key && AddAnimationToCompositorTable(animElem, *key,
+                                             currentCompositorTable.get())) {
       animElems.AppendElement(animElem);
     }
   }
@@ -490,14 +501,8 @@ void SMILAnimationController::SampleTimedElement(
 
 /*static*/
 bool SMILAnimationController::AddAnimationToCompositorTable(
-    SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable) {
-  // Add a compositor to the hash table if there's not already one there
-  SMILTargetIdentifier key;
-  if (!GetTargetIdentifierForAnimation(aElement, key)) {
-    // Something's wrong/missing about animation's target; skip this animation
-    return false;
-  }
-
+    SVGAnimationElement* aElement, const SMILTargetIdentifier& aKey,
+    SMILCompositorTable* aCompositorTable) {
   SMILAnimationFunction& func = aElement->AnimationFunction();
 
   // Only add active animation functions. If there are no active animations
@@ -506,7 +511,7 @@ bool SMILAnimationController::AddAnimationToCompositorTable(
   if (func.IsActiveOrFrozen()) {
     // Look up the compositor for our target, & add our animation function
     // to its list of animation functions.
-    SMILCompositor* result = aCompositorTable->PutEntry(key);
+    SMILCompositor* result = aCompositorTable->PutEntry(aKey);
     result->AddAnimationFunction(&func);
     return true;
   }
@@ -520,7 +525,7 @@ bool SMILAnimationController::AddAnimationToCompositorTable(
   // sample. |func| is inactive, but it's probably *newly* inactive (since
   // it's got HasChanged() == true), so we need to make sure to recompose
   // its target.
-  SMILCompositor* result = aCompositorTable->PutEntry(key);
+  SMILCompositor* result = aCompositorTable->PutEntry(aKey);
   result->ToggleForceCompositing();
 
   // We've now made sure that |func|'s inactivity will be reflected as of
@@ -543,16 +548,17 @@ static inline bool IsTransformAttribute(const Element* aElement,
 }
 
 // Helper function that, given a SVGAnimationElement, looks up its target
-// element & target attribute and populates a SMILTargetIdentifier
+// element & target attribute and returns a SMILTargetIdentifier
 // for this target.
 /*static*/
-bool SMILAnimationController::GetTargetIdentifierForAnimation(
-    SVGAnimationElement* aAnimElem, SMILTargetIdentifier& aResult) {
+Maybe<SMILTargetIdentifier>
+SMILAnimationController::GetTargetIdentifierForAnimation(
+    SVGAnimationElement* aAnimElem) {
   // Look up target (animated) element
   Element* targetElem = aAnimElem->GetTargetElementContent();
   if (!targetElem)
     // Animation has no target elem -- skip it.
-    return false;
+    return Nothing();
 
   // Look up target (animated) attribute
   // SMILANIM section 3.1, attributeName may
@@ -562,20 +568,21 @@ bool SMILAnimationController::GetTargetIdentifierForAnimation(
   if (!aAnimElem->GetTargetAttributeName(&attributeNamespaceID,
                                          getter_AddRefs(attributeName)))
     // Animation has no target attr -- skip it.
-    return false;
+    return Nothing();
 
   // animateTransform can only animate transforms, conversely transforms
   // can only be animated by animateTransform
   if (IsTransformAttribute(targetElem, attributeNamespaceID, attributeName) !=
       aAnimElem->IsSVGElement(nsGkAtoms::animateTransform))
-    return false;
+    return Nothing();
 
   // Construct the key
-  aResult.mElement = targetElem;
-  aResult.mAttributeName = attributeName;
-  aResult.mAttributeNamespaceID = attributeNamespaceID;
+  SMILTargetIdentifier result;
+  result.mElement = targetElem;
+  result.mAttributeName = std::move(attributeName);
+  result.mAttributeNamespaceID = attributeNamespaceID;
 
-  return true;
+  return Some(std::move(result));
 }
 
 void SMILAnimationController::PreTraverse() { PreTraverseInSubtree(nullptr); }
@@ -593,8 +600,8 @@ void SMILAnimationController::PreTraverseInSubtree(Element* aRoot) {
   }
 
   for (SVGAnimationElement* animElement : mAnimationElementTable.Keys()) {
-    SMILTargetIdentifier key;
-    if (!GetTargetIdentifierForAnimation(animElement, key)) {
+    const auto key = GetTargetIdentifierForAnimation(animElement);
+    if (!key) {
       // Something's wrong/missing about animation's target; skip this animation
       continue;
     }
@@ -602,12 +609,12 @@ void SMILAnimationController::PreTraverseInSubtree(Element* aRoot) {
     // Ignore restyles that aren't in the flattened tree subtree rooted at
     // aRoot.
     if (aRoot && !nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-                     key.mElement, aRoot)) {
+                     key->mElement, aRoot)) {
       continue;
     }
 
     context->RestyleManager()->PostRestyleEventForAnimations(
-        key.mElement, PseudoStyleRequest::NotPseudo(),
+        key->mElement, PseudoStyleRequest::NotPseudo(),
         RestyleHint::RESTYLE_SMIL);
   }
 

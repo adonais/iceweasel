@@ -1868,6 +1868,41 @@ TEST_P(ReceiveStatisticsProxyTestWithContent, TimeInBlockyVideoReported) {
   }
 }
 
+// The RTP timestamp is set by the remote sender, so more than one decoded frame
+// may have the same timestamp before any of them is rendered.
+TEST_P(ReceiveStatisticsProxyTestWithContent,
+       TimeInBlockyVideoReportedWhenRtpTimestampIsDecodedTwice) {
+  const TimeDelta kInterFrameDelay = TimeDelta::Millis(20);
+  const int kHighQp = 80;
+  VideoFrame frame = CreateFrame(kWidth, kHeight);
+
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    VideoFrameMetaData meta = MetaData(frame);
+    for (int j = 0; j < 2; ++j) {
+      statistics_proxy_->OnDecodedFrame(
+          meta, kHighQp, TimeDelta::Zero(), TimeDelta::Zero(),
+          TimeDelta::Zero(), content_type_, VideoFrameType::kVideoFrameKey);
+    }
+    statistics_proxy_->OnRenderedFrame(meta);
+    time_controller_.AdvanceTime(kInterFrameDelay);
+  }
+  // Extra last frame.
+  statistics_proxy_->OnRenderedFrame(MetaData(frame));
+
+  FlushAndUpdateHistograms(std::nullopt, StreamDataCounters(), nullptr);
+  const int kExpectedTimeInBlockyVideoPercents = 100;
+  if (videocontenttypehelpers::IsScreenshare(content_type_)) {
+    EXPECT_METRIC_EQ(
+        kExpectedTimeInBlockyVideoPercents,
+        metrics::MinSample(
+            "WebRTC.Video.Screenshare.TimeInBlockyVideoPercentage"));
+  } else {
+    EXPECT_METRIC_EQ(
+        kExpectedTimeInBlockyVideoPercents,
+        metrics::MinSample("WebRTC.Video.TimeInBlockyVideoPercentage"));
+  }
+}
+
 TEST_P(ReceiveStatisticsProxyTestWithContent, DownscalesReported) {
   // To ensure long enough call duration.
   const TimeDelta kInterFrameDelay = TimeDelta::Seconds(2);

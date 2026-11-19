@@ -27,8 +27,7 @@ using namespace mozilla::image;
 
 nsIFrame* NS_NewSVGClipPathFrame(mozilla::PresShell* aPresShell,
                                  mozilla::ComputedStyle* aStyle) {
-  return new (aPresShell)
-      mozilla::SVGClipPathFrame(aStyle, aPresShell->GetPresContext());
+  return new mozilla::SVGClipPathFrame(aStyle, aPresShell->GetPresContext());
 }
 
 namespace mozilla {

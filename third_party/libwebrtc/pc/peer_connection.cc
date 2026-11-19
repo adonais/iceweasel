@@ -299,6 +299,7 @@ RTCError ValidateIceCandidatePoolSize(
 // Properties left out of the copy list can not be modified after construction:
 //   - bundle_policy and rtcp_mux_policy, per RFC 8829 section 4.1.18.
 //   - always_negotiate_data_channels, similar to bundle_policy.
+//   - crypto_options.srtp.cryptex_policy, similar to bundle_policy.
 //   - certificates.
 RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
     const PeerConnectionInterface::RTCConfiguration& configuration,
@@ -307,6 +308,8 @@ RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
       existing_configuration;
   modified_config.type = configuration.type;
   modified_config.crypto_options = configuration.crypto_options;
+  modified_config.crypto_options.srtp.cryptex_policy =
+      existing_configuration.crypto_options.srtp.cryptex_policy;
 
   // ICE configuration.
   modified_config.servers = configuration.servers;
@@ -468,7 +471,7 @@ PeerConnection::PeerConnection(
     const std::vector<RelayServerConfig>& turn_servers,
     bool dtls_enabled)
     : env_(env),
-      context_(context),
+      context_(std::move(context)),
       options_(options),
       observer_(dependencies.observer),
       is_unified_plan_(is_unified_plan),
@@ -1633,7 +1636,7 @@ RTCError PeerConnection::SetConfiguration(
   // controller on the network thread to the transport controller on the
   // signaling thread, we should instead use a
   // ScopedOperationsBatcher::BatchTaskWithFinalizer.
-  flat_map<std::string, JsepTransportController::TransportState> new_states;
+  JsepTransportController::TransportStateSnapshot new_states;
   if (!network_thread()->BlockingCall([&] {
         RTC_DCHECK_RUN_ON(network_thread());
         // As described in JSEP, calling setConfiguration with new ICE

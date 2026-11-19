@@ -87,6 +87,12 @@ interface nsIBounceTrackingProtection : nsISupports {
     [implicit_jscontext]
     Promise testRunPurgeBounceTrackers();
 
+    // Flush pending storage updates. Resolves once all queued storage
+    // operations, including initialization and loading the on-disk state into
+    // memory, have completed.
+    [implicit_jscontext]
+    Promise testFlushStorage();
+
     // Clear expired user activation flags. Expiry is set via pref
     // "privacy.bounceTrackingProtection.bounceTrackingActivationLifetimeSec".
     void testClearExpiredUserActivations();

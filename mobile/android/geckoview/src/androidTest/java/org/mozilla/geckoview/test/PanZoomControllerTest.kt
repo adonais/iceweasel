@@ -1065,4 +1065,52 @@ class PanZoomControllerTest : BaseSessionTest() {
             )
         }
     }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun stylusHoverOnPointerEvent() {
+        setupDocument(TOUCH_HTML_PATH)
+
+        val pointerType =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve =>
+                    document.documentElement.addEventListener(
+                        "pointermove",
+                        e => resolve(e.pointerType),
+                        { once: true }))
+                """
+                    .trimIndent()
+            )
+
+        val pointerProperties = arrayOf(MotionEvent.PointerProperties())
+        pointerProperties[0].id = 0
+        pointerProperties[0].toolType = MotionEvent.TOOL_TYPE_STYLUS
+
+        val pointerCoords = arrayOf(MotionEvent.PointerCoords())
+        pointerCoords[0].x = 50.0f
+        pointerCoords[0].y = 50.0f
+
+        val time = SystemClock.uptimeMillis()
+        val hover =
+            MotionEvent.obtain(
+                time,
+                time,
+                MotionEvent.ACTION_HOVER_MOVE,
+                1,
+                pointerProperties,
+                pointerCoords,
+                0,
+                0,
+                0.0f,
+                0.0f,
+                0,
+                0,
+                InputDevice.SOURCE_STYLUS,
+                0,
+            )
+        mainSession.panZoomController.onMotionEvent(hover)
+
+        assertThat("A hovering stylus should be reported as a pen", pointerType.value, equalTo("pen"))
+    }
 }

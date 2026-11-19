@@ -12,7 +12,6 @@ import copy
 import json
 import os
 import pathlib
-import re
 import sys
 import time
 from datetime import datetime
@@ -22,17 +21,14 @@ from yaml import YAMLError
 
 from mozharness.base.config import DEFAULT_CONFIG_PATH, BaseConfig, parse_config_file
 from mozharness.base.errors import MakefileErrorList
-from mozharness.base.log import FATAL, OutputParser
+from mozharness.base.log import FATAL
 from mozharness.base.python import PerfherderResourceOptionsMixin, VirtualenvMixin
 from mozharness.base.script import PostScriptRun
 from mozharness.base.vcs.vcsbase import MercurialScript
 from mozharness.mozilla.automation import (
     EXIT_STATUS_DICT,
     TBPL_FAILURE,
-    TBPL_RETRY,
     TBPL_STATUS_DICT,
-    TBPL_SUCCESS,
-    TBPL_WORST_LEVEL_TUPLE,
     AutomationMixin,
 )
 from mozharness.mozilla.secrets import SecretsMixin
@@ -48,48 +44,6 @@ because it was a forced build.',
     "tooltool_manifest_undetermined": '"tooltool_manifest_src" not set, \
 Skipping run_tooltool...',
 }
-
-
-# Output Parsers
-
-TBPL_UPLOAD_ERRORS = [
-    {
-        "regex": re.compile("Connection timed out"),
-        "level": TBPL_RETRY,
-    },
-    {
-        "regex": re.compile("Connection reset by peer"),
-        "level": TBPL_RETRY,
-    },
-    {
-        "regex": re.compile("Connection refused"),
-        "level": TBPL_RETRY,
-    },
-]
-
-
-class MakeUploadOutputParser(OutputParser):
-    tbpl_error_list = TBPL_UPLOAD_ERRORS
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.tbpl_status = TBPL_SUCCESS
-
-    def parse_single_line(self, line):
-        # let's check for retry errors which will give log levels:
-        # tbpl status as RETRY and mozharness status as WARNING
-        for error_check in self.tbpl_error_list:
-            if error_check["regex"].search(line):
-                self.num_warnings += 1
-                self.warning(line)
-                self.tbpl_status = self.worst_level(
-                    error_check["level"],
-                    self.tbpl_status,
-                    levels=TBPL_WORST_LEVEL_TUPLE,
-                )
-                break
-        else:
-            self.info(line)
 
 
 class MozconfigPathError(Exception):
@@ -700,7 +654,6 @@ items from that key's value."
         dirs = self.query_abs_dirs()
         base_work_dir = dirs["base_work_dir"]
         work_dir = dirs["abs_work_dir"]
-        objdir = dirs["abs_obj_dir"]
         branch = self.branch
 
         # Building a nightly with the try repository fails because a
@@ -732,43 +685,18 @@ items from that key's value."
             cmd, env=self.query_build_env(), cwd=base_work_dir, halt_on_failure=True
         )
 
-        package_cmd = [
-            "make",
-            "echo-variable-PACKAGE",
-            "AB_CD=multi",
+        upload_cmd = self._query_mach() + [
+            "--log-no-times",
+            "package-multi-locale",
+            "upload",
         ]
-        package_filename = self.get_output_from_command(
-            package_cmd,
-            cwd=objdir,
-        )
-        if not package_filename:
-            self.fatal(
-                "Unable to determine the package filename for the multi-l10n build. "
-                "Was trying to run: %s" % package_cmd
-            )
-
-        self.info("Multi-l10n package filename is: %s" % package_filename)
-
-        parser = MakeUploadOutputParser(
-            config=self.config,
-            log_obj=self.log_obj,
-        )
-        upload_cmd = ["make", "upload", "AB_CD=multi"]
+        env = self.query_build_env()
+        env.update(self.query_mach_build_env(multiLocale=False))
         self.run_command(
             upload_cmd,
-            partial_env=self.query_mach_build_env(multiLocale=False),
-            cwd=objdir,
+            env=env,
+            cwd=dirs["abs_src_dir"],
             halt_on_failure=True,
-            output_parser=parser,
-        )
-        upload_files_cmd = [
-            "make",
-            "echo-variable-UPLOAD_FILES",
-            "AB_CD=multi",
-        ]
-        self.get_output_from_command(
-            upload_files_cmd,
-            cwd=objdir,
         )
 
     def postflight_build(self):

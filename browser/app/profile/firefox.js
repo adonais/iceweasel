@@ -47,6 +47,9 @@ pref("extensions.getAddons.browserMappings.url", "https://services.addons.mozill
 // The URL for the privacy policy related to recommended extensions.
 pref("extensions.recommendations.privacyPolicyUrl", "https://www.mozilla.org/privacy/firefox/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_content=privacy-policy-link#addons");
 // The URL for Firefox Color, recommended on the theme page in about:addons.
+// NOTE: the link to Firefox Color is always hidden when Nova is enabled,
+// consider removing it along with cleaning up about:addons parts conditioned
+// on the browser.nova.enabled pref.
 pref("extensions.recommendations.themeRecommendationUrl", "https://color.firefox.com/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_content=theme-footer-link");
 
 pref("extensions.update.autoUpdateDefault", true);
@@ -516,8 +519,15 @@ pref("browser.urlbar.trustPanel.featureGate", true);
 pref("browser.urlbar.trustPanel.breachAlerts.featureGate", true);
 pref("browser.urlbar.trustPanel.breachAlerts", true);
 
-// Whether or not Unified Search Button is shown always.
-pref("browser.urlbar.unifiedSearchButton.always", false);
+#ifdef NIGHTLY_BUILD
+  // Whether or not Unified Search Button is shown always.
+  pref("browser.urlbar.unifiedSearchButton.always", true);
+  // Whether or not history is shown when in search mode.
+  pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", true);
+#else
+  pref("browser.urlbar.unifiedSearchButton.always", false);
+  pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", false);
+#endif
 
 // Enable trending suggestions and recent searches.
 pref("browser.urlbar.trending.featureGate", true);
@@ -637,9 +647,11 @@ pref("browser.urlbar.quicksuggest.impressionCaps.sponsoredEnabled", false);
 // at least this many characters long, it will be shown as a top pick.
 pref("browser.urlbar.quicksuggest.ampTopPickCharThreshold", 5);
 
-// Whether or not use the Nova icon size for AMP suggestion.
-// Otherwise, use standard rich-suggestion size.
-pref("browser.urlbar.quicksuggest.ampTopPickUseNovaIconSize", false);
+// The minimum score a top-pick AMP suggestion must have to be shown with the
+// large-icon UI treatment used for other top picks, as a decimal string (e.g.,
+// "1.0"). If it's an empty string or otherwise can't be parsed with parseFloat,
+// the small-icon UI treatment will be used.
+pref("browser.urlbar.quicksuggest.ampTopPickScoreForLargeIcon", "");
 
 // The matching strategy for AMP suggestions. Zero is the usual default
 // exact-keyword strategy. Other values are the integers defined on
@@ -907,7 +919,11 @@ pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
 
 // When selecting and hovering over certain types of urlbar results, replace
 // their URLs with strings that explain why they're shown.
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.resultExplanations.featureGate", true);
+#else
 pref("browser.urlbar.resultExplanations.featureGate", false);
+#endif
 
 pref("browser.altClickSave", false);
 
@@ -1009,6 +1025,20 @@ pref("browser.highlightToSearch.enabled", true);
 // Which actions the menu offers. Set from the menu's own settings.
 pref("browser.highlightToSearch.search.enabled", true);
 pref("browser.highlightToSearch.copy.enabled", true);
+
+// Comma-separated sites where the menu is not shown because the page has its
+// own menu for selected text. A site also matches its subdomains.
+pref(
+  "browser.highlightToSearch.ignoredSites",
+  "atlassian.net,docs.google.com,read.amazon.com,read.readwise.io,hypothes.is,chatgpt.com,github.com,notion.so,notion.site,office.com,sharepoint.com,canva.com,figma.com"
+);
+
+// Whether the menu is not shown, or is hidden, when the page shows its own
+// floating menu next to the selected text.
+pref("browser.highlightToSearch.detectPageMenus", true);
+
+// Whether the user has seen the feature callout on the actions menu.
+pref("browser.highlightToSearch.callout.seen", false);
 
 // Spin the cursor while the page is loading
 pref("browser.spin_cursor_while_busy", false);
@@ -1171,13 +1201,7 @@ pref("browser.tabs.hoverPreview.showThumbnails", false);
 
 pref("browser.tabs.groups.enabled", true);
 pref("browser.tabs.groups.hoverPreview.enabled", true);
-#ifdef NIGHTLY_BUILD
 pref("browser.tabs.groups.alternateMenu", true);
-#else
-pref("browser.tabs.groups.alternateMenu", false);
-#endif
-// Bug 2052293: temporarily disabled while tab groups move away from the list all tabs menu.
-pref("browser.tabs.groups.onboardingCallouts.enabled", false);
 // Number of times the "Tab group saved" confirmation hint has been shown
 pref("browser.tabs.groups.saveHintShownCount", 0);
 
@@ -1650,6 +1674,14 @@ pref("places.frecency.origins.alternative.featureGate", false);
 // Whether to warm up network connections for places: menus and places: toolbar.
 pref("browser.places.speculativeConnect.enabled", true);
 
+#ifdef XP_MACOSX
+// Limit query results in the native macOS menu. Set to 0 to disable the limit.
+// Restart for changes to fully apply to cached queries.
+pref("browser.places.nativeMenu.maxResults", 100);
+// Limit entries in each native bookmark folder menu. Set to 0 to disable.
+pref("browser.places.nativeMenu.maxFolderResults", 500);
+#endif
+
 // if true, use full page zoom instead of text zoom
 pref("browser.zoom.full", true);
 
@@ -1746,13 +1778,6 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   pref("security.sandbox.content.write_path_whitelist", "");
   pref("security.sandbox.content.read_path_whitelist", "");
   pref("security.sandbox.content.syscall_whitelist", "");
-  // Introduced as part of bug 1608558.  Linux is currently the only platform
-  // that uses a sandbox level for the socket process.  The following levels
-  // are currently defined:
-  // 0 -> "no sandbox"
-  // 1 -> "sandboxed, allows socket operations and reading necessary certs"
-  // 2 -> default-deny for ioctl
-  pref("security.sandbox.socket.process.level", 2);
 #endif
 
 #if defined(XP_OPENBSD) && defined(MOZ_SANDBOX)
@@ -1999,10 +2024,10 @@ pref("browser.newtabpage.activity-stream.images.smart", true);
 pref("browser.newtabpage.activity-stream.weather.locationSearchEnabled", true);
 
 // List of regions that get weather by default.
-pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "AT,BE,BG,CA,CH,CY,CZ,DE,DK,EE,ES,FI,FR,GB,GR,HR,HU,IE,IS,IT,LI,LT,LV,MT,NL,NO,PL,PT,RO,SE,SG,SI,SK,US");
+pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "AT,BE,BG,CA,CH,CY,CZ,DE,DK,EE,ES,FI,FR,GB,GL,GR,HK,HR,HU,IE,IQ,IS,IT,LI,LT,LV,MT,NL,NO,PL,PT,RO,RU,SE,SI,SK,US");
 
 // List of locales that weather widget supports.
-pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "bg,cs,da,de,el,en-CA,en-GB,en-US,es-ES,et,fi,fr,hr,hu,is,it,lv,nb-NO,nl,pl,pt-PT,ro,sk,sl,sv-SE,tr");
+pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "ar,bg,cs,da,de,el,en-CA,en-GB,en-US,es-ES,et,fi,fr,hr,hu,is,it,lv,nb-NO,nl,pl,pt-PT,ro,ru,sk,sl,sv-SE,tr,zh-CN,zh-TW");
 
 // Regions with no widgets at all. Everywhere else the container is available
 // and on, and each widget's own prefs decide what appears. Blank means no
@@ -2275,19 +2300,6 @@ pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", false);
 pref("nimbus.firstUpdateComplete", false);
 
-// Should Nimbus write to the shared ProfilesDatastoreService? Only used by tests.
-// TODO(bug 1967779): Require the ProfileDatastoreService by default and remove
-// this pref.
-pref("nimbus.profilesdatastoreservice.enabled", false);
-
-// Should Nimbus read from the shared ProfilesDatastoreService?
-// TODO(bug 2032586): Remove this pref.
-pref("nimbus.profilesdatastoreservice.read.enabled", true);
-
-// Should Nimbus sync experiment unenrollments from other profiles?
-// TODO(bug 2032586): Remove this pref.
-pref("nimbus.profilesdatastoreservice.sync.enabled", true);
-
 // Enable the targeting context telemetry by default, but allow it to be
 // disabled, e.g., for artifact builds.
 // See-also: https://bugzilla.mozilla.org/show_bug.cgi?id=1936317
@@ -2424,6 +2436,8 @@ pref("browser.ml.pageAssist.enabled", false);
 pref("browser.smartwindow.enabled", false);
 // Default endpoint for preset models
 pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1");
+pref("browser.smartwindow.auth.impl", "fxa");
+pref("browser.smartwindow.auth.guest.mode", "fetch");
 pref("browser.smartwindow.memories.generateFromHistory", true);
 pref("browser.smartwindow.memories.generateFromConversation", true);
 pref("browser.smartwindow.memories.hasSeenMemories", false);
@@ -2434,13 +2448,12 @@ pref("browser.smartwindow.resumeActivity.enabled", true);
 pref("browser.smartwindow.resumeCards.enabled", true);
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
+pref("browser.smartwindow.firstrun.singlePageWithAutoModel", false);
 pref("browser.smartwindow.showThemesNotice", true);
 pref("browser.smartwindow.sidebar.openByDefault", true);
 pref("browser.smartwindow.isDefaultWindow", false);
 pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/smart-window/?v=product");
 pref("places.semanticHistory.smartwindow.featureGate", false);
-// TODO Bug 2053495: remove with mistral release pref
-pref("browser.smartwindow.mistralRelease", true);
 
 // Semantic distance threshold for Smart Window history search only.
 pref("places.semanticHistory.smartwindow.distanceThreshold", "0.6");
@@ -2475,6 +2488,9 @@ pref("browser.smartwindow.aitab.menus", true);
 pref("browser.smartwindow.aitab.menus", false);
 #endif
 
+// Off until the model's use of manage_tabs' include_chat_tab is evaluated.
+pref("browser.smartwindow.manageTabs.includeChatTab", false);
+
 // Smart Window Agent
 pref("browser.smartwindow.agent.enabled", true);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
@@ -2504,6 +2520,10 @@ pref("browser.smartwindow.searchTheWebFast", true);
 // browser.smartwindow.searchTheWebFast.
 pref("browser.smartwindow.searchTheWebAnswers", false);
 
+// Smart Window: approximate location (city, region, country) from Merino
+// geolocation, kept in memory.
+pref("browser.smartwindow.location.enabled", true);
+
 // Smart Window Logging
 pref("browser.smartwindow.aiTabHistory.logLevel", "Error");
 pref("browser.smartwindow.aiTabStore.logLevel", "Error");
@@ -2514,6 +2534,14 @@ pref("browser.smartwindow.conversationHistory.logLevel", "Error");
 pref("browser.smartwindow.conversationStore.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 pref("browser.smartwindow.telemetryLogLevel", "Error");
+
+pref("browser.widgets.generated.enabled", false);
+pref("browser.widgets.generated.loglevel", "Warn");
+pref("browser.widgets.generated.endpoint", "");
+pref("browser.widgets.generated.apiKey", "");
+pref("browser.widgets.generated.model", "");
+pref("browser.widgets.generated.maxTurns", 20);
+pref("browser.widgets.generated.localPrompt", false);
 
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);
@@ -2888,9 +2916,6 @@ pref("extensions.webcompat.smartblockEmbeds.enabled", true);
 pref("privacy.exposeContentTitleInWindow", true);
 pref("privacy.exposeContentTitleInWindow.pbm", true);
 
-// Run media transport in a separate process?
-pref("media.peerconnection.mtransport_process", true);
-
 // For speculatively warming up tabs to improve perceived
 // performance while using the async tab switcher.
 pref("browser.tabs.remote.warmup.enabled", true);
@@ -2969,6 +2994,9 @@ pref("browser.migrate.canary.enabled", true);
 pref("browser.migrate.chrome.enabled", true);
 // See comments in bug 1340115 on how we got to this number.
 pref("browser.migrate.chrome.history.limit", 2000);
+// Number of recent visits to import per URL from Chrome history, capped at
+// places.frecency.pages.numSampledVisits.
+pref("browser.migrate.chrome.history.visit.limit", 5);
 pref("browser.migrate.chrome.payment_methods.enabled", true);
 pref("browser.migrate.chrome.extensions.enabled", true);
 pref("browser.migrate.chrome.get_permissions.enabled", true);
@@ -3188,6 +3216,10 @@ pref("browser.urlbar.share-button.enabled", false);
 pref("browser.toolbars.tab-groups.enabled", false);
 
 pref("security.certerrors.felt-privacy-v1", true);
+
+#ifdef NIGHTLY_BUILD
+  pref("security.utility_pkcs11_module_process.enabled", true);
+#endif
 
 // Prefs to control the Firefox Account toolbar menu.
 // This pref will surface existing Firefox Account information
@@ -3851,7 +3883,7 @@ pref("browser.ipProtection.l10nGateVersion", 0);
 // Pref to enable support for site exceptions
 pref("browser.ipProtection.features.siteExceptions", true);
 // Pref to enable support for site inclusions
-pref("browser.ipProtection.features.siteInclusions", false);
+pref("browser.ipProtection.features.siteInclusions", true);
 // Pref to track if the site inclusion prompt has been shown in the VPN panel
 pref("browser.ipProtection.siteInclusionPromptShown", false);
 pref("browser.ipProtection.log", false);
@@ -3886,7 +3918,7 @@ pref("toolkit.rust-components.logging.crates", "");
 pref("toolkit.rust-components.logging.internal-level", "Warn");
 
 // Settings Redesign 2025 prefs
-pref("browser.settings-redesign.enabled", true);
+pref("browser.settings-redesign.enabled", true, locked);
 
 // Gates the in-progress Notifications sub-page and its entry card in
 // Permissions and data. Not part of the settings-redesign section scheme, since

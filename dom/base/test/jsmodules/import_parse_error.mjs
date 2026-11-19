@@ -1,2 +1,2 @@
-/* eslint-disable import/named */
+/* eslint-disable import-x/named */
 import { foo } from "./parse_error.js";

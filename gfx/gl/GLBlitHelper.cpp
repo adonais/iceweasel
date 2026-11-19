@@ -1089,7 +1089,9 @@ bool GLBlitHelper::Blit(layers::AndroidHardwareBuffer* const buffer,
   if (fenceFd) {
     const EGLint attribs[] = {
         LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
-        fenceFd.get(),
+        // eglCreateSyncKHR takes ownership of the fd even on failure.
+        // Release it here to prevent the caller from closing it again.
+        fenceFd.release(),
         LOCAL_EGL_NONE,
     };
 
@@ -1100,9 +1102,6 @@ bool GLBlitHelper::Blit(layers::AndroidHardwareBuffer* const buffer,
           << "GLBlitHelper::Blit: Failed to create EGLSync from acquire fence";
       return false;
     }
-
-    // EGL owns the fd after a successful eglCreateSyncKHR().
-    (void)fenceFd.release();
 
     if (egl->IsExtensionSupported(EGLExtension::KHR_wait_sync)) {
       egl->fWaitSync(sync, 0);

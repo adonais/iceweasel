@@ -116,11 +116,6 @@ interface nsIDNSAddrRecord : nsIDNSRecord
     boolean IsTRR();
 
     /**
-     * Record is resolved in socket process.
-     */
-    boolean resolvedInSocketProcess();
-
-    /**
      * This attribute is only set if TRR is used and it measures time between
      * asyncOpen on a channel and the time parsing of response if done.
      * Thee time is measured in milliseconds.

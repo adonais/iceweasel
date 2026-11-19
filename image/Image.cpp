@@ -47,7 +47,7 @@ static void GetTruncatedSpec(nsIURI* aURI, nsCString& aSpec) {
 }
 
 ImageMemoryCounter::ImageMemoryCounter(imgRequest* aRequest,
-                                       SizeOfState& aState, bool aIsUsed,
+                                       SizeOfState& /*aState*/, bool aIsUsed,
                                        bool aAnonymize)
     : mProgress(UINT32_MAX),
       mType(UINT16_MAX),

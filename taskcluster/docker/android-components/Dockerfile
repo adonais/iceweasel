@@ -7,9 +7,10 @@ MAINTAINER Geoff Brown <gbrown@mozilla.com>
 VOLUME /builds/worker/checkouts
 VOLUME /builds/worker/workspace
 VOLUME /builds/worker/tooltool-cache
+VOLUME /builds/worker/gradle-user-home
 
 ENV CURL='curl --location --retry 5' \
-    GRADLE_OPTS='-Xmx4096m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false' \
+    GRADLE_OPTS='-Xmx4096m -Dorg.gradle.parallel=false' \
     LANG='en_US.UTF-8' \
     TERM='dumb'
 

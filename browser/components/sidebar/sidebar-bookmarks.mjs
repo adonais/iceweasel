@@ -11,7 +11,7 @@ import {
   navigateToLink,
   escapeHtmlEntities,
 } from "chrome://browser/content/firefoxview/helpers.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/sidebar/sidebar-bookmark-list.mjs";
 
 let XPCOMUtils;
@@ -1167,6 +1167,11 @@ export class SidebarBookmarks extends SidebarPage {
   #searchBookmarks(node, query) {
     const results = [];
     for (const child of node.children ?? []) {
+      // Smart bookmark (place:) results duplicate real bookmarks or include
+      // history entries, so don't search inside them.
+      if (child.isPlaceContainer) {
+        continue;
+      }
       if (child.children) {
         results.push(...this.#searchBookmarks(child, query));
       } else if (

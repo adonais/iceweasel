@@ -13,7 +13,6 @@
   --panel-banner-item-hover-bgcolor: var(--button-background-color-hover);
   --panel-banner-item-active-bgcolor: var(--button-background-color-active);
   --panel-banner-item-update-supported-bgcolor: var(--color-accent-attention);
-  --panel-banner-item-info-icon-bgcolor: light-dark(#0090ed, #80ebff);
 
   --menu-panel-width: 22.35em;
   --menu-panel-width-wide: 29em;
@@ -1062,20 +1061,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   }
 }
 
-#PanelUI-fxa-menu-secure-sync-subpanel,
-#PanelUI-fxa-device-recent-tabs {
-  height: fit-content;
-  /* FIXME: Why is !important needed here? */
-  min-height: 0 !important;
-}
-
-/* FIXME(bug 2061145): We should track visible panel without using :has() */
-/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
-.panel-viewcontainer:has(#PanelUI-fxa-menu-secure-sync-subpanel[visible], #PanelUI-fxa-device-recent-tabs[visible], #PanelUI-profiles[visible]) {
-  /* FIXME: Why is !important needed here? */
-  min-height: 0 !important;
-}
-
 #PanelUI-fxa-cta-menu .fxa-cta-button label {
   margin: 0;
 }
@@ -1090,8 +1075,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   &[fxastatus="unverified"] #appMenu-fxa-label2::after {
     content: url("chrome://global/skin/icons/info-filled.svg");
     -moz-context-properties: fill;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    fill: var(--panel-banner-item-info-icon-bgcolor);
+    fill: var(--icon-color-information);
   }
 }
 
@@ -1998,12 +1982,6 @@ toolbarbutton[itemtype="showinactivebutton"] {
   &[cui-areatype="panel"] > .toolbarbutton-combined-buttons-dropmarker,
   &[overflowedItem] > .toolbarbutton-combined-buttons-dropmarker {
     display: none;
-  }
-
-  &:is(:not([cui-areatype="toolbar"]), [overflowedItem="true"]) > toolbarbutton:not(.toolbarbutton-1)[disabled] {
-    opacity: var(--button-opacity-disabled);
-    /* Override toolbarbutton.css which sets the color to GrayText */
-    color: inherit;
   }
 
   &:is(:not([cui-areatype="toolbar"]), [overflowedItem="true"]) > separator {
@@ -3021,11 +2999,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-height: 50dvh;
   overflow: hidden auto;
-}
-
-#PanelUI-profiles {
-  height: fit-content;
-  min-height: 0 !important;
 }
 
 /* ----- Profiles FxA panel ----- */

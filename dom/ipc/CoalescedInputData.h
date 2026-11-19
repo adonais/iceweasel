@@ -72,6 +72,7 @@ class CoalescedInputFlusher : public nsARefreshObserver {
  public:
   explicit CoalescedInputFlusher(BrowserChild* aBrowserChild);
 
+  MOZ_CAN_RUN_SCRIPT
   virtual void WillRefresh(mozilla::TimeStamp aTime) override = 0;
 
   NS_INLINE_DECL_REFCOUNTING(CoalescedInputFlusher, override)

@@ -1935,6 +1935,7 @@ const CTAParagraph = props => {
     handleAction(event);
     event.preventDefault();
   }, [handleAction]);
+  const keyPressedRef = external_React_default().useRef(false);
   return /*#__PURE__*/external_React_default().createElement("h2", {
     className: `cta-paragraph ${content?.info_tile ? "info-tile" : ""}`,
     style: {
@@ -1951,7 +1952,15 @@ const CTAParagraph = props => {
   }, content.text.string_name && typeof handleAction === "function" ? /*#__PURE__*/external_React_default().createElement("span", {
     "data-l10n-id": content.text.string_id,
     onClick: onClick,
-    onKeyUp: event => ["Enter", " "].includes(event.key) ? onClick(event) : null,
+    onKeyDown: event => {
+      keyPressedRef.current = ["Enter", " "].includes(event.key);
+    },
+    onKeyUp: event => {
+      if (keyPressedRef.current && ["Enter", " "].includes(event.key)) {
+        onClick(event);
+      }
+      keyPressedRef.current = false;
+    },
     value: "cta_paragraph"
   }, " ", /*#__PURE__*/external_React_default().createElement("a", {
     "data-l10n-name": content.text.string_name,
@@ -3047,23 +3056,6 @@ const SingleSelect = ({
 
 
 
-const MarketplaceButtons = props => {
-  return /*#__PURE__*/external_React_default().createElement("ul", {
-    className: "mobile-download-buttons"
-  }, props.buttons.includes("ios") ? /*#__PURE__*/external_React_default().createElement("li", {
-    className: "ios"
-  }, /*#__PURE__*/external_React_default().createElement("button", {
-    "data-l10n-id": "spotlight-ios-marketplace-button",
-    value: "ios",
-    onClick: props.handleAction
-  })) : null, props.buttons.includes("android") ? /*#__PURE__*/external_React_default().createElement("li", {
-    className: "android"
-  }, /*#__PURE__*/external_React_default().createElement("button", {
-    "data-l10n-id": "spotlight-android-marketplace-button",
-    value: "android",
-    onClick: props.handleAction
-  })) : null);
-};
 const MobileDownloads = props => {
   const {
     QR_code: QRCode
@@ -3083,10 +3075,7 @@ const MobileDownloads = props => {
     className: "email-link",
     value: "email_link",
     onClick: props.handleAction
-  }))) : null, props.data.marketplace_buttons ? /*#__PURE__*/external_React_default().createElement(MarketplaceButtons, {
-    buttons: props.data.marketplace_buttons,
-    handleAction: props.handleAction
-  }) : null);
+  }))) : null);
 };
 ;// ./content-src/components/MultiSelect.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -5124,7 +5113,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     return !!(content.background && content.background_static || content.hero_image?.url && content.hero_image?.static_url);
   }
   getEffectiveBackground(content) {
-    if (content.position !== "split") {
+    if (!["split", "card-stack"].includes(content.position)) {
       const gradient = content.zap_border_gradient || "linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%)";
       const combinedBackground = content.background && content.zap_border ? `${gradient} border-box border-area, image(${content.background}) padding-box` : content.background;
       const combinedBackgroundStatic = content.background_static && content.zap_border ? `${gradient} border-box border-area, image(${content.background_static}) padding-box` : content.background_static;
@@ -5155,17 +5144,31 @@ class ProtonScreen extends (external_React_default()).PureComponent {
   renderSecondarySection(content) {
     const background = this.getEffectiveBackground(content);
     const heroImageUrl = this.getEffectiveHeroImageUrl(content);
-    // pinnable_sites exposes its background through a custom property so the
-    // stylesheet can swap the wide-layout image for a narrow gradient without
-    // overriding an inline `background` shorthand.
+    const cardStackImageClass = content.card_stack_image ? `card-stack-image-${content.card_stack_image.type ?? "float"}` : "";
     const tiles = Array.isArray(content.tiles) ? content.tiles : [content.tiles];
     const isPinnableSites = tiles.some(tile => tile?.type === "pinnable_sites");
-    return /*#__PURE__*/external_React_default().createElement("div", {
-      className: `section-secondary ${content.hide_secondary_section ? "with-secondary-section-hidden" : ""}`,
-      style: background ? {
+    let style = {};
+    // compute the style prop depending on the message type
+    if (content.position === "card-stack" && content.card_stack_image) {
+      // set variables to use in the CSS
+      style = {
+        "--card-stack-bkg": background,
+        "--card-stack-bkg-uncropped": content.card_stack_image.background_uncropped ?? background,
+        "--card-stack-bkg-medium": content.card_stack_image.background_medium ?? background,
+        "--card-stack-bkg-small": content.card_stack_image.background_small ?? background
+      };
+    } else {
+      // pinnable_sites exposes its background through a custom property so the
+      // stylesheet can swap the wide-layout image for a narrow gradient without
+      // overriding an inline `background` shorthand.
+      style = background ? {
         [isPinnableSites ? "--pinnable-sites-bkg" : "background"]: background,
         "--mr-secondary-background-position-y": content.split_narrow_bkg_position
-      } : {}
+      } : {};
+    }
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      className: `section-secondary ${content.hide_secondary_section ? "with-secondary-section-hidden" : ""} ${cardStackImageClass}`,
+      style: style
     }, content.dismiss_button && content.reverse_split ? this.renderDismissButton() : null, /*#__PURE__*/external_React_default().createElement(Localized, {
       text: content.image_alt_text
     }, /*#__PURE__*/external_React_default().createElement("div", {
@@ -5510,6 +5513,25 @@ const screenContentShape = {
     // The URL of the static hero image, provided if the default hero image
     // has animated content.
     url: (prop_types_default()).string
+  }),
+  // The image to insert into the secondary section background
+  // if the screen is a card stack. "Float" is the default
+  // and uses the "background" property under the hood, so no
+  // extra URLs are needed.
+  card_stack_image: prop_types_default().shape({
+    // The image type; 'float' is a centered floating image (default),
+    // 'bleed' is an image designed to bleed over the bottom edge of the
+    // card, and 'banner' is a wider image that will bleed over two edges,
+    // and convert to a centered image at smaller widths.
+    type: prop_types_default().oneOf(["float", "bleed", "banner"]),
+    // The static CSS background to use with the 'bleed' image type
+    background_uncropped: (prop_types_default()).string,
+    // The static CSS background to use at the middle breakpoint
+    // for the 'banner' image type
+    background_medium: (prop_types_default()).string,
+    // The static CSS background to use at the smallest breakpoint
+    // for the 'banner' image type
+    background_small: (prop_types_default()).string
   }),
   // A single checkbox action.
   checkbox: prop_types_default().shape({
@@ -6107,7 +6129,8 @@ const MultiStageAboutWelcome = props => {
   const [transition, setTransition] = (0,external_React_namespaceObject.useState)(props.transitions ? "in" : "");
   (0,external_React_namespaceObject.useEffect)(() => {
     if (transition === "in") {
-      requestAnimationFrame(() => requestAnimationFrame(() => setTransition("")));
+      // Don't clobber an "out" transition started in the meantime.
+      requestAnimationFrame(() => requestAnimationFrame(() => setTransition(prev => prev === "in" ? "" : prev)));
     }
   }, [transition]);
   const isCardStack = defaultScreens?.[0]?.content?.position === "card-stack";
@@ -6979,6 +7002,7 @@ function MultistageWithDismiss({
     message_id: config.id,
     transitions: transitions,
     backdrop: config.backdrop,
+    ariaRole: "dialog",
     startScreen: 0,
     updateHistory: false
   }));
@@ -6996,16 +7020,82 @@ window.mountMultistageMessage = function mountMultistageMessage(container, props
     messageData,
     handleDismiss,
     handleBlock,
-    handleClick
+    handleClose
   } = props;
   const config = messageData.content;
+  const impressionListeners = new AbortController();
+  // Outcome of each screen that has a primary button, keyed by screen id:
+  // "completed" (primary button clicked)
+  // "skipped" (secondary button clicked)
+  // "expired" (dismissed without either)
+  const completionStatus = {};
+  let currentScreenId = null;
+  let dismissSent = false;
+  const sendTelemetry = data => window.ASRouterMessage({
+    type: "AS_ROUTER_TELEMETRY_USER_EVENT",
+    data: {
+      ...data,
+      action: "newtab_message_user_event"
+    }
+  });
+  const trackCards = (screens, shownScreens) => {
+    const shownIds = new Set(shownScreens.map(({
+      id
+    }) => id));
+    for (const {
+      id,
+      content
+    } of screens) {
+      if (!shownIds.has(id)) {
+        delete completionStatus[id];
+      } else if (content?.primary_button) {
+        completionStatus[id] ??= "expired";
+      }
+    }
+  };
+  const trackTelemetry = data => {
+    if (data.event === "IMPRESSION") {
+      currentScreenId = data.event_context?.screen_id ?? null;
+    } else if (data.event === "CLICK_BUTTON" && currentScreenId in completionStatus) {
+      if (data.event_context?.source === "primary_button") {
+        completionStatus[currentScreenId] = "completed";
+      } else if (data.event_context?.source === "secondary_button") {
+        completionStatus[currentScreenId] = "skipped";
+      }
+    }
+  };
+  const sendDismissTelemetry = () => {
+    if (dismissSent) {
+      return;
+    }
+    dismissSent = true;
+    const completionCount = Object.values(completionStatus).filter(cardStatus => cardStatus === "completed").length;
+    sendTelemetry({
+      event: "DISMISS",
+      event_context: {
+        source: "newtab",
+        page: "about:newtab",
+        reason: completionCount ? "engaged" : "not_engaged",
+        completion_status: completionStatus,
+        completion_count: completionCount
+      },
+      message_id: messageData.id
+    });
+  };
   const awHandlers = {
-    AWEvaluateScreenTargeting: screens => window.ASRouterMessage({
-      type: "AW_EVALUATE_SCREEN_TARGETING",
-      data: screens
-    }),
+    AWEvaluateScreenTargeting: async screens => {
+      const filtered = await window.ASRouterMessage({
+        type: "AW_EVALUATE_SCREEN_TARGETING",
+        data: screens
+      });
+      trackCards(screens, filtered ?? screens);
+      return filtered;
+    },
     AWGetFeatureConfig: () => config,
-    AWFinish: () => handleDismiss(),
+    AWFinish: () => {
+      sendDismissTelemetry();
+      handleClose();
+    },
     AWSendToParent: (handlerName, data) => window.ASRouterMessage({
       type: "USER_ACTION",
       data
@@ -7017,8 +7107,14 @@ window.mountMultistageMessage = function mountMultistageMessage(container, props
       });
     },
     AWSendEventTelemetry: data => {
-      if (data.event !== "IMPRESSION") {
-        handleClick(data.event);
+      trackTelemetry(data);
+      if (data.event !== "IMPRESSION" || document.visibilityState === "visible") {
+        sendTelemetry(data);
+      } else {
+        document.addEventListener("visibilitychange", () => sendTelemetry(data), {
+          once: true,
+          signal: impressionListeners.signal
+        });
       }
     },
     AWGetSelectedTheme: () => Promise.resolve(),
@@ -7046,6 +7142,7 @@ window.mountMultistageMessage = function mountMultistageMessage(container, props
     handleBlock: handleBlock
   }));
   return function cleanup() {
+    impressionListeners.abort();
     root.unmount();
     for (const handlerName of Object.keys(awHandlers)) {
       delete window[handlerName];

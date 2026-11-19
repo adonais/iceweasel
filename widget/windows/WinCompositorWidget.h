@@ -6,7 +6,6 @@
 #define widget_windows_WinCompositorWidget_h
 
 #include "CompositorWidget.h"
-#include "FxROutputHandler.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/gfx/CriticalSection.h"
@@ -68,10 +67,6 @@ class WinCompositorWidget : public CompositorWidget {
   void DestroyCompositorWindow();
   void UpdateCompositorWndSizeIfNecessary();
 
-  void RequestFxrOutput();
-  bool HasFxrOutputHandler() const { return !!mFxrHandler; }
-  FxROutputHandler* GetFxrOutputHandler() const { return mFxrHandler.get(); }
-
   virtual bool GetWindowIsFullyOccluded() const = 0;
 
   virtual void UpdateCompositorWnd(const HWND aCompositorWnd,
@@ -95,8 +90,6 @@ class WinCompositorWidget : public CompositorWidget {
   mozilla::Atomic<uint32_t, MemoryOrdering::Relaxed> mTransparencyMode;
   WinCompositorWnds mCompositorWnds;
   LayoutDeviceIntSize mLastCompositorWndSize;
-
-  UniquePtr<FxROutputHandler> mFxrHandler;
 };
 
 }  // namespace mozilla::widget

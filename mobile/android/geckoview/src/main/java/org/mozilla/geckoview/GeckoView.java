@@ -1116,9 +1116,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     }
   }
 
-  /**
-   * @return Whether or not Android autofill is enabled for this view.
-   */
+  /** {@return whether or not Android autofill is enabled for this view} */
   public boolean getAutofillEnabled() {
     return mAutofillEnabled;
   }

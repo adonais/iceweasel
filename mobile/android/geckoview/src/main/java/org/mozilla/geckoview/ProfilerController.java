@@ -54,6 +54,9 @@ import org.mozilla.gecko.GeckoJavaSampler;
  */
 @UiThread
 public class ProfilerController {
+  /** Public constructor for ProfilerController. */
+  public ProfilerController() {}
+
   private static final String LOGTAG = "ProfilerController";
 
   /**

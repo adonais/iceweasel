@@ -24,7 +24,6 @@ not-for-build-platforms:
     - linux64-aarch64-shippable/opt
     - linux64-nightlyasrelease/opt
     - macosx64-shippable/opt
-    - macosx64-nightlyasrelease/opt
     - win32-shippable/opt
     - win64-shippable/opt
     - win64-aarch64-shippable/opt
@@ -38,13 +37,9 @@ not-for-build-platforms:
 
 task-defaults:
     task-context:
-        from-parameters:
-            project: project
         from-custom:
             - release-level
         substitution-fields:
-            - run-on-hg-branches
-            - shipping-phase
             - bucket-scope
 
 tasks:
@@ -53,26 +48,13 @@ tasks:
             group-by: platform
         attributes:
             artifact_map: taskcluster/gecko_taskgraph/manifests/fennec_geckoview.yml
-        run-on-projects: ['mozilla-release']
-        run-on-hg-branches:
-            by-project:
-                mozilla-release:
-                    - '^GECKOVIEW_\d+_RELBRANCH$'
-                default:
-                    - 'all'
-        shipping-phase:
-            by-project:
-                # Beetmoving geckoview makes it available to the official maven repo.
-                # That happens:
-                # 1. as part of the nightly-android or nightly-all graph on mozilla-central
-                # 2. as part of firefox-android ship graphs on both mozilla-beta and mozilla-release
-                # 3. at every patch uplifted on the GECKOVIEW_XX_RELBRANCH on mozilla-release
-                # Reminder: There is no Android/geckoview build on ESR.
-                #
-                # The logic of point 2 is handled in target_tasks directly because it's mixing and
-                # matching 2 different shipping-products
-                mozilla-release: build
-                default: promote
+        run-on-projects: []
+        # Beetmoving geckoview makes it available to the official maven repo.
+        # That happens:
+        # 1. as part of the nightly-android or nightly-all graph on mozilla-central
+        # 2. as part of firefox-android ship graphs on both mozilla-beta and mozilla-release
+        # Reminder: There is no Android/geckoview build on ESR.
+        shipping-phase: ship
         bucket-scope:
             by-release-level:
                 production: 'project:releng:beetmover:bucket:maven-production'

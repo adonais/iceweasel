@@ -23,7 +23,6 @@
 #include "txXPathNode.h"
 #include "txXPathOptimizer.h"
 
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 using mozilla::WrapUnique;
 
@@ -82,8 +81,8 @@ nsresult txExprParser::createAVT(const nsAString& aAttrValue,
         // Restart the loop since we didn't create an expression
         continue;
       }
-      newExpr =
-          MakeUnique<txLiteralExpr>(literalString + Substring(start, iter));
+      newExpr = std::make_unique<txLiteralExpr>(literalString +
+                                                Substring(start, iter));
     } else {
       // Parse expressions, iter is already past the initial '{' when
       // we get here.
@@ -133,7 +132,7 @@ nsresult txExprParser::createAVT(const nsAString& aAttrValue,
   }
 
   if (!expr) {
-    expr = MakeUnique<txLiteralExpr>(u""_ns);
+    expr = std::make_unique<txLiteralExpr>(u""_ns);
   }
 
   *aResult = expr.release();
@@ -283,12 +282,12 @@ nsresult txExprParser::createExpr(txExprLexer& lexer, txIParseContext* aContext,
     if (negations > 0) {
       if (negations % 2 == 0) {
         auto fcExpr =
-            MakeUnique<txCoreFunctionCall>(txCoreFunctionCall::NUMBER);
+            std::make_unique<txCoreFunctionCall>(txCoreFunctionCall::NUMBER);
 
         fcExpr->addParam(expr.release());
         expr = std::move(fcExpr);
       } else {
-        expr = MakeUnique<UnaryExpr>(expr.release());
+        expr = std::make_unique<UnaryExpr>(expr.release());
       }
     }
 
@@ -352,7 +351,7 @@ nsresult txExprParser::createFilterOrStep(txExprLexer& lexer,
         nsresult rv = resolveQName(tok->Value(), getter_AddRefs(prefix),
                                    aContext, getter_AddRefs(lName), nspace);
         NS_ENSURE_SUCCESS(rv, rv);
-        expr = MakeUnique<VariableRefExpr>(prefix, lName, nspace);
+        expr = std::make_unique<VariableRefExpr>(prefix, lName, nspace);
       }
       break;
     case Token::L_PAREN:
@@ -367,11 +366,11 @@ nsresult txExprParser::createFilterOrStep(txExprLexer& lexer,
       break;
     case Token::LITERAL:
       lexer.nextToken();
-      expr = MakeUnique<txLiteralExpr>(tok->Value());
+      expr = std::make_unique<txLiteralExpr>(tok->Value());
       break;
     case Token::NUMBER: {
       lexer.nextToken();
-      expr = MakeUnique<txLiteralExpr>(txDouble::toDouble(tok->Value()));
+      expr = std::make_unique<txLiteralExpr>(txDouble::toDouble(tok->Value()));
       break;
     }
     default:
@@ -415,7 +414,7 @@ nsresult txExprParser::createFunctionCall(txExprLexer& lexer,
   if (namespaceID == kNameSpaceID_None &&
       txCoreFunctionCall::getTypeFromAtom(lName, type)) {
     // It is a known built-in function.
-    fnCall = MakeUnique<txCoreFunctionCall>(type);
+    fnCall = std::make_unique<txCoreFunctionCall>(type);
   }
 
   // check extension functions and xslt
@@ -501,13 +500,13 @@ nsresult txExprParser::createLocationStep(txExprLexer& lexer,
       //-- eat token
       lexer.nextToken();
       axisIdentifier = LocationStep::PARENT_AXIS;
-      nodeTest = MakeUnique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
+      nodeTest = std::make_unique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
       break;
     case Token::SELF_NODE:
       //-- eat token
       lexer.nextToken();
       axisIdentifier = LocationStep::SELF_AXIS;
-      nodeTest = MakeUnique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
+      nodeTest = std::make_unique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
       break;
     default:
       break;
@@ -527,7 +526,7 @@ nsresult txExprParser::createLocationStep(txExprLexer& lexer,
                         getter_AddRefs(lName), nspace, true);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      nodeTest = MakeUnique<txNameTest>(
+      nodeTest = std::make_unique<txNameTest>(
           prefix, lName, nspace,
           axisIdentifier == LocationStep::ATTRIBUTE_AXIS
               ? static_cast<uint16_t>(txXPathNodeType::ATTRIBUTE_NODE)
@@ -538,8 +537,7 @@ nsresult txExprParser::createLocationStep(txExprLexer& lexer,
     }
   }
 
-  UniquePtr<LocationStep> lstep =
-      std::make_unique<LocationStep>(nodeTest.get(), axisIdentifier);
+  auto lstep = std::make_unique<LocationStep>(nodeTest.get(), axisIdentifier);
 
   (void)nodeTest.release();
 
@@ -565,19 +563,19 @@ nsresult txExprParser::createNodeTypeTest(txExprLexer& lexer,
   switch (nodeTok->mType) {
     case Token::COMMENT_AND_PAREN:
       lexer.nextToken();
-      nodeTest = MakeUnique<txNodeTypeTest>(txNodeTypeTest::COMMENT_TYPE);
+      nodeTest = std::make_unique<txNodeTypeTest>(txNodeTypeTest::COMMENT_TYPE);
       break;
     case Token::NODE_AND_PAREN:
       lexer.nextToken();
-      nodeTest = MakeUnique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
+      nodeTest = std::make_unique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
       break;
     case Token::PROC_INST_AND_PAREN:
       lexer.nextToken();
-      nodeTest = MakeUnique<txNodeTypeTest>(txNodeTypeTest::PI_TYPE);
+      nodeTest = std::make_unique<txNodeTypeTest>(txNodeTypeTest::PI_TYPE);
       break;
     case Token::TEXT_AND_PAREN:
       lexer.nextToken();
-      nodeTest = MakeUnique<txNodeTypeTest>(txNodeTypeTest::TEXT_TYPE);
+      nodeTest = std::make_unique<txNodeTypeTest>(txNodeTypeTest::TEXT_TYPE);
       break;
     default:
       return NS_ERROR_XPATH_NO_NODE_TYPE_TEST;
@@ -632,7 +630,7 @@ nsresult txExprParser::createPathExpr(txExprLexer& lexer,
       return NS_OK;
     }
   } else {
-    expr = MakeUnique<RootExpr>();
+    expr = std::make_unique<RootExpr>();
 
 #ifdef TX_TO_STRING
     static_cast<RootExpr*>(expr.get())->setSerialize(false);

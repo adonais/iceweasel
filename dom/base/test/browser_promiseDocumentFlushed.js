@@ -66,6 +66,15 @@ async function cleanTheDOM() {
 
 add_setup(async function () {
   registerCleanupFunction(cleanTheDOM);
+
+  // Compositor animations make needsFlush() return true, but don't block
+  // promiseDocumentFlushed, so let the ones in progress finish first.
+  await Promise.all(
+    document
+      .getAnimations()
+      .filter(a => a.effect.getComputedTiming().endTime != Infinity)
+      .map(a => a.finished.catch(() => {}))
+  );
 });
 
 /**

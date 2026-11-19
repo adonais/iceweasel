@@ -39,7 +39,7 @@ class MemoryCounter : public BaseProfilerCount {
 };
 
 UniquePtr<BaseProfilerCount> create_memory_counter() {
-  return MakeUnique<MemoryCounter>();
+  return std::make_unique<MemoryCounter>();
 }
 
 }  // namespace mozilla::profiler

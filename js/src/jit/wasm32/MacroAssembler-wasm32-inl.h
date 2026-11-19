@@ -608,6 +608,17 @@ void MacroAssembler::branchTestNull(Condition cond, const ValueOperand& value,
   MOZ_CRASH();
 }
 
+void MacroAssembler::branchTestNullOrUndefined(Condition cond, Register tag,
+                                               Label* label) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::branchTestNullOrUndefined(Condition cond,
+                                               const ValueOperand& value,
+                                               Label* label) {
+  MOZ_CRASH();
+}
+
 void MacroAssembler::branchTestObject(Condition cond, const Address& address,
                                       Label* label) {
   MOZ_CRASH();
@@ -620,6 +631,11 @@ void MacroAssembler::branchTestObject(Condition cond, const BaseIndex& address,
 
 void MacroAssembler::branchTestObject(Condition cond, const ValueOperand& value,
                                       Label* label) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::branchTestGCThing(Condition cond, Register tag,
+                                       Label* label) {
   MOZ_CRASH();
 }
 

@@ -20,8 +20,8 @@ Module::Module() = default;
 #include "xpc_map_end.h"
 
 NS_IMETHODIMP
-Module::Call(nsIXPConnectWrappedNative* wrapper, JSContext* cx, JSObject* obj,
-             const JS::CallArgs& args, bool* _retval) {
+Module::Call(nsIXPConnectWrappedNative* /*wrapper*/, JSContext* cx,
+             JSObject* /*obj*/, const JS::CallArgs& /*args*/, bool* _retval) {
   JS::Rooted<JSObject*> global(cx, JS::GetScriptedCallerGlobal(cx));
   if (!global) return NS_ERROR_NOT_AVAILABLE;
 

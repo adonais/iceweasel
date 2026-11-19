@@ -64,6 +64,7 @@ import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSiteSettingsException
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSiteSettingsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsSiteSettingsPermissionsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsTabsPage
+import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsTranslationsPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.SettingsTurnOnSyncPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.ShareOverlayPage
 import org.mozilla.fenix.ui.efficiency.pageObjects.ShortcutsPage
@@ -133,6 +134,7 @@ class PageContext(val composeRule: AndroidComposeTestRule<HomeActivityIntentTest
     val settingsSiteSettingsPermissions = SettingsSiteSettingsPermissionsPage(composeRule)
     val settingsSiteSettingsExceptions = SettingsSiteSettingsExceptionsPage(composeRule)
     val settingsTabs = SettingsTabsPage(composeRule)
+    val settingsTranslations = SettingsTranslationsPage(composeRule)
     val settingsTurnOnSync = SettingsTurnOnSyncPage(composeRule)
     val shareOverlay = ShareOverlayPage(composeRule)
     val shortcuts = ShortcutsPage(composeRule)

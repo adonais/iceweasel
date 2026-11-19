@@ -549,7 +549,15 @@ def test_expanded(params):
     assert scheduled == all_labels
 
 
-@pytest.mark.parametrize("strategy", ["skip-unless-backstop", "skip-unless-expanded"])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        "skip-unless-backstop",
+        "skip-unless-expanded",
+        "perf-cadence-backstop",
+        "perf-cadence-expanded",
+    ],
+)
 def test_tryselect_backstop_expanded(responses, params, strategy):
     params.update({"project": "try", "backstop": False, "pushlog_id": 11})
     responses.add(

@@ -17,22 +17,33 @@ import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.store.MenuAction
 
-/** [MenuItemProvider] for the menu item allowing to customize what the homepage shows. */
-class CustomizeHomepageMenuItemProvider : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        MutableStateFlow(
-            StandardMenuItem(
-                title = MenuItemTitle(Text.Resource(R.string.browser_menu_customize_homepage)),
-                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_home_24),
-                onClickEvent = MenuAction.Navigate.CustomizeHomepage,
-            )
-        )
+/**
+ * [MenuItemProvider] for the menu item allowing to customize what the homepage shows.
+ *
+ * @param target [MenuTarget] for which this menu item would be shown for.
+ */
+class CustomizeHomepageMenuItemProvider(private val target: MenuTarget) : MenuItemProvider {
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.Navigate.CustomizeHomepage)))
+        }
 
     override fun handles(event: MenuEvent) = event == MenuAction.Navigate.CustomizeHomepage
 
     override fun onEvent(event: MenuEvent, menu: MenuHost) {
         menu.navigate(NavGraphDirections.actionGlobalHomeSettingsFragment())
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_customize_homepage)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_home_24),
+            )
     }
 }

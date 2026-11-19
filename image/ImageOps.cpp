@@ -163,17 +163,23 @@ nsresult ImageOps::DecodeMetadata(ImageBuffer* aBuffer,
   }
 
   RefPtr<SourceBuffer> sourceBuffer = aBuffer->GetSourceBuffer();
-  if (NS_WARN_IF(!sourceBuffer)) {
+  DecoderType decoderType =
+      DecoderFactory::GetDecoderType(PromiseFlatCString(aMimeType).get());
+  return DecodeMetadata(sourceBuffer, decoderType, aMetadata);
+}
+
+nsresult ImageOps::DecodeMetadata(SourceBuffer* aSourceBuffer,
+                                  DecoderType aDecoderType,
+                                  ImageMetadata& aMetadata) {
+  if (NS_WARN_IF(!aSourceBuffer)) {
     return NS_ERROR_FAILURE;
   }
 
   // Create a decoder.
-  DecoderType decoderType =
-      DecoderFactory::GetDecoderType(PromiseFlatCString(aMimeType).get());
   DecoderFlags decoderFlags = DefaultDecoderFlags();
   decoderFlags |= DecoderFlags::FIRST_FRAME_ONLY;
   RefPtr<Decoder> decoder = DecoderFactory::CreateAnonymousMetadataDecoder(
-      decoderType, WrapNotNull(sourceBuffer), decoderFlags);
+      aDecoderType, WrapNotNull(aSourceBuffer), decoderFlags);
   if (!decoder) {
     return NS_ERROR_FAILURE;
   }

@@ -7,7 +7,7 @@ namespace mozilla::intl {
 
 /*static*/ Result<UniquePtr<NumberParser>, ICUError> NumberParser::TryCreate(
     std::string_view aLocale, bool aUseGrouping) {
-  UniquePtr<NumberParser> nf = MakeUnique<NumberParser>();
+  auto nf = std::make_unique<NumberParser>();
 
   UErrorCode status = U_ZERO_ERROR;
   nf->mNumberFormat =

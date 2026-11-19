@@ -1,3 +1,28 @@
+Release 1.18.6 (2026-09-20 Emmanuele Bassi <ebassi@gnome.org>)
+==============================================================
+
+A new stable release.
+
+The XCB surface triggered an UAF warning when building with GCC. [#898]
+
+The clipping code was accessing various fields in a guard value, and
+causing a crash inside Inkscape. See: https://gitlab.com/inkscape/inkscape/-/issues/5631
+
+Multiple fixes for the Windows backends, including improvements in the
+thread safety of the DirectWrite code. [#897]
+
+The DirectWrite backend now supports COLRv1 fonts. [#903]
+
+Multiple fixes for building with MSVC and ClangCL.
+
+A leak in the PDF surfaces has been fixed. [!644]
+
+Various gaps between abutting rectangles when drawing with ANTIALIAS_NONE
+were removed by using absolute coordinates and avoiding rounding
+errors. [#976]
+
+Remove an overflow when computing the buffer size in the XRender code. [#950]
+
 Release 1.18.4 (2025-03-08 Emmanuele Bassi <ebassi@gnome.org>)
 ==============================================================
 

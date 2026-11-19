@@ -132,7 +132,7 @@ void APZUpdater::ProcessPendingTasks(const wr::WrWindowId& aWindowId) {
 }
 
 void APZUpdater::ClearTree(LayersId aRootLayersId) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZUpdater> self = this;
   RefPtr<Runnable> task =
       NS_NewRunnableFunction("APZUpdater::ClearTree", [=]() {
@@ -167,7 +167,7 @@ void APZUpdater::ClearTree(LayersId aRootLayersId) {
 void APZUpdater::UpdateFocusState(LayersId aRootLayerTreeId,
                                   LayersId aOriginatingLayersId,
                                   const FocusTarget& aFocusTarget) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RunOnUpdaterThread(aOriginatingLayersId,
                      NewRunnableMethod<LayersId, LayersId, FocusTarget>(
                          "APZUpdater::UpdateFocusState", mApz,
@@ -178,7 +178,7 @@ void APZUpdater::UpdateFocusState(LayersId aRootLayerTreeId,
 void APZUpdater::UpdateScrollDataAndTreeState(
     LayersId aRootLayerTreeId, LayersId aOriginatingLayersId,
     const wr::Epoch& aEpoch, WebRenderScrollData&& aScrollData) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZUpdater> self = this;
   // Insert an epoch requirement update into the queue, so that
   // tasks inserted into the queue after this point only get executed
@@ -263,7 +263,7 @@ void APZUpdater::UpdateScrollOffsets(LayersId aRootLayerTreeId,
                                      LayersId aOriginatingLayersId,
                                      ScrollUpdatesMap&& aUpdates,
                                      uint32_t aPaintSequenceNumber) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZUpdater> self = this;
   RunOnUpdaterThread(
       aOriginatingLayersId,
@@ -284,7 +284,7 @@ void APZUpdater::UpdateScrollOffsets(LayersId aRootLayerTreeId,
 
 void APZUpdater::NotifyLayerTreeAdopted(LayersId aLayersId,
                                         const RefPtr<APZUpdater>& aOldUpdater) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RunOnUpdaterThread(aLayersId,
                      NewRunnableMethod<LayersId, RefPtr<APZCTreeManager>>(
                          "APZUpdater::NotifyLayerTreeAdopted", mApz,
@@ -293,7 +293,7 @@ void APZUpdater::NotifyLayerTreeAdopted(LayersId aLayersId,
 }
 
 void APZUpdater::NotifyLayerTreeRemoved(LayersId aLayersId) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZUpdater> self = this;
   RunOnUpdaterThread(
       aLayersId,
@@ -305,7 +305,7 @@ void APZUpdater::NotifyLayerTreeRemoved(LayersId aLayersId) {
 }
 
 bool APZUpdater::GetAPZTestData(LayersId aLayersId, APZTestData* aOutData) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
   RefPtr<APZCTreeManager> apz = mApz;
   bool ret = false;
@@ -325,7 +325,7 @@ bool APZUpdater::GetAPZTestData(LayersId aLayersId, APZTestData* aOutData) {
 void APZUpdater::SetTestAsyncScrollOffset(
     LayersId aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
     const CSSPoint& aOffset) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZCTreeManager> apz = mApz;
   RunOnUpdaterThread(
       aLayersId,
@@ -343,7 +343,7 @@ void APZUpdater::SetTestAsyncScrollOffset(
 void APZUpdater::SetTestAsyncZoom(LayersId aLayersId,
                                   const ScrollableLayerGuid::ViewID& aScrollId,
                                   const LayerToParentLayerScale& aZoom) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   RefPtr<APZCTreeManager> apz = mApz;
   RunOnUpdaterThread(
       aLayersId, NS_NewRunnableFunction("APZUpdater::SetTestAsyncZoom", [=]() {
@@ -415,7 +415,7 @@ void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
           }
         }
       }
-      mUpdaterQueue.push_back(QueuedTask{aLayersId, task});
+      mUpdaterQueue.push_back(QueuedTask{aLayersId, task, aDuringShutdown});
     }
     if (sendWakeMessage) {
       RefPtr<wr::WebRenderAPI> api = mApz->GetWebRenderAPI();
@@ -466,7 +466,7 @@ void APZUpdater::AssertOnUpdaterThreadOrNotInitialized() const {
 
 void APZUpdater::RunOnControllerThread(LayersId aLayersId,
                                        already_AddRefed<Runnable> aTask) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
   RefPtr<Runnable> task = aTask;
 
@@ -529,7 +529,8 @@ void APZUpdater::ProcessQueue() {
     // might result in tasks getting executed out of order.
 
     auto it = mEpochData.find(task.mLayersId);
-    if (it != mEpochData.end() && it->second.IsBlocked()) {
+    if (task.mDuringShutdown == DuringShutdown::No && it != mEpochData.end() &&
+        it->second.IsBlocked()) {
       // If this task is blocked, put it into the blockedTasks queue that
       // we will replace mUpdaterQueue with
       blockedTasks.push_back(task);
@@ -546,7 +547,9 @@ void APZUpdater::ProcessQueue() {
     // if the tasks were queued after the root pipeline was removed in
     // WebRender, which prevents scene builds (and therefore prevents us
     // from getting updated epochs via CompleteSceneSwap). See bug 1465658
-    // comment 43 for some more context.
+    // comment 43 for some more context. There might also be tasks for the
+    // root layers id that were queued before ClearTree, which runs ahead of
+    // them if the root's last epoch was never built.
     // To avoid leaking these tasks, we discard the contents of the queue.
     // This happens during window shutdown so if we don't run the tasks it's
     // not going to matter much.

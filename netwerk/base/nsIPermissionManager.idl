@@ -110,6 +110,19 @@ interface nsIPermissionManager : nsISupports
   Array<nsIPermission> getAllByTypes(in Array<ACString> types);
 
   /**
+   * Get all custom permissions whose OriginAttributes match the given
+   * OriginAttributesPattern. Pattern fields the permission manager does not
+   * isolate by (see the permissions.isolateBy.* prefs) are ignored. Not
+   * available in the content process.
+   *
+   * @param patternAsJSON  an OriginAttributesPattern serialized as JSON.
+   * @param types  an array of case-sensitive ASCII strings, identifying the
+   *               permissions to be matched. If empty, all types match.
+   */
+  Array<nsIPermission> getAllForOriginAttributesPattern(
+      in AString patternAsJSON, in Array<ACString> types);
+
+  /**
    * Get all custom permissions of a specific type and that were modified after
    * the specified date. This will return an array of all permissions which are
    * not set to default.

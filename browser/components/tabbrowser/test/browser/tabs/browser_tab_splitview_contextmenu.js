@@ -9,6 +9,18 @@ add_setup(async function () {
 });
 
 registerCleanupFunction(async function () {
+  // The synthesized clicks leave the pointer over a tab. Move it away so the
+  // hover preview closes before the tab strip moves out from under it.
+  const previewPanel = document.getElementById("tab-preview-panel");
+  let previewHidden;
+  if (previewPanel.state != "closed") {
+    previewHidden = BrowserTestUtils.waitForPopupEvent(previewPanel, "hidden");
+  }
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("nav-bar"), {
+    type: "mousemove",
+  });
+  await previewHidden;
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["sidebar.verticalTabs", false],

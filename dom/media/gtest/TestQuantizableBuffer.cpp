@@ -65,7 +65,7 @@ class QuantizableBufferTest : public testing::TestWithParam<PixFormatParam> {
       CheckedInt<size_t> bufferSize =
           checkedYLength + checkedCbLength * sizeof(DataType);
       mData = aSourceData ? std::move(aSourceData)
-                          : MakeUnique<AlignedBuffer<DataType>>(
+                          : std::make_unique<AlignedBuffer<DataType>>(
                                 bufferSize.isValid() ? bufferSize.value() : 0);
       if (mData->Data()) {
         // Use checked arithmetic to ensure no memory address overflow.
@@ -137,36 +137,36 @@ TEST_P(QuantizableBufferTest, VariousSizes) {
 
 TEST_P(QuantizableBufferTest, InvalidSizes) {
   TestBuffer zeroWidth{0, kVGAHeight, GetParam(), ColorDepth::COLOR_10,
-                       MakeUnique<AlignedBuffer<TenBit>>(kVGAHeight)};
+                       std::make_unique<AlignedBuffer<TenBit>>(kVGAHeight)};
   EXPECT_EQ(zeroWidth.mBuffer.To8BitPerChannel(mRecycleBin),
             NS_ERROR_ILLEGAL_VALUE);
   TestBuffer zeroHeight{kVGAWidth, 0, GetParam(), ColorDepth::COLOR_10,
-                        MakeUnique<AlignedBuffer<TenBit>>(kVGAWidth)};
+                        std::make_unique<AlignedBuffer<TenBit>>(kVGAWidth)};
   EXPECT_EQ(zeroHeight.mBuffer.To8BitPerChannel(mRecycleBin),
             NS_ERROR_ILLEGAL_VALUE);
 
   TestBuffer invalidWidth{std::numeric_limits<uint32_t>::max(), kVGAHeight,
                           GetParam(), ColorDepth::COLOR_10,
-                          MakeUnique<AlignedBuffer<TenBit>>(kVGAHeight)};
+                          std::make_unique<AlignedBuffer<TenBit>>(kVGAHeight)};
   EXPECT_EQ(invalidWidth.mBuffer.To8BitPerChannel(mRecycleBin),
             NS_ERROR_ILLEGAL_VALUE);
   TestBuffer invalidHeight{kVGAWidth, std::numeric_limits<uint32_t>::max(),
                            GetParam(), ColorDepth::COLOR_10,
-                           MakeUnique<AlignedBuffer<TenBit>>(kVGAWidth)};
+                           std::make_unique<AlignedBuffer<TenBit>>(kVGAWidth)};
   EXPECT_EQ(invalidHeight.mBuffer.To8BitPerChannel(mRecycleBin),
             NS_ERROR_ILLEGAL_VALUE);
 
   TestBuffer invalidDestLength{
       std::numeric_limits<int>::max(), std::numeric_limits<int>::max(),
       GetParam(), ColorDepth::COLOR_10,
-      MakeUnique<AlignedBuffer<TenBit>>(kVGAWidth * kVGAHeight)};
+      std::make_unique<AlignedBuffer<TenBit>>(kVGAWidth * kVGAHeight)};
   EXPECT_EQ(invalidDestLength.mBuffer.To8BitPerChannel(mRecycleBin),
             NS_ERROR_ILLEGAL_VALUE);
 };
 
 TEST_P(QuantizableBufferTest, NoData) {
   TestBuffer noData{kVGAWidth, kVGAHeight, GetParam(), ColorDepth::COLOR_10,
-                    MakeUnique<AlignedBuffer<TenBit>>()};
+                    std::make_unique<AlignedBuffer<TenBit>>()};
 
   EXPECT_EQ(noData.mBuffer.To8BitPerChannel(mRecycleBin),
             NS_ERROR_ILLEGAL_VALUE);

@@ -50,8 +50,7 @@
 
 .monitor-card-state-title {
   font-size: var(--font-size-large);
-  margin-top: 0;
-  margin-bottom: 0;
+  margin-block: 0;
 }
 
 .title-container {
@@ -314,7 +313,7 @@ moz-input-text::part(label),
 
 hr.rule {
   border: 0;
-  border-top: 1px solid var(--border-color-deemphasized);
+  border-block-start: 1px solid var(--border-color-deemphasized);
   margin: var(--space-xsmall) 0;
   width: 100%;
 }
@@ -336,7 +335,7 @@ hr.rule {
 .history-note {
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
-  border-top: 1px solid var(--border-color-deemphasized);
+  border-block-start: 1px solid var(--border-color-deemphasized);
 }
 
 .history-item {
@@ -345,7 +344,7 @@ hr.rule {
   align-items: baseline;
   gap: var(--space-medium);
   padding: var(--space-small) 0;
-  border-top: 1px solid var(--border-color-deemphasized);
+  border-block-start: 1px solid var(--border-color-deemphasized);
   font-size: var(--font-size-small);
 
   @media (max-width: 600px) {
@@ -354,7 +353,7 @@ hr.rule {
 
     & > span:last-child {
       grid-column: 1 / -1;
-      margin-top: var(--space-xsmall);
+      margin-block-start: var(--space-xsmall);
     }
   }
 
@@ -395,7 +394,7 @@ hr.rule {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-color-deemphasized);
-  margin-bottom: var(--space-small);
+  margin-block-end: var(--space-small);
 }
 
 .task-content {
@@ -411,7 +410,7 @@ hr.rule {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-small);
-  margin-top: var(--space-small);
+  margin-block-start: var(--space-small);
 }
 
 .condition-badge {

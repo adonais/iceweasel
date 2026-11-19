@@ -100,6 +100,54 @@ class TestCompileDBBackends(BackendTester):
             ['-DMOZ_APP_NAME="firefox"', '-DMOZ_APP_DISPLAYNAME="Mozilla Firefox"'],
         )
 
+    def test_database_objc(self):
+        env = self._consume("database-objc", CompileDBBackend)
+        with open(os.path.join(env.topobjdir, "compile_commands.json")) as fh:
+            compile_db = json.load(fh)
+
+        flags = [
+            f"-I{env.topsrcdir}",
+            f"-I{env.topobjdir}",
+            f"-I{env.topobjdir}/dist/include",
+            "-fno-strict-aliasing",
+            "-ffp-contract=off",
+        ]
+        self.assertCountEqual(
+            compile_db,
+            [
+                {
+                    "directory": env.topobjdir,
+                    "arguments": [
+                        "clang",
+                        "-o",
+                        "/dev/null",
+                        "-c",
+                        *flags,
+                        "-fobjc-exceptions",
+                        "-fobjc-arc",
+                        "-ferror-limit=0",
+                        f"{env.topsrcdir}/baz.m",
+                    ],
+                    "file": f"{env.topsrcdir}/baz.m",
+                },
+                {
+                    "directory": env.topobjdir,
+                    "arguments": [
+                        "clang++",
+                        "-o",
+                        "/dev/null",
+                        "-c",
+                        *flags,
+                        "-fobjc-call-cxx-cdtors",
+                        "-fobjc-weak",
+                        "-ferror-limit=0",
+                        f"{env.topsrcdir}/qux.mm",
+                    ],
+                    "file": f"{env.topsrcdir}/qux.mm",
+                },
+            ],
+        )
+
     def test_clangd(self):
         """Ensure we can generate a `compile_commands.json` and that is correct.
         in order to be used by ClandBackend"""

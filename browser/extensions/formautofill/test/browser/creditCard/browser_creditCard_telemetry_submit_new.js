@@ -58,7 +58,10 @@ add_task(async function test_submit_creditCard_new() {
     ccFormArgsv2("detected", buildccFormv2Extra({ cc_exp: "false" }, "true")),
     ccFormArgsv2(
       "submitted",
-      buildccFormv2Extra({ cc_exp: "unavailable" }, "user_filled")
+      buildccFormv2Extra(
+        { cc_exp: "unavailable", cc_csc: "not_filled" },
+        "user_filled"
+      )
     ),
   ];
 

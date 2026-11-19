@@ -2018,7 +2018,7 @@ AsyncErrorReporter::AsyncErrorReporter(xpc::ErrorReport* aReport)
 
 void AsyncErrorReporter::SerializeStack(JSContext* aCx,
                                         JS::Handle<JSObject*> aStack) {
-  mStackHolder = MakeUnique<SerializedStackHolder>();
+  mStackHolder = std::make_unique<SerializedStackHolder>();
   mStackHolder->SerializeMainThreadOrWorkletStack(aCx, aStack);
 }
 

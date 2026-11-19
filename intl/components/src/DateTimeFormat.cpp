@@ -637,7 +637,7 @@ Result<UniquePtr<Calendar>, ICUError> DateTimeFormat::CloneCalendar(
   if (U_FAILURE(status)) {
     return Err(ToICUError(status));
   }
-  auto calendar = MakeUnique<Calendar>(calendarRaw);
+  auto calendar = std::make_unique<Calendar>(calendarRaw);
 
   MOZ_TRY(calendar->SetTimeInMs(aUnixEpoch));
 
@@ -807,7 +807,7 @@ DateTimeFormat::GetAllowedHourCycles(const LanguageSubtag& aLanguage,
 
 template <typename CharT>
 static Result<Buffer<char>, ICUError> DuplicateChars(Span<CharT> aView) {
-  auto chars = MakeUnique<char[]>(aView.Length() + 1);
+  auto chars = std::make_unique<char[]>(aView.Length() + 1);
   std::copy_n(aView.Elements(), aView.Length(), chars.get());
   chars[aView.Length()] = '\0';
   return Buffer{std::move(chars), aView.Length()};

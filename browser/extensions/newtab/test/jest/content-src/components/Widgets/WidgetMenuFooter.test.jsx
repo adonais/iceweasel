@@ -8,6 +8,8 @@ import { INITIAL_STATE } from "common/Reducers.sys.mjs";
 import { WidgetMenuFooter } from "content-src/components/Widgets/WidgetMenuFooter";
 import { actionTypes as at } from "common/Actions.mjs";
 import { PREF_WIDGETS_ORDER } from "common/WidgetsRegistry.mjs";
+import { WIDGET_PLACEMENTS } from "common/PageLayoutVariants.mjs";
+import { WidgetPlacementContext } from "content-src/components/Widgets/WidgetPlacement";
 
 function renderFooter(props = {}) {
   const dispatch = jest.fn();
@@ -158,5 +160,35 @@ describe("<WidgetMenuFooter>", () => {
       data: { where: "tab" },
     });
     expect(onLearnMore).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers Move > Home alongside Hide in the widget library", () => {
+    const dispatch = jest.fn();
+    const { container } = render(
+      <WrapWithProvider>
+        <WidgetPlacementContext.Provider value={WIDGET_PLACEMENTS.LIBRARY}>
+          <panel-list>
+            <WidgetMenuFooter
+              dispatch={dispatch}
+              widgetId="clocks"
+              widgetName="clocks"
+              enabledPref="widgets.clocks.enabled"
+              widgetSize="large"
+              learnMoreL10nId="newtab-clock-widget-menu-learn-more"
+            />
+          </panel-list>
+        </WidgetPlacementContext.Provider>
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelector(
+        "panel-item[data-l10n-id='newtab-widget-menu-move-to-home']"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        "panel-item[data-l10n-id='newtab-widget-menu-hide']"
+      )
+    ).toBeInTheDocument();
   });
 });

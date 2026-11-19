@@ -10,6 +10,7 @@
 #include "nsStringFwd.h"
 #include "ContentBlockingNotifier.h"
 
+#include "nsIClassifiedChannel.h"
 #include "nsILoadInfo.h"
 
 class nsPIDOMWindowInner;
@@ -145,6 +146,28 @@ class AntiTrackingUtils final {
   // will be considered as a third party only when it's a third party to both
   // its parent and the top-level window.
   static bool IsThirdPartyChannel(nsIChannel* aChannel);
+
+  // Returns true if the channel is annotated as a third-party tracker. This
+  // takes the channel annotation preferences into account. Returns false for
+  // null or non-classified channels.
+  static bool IsThirdPartyTrackingChannel(nsIChannel* aChannel);
+
+  // Returns true if the channel is annotated as a first-party tracker. This
+  // takes the channel annotation preferences into account. Returns false for
+  // null or non-classified channels.
+  static bool IsFirstPartyTrackingChannel(nsIChannel* aChannel);
+
+  // Returns the first- and third-party classification flags of the channel, or
+  // zero flags for null or non-classified channels.
+  static net::ClassificationFlags GetClassificationFlags(nsIChannel* aChannel);
+
+  // Returns true if the channel is annotated as a third-party social tracker.
+  // Returns false for null or non-classified channels.
+  static bool IsThirdPartySocialTrackingChannel(nsIChannel* aChannel);
+
+  // Returns true if the tracking protection preferences enable blocking of
+  // tracking resources, either globally or for private browsing only.
+  static bool IsTrackingProtectionEnabled(bool aIsPrivate);
 
   // Given a window and a URI, this function first determines if the window is
   // third-party with respect to the URI. The function returns if it's true.

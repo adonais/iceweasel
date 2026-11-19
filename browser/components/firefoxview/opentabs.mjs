@@ -12,9 +12,9 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { getLogger, MAX_TABS_FOR_RECENT_BROWSING } from "./helpers.mjs";
 import { searchTabList } from "./search-helpers.mjs";
 import { ViewPage, ViewPageContent } from "./viewpage.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/firefoxview/opentabs-tab-list.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-label.mjs";
 
 const lazy = {};

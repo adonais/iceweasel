@@ -243,6 +243,9 @@ function do_test() {
   var prop = "quotes"
   var values = InspectorUtils.getCSSValuesForProperty(prop);
   var expected = [ ...CSS_WIDE_KEYWORDS, "auto", "none" ];
+  if (SpecialPowers.getBoolPref("layout.css.quotes.match-parent.enabled")) {
+    expected.push("match-parent");
+  }
   ok(testValues(values, expected), "property quotes's values.");
 
   // Regression test for bug 1255384.
@@ -294,7 +297,7 @@ function do_test() {
   var expected = [ "normal", "none", "counter", "counters",
                    "open-quote", "close-quote", "no-open-quote",
                    ...CSS_WIDE_KEYWORDS, "no-close-quote",
-                   "-moz-alt-content", "-moz-label-content", ]
+                   "-moz-label-content", ]
     .concat(allImages);
   var values = InspectorUtils.getCSSValuesForProperty("content");
   ok(testValues(values, expected), "property content's values");

@@ -13,9 +13,6 @@ transforms:
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     cron:
         description: Cron Job for Updatebot
@@ -58,6 +55,7 @@ tasks:
             toolchain:
                 - linux64-rust
                 - linux64-cargo-vet
+                - linux64-gn
 
     cron-win:
         description: Cron Job for Updatebot (Windows)

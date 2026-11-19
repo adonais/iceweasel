@@ -2,14 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-using mozilla::psm::EnabledSignatureScheme from "mozilla/psm/PSMIPCUtils.h";
-
 namespace mozilla {
 namespace psm {
-
-struct ByteArray {
-  uint8_t[] data;
-};
 
 struct ECKey {
   uint8_t[] params; // the EC point representing this key
@@ -26,17 +20,12 @@ struct Certificate {
   bool serverAuthTrustAnchor; // true if this is a TLS server auth trust anchor
 };
 
-// Helper type for sending keys and certificates over IPC for use by IPC client
-// certs.
-union IPCClientCertObject {
+// Helper type for sending keys and certificates over IPC for use by remote
+// PKCS#11 modules.
+union CryptokiObject {
   ECKey;
   RSAKey;
   Certificate;
-};
-
-struct DelegatedCredentialInfoArg {
-  EnabledSignatureScheme scheme;
-  uint32_t authKeyBits;
 };
 
 } // namespace psm

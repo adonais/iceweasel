@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-disable import/no-unassigned-import */
+/* eslint-disable import-x/no-unassigned-import */
 
 import { NetErrorCard } from "chrome://global/content/net-error-card.mjs";
 import {
@@ -13,6 +13,7 @@ import {
   gOffline,
   searchParams,
   getHostName,
+  getLoopbackInfo,
   getSubjectAltNames,
   getFailedCertificatesAsPEMString,
   recordSecurityUITelemetry,
@@ -682,6 +683,9 @@ function getNetErrorDescParts(noConnectivity) {
     noConnectivity,
     showOSXPermissionWarning: RPMShowOSXLocalNetworkPermissionWarning(),
     offline: gOffline,
+    // Only a refused connection means "nothing is listening"; timeouts and
+    // resets on loopback can have other causes.
+    loopback: gErrorCode == "connectionFailure" ? getLoopbackInfo() : null,
   };
 
   // The legacy page looks up configs by gErrorCode (the URL e= parameter).

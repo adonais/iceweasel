@@ -12,8 +12,13 @@ client side of the tests never needs to know which recipe was used.
 
 from __future__ import annotations
 
+import os
+import signal
 import socket
+import subprocess
+import sys
 import time
+from dataclasses import dataclass, field
 
 from marionette_driver.marionette import Marionette
 
@@ -116,3 +121,101 @@ class DesktopServer:
 
     def __exit__(self, *args) -> None:
         self.stop()
+
+
+# xpcshell test debugged by browser_backward_compat_xpcshell.js.
+XPCSHELL_MANIFEST = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "fixtures", "xpcshell", "xpcshell.toml"
+)
+
+# The xpcshell commands are sent from a browser mochitest. This timeout should
+# be short enough for the test to report it before its own 45s timeout.
+XPCSHELL_EXIT_TIMEOUT = 10
+
+
+@dataclass
+class XpcshellHarness:
+    """Location of the xpcshell test harness.
+
+    :param script: path to runxpcshelltests.py.
+    :param binary: path to the xpcshell binary.
+    :param extra_args: additional arguments for runxpcshelltests.py, for paths
+        it cannot guess by itself.
+    """
+
+    script: str
+    binary: str
+    extra_args: list[str] = field(default_factory=list)
+
+
+class XpcshellServer:
+    """An xpcshell test run with --jsdebugger, acting as the DevTools server.
+
+    The xpcshell harness opens a DevTools server socket and waits for a client
+    to connect. The test then pauses on its first line, so the process only
+    exits once the client resumes it.
+
+    start() does not wait for the socket to be open: connecting to check it
+    would be seen as a debugger connecting then leaving, and the test would run
+    without pausing. The client retries until the connection succeeds instead.
+
+    :param harness: the xpcshell harness to use.
+    :param log_path: path of the file receiving the harness output.
+    """
+
+    def __init__(self, harness: XpcshellHarness, log_path: str) -> None:
+        self.harness = harness
+        self.log_path = log_path
+        self.port = None
+        self._process = None
+        self._log_file = None
+
+    def start(self) -> None:
+        self.stop()
+        self.port = find_free_port()
+        self._log_file = open(self.log_path, "w")
+        self._process = subprocess.Popen(
+            [
+                sys.executable,
+                self.harness.script,
+                "--xpcshell",
+                self.harness.binary,
+                "--manifest",
+                XPCSHELL_MANIFEST,
+                "--jsdebugger",
+                "--jsdebugger-port",
+                str(self.port),
+                "--no-logfiles",
+                "--log-mach",
+                "-",
+            ]
+            + self.harness.extra_args,
+            stdout=self._log_file,
+            stderr=subprocess.STDOUT,
+            # runxpcshelltests.py starts xpcshell and a few servers as child
+            # processes, they should all be killed together.
+            start_new_session=True,
+        )
+
+    def wait(self) -> int:
+        try:
+            return self._process.wait(timeout=XPCSHELL_EXIT_TIMEOUT)
+        finally:
+            self.stop()
+
+    def stop(self) -> None:
+        if self._process:
+            if self._process.poll() is None:
+                if os.name == "posix":
+                    os.killpg(self._process.pid, signal.SIGKILL)
+                else:
+                    self._process.kill()
+                self._process.wait()
+            self._process = None
+        if self._log_file:
+            self._log_file.close()
+            self._log_file = None
+
+    @property
+    def host(self) -> str:
+        return f"localhost:{self.port}"

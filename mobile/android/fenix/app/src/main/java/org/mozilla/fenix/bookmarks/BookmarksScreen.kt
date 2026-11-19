@@ -465,7 +465,7 @@ private fun BookmarksListContent(
                                 modifier = Modifier.size(24.dp),
                             ) {
                                 Icon(
-                                    painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                                    painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                                     contentDescription = null,
                                 )
                             }
@@ -524,7 +524,7 @@ private fun BookmarksListContent(
                             modifier = Modifier.size(24.dp),
                         ) {
                             Icon(
-                                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                                painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                                 contentDescription = null,
                             )
                         }
@@ -778,7 +778,7 @@ private fun BookmarksListTopBarActionsSelections(
             contentDescription = stringResource(R.string.content_description_menu),
         ) {
             Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                 contentDescription = null,
                 tint = iconColor,
             )
@@ -829,7 +829,7 @@ private fun BookmarksListTopBarActionsFolderSelections(
             contentDescription = stringResource(R.string.content_description_menu),
         ) {
             Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                 contentDescription = null,
                 tint = iconColor,
             )
@@ -905,7 +905,7 @@ private fun BookmarksListTopBarActionsNoSelection(
                 contentDescription = stringResource(R.string.bookmark_import_bookmarks_button_content_description),
             ) {
                 Icon(
-                    painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                    painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )

@@ -27,9 +27,6 @@
   locale/@AB_CD@/global/filepicker.properties           (%chrome/global/filepicker.properties)
   locale/@AB_CD@/global/intl.css                        (%chrome/global/intl.css)
   locale/@AB_CD@/global/keys.properties                 (%chrome/global/keys.properties)
-#ifndef MOZ_GECKOVIEW
-  locale/@AB_CD@/global/narrate.properties              (%chrome/global/narrate.properties)
-#endif
 #if !defined(XP_WIN) && !defined(MOZ_GECKOVIEW)
   locale/@AB_CD@/global/printdialog.properties          (%chrome/global/printdialog.properties)
 #endif

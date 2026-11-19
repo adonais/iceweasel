@@ -37,6 +37,9 @@ class gfxDWriteFont final : public gfxFont {
 
   static void SystemTextQualityChanged();
 
+  bool InitMetricsFromPlatform() override;
+  void FinishInitFontMetrics() override;
+
   gfxFont* CopyWithAntialiasOption(AntialiasOption anAAOption) const override;
 
   bool AllowSubpixelAA() const override { return mAllowManualShowGlyphs; }
@@ -74,8 +77,6 @@ class gfxDWriteFont final : public gfxFont {
   ~gfxDWriteFont() override;
 
   bool GetFakeMetricsForArialBlack(DWRITE_FONT_METRICS* aFontMetrics);
-
-  void ComputeMetrics(AntialiasOption anAAOption);
 
   bool HasBitmapStrikeForSize(uint32_t aSize);
 

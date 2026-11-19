@@ -58,7 +58,7 @@ bool GPUProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
   MOZ_ASSERT(!gfxPlatform::IsHeadless() ||
              StaticPrefs::layers_gpu_process_allow_headless_AtStartup());
 
-  mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
+  mPrefSerializer = std::make_unique<ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_GPU,
                                                 /* remoteType */ {})) {
     return false;
@@ -319,6 +319,11 @@ uint64_t GPUProcessHost::GetProcessToken() const { return mProcessToken; }
 
 void GPUProcessHost::KillProcess(bool aGenerateMinidump) {
   KillHard(aGenerateMinidump);
+}
+
+void GPUProcessHost::KillProcessForTesting() {
+  mKilledForTesting = true;
+  KillHard(/* aGenerateMinidump */ false);
 }
 
 void GPUProcessHost::CrashProcess() { mGPUChild->SendCrashProcess(); }

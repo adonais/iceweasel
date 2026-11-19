@@ -394,8 +394,10 @@ class ContinuousOnboardingFeatureTest {
                 )
 
             feature.start()
-            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
-            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible)
+            )
+            ipProtectionStore.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(AccountStatus.NoAccount))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(navigateToIpProtectionInvoked)
@@ -426,8 +428,10 @@ class ContinuousOnboardingFeatureTest {
                 )
 
             feature.start()
-            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
-            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible)
+            )
+            ipProtectionStore.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(AccountStatus.NoAccount))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertFalse(navigateToIpProtectionInvoked)
@@ -461,12 +465,16 @@ class ContinuousOnboardingFeatureTest {
                 )
 
             feature.start()
-            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
-            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible)
+            )
+            ipProtectionStore.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(AccountStatus.NoAccount))
             testDispatcher.scheduler.advanceUntilIdle()
 
             ipProtectionPromptRepository.canShowIPProtectionPrompt = false
-            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.Authenticated))
+            ipProtectionStore.dispatch(
+                IPProtectionAction.AccountAction.AccountStateChanged(AccountStatus.Authenticated)
+            )
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(1, navigateToIpProtectionCount)
@@ -499,7 +507,7 @@ class ContinuousOnboardingFeatureTest {
                     )
 
                 feature.start()
-                store.dispatch(IPProtectionAction.EligibilityChanged(ineligibleStatus))
+                store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(ineligibleStatus))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertFalse(navigateToIpProtectionInvoked)
@@ -535,8 +543,10 @@ class ContinuousOnboardingFeatureTest {
 
             feature.start()
             feature.stop()
-            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
-            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible)
+            )
+            ipProtectionStore.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(AccountStatus.NoAccount))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertFalse(navigateToIpProtectionInvoked)
@@ -570,8 +580,10 @@ class ContinuousOnboardingFeatureTest {
             feature.start()
             feature.stop()
             feature.start()
-            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
-            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible)
+            )
+            ipProtectionStore.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(AccountStatus.NoAccount))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(navigateToIpProtectionInvoked)
@@ -625,8 +637,10 @@ class ContinuousOnboardingFeatureTest {
                 )
 
             feature.start()
-            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
-            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible)
+            )
+            ipProtectionStore.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(AccountStatus.NoAccount))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertFalse(navigateToIpProtectionInvoked)

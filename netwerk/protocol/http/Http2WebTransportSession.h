@@ -92,6 +92,10 @@ class Http2WebTransportSessionImpl final : public WebTransportSessionBase,
                                 uint32_t aOutputLength,
                                 nsTArray<uint8_t>& aKeyingMaterial) override;
   void GetNegotiatedProtocol(nsACString& aProtocol) override;
+  void SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+      uint16_t aValue) override;
+  void SetAnticipatedConcurrentIncomingBidirectionalStreams(
+      uint16_t aValue) override;
   void SetDatagramMaxBufferedDatagrams(uint32_t aMaxBufferedDatagrams) override;
   void SetDatagramMaxAge(double aMaxAge) override;
   nsresult RegisterSendGroup(uint64_t aGroupId) override;

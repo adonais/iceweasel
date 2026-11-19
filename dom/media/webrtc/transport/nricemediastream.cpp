@@ -167,7 +167,7 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
 // defn of nr_ice_candidate but we pass by reference.
 static UniquePtr<NrIceCandidate> MakeNrIceCandidate(
     const nr_ice_candidate& candc) {
-  auto out = MakeUnique<NrIceCandidate>();
+  auto out = std::make_unique<NrIceCandidate>();
 
   if (!ToNrIceCandidate(candc, out.get())) {
     return nullptr;
@@ -783,6 +783,12 @@ void NrIceMediaStream::OnGatheringComplete(nr_ice_media_stream* stream) {
   SignalCandidate(this, "", stream->ufrag, "", "");
   if (AllGenerationsDoneGathering()) {
     SignalGatheringStateChange(GetId(), ICE_STREAM_GATHER_COMPLETE);
+  }
+}
+
+void NrIceMediaStream::GatheringFailed() {
+  if (stream_) {
+    OnGatheringComplete(stream_);
   }
 }
 

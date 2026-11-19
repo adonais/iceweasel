@@ -694,6 +694,14 @@ add_task(
       /invalid_value/,
       "Should throw because last object was invalid."
     );
+
+    Services.fog.testResetFOG();
+    Glean.testOnly.balloons.set([null]);
+    Assert.throws(
+      () => Glean.testOnly.balloons.testGetValue(),
+      /invalid_value/,
+      "Null array elements are rejected, not omitted"
+    );
   }
 );
 
@@ -741,23 +749,33 @@ add_task(async function test_fog_complex_object_works() {
   result = Glean.testOnly.crashStack.testGetValue();
   Assert.deepEqual(stack, result);
 
-  // FIXME(bug 1947194): JOG object metrics don't do schema validation yet
-  if (!Services.prefs.getBoolPref("telemetry.fog.artifact_build", false)) {
-    stack = {
-      status: "OK",
-      modules: [],
-    };
-    Glean.testOnly.crashStack.set(stack);
-    result = Glean.testOnly.crashStack.testGetValue();
-    Assert.deepEqual({ status: "OK" }, result);
+  stack = {
+    status: "OK",
+    crash_info: null,
+    modules: [],
+  };
+  Glean.testOnly.crashStack.set(stack);
+  result = Glean.testOnly.crashStack.testGetValue();
+  Assert.deepEqual({ status: "OK" }, result);
 
-    stack = {
-      status: "OK",
-    };
-    Glean.testOnly.crashStack.set(stack);
-    result = Glean.testOnly.crashStack.testGetValue();
-    Assert.deepEqual(stack, result);
-  }
+  stack = {
+    status: "OK",
+  };
+  Glean.testOnly.crashStack.set(stack);
+  result = Glean.testOnly.crashStack.testGetValue();
+  Assert.deepEqual(stack, result);
+
+  Glean.testOnly.crashStack.set({
+    status: "",
+    main_module: 0,
+    crash_info: { typ: null },
+    modules: [{ base_addr: null }],
+  });
+  Assert.deepEqual(
+    { status: "", main_module: 0, crash_info: {}, modules: [{}] },
+    Glean.testOnly.crashStack.testGetValue(),
+    "Omit nested null members without dropping empty objects or other falsy values"
+  );
 });
 
 add_task(

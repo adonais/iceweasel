@@ -7,8 +7,6 @@
 
 #include <memory>
 
-#include "mozilla/UniquePtr.h"
-
 namespace mozilla {
 
 /// <div rustbindgen="true" replaces="mozilla::BindgenUniquePtr">
@@ -18,10 +16,10 @@ struct BindgenUniquePtr_Simple {
 };
 
 template <typename T>
-class BindgenUniquePtr final : public std::unique_ptr<T, DefaultDelete<T>> {
-  static_assert(alignof(std::unique_ptr<T, DefaultDelete<T>>) ==
+class BindgenUniquePtr final : public std::unique_ptr<T> {
+  static_assert(alignof(std::unique_ptr<T>) ==
                 alignof(BindgenUniquePtr_Simple<T>));
-  static_assert(sizeof(std::unique_ptr<T, DefaultDelete<T>>) ==
+  static_assert(sizeof(std::unique_ptr<T>) ==
                 sizeof(BindgenUniquePtr_Simple<T>));
 };
 

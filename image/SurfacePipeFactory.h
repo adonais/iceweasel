@@ -767,7 +767,8 @@ class SurfacePipeFactory {
 
   template <typename... Configs>
   static Maybe<SurfacePipe> MakePipe(const Configs&... aConfigs) {
-    auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
+    auto pipe =
+        std::make_unique<typename detail::FilterPipeline<Configs...>::Type>();
     nsresult rv = pipe->Configure(aConfigs...);
     if (NS_FAILED(rv)) {
       return Nothing();

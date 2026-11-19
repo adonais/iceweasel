@@ -9,6 +9,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  IPPMode:
+    "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
   IPPPrincipalRules:
     "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPSiteRuleManager:
@@ -276,18 +278,19 @@ export class IPProtectionToolbarButton {
     }
 
     let principal = getSitePrincipal(this.gBrowser);
+    let browserId = this.gBrowser.selectedBrowser.browserId;
     // Only surface an exclusion for pages the user can manage (normal content
     // pages), matching the panel: about:/chrome:/system pages are never shown
     // excluded.
     let isExcluded =
       !!principal &&
       lazy.IPPSiteRuleManager.canManage(principal) &&
-      lazy.IPPSiteRuleManager.getRule(principal) ===
+      lazy.IPPSiteRuleManager.getRule(principal, browserId) ===
         lazy.IPPPrincipalRules.EXCLUDED;
     let isIncluded =
       !!principal &&
       lazy.IPPSiteRuleManager.canManage(principal) &&
-      lazy.IPPSiteRuleManager.getRule(principal) ===
+      lazy.IPPSiteRuleManager.getRule(principal, browserId) ===
         lazy.IPPPrincipalRules.INCLUDED;
     let isActive = lazy.IPPProxyManager.isDefaultModeActive;
     let isProxyActive =
@@ -296,9 +299,13 @@ export class IPProtectionToolbarButton {
       lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING;
     let isPaused = lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED;
 
-    // Show error icon when proxy manager is in ERROR state.
+    // Show error icon when proxy manager is in ERROR state, unless the
+    // connection only carries included sites and this tab is not one of them.
     let hasProxyError =
-      lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR;
+      lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR &&
+      (lazy.IPPProxyManager.mode !== lazy.IPPMode.MODE_INCLUSION ||
+        lazy.IPPSiteRuleManager.getRule(principal, browserId) ===
+          lazy.IPPPrincipalRules.INCLUDED);
 
     let isNetworkError =
       options?.error === lazy.ERRORS.NETWORK ||
@@ -329,10 +336,11 @@ export class IPProtectionToolbarButton {
 
     this.updateIconStatus(toolbaritem, {
       isActive,
+      isProxyActive,
       isError,
       isNetworkError,
       isExcluded,
-      isIncluded,
+      isIncluded: isIncluded && isProxyActive,
       isPaused,
     });
 
@@ -461,12 +469,14 @@ export class IPProtectionToolbarButton {
    * @param {XULElement} toolbaritem
    *  The toolbaritem to update
    * @param {object} status
-   *  VPN connection status
+   *  VPN connection status. isActive is true when the VPN is on for all
+   *  sites, isProxyActive whenever the proxy is connected in any mode.
    */
   updateIconStatus(
     toolbaritem,
     status = {
       isActive: false,
+      isProxyActive: false,
       isError: false,
       isExcluded: false,
       isIncluded: false,
@@ -484,7 +494,10 @@ export class IPProtectionToolbarButton {
     let isNetworkError = status.isNetworkError;
     let isError = status.isError && !isNetworkError;
     let isExcluded = status.isExcluded && this.isExceptionsFeatureEnabled;
-    let isIncluded = status.isIncluded && this.isInclusionsFeatureEnabled;
+    let isIncluded =
+      status.isIncluded &&
+      status.isProxyActive &&
+      this.isInclusionsFeatureEnabled;
     let isPaused = status.isPaused;
     let l10nId =
       isError || isNetworkError

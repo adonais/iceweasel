@@ -399,9 +399,7 @@ nr_stun_add_realm_and_nonce(int new_nonce, nr_stun_server_client *clnt, nr_stun_
 
     _status=0;
  abort:
-#ifdef USE_TURN
 assert(_status == 0); /* TODO: !nn! cleanup after I reimplmement TURN */
-#endif
     free(realm);
     return _status;
 }

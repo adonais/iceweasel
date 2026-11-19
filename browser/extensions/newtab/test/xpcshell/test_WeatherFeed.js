@@ -321,6 +321,48 @@ add_task(async function test_onAction_opt_in_no_location_found() {
   sandbox.restore();
 });
 
+add_task(async function test_fetchLocationAutocomplete_broadcasts_results() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState() {
+      return { Weather: { locationSearchString: "Tor" } };
+    },
+  };
+  let autoComplete = sandbox.stub();
+  feed.merino = { autoCompleteWeatherLocation: autoComplete };
+
+  const toronto = { key: "55488", localized_name: "Toronto" };
+  const cases = [
+    { response: { locations: [toronto] }, expected: [toronto] },
+    { response: { locations: [] }, expected: [] },
+    { response: null, expected: [] },
+  ];
+  for (const { response, expected } of cases) {
+    feed.store.dispatch.resetHistory();
+    autoComplete.resolves(response);
+
+    await feed.fetchLocationAutocomplete();
+
+    Assert.deepEqual(
+      feed.store.dispatch.firstCall.args[0],
+      actionCreators.BroadcastToContent({
+        type: actionTypes.WEATHER_LOCATION_SUGGESTIONS_UPDATE,
+        data: expected,
+      }),
+      `Broadcasts ${expected.length} suggestion(s) for ${JSON.stringify(response)}`
+    );
+  }
+
+  sandbox.restore();
+});
+
 // Test fetching weather information using GeolocationUtils.geolocation()
 add_task(async function test_fetch_weather_with_geolocation() {
   const TEST_DATA = [

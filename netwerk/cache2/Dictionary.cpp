@@ -57,7 +57,6 @@
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
 #include "nsSimpleURI.h"
-#include "nsStandardURL.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -1629,9 +1628,7 @@ void DictionaryCache::GetDictionaryFor(
   bool exists;
   nsCOMPtr<nsIURI> prepathURI;
 
-  if (NS_SUCCEEDED(NS_MutateURI(new net::nsStandardURL::Mutator())
-                       .SetSpec(prepath)
-                       .Finalize(prepathURI)) &&
+  if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(prepathURI), prepath)) &&
       NS_SUCCEEDED(
           storage->Exists(prepathURI, META_DICTIONARY_PREFIX, &exists)) &&
       exists) {

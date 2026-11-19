@@ -17,8 +17,8 @@ origin:
   license-file: COPYING
 
 vendoring:
-  url: http://git.tukaani.org/xz-embedded.git
-  source-hosting: git
+  url: https://github.com/tukaani-project/xz-embedded
+  source-hosting: github
   tracking: commit
 
   exclude:

@@ -952,6 +952,22 @@ const MESSAGES = () => [
     targeting: "true",
   },
   {
+    id: "TEST_URLBAR_ACTION",
+    groups: [],
+    template: "urlbar_action",
+    content: {
+      key: "test",
+      keywords: ["fxmstest", "fxms test"],
+      label: "Open about:robots",
+      icon: "chrome://global/skin/icons/info.svg",
+      action: {
+        type: "OPEN_ABOUT_PAGE",
+        data: { args: "robots", where: "tab" },
+      },
+    },
+    targeting: "true",
+  },
+  {
     id: "MULTISTAGE_SPOTLIGHT_MESSAGE",
     groups: ["panel-test-provider"],
     template: "spotlight",
@@ -2902,6 +2918,9 @@ const MESSAGES = () => [
             position: "card-stack",
             background:
               "url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg') center / contain no-repeat",
+            card_stack_image: {
+              type: "float",
+            },
             title: { raw: "This is a card-stack headline" },
             subtitle: {
               raw: "This is a card-stack subtitle, lower in the visual hierarchy.",
@@ -2942,7 +2961,12 @@ const MESSAGES = () => [
           content: {
             position: "card-stack",
             background:
-              "url('chrome://activity-stream/content/data/content/assets/br-import-fox-house.svg') center / contain no-repeat",
+              "url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20261014160437--hnt-import--84d11ab4-339b-45df-b94f-4202cd9cdc52.svg') center / contain no-repeat",
+            card_stack_image: {
+              type: "bleed",
+              background_uncropped:
+                "url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20261021220131--hnt-import-uncropped--b8015f9d-bf0a-4b1e-9b83-f846bc7169d4.svg') center / contain no-repeat",
+            },
             title: {
               raw: "This is a card-stack headline, on the second screen",
             },
@@ -2977,13 +3001,63 @@ const MESSAGES = () => [
             },
           },
         },
-        // The unique "last card" layout (bug 2069997).
         {
           id: "CARD_STACK_SCREEN_3",
           targeting:
             "('messaging-system-action.hnt-card-stack.screen'|preferenceValue(1)) <= 3",
           force_hide_steps_indicator: true,
-          auto_dismiss: { after: 6000 },
+          content: {
+            position: "card-stack",
+            background:
+              "url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20261014160552--hnt-pin-firefox--8240f52c-fc1e-4416-ae07-376063a2a9ac.svg') center / contain no-repeat",
+            card_stack_image: {
+              type: "banner",
+              background_medium:
+                "url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20261021220423--hnt-pin-medium--b1a464e4-7d02-405d-88c4-297a43f198df.svg') center / contain no-repeat",
+              background_small:
+                "url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20261021220539--hnt-pin-small--b9b067c8-08ac-4776-8939-b504953a1b8b.svg') center / contain no-repeat",
+            },
+            title: {
+              raw: "This is a card-stack headline, on the third screen",
+            },
+            subtitle: {
+              raw: "This is a card-stack subtitle, on the third screen.",
+            },
+            primary_button: {
+              label: { raw: "Primary action" },
+              action: {
+                type: "SET_PREF",
+                data: {
+                  pref: {
+                    name: "messaging-system-action.hnt-card-stack.screen",
+                    value: 3,
+                  },
+                },
+                navigate: true,
+              },
+            },
+            secondary_button: {
+              label: { raw: "Dismiss" },
+              action: {
+                type: "SET_PREF",
+                data: {
+                  pref: {
+                    name: "messaging-system-action.hnt-card-stack.screen",
+                    value: 3,
+                  },
+                },
+                navigate: true,
+              },
+            },
+          },
+        },
+        // The unique "last card" layout (bug 2069997).
+        {
+          id: "CARD_STACK_SCREEN_4",
+          targeting:
+            "('messaging-system-action.hnt-card-stack.screen'|preferenceValue(1)) <= 4",
+          force_hide_steps_indicator: true,
+          auto_dismiss: { after: 5000 },
           content: {
             position: "card-stack",
             layout: "last-card",
@@ -2991,7 +3065,7 @@ const MESSAGES = () => [
             subtitle: { raw: "Say hello to a better web." },
             center_image: {
               imageURL:
-                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260923193621--fox-peeking--a7cb53ba-228f-4b81-a92f-6ad34474872b.svg",
+                "chrome://browser/content/asrouter/assets/hnt-center-animated-no-loop.svg",
               alt: "",
               marginBlock: "40px 0",
             },
@@ -3717,6 +3791,163 @@ const MESSAGES = () => [
     targeting: "isAIWindow",
     frequency: {
       lifetime: 3,
+    },
+  },
+  {
+    id: "SMARTWINDOW_AITAB_SPLITVIEW_TEST",
+    template: "feature_callout",
+    groups: ["cfr", "smart-window-message"],
+    content: {
+      id: "SMARTWINDOW_AITAB_SPLITVIEW_TEST",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "SMARTWINDOW_AITAB_SPLITVIEW_TEST_SCREEN",
+          force_hide_steps_indicator: true,
+          anchors: [
+            {
+              selector:
+                "#ai-window-box:not([collapsed]) #ai-window-browser::%document%ai-window::%shadow%#smartbar-wrapper",
+              panel_position: {
+                anchor_attachment: "topcenter",
+                callout_attachment: "bottomcenter",
+              },
+            },
+            {
+              selector: "#smartwindow-ask-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            title: { raw: "Compare pages side by side" },
+            subtitle: {
+              raw: "Firefox can turn the pages you're looking into one page with a side-by-side table you can come back to. Use @ and find the pages you'd like to include.",
+            },
+            primary_button: {
+              label: { raw: "Try Now" },
+              action: {
+                type: "SUBMIT_SMARTWINDOW_PROMPT",
+                data: {
+                  prompt:
+                    "Compare the pages in my split view side by side in a table and put it in a page",
+                },
+                dismiss: true,
+              },
+            },
+            secondary_button: {
+              label: { raw: "Later" },
+              action: { dismiss: true },
+            },
+            dismiss_button: {
+              action: {
+                type: "BLOCK_MESSAGE",
+                data: { id: "SMARTWINDOW_AITAB_SPLITVIEW_TEST" },
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+    trigger: {
+      id: "splitViewUsed",
+    },
+    targeting: "isAIWindow && !activeNotifications",
+    frequency: {
+      lifetime: 3,
+      custom: [{ period: 604800000, cap: 1 }],
+    },
+  },
+  {
+    id: "SMARTWINDOW_AITAB_RECIPES_TEST",
+    template: "feature_callout",
+    groups: ["cfr", "smart-window-message"],
+    content: {
+      id: "SMARTWINDOW_AITAB_RECIPES_TEST",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "SMARTWINDOW_AITAB_RECIPES_TEST_SCREEN",
+          force_hide_steps_indicator: true,
+          anchors: [
+            {
+              selector:
+                "#ai-window-box:not([collapsed]) #ai-window-browser::%document%ai-window::%shadow%#smartbar-wrapper",
+              panel_position: {
+                anchor_attachment: "topcenter",
+                callout_attachment: "bottomcenter",
+              },
+            },
+            {
+              selector: "#smartwindow-ask-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            title: { raw: "Turn recipes into one shopping list" },
+            subtitle: {
+              raw: "Firefox can pull the ingredients from your recipe tabs into one page for easy access.",
+            },
+            primary_button: {
+              label: { raw: "Try Now" },
+              action: {
+                type: "SUBMIT_SMARTWINDOW_PROMPT",
+                data: {
+                  prompt:
+                    "Collect ingredients from recipes in my open tabs and put them in a page",
+                },
+                dismiss: true,
+              },
+            },
+            secondary_button: {
+              label: { raw: "Later" },
+              action: { dismiss: true },
+            },
+            dismiss_button: {
+              action: {
+                type: "BLOCK_MESSAGE",
+                data: { id: "SMARTWINDOW_AITAB_RECIPES_TEST" },
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+    trigger: {
+      id: "openURL",
+      patterns: [
+        "*://www.allrecipes.com/recipe/*",
+        "*://www.foodnetwork.com/recipes/*",
+        "*://cooking.nytimes.com/recipes/*",
+        "*://www.seriouseats.com/*-recipe-*",
+        "*://www.simplyrecipes.com/*-recipe-*",
+        "*://www.bonappetit.com/recipe/*",
+        "*://www.epicurious.com/recipes/food/views/*",
+        "*://www.budgetbytes.com/*",
+        "*://www.ricardocuisine.com/en/recipes/*",
+        "*://chatelaine.com/recipe/*",
+      ],
+      regexPatterns: ["^https?://[^?#]*recipe"],
+    },
+    targeting: "isAIWindow && !activeNotifications",
+    frequency: {
+      lifetime: 3,
+      custom: [{ period: 604800000, cap: 1 }],
     },
   },
 ];

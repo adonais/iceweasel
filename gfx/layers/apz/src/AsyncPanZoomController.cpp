@@ -399,6 +399,13 @@ typedef PlatformSpecificStateBase
  * the main thread doesn't actually need to do a repaint. This pref allows the
  * main thread to skip doing those repaints in cases where it doesn't need to.
  *
+ * \li\b apz.pan_gesture.buffer_max_age
+ * To ensure that axis lock breakout calculations for pan gestures are not
+ * affected by the size of individual pan gesture deltas, calculations draw
+ * from a buffer of recent events. This preference specifies the maximum time
+ * that events are held in this buffer.
+ * Units: milliseconds
+ *
  * \li\b apz.pinch_lock.mode
  * The preferred pinch locking style. See PinchLockMode for possible values.
  *
@@ -555,7 +562,7 @@ AsyncPanZoomAnimation* PlatformSpecificStateBase::CreateFlingAnimation(
 
 UniquePtr<VelocityTracker> PlatformSpecificStateBase::CreateVelocityTracker(
     Axis* aAxis) {
-  return MakeUnique<SimpleVelocityTracker>(aAxis);
+  return std::make_unique<SimpleVelocityTracker>(aAxis);
 }
 
 // This is a helper class for populating
@@ -827,7 +834,7 @@ void AsyncPanZoomController::InitializeGlobalState() {
   if (sInitialized) return;
   sInitialized = true;
 
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   gZoomAnimationFunction = new StyleComputedTimingFunction(
       StyleComputedTimingFunction::Keyword(StyleTimingKeyword::Ease));
@@ -866,6 +873,8 @@ AsyncPanZoomController::AsyncPanZoomController(
           TimeDuration::FromMilliseconds(
               StaticPrefs::apz_touch_scroll_buffer_max_age_AtStartup()),
           2),
+      mPanGestureEventBuffer(TimeDuration::FromMilliseconds(
+          StaticPrefs::apz_pan_gesture_buffer_max_age_AtStartup())),
       mZoomConstraints(false, false,
                        mScrollMetadata.GetMetrics().GetDevPixelsPerCSSPixel() *
                            ViewportMinScale() / ParentLayerToScreenScale(1),
@@ -873,7 +882,7 @@ AsyncPanZoomController::AsyncPanZoomController(
                            ViewportMaxScale() / ParentLayerToScreenScale(1)),
       mLastSampleTime(GetFrameTime()),
       mLastCheckerboardReport(GetFrameTime()),
-      mOverscrollEffect(MakeUnique<OverscrollEffect>(*this)),
+      mOverscrollEffect(std::make_unique<OverscrollEffect>(*this)),
       mState(NOTHING),
       mX(this),
       mY(this),
@@ -896,7 +905,7 @@ AsyncPanZoomController::~AsyncPanZoomController() { MOZ_ASSERT(IsDestroyed()); }
 
 PlatformSpecificStateBase* AsyncPanZoomController::GetPlatformSpecificState() {
   if (!mPlatformSpecificState) {
-    mPlatformSpecificState = MakeUnique<PlatformSpecificState>();
+    mPlatformSpecificState = std::make_unique<PlatformSpecificState>();
   }
   return mPlatformSpecificState.get();
 }
@@ -2847,6 +2856,7 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
       ExcludeOverscroll);
 
   StartTouch(aEvent.mLocalPanStartPoint, aEvent.mTimeStamp);
+  mPanGestureEventBuffer.clear();
 
   if (!UsingStatefulAxisLock()) {
     SetState(PANNING);
@@ -3050,7 +3060,12 @@ nsEventStatus AsyncPanZoomController::OnPan(
     }
   }
 
-  HandlePanningUpdate(physicalPanDisplacement);
+  mPanGestureEventBuffer.push({aEvent.mTimeStamp, physicalPanDisplacement});
+  ScreenPoint recentPanDisplacement;
+  for (const PanGestureDisplacement& entry : mPanGestureEventBuffer) {
+    recentPanDisplacement += entry.mDisplacement;
+  }
+  HandlePanningUpdate(recentPanDisplacement);
 
   MOZ_ASSERT(GetCurrentPanGestureBlock());
   ScreenPoint panDistance(fabs(physicalPanDisplacement.x),
@@ -3139,6 +3154,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
     // Call into OnPan in order to process the delta included in this event.
     OnPan(aEvent, FingersOnTouchpad::Yes);
   }
+  mPanGestureEventBuffer.clear();
 
   // Do not unlock the axis lock at the end of a pan gesture. The axis lock
   // should extend into the momentum scroll.
@@ -4873,7 +4889,7 @@ void AsyncPanZoomController::RequestContentRepaint(
     return;
   }
 
-  MOZ_ASSERT(controller->IsRepaintThread());
+  MOZ_RELEASE_ASSERT(controller->IsRepaintThread());
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   ParentLayerPoint velocity = GetVelocityVector();
@@ -4910,7 +4926,7 @@ void AsyncPanZoomController::RequestContentRepaint(
   if (!controller) {
     return;
   }
-  MOZ_ASSERT(controller->IsRepaintThread());
+  MOZ_RELEASE_ASSERT(controller->IsRepaintThread());
 
   APZScrollAnimationType animationType = APZScrollAnimationType::No;
   if (mAnimation) {
@@ -5424,7 +5440,10 @@ void AsyncPanZoomController::SetScrolledByHandedOffGesture(bool aState) {
 
 void AsyncPanZoomController::ClearScrolledByHandedOffGestureOnChain() {
   if (InputBlockState* block = GetCurrentInputBlock()) {
-    block->GetOverscrollHandoffChain()->ClearScrolledByHandedOffGesture();
+    if (RefPtr<const OverscrollHandoffChain> chain =
+            block->GetOverscrollHandoffChain()) {
+      chain->ClearScrolledByHandedOffGesture();
+    }
   }
 }
 
@@ -5569,7 +5588,7 @@ void AsyncPanZoomController::ReportCheckerboard(
 
   MutexAutoLock lock(mCheckerboardEventLock);
   if (!mCheckerboardEvent && (recordTrace || forTelemetry)) {
-    mCheckerboardEvent = MakeUnique<CheckerboardEvent>(recordTrace);
+    mCheckerboardEvent = std::make_unique<CheckerboardEvent>(recordTrace);
   }
   mPotentialCheckerboardTracker.InTransform(inTransformingState,
                                             recordTrace || forTelemetry);

@@ -14,8 +14,12 @@ use crate::{
 
 use futures_util::StreamExt;
 use nsstring::{nsACString, nsCString};
+use scopeguard::{guard, ScopeGuard};
 
-use wgc::{error::EmptyErrorScopeStack, resource::BufferAccessError};
+use wgc::{
+    error::EmptyErrorScopeStack,
+    resource::{BufferAccessError, BufferAccessResult, BufferMapCallback},
+};
 #[allow(unused_imports)]
 use wgh::Instance;
 use wgpu_core_remote_types::{
@@ -950,8 +954,8 @@ pub enum BufferMapAsyncStatus {
     InvalidUsageFlags,
 }
 
-impl From<Result<(), BufferAccessError>> for BufferMapAsyncStatus {
-    fn from(result: Result<(), BufferAccessError>) -> Self {
+impl From<BufferAccessResult> for BufferMapAsyncStatus {
+    fn from(result: BufferAccessResult) -> Self {
         match result {
             Ok(_) => BufferMapAsyncStatus::Success,
             Err(BufferAccessError::Device(_)) => BufferMapAsyncStatus::ContextLost,
@@ -1010,10 +1014,10 @@ pub enum HostMap {
 }
 
 impl HostMap {
-    fn to_wgc(&self) -> wgt::MapMode {
+    fn to_wgrt(&self) -> wgpu_core_remote_types::MapMode {
         match self {
-            HostMap::Read => wgt::MapMode::Read,
-            HostMap::Write => wgt::MapMode::Write,
+            HostMap::Read => wgpu_core_remote_types::MapMode::READ,
+            HostMap::Write => wgpu_core_remote_types::MapMode::WRITE,
         }
     }
 }
@@ -1043,15 +1047,13 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
     })
     .detach();
 
-    let operation = wgc::resource::BufferMapOperation {
-        mode: map_mode.to_wgc(),
-        callback: Some(Box::new(move |result| {
-            // Send the map result from whatever thread this callback is running
-            // on to the task we spawned above.
-            map_result_sender.send(result).unwrap();
-        })),
-    };
-    let _submission_idx_opt = global.buffer_map_async(buffer_id, start, Some(size), operation);
+    let mode = map_mode.to_wgrt();
+    let callback: Option<BufferMapCallback> = Some(Box::new(move |result| {
+        // Send the map result from whatever thread this callback is running
+        // on to the task we spawned above.
+        map_result_sender.send(result).unwrap();
+    }));
+    let _submission_idx_opt = global.buffer_map_async(buffer_id, mode, start, Some(size), callback);
 }
 
 /// Map a buffer, blocking until it is ready for access.
@@ -1083,21 +1085,19 @@ pub extern "C" fn wgpu_server_buffer_map_blocking(
     // song and dance is required because `buffer_map_async` assumes that the
     // poll might happen on another thread.
     let status_passback = Arc::new(OnceLock::new());
-    let op = wgc::resource::BufferMapOperation {
-        mode: map_mode.to_wgc(),
-        callback: Some(Box::new({
-            let status_passback = Arc::clone(&status_passback);
-            move |status| {
-                // unwrap: This callback is the only place that initializes the
-                // `OnceLock`, and it should only be invoked once.
-                status_passback.set(status).unwrap();
-            }
-        })),
-    };
+    let mode = map_mode.to_wgrt();
+    let callback: Option<BufferMapCallback> = Some(Box::new({
+        let status_passback = Arc::clone(&status_passback);
+        move |status| {
+            // unwrap: This callback is the only place that initializes the
+            // `OnceLock`, and it should only be invoked once.
+            status_passback.set(status).unwrap();
+        }
+    }));
 
     // Submit the map request, and note its submission index.
     let submission_index;
-    match global.buffer_map_async(buffer_id, offset, Some(size), op) {
+    match global.buffer_map_async(buffer_id, mode, offset, Some(size), callback) {
         Some(i) => {
             submission_index = i;
         }
@@ -1882,48 +1882,40 @@ pub fn select_memory_type(
 }
 
 impl Global {
+    /// Import a D3D texture (`ID3D11Resource`) shared handle to a wgpu texture.
+    ///
+    /// Three outcomes are possible:
+    /// - The texture is imported successfully. Return value is `None`.
+    /// - The import fails before the call to `create_texture_from_hal`.
+    ///   Return value is `Some`, containing the provided `ScopeGuard`,
+    ///   which should populate the texture as invalid.
+    /// - The import failed within the call to `create_texture_from_hal`.
+    ///   In this case `create_texture_from_hal` populates an invalid
+    ///   texture. The `ScopeGuard` is defused and the return value is
+    ///   `None`.
+    ///
+    /// This function only supports plain 2D color textures. Multisampled,
+    /// depth/stencil, layered, mipmapped, and volume textures are not
+    /// supported.
     #[cfg(target_os = "windows")]
-    fn create_texture_with_shared_texture_d3d11(
+    fn create_texture_with_imported_d3d11_resource<'a, F: FnOnce(()) + 'a>(
         &self,
         device_id: id::DeviceId,
         texture_id: id::TextureId,
         desc: &TextureDescriptor,
-        swap_chain_id: Option<SwapChainId>,
-    ) -> bool {
+        handle: *mut core::ffi::c_void,
+        guard: ScopeGuard<(), F>,
+    ) -> Option<ScopeGuard<(), F>> {
+        assert!(desc.dimension == wgt::TextureDimension::D2);
+        assert!(desc.sample_count == 1);
+        assert!(desc.size.depth_or_array_layers == 1);
+        assert!(desc.mip_level_count == 1);
+
         let device = self.resolve_device_id(device_id);
         let dx12_device = unsafe { device.as_hal::<wgc::api::Dx12>() }
             .expect("D3D12 backend device on windows")
             .raw_device()
             .clone();
-
-        let ret = unsafe {
-            wgpu_server_ensure_shared_texture_for_swap_chain(
-                self.owner,
-                swap_chain_id.unwrap(),
-                device_id,
-                texture_id,
-                desc.size.width,
-                desc.size.height,
-                desc.format,
-                desc.usage,
-            )
-        };
-        if ret != true {
-            let msg = c"Failed to create shared texture";
-            unsafe {
-                gfx_critical_note(msg.as_ptr());
-            }
-            return false;
-        }
-
-        let handle = unsafe { wgpu_server_get_shared_texture_handle(self.owner, texture_id) };
-        if handle.is_null() {
-            let msg = c"Failed to get shared texture handle";
-            unsafe {
-                gfx_critical_note(msg.as_ptr());
-            }
-            return false;
-        }
         let mut resource: Option<Direct3D12::ID3D12Resource> = None;
         let res =
             unsafe { dx12_device.OpenSharedHandle(Foundation::HANDLE(handle), &mut resource) };
@@ -1932,13 +1924,13 @@ impl Global {
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
-            return false;
+            return Some(guard);
         }
 
         let hal_texture = unsafe {
             <wgh::api::Dx12 as wgh::Api>::Device::texture_from_raw(
                 resource.unwrap(),
-                wgt::TextureFormat::Bgra8Unorm,
+                desc.format,
                 wgt::TextureDimension::D2,
                 desc.size,
                 1,
@@ -1946,6 +1938,11 @@ impl Global {
                 None,
             )
         };
+
+        // `create_texture_from_hal` populates an invalid texture on failure, so
+        // defuse the guard now.
+        ScopeGuard::into_inner(guard);
+
         let (_, error) = unsafe {
             self.create_texture_from_hal(
                 Box::new(hal_texture),
@@ -1953,8 +1950,8 @@ impl Global {
                 &desc,
                 wgt::TextureUses::UNINITIALIZED,
                 texture_id,
-                // NOTE: We want `false`, but we can't yet, because
-                // upstream's API isn't quite right yet.
+                // NOTE: For swapchain textures (but not external textures), we want `false`,
+                // but we can't yet, because upstream's API isn't quite right yet.
                 /* cleared */
                 true,
             )
@@ -1964,54 +1961,38 @@ impl Global {
             unsafe {
                 gfx_critical_note(msg.as_ptr());
             }
-            return false;
+            // Texture was already populated as invalid.
         }
 
-        true
+        None
     }
 
     #[cfg(target_os = "linux")]
-    fn create_texture_with_shared_texture_dmabuf(
+    fn create_texture_with_imported_dmabuf<'a, F: FnOnce(()) + 'a>(
         &self,
         device_id: id::DeviceId,
         texture_id: id::TextureId,
         desc: &TextureDescriptor,
-        swap_chain_id: Option<SwapChainId>,
-    ) -> bool {
+        guard: ScopeGuard<(), F>,
+    ) -> Option<ScopeGuard<(), F>> {
         unsafe {
-            let ret = wgpu_server_ensure_shared_texture_for_swap_chain(
-                self.owner,
-                swap_chain_id.unwrap(),
-                device_id,
-                texture_id,
-                desc.size.width,
-                desc.size.height,
-                desc.format,
-                desc.usage,
-            );
-            if ret != true {
-                let msg = c"Failed to create shared texture";
-                gfx_critical_note(msg.as_ptr());
-                return false;
-            }
-
             let info = wgpu_server_get_dma_buf_info(self.owner, texture_id);
             if !info.is_valid {
                 let msg = c"Failed to get DMABufInfo";
                 gfx_critical_note(msg.as_ptr());
-                return false;
+                return Some(guard);
             }
             if info.plane_count as usize > info.offsets.len() {
                 let msg = c"Invalid dmabuf plane count";
                 gfx_critical_note(msg.as_ptr());
-                return false;
+                return Some(guard);
             }
 
             let fd = wgpu_server_get_dma_buf_fd(self.owner, texture_id);
             if fd < 0 {
                 let msg = c"Failed to get DMABuf fd";
                 gfx_critical_note(msg.as_ptr());
-                return false;
+                return Some(guard);
             }
 
             // Ensure to close file descriptor
@@ -2098,7 +2079,7 @@ impl Global {
                     ))
                     .unwrap();
                     gfx_critical_note(msg.as_ptr());
-                    return false;
+                    return Some(guard);
                 }
                 Ok(image) => image,
             };
@@ -2123,7 +2104,7 @@ impl Global {
                 let msg =
                     CString::new(format!("get_memory_fd_properties() failed: {:?}", err)).unwrap();
                 gfx_critical_note(msg.as_ptr());
-                return false;
+                return Some(guard);
             }
 
             let mem_properties = instance.get_physical_device_memory_properties(physical_device);
@@ -2135,7 +2116,7 @@ impl Global {
             let Some(memory_type_index) = memory_type_index else {
                 let msg = c"Failed to find a memory type for the imported dmabuf";
                 gfx_critical_note(msg.as_ptr());
-                return false;
+                return Some(guard);
             };
 
             let mut dedicated_memory_info = vk::MemoryDedicatedAllocateInfo::default().image(image);
@@ -2160,7 +2141,7 @@ impl Global {
                     ))
                     .unwrap();
                     gfx_critical_note(msg.as_ptr());
-                    return false;
+                    return Some(guard);
                 }
                 Ok(memory) => {
                     let _ = owned_fd.into_raw_fd();
@@ -2178,7 +2159,7 @@ impl Global {
                     ))
                     .unwrap();
                     gfx_critical_note(msg.as_ptr());
-                    return false;
+                    return Some(guard);
                 }
             }
 
@@ -2202,14 +2183,18 @@ impl Global {
                 wgh::vulkan::TextureMemory::Dedicated(memory),
             );
 
+            // `create_texture_from_hal` populates an invalid texture on failure, so
+            // defuse the guard now.
+            ScopeGuard::into_inner(guard);
+
             let (_, error) = self.create_texture_from_hal(
                 Box::new(hal_texture),
                 device_id,
                 &desc,
                 wgt::TextureUses::UNINITIALIZED,
                 texture_id,
-                // NOTE: We want `false`, but we can't yet, because
-                // upstream's API isn't quite right yet.
+                // NOTE: For swapchain textures (but not external textures), we want `false`,
+                // but we can't yet, because upstream's API isn't quite right yet.
                 /* cleared */
                 true,
             );
@@ -2217,14 +2202,122 @@ impl Global {
                 let msg =
                     CString::new(format!("create_texture_from_hal() failed: {:?}", err)).unwrap();
                 gfx_critical_note(msg.as_ptr());
-                return false;
+                // Texture was already populated as invalid.
             }
 
-            // wgpu-core now owns the image and its memory.
+            // We've successfully imported the texture. wgpu-core now owns
+            // the image and its memory.
             scoped_image.release();
 
-            true
+            None
         }
+    }
+
+    /// Create a shared texture for use in a no-readback swap chain.
+    ///
+    /// Three outcomes are possible:
+    /// - The texture is created successfully. Return value is `None`.
+    /// - The import fails without populating the texture as invalid. Return value is
+    ///   `Some`, containing a `ScopeGuard` that would populate the texture as invalid.
+    ///   However, the caller instead defuses the guard and falls back to creating a
+    ///   regular texture to be presented via readback.
+    /// - The import fails within a call to `create_texture_from_hal`. In this case
+    ///   `create_texture_from_hal` populates an invalid texture. The `ScopeGuard` is
+    ///   defused and the return value is `None`.
+    fn create_shared_texture_for_swap_chain<'a>(
+        &'a self,
+        device_id: id::DeviceId,
+        swap_chain_id: SwapChainId,
+        texture_id: id::TextureId,
+        desc: &'a TextureDescriptor,
+    ) -> Option<ScopeGuard<(), impl FnOnce(()) + 'a>> {
+        if let Some(err) = self.device_validate_texture_descriptor(device_id, &desc) {
+            self.device_handle_error(device_id, err, None, "Device::create_texture");
+            self.create_texture_error(device_id, texture_id, &desc);
+            return None;
+        }
+
+        let guard = guard(
+            (),
+            Box::new(move |()| {
+                self.create_texture_error(device_id, texture_id, desc);
+            }),
+        );
+
+        let ret = unsafe {
+            wgpu_server_ensure_shared_texture_for_swap_chain(
+                self.owner,
+                swap_chain_id,
+                device_id,
+                texture_id,
+                desc.size.width,
+                desc.size.height,
+                desc.format,
+                desc.usage,
+            )
+        };
+        if ret != true {
+            let msg = c"Failed to create shared texture";
+            unsafe {
+                gfx_critical_note(msg.as_ptr());
+            }
+            return Some(guard);
+        }
+
+        // TODO: Use `cfg_select!` when we adopt Rust 1.95+.
+
+        #[cfg(target_os = "windows")]
+        {
+            let handle = unsafe { wgpu_server_get_shared_texture_handle(self.owner, texture_id) };
+            if handle.is_null() {
+                let msg = c"Failed to get shared texture handle";
+                unsafe {
+                    gfx_critical_note(msg.as_ptr());
+                }
+                return Some(guard);
+            }
+
+            self.create_texture_with_imported_d3d11_resource(
+                device_id, texture_id, &desc, handle, guard,
+            )
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            self.create_texture_with_imported_dmabuf(device_id, texture_id, &desc, guard)
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            let io_surface_id =
+                unsafe { wgpu_server_get_external_io_surface_id(self.owner, texture_id) };
+            if io_surface_id == 0 {
+                let msg = c"Failed to get io surface id";
+                unsafe {
+                    gfx_critical_note(msg.as_ptr());
+                }
+                return Some(guard);
+            }
+
+            self.create_texture_with_imported_iosurface(
+                device_id,
+                texture_id,
+                &desc,
+                io_surface_id,
+                0,
+                guard,
+            )
+        }
+
+        #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
+        {
+            unreachable!()
+        }
+
+        // Our return value comes directly from whichever `create_texture_with_imported_*` we
+        // called, and is `None`, if the texture was created (either successfully or as an
+        // invalid texture), or is `Some`, containing a `ScopeGuard` that will populate an
+        // invalid texture, if there was an error.
     }
 
     fn device_action(
@@ -2335,48 +2428,20 @@ impl Global {
                 };
 
                 if use_shared_texture {
-                    if let Some(err) = self.device_validate_texture_descriptor(device_id, &desc) {
-                        self.device_handle_error(device_id, err, None, "Device::create_texture");
-                        self.create_texture_error(device_id, id, &desc);
-                        return;
-                    }
-
-                    #[cfg(target_os = "windows")]
-                    {
-                        let is_created = self.create_texture_with_shared_texture_d3d11(
-                            device_id,
-                            id,
-                            &desc,
-                            swap_chain_id,
-                        );
-                        if is_created {
-                            return;
-                        }
-                    }
-
-                    #[cfg(target_os = "linux")]
-                    {
-                        let is_created = self.create_texture_with_shared_texture_dmabuf(
-                            device_id,
-                            id,
-                            &desc,
-                            swap_chain_id,
-                        );
-                        if is_created {
-                            return;
-                        }
-                    }
-
-                    #[cfg(target_os = "macos")]
-                    {
-                        let is_created = self.create_texture_with_shared_texture_iosurface(
-                            device_id,
-                            id,
-                            &desc,
-                            swap_chain_id,
-                        );
-                        if is_created {
-                            return;
+                    match self.create_shared_texture_for_swap_chain(
+                        device_id,
+                        swap_chain_id.unwrap(),
+                        id,
+                        &desc,
+                    ) {
+                        None => return,
+                        Some(guard) => {
+                            // `guard` is a scope guard that would populate an invalid texture, but
+                            // we defuse the guard and fall back to the regular texture creation
+                            // path (and will present by manual readback). If there is also a
+                            // problem creating the regular texture, `device_create_texture`
+                            // populates it as an invalid texture.
+                            ScopeGuard::into_inner(guard)
                         }
                     }
 
@@ -2714,15 +2779,13 @@ fn process_buffer_map(global: &Global, msg: Message, response_byte_buf: &mut Byt
     })
     .detach();
 
-    let operation = wgc::resource::BufferMapOperation {
-        mode: mode.to_wgc(),
-        callback: Some(Box::new(move |result| {
-            // Send the map result from whatever thread this callback is running
-            // on to the task we spawned above.
-            map_result_sender.send(result).unwrap();
-        })),
-    };
-    global.buffer_map_async(buffer_id, offset, Some(size), operation);
+    let mode = mode.to_wgrt();
+    let callback: Option<BufferMapCallback> = Some(Box::new(move |result| {
+        // Send the map result from whatever thread this callback is running
+        // on to the task we spawned above.
+        map_result_sender.send(result).unwrap();
+    }));
+    global.buffer_map_async(buffer_id, mode, offset, Some(size), callback);
 }
 
 // Process one WebGPU message
@@ -3258,19 +3321,16 @@ pub struct VkSemaphoreHandle(pub u64);
 /// the submission they belong to has been attempted. The actual
 /// `vkDestroySemaphore` calls happen later, from an `on_submitted_work_done`
 /// closure.
-///
-/// Returns `true` if at least one of `handles` was registered in (and removed
-/// from) the queue.
 #[cfg(target_os = "linux")]
 fn enqueue_signal_semaphores_destruction(
     queue: &Arc<wgc::device::queue::Queue>,
     device: Arc<wgc::device::Device>,
     handles: &[VkSemaphoreHandle],
-) -> bool {
+) {
     use ash::vk::Handle as _;
 
     if handles.is_empty() {
-        return false;
+        return;
     }
 
     let semaphores: Vec<vk::Semaphore> = handles
@@ -3283,13 +3343,12 @@ fn enqueue_signal_semaphores_destruction(
     // Since attempting to remove a semaphore that was already consumed is a
     // no-op, just ask the queue to remove all of the ones we know were part of
     // the submission.
-    let mut semaphore_removed = false;
     {
         let queue = queue.clone();
         let hal_queue =
             unsafe { queue.as_hal::<wgc::api::Vulkan>() }.expect("Vulkan backend queue on linux");
         for &semaphore in &semaphores {
-            semaphore_removed |= hal_queue.remove_signal_semaphore(semaphore);
+            hal_queue.remove_signal_semaphore(semaphore);
         }
     }
 
@@ -3314,8 +3373,6 @@ fn enqueue_signal_semaphores_destruction(
             }
         }
     }));
-
-    semaphore_removed
 }
 
 #[no_mangle]
@@ -3325,34 +3382,24 @@ pub unsafe extern "C" fn wgpu_server_queue_submit(
     command_buffer_ids: FfiSlice<'_, id::CommandBufferId>,
     signal_semaphores: FfiSlice<'_, VkSemaphoreHandle>,
 ) -> u64 {
-    use wgc::resource::ParentDevice as _;
-
-    let queue = global.resolve_queue_id(queue_id);
-    let device = queue.device();
-
-    device.push_error_scope(ErrorFilter::Validation);
-    let submission_index = global.queue_submit(queue_id, unsafe { command_buffer_ids.as_slice() });
-    let error = device.pop_error_scope().unwrap();
-    #[cfg_attr(not(target_os = "linux"), expect(unused_mut))]
-    let mut submission_succeeded = error.is_none();
-    if let Some(error) = error {
-        device.handle_error(error, None, "Queue::submit");
-    }
+    let submission_index_opt =
+        global.queue_submit(queue_id, unsafe { command_buffer_ids.as_slice() });
 
     #[cfg(target_os = "linux")]
     {
-        submission_succeeded &=
-            !enqueue_signal_semaphores_destruction(&queue, device.clone(), unsafe {
-                signal_semaphores.as_slice()
-            });
+        use wgc::resource::ParentDevice as _;
+
+        let queue = global.resolve_queue_id(queue_id);
+        let device = queue.device();
+        enqueue_signal_semaphores_destruction(&queue, device.clone(), unsafe {
+            signal_semaphores.as_slice()
+        });
     }
     #[cfg(not(target_os = "linux"))]
     let _ = signal_semaphores;
 
     // NOTE: `0` means "no index to follow up with".
-    submission_succeeded
-        .then_some(submission_index)
-        .unwrap_or(0)
+    submission_index_opt.unwrap_or(0)
 }
 
 #[repr(C)]
@@ -3434,7 +3481,7 @@ pub extern "C" fn wgpu_server_buffer_drop(global: &Global, self_id: id::BufferId
 #[cfg(target_os = "windows")]
 #[no_mangle]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wgpu_server_device_import_texture_from_shared_handle(
+pub unsafe extern "C" fn wgpu_server_device_import_texture_from_d3d11_resource(
     global: &Global,
     device_id: id::DeviceId,
     id_in: id::TextureId,
@@ -3443,43 +3490,15 @@ pub unsafe extern "C" fn wgpu_server_device_import_texture_from_shared_handle(
 ) {
     let desc = desc.to_wgpu();
 
-    let device = global.resolve_device_id(device_id);
-    let hal_device =
-        unsafe { device.as_hal::<wgc::api::Dx12>() }.expect("D3D12 backend device on windows");
-
-    let dx12_device = hal_device.raw_device();
-
-    let mut resource: Option<Direct3D12::ID3D12Resource> = None;
-    let res = dx12_device.OpenSharedHandle(Foundation::HANDLE(handle), &mut resource);
-    if res.is_err() || resource.is_none() {
-        let msg = CString::new(format!("OpenSharedHandle() failed: {:?}", res)).unwrap();
-        gfx_critical_note(msg.as_ptr());
-        global.create_texture_error(device_id, id_in, &desc);
-        return;
-    }
-
-    let hal_texture = <wgh::api::Dx12 as wgh::Api>::Device::texture_from_raw(
-        resource.unwrap(),
-        desc.format,
-        desc.dimension,
-        desc.size,
-        desc.mip_level_count,
-        desc.sample_count,
-        None,
-    );
-
-    let (_, error) = global.create_texture_from_hal(
-        Box::new(hal_texture),
+    global.create_texture_with_imported_d3d11_resource(
         device_id,
-        &desc,
-        wgt::TextureUses::UNINITIALIZED,
         id_in,
-        /* cleared */ true,
+        &desc,
+        handle,
+        guard((), |_| {
+            global.create_texture_error(device_id, id_in, &desc);
+        }),
     );
-    if let Some(err) = error {
-        let msg = CString::new(format!("texture_from_hal() failed: {:?}", err)).unwrap();
-        gfx_critical_note(msg.as_ptr());
-    }
 }
 
 /// Imports a fence from a shared handle and queues a GPU-side wait on the
@@ -3521,27 +3540,21 @@ mod macos {
     use std::ffi::CString;
 
     use super::{emit_critical_invalid_note, gfx_critical_note, Global};
-    use crate::{
-        server::{
-            wgpu_server_ensure_shared_texture_for_swap_chain,
-            wgpu_server_get_external_io_surface_id,
-        },
-        FfiTextureDescriptor, SwapChainId,
-    };
+    use crate::FfiTextureDescriptor;
 
-    use objc2::{
-        rc::{autoreleasepool, Retained},
-        runtime::ProtocolObject,
-    };
+    use objc2::{rc::autoreleasepool, runtime::ProtocolObject};
     use objc2_foundation::NSString;
     use objc2_io_surface::IOSurfaceRef;
     use objc2_metal::{
-        MTLDevice as _, MTLPixelFormat, MTLResource, MTLStorageMode, MTLTexture,
-        MTLTextureDescriptor, MTLTextureType, MTLTextureUsage,
+        MTLDevice as _, MTLPixelFormat, MTLResource, MTLStorageMode, MTLTextureDescriptor,
+        MTLTextureType, MTLTextureUsage,
     };
+    use scopeguard::{guard, ScopeGuard};
     use wgpu_core_remote_types::{id, TextureDescriptor};
 
     /// Imports a Metal texture from the specified plane of an IOSurface.
+    ///
+    /// This is used for external textures.
     #[no_mangle]
     #[allow(unsafe_op_in_unsafe_fn)]
     pub unsafe extern "C" fn wgpu_server_device_import_texture_from_iosurface(
@@ -3554,171 +3567,113 @@ mod macos {
     ) {
         let desc = desc.to_wgpu();
 
-        let Some(surface) = IOSurfaceRef::lookup(io_surface_id) else {
-            emit_critical_invalid_note("IOSurface");
-            global.create_texture_error(device_id, id_in, &desc);
-            return;
-        };
-
-        let device = global.resolve_device_id(device_id);
-        let Some(hal_device) = device.as_hal::<wgc::api::Metal>() else {
-            emit_critical_invalid_note("metal device");
-            global.create_texture_error(device_id, id_in, &desc);
-            return;
-        };
-        let metal_device = hal_device.raw_device();
-
-        let metal_desc = MTLTextureDescriptor::new();
-        let texture_type = match desc.dimension {
-            wgt::TextureDimension::D1 => MTLTextureType::Type1D,
-            wgt::TextureDimension::D2 => {
-                if desc.sample_count > 1 {
-                    metal_desc.setSampleCount(desc.sample_count as usize);
-                    MTLTextureType::Type2DMultisample
-                } else if desc.size.depth_or_array_layers > 1 {
-                    metal_desc.setArrayLength(desc.size.depth_or_array_layers as usize);
-                    MTLTextureType::Type2DArray
-                } else {
-                    MTLTextureType::Type2D
-                }
-            }
-            wgt::TextureDimension::D3 => {
-                metal_desc.setDepth(desc.size.depth_or_array_layers as usize);
-                MTLTextureType::Type3D
-            }
-        };
-        metal_desc.setTextureType(texture_type);
-        let format = match desc.format {
-            wgt::TextureFormat::Rgba8Unorm => MTLPixelFormat::RGBA8Unorm,
-            wgt::TextureFormat::Bgra8Unorm => MTLPixelFormat::BGRA8Unorm,
-            wgt::TextureFormat::R8Unorm => MTLPixelFormat::R8Unorm,
-            wgt::TextureFormat::Rg8Unorm => MTLPixelFormat::RG8Unorm,
-            wgt::TextureFormat::R16Unorm => MTLPixelFormat::R16Unorm,
-            wgt::TextureFormat::Rg16Unorm => MTLPixelFormat::RG16Unorm,
-            _ => unreachable!(),
-        };
-        metal_desc.setPixelFormat(format);
-        metal_desc.setWidth(desc.size.width as usize);
-        metal_desc.setHeight(desc.size.height as usize);
-        metal_desc.setMipmapLevelCount(desc.mip_level_count as usize);
-        metal_desc.setStorageMode(MTLStorageMode::Private);
-        metal_desc.setUsage(MTLTextureUsage::ShaderRead);
-
-        let Some(metal_texture) =
-            metal_device.newTextureWithDescriptor_iosurface_plane(&metal_desc, &surface, plane)
-        else {
-            emit_critical_invalid_note("IOSurface");
-            global.create_texture_error(device_id, id_in, &desc);
-            return;
-        };
-
-        let hal_texture = <wgh::api::Metal as wgh::Api>::Device::texture_from_raw(
-            metal_texture,
-            desc.format,
-            texture_type,
-            desc.array_layer_count(),
-            desc.mip_level_count,
-            wgh::CopyExtent::map_extent_to_copy_size(&desc.size, desc.dimension),
-            None,
+        global.create_texture_with_imported_iosurface(
+            device_id,
+            id_in,
+            &desc,
+            io_surface_id,
+            plane,
+            guard((), |_| {
+                global.create_texture_error(device_id, id_in, &desc);
+            }),
         );
-
-        let (_, error) = unsafe {
-            global.create_texture_from_hal(
-                Box::new(hal_texture),
-                device_id,
-                &desc,
-                wgt::TextureUses::UNINITIALIZED,
-                id_in,
-                /* cleared */ true,
-            )
-        };
-        if let Some(err) = error {
-            let msg = CString::new(format!("texture_from_hal() failed: {:?}", err)).unwrap();
-            gfx_critical_note(msg.as_ptr());
-        }
     }
 
     impl super::Global {
-        pub(super) fn create_texture_with_shared_texture_iosurface(
+        /// Import an `IOSurface` as a `wgpu` texture.
+        ///
+        /// Three outcomes are possible:
+        /// - The texture is imported successfully. Return value is `None`.
+        /// - The import fails before the call to `create_texture_from_hal`.
+        ///   Return value is `Some`, containing the provided `ScopeGuard`,
+        ///   which should populate the texture as invalid.
+        /// - The import failed within the call to `create_texture_from_hal`.
+        ///   In this case `create_texture_from_hal` populates an invalid
+        ///   texture. The `ScopeGuard` is defused and the return value is
+        ///   `None`.
+        ///
+        /// This function only supports plain 2D color textures. Multisampled,
+        /// depth/stencil, layered, mipmapped, and volume textures are not
+        /// supported.
+        ///
+        /// This function also only handles a basic set of color formats.
+        pub(super) fn create_texture_with_imported_iosurface<'a, F: FnOnce(()) + 'a>(
             &self,
             device_id: id::DeviceId,
             texture_id: id::TextureId,
-            desc: &TextureDescriptor,
-            swap_chain_id: Option<SwapChainId>,
-        ) -> bool {
-            let ret = unsafe {
-                wgpu_server_ensure_shared_texture_for_swap_chain(
-                    self.owner,
-                    swap_chain_id.unwrap(),
-                    device_id,
-                    texture_id,
-                    desc.size.width,
-                    desc.size.height,
-                    desc.format,
-                    desc.usage,
-                )
-            };
-            if ret != true {
-                let msg = c"Failed to create shared texture";
-                unsafe {
-                    gfx_critical_note(msg.as_ptr());
-                }
-                return false;
-            }
-
-            let io_surface_id =
-                unsafe { wgpu_server_get_external_io_surface_id(self.owner, texture_id) };
-            if io_surface_id == 0 {
-                let msg = c"Failed to get io surface id";
-                unsafe {
-                    gfx_critical_note(msg.as_ptr());
-                }
-                return false;
-            }
-
+            desc: &'a TextureDescriptor,
+            io_surface_id: u32,
+            plane: usize,
+            guard: ScopeGuard<(), F>,
+        ) -> Option<ScopeGuard<(), F>> {
             let Some(io_surface) = IOSurfaceRef::lookup(io_surface_id) else {
-                emit_critical_invalid_note("metal device");
-                return false;
+                emit_critical_invalid_note("IOSurface");
+                return Some(guard);
             };
 
-            let desc_ref = &desc;
+            assert!(desc.dimension == wgt::TextureDimension::D2);
+            assert!(desc.sample_count == 1);
+            assert!(desc.size.depth_or_array_layers == 1);
+            assert!(desc.mip_level_count == 1);
 
-            let raw_texture: Retained<ProtocolObject<dyn MTLTexture>> = unsafe {
+            let raw_texture = unsafe {
                 let device = self.resolve_device_id(device_id);
                 let Some(hal_device) = device.as_hal::<wgc::api::Metal>() else {
                     emit_critical_invalid_note("metal device");
-                    return false;
+                    return Some(guard);
                 };
 
                 let device = hal_device.raw_device();
 
-                let maybe_texture = autoreleasepool(|_| {
-                    let descriptor = MTLTextureDescriptor::new();
-                    let usage = MTLTextureUsage::RenderTarget
-                        | MTLTextureUsage::ShaderRead
-                        | MTLTextureUsage::PixelFormatView;
+                let texture = autoreleasepool(|_| {
+                    use wgt::TextureUsages as Tu;
 
-                    descriptor.setTextureType(MTLTextureType::Type2D);
-                    descriptor.setWidth(desc_ref.size.width as usize);
-                    descriptor.setHeight(desc_ref.size.height as usize);
-                    descriptor.setMipmapLevelCount(desc_ref.mip_level_count as usize);
-                    descriptor.setPixelFormat(MTLPixelFormat::BGRA8Unorm);
+                    let descriptor = MTLTextureDescriptor::new();
+
+                    let format = match desc.format {
+                        wgt::TextureFormat::Rgba8Unorm => MTLPixelFormat::RGBA8Unorm,
+                        wgt::TextureFormat::Bgra8Unorm => MTLPixelFormat::BGRA8Unorm,
+                        wgt::TextureFormat::R8Unorm => MTLPixelFormat::R8Unorm,
+                        wgt::TextureFormat::Rg8Unorm => MTLPixelFormat::RG8Unorm,
+                        wgt::TextureFormat::R16Unorm => MTLPixelFormat::R16Unorm,
+                        wgt::TextureFormat::Rg16Unorm => MTLPixelFormat::RG16Unorm,
+                        _ => unimplemented!(),
+                    };
+
+                    let mut usage = MTLTextureUsage::Unknown;
+                    usage.set(
+                        MTLTextureUsage::RenderTarget,
+                        desc.usage.intersects(Tu::RENDER_ATTACHMENT),
+                    );
+                    usage.set(
+                        MTLTextureUsage::ShaderRead,
+                        desc.usage
+                            .intersects(Tu::TEXTURE_BINDING | Tu::STORAGE_BINDING),
+                    );
+                    usage.set(
+                        MTLTextureUsage::ShaderWrite,
+                        desc.usage.intersects(Tu::STORAGE_BINDING),
+                    );
+
+                    descriptor.setWidth(desc.size.width as usize);
+                    descriptor.setHeight(desc.size.height as usize);
+                    descriptor.setPixelFormat(format);
                     descriptor.setUsage(usage);
                     descriptor.setStorageMode(MTLStorageMode::Private);
 
-                    device.newTextureWithDescriptor_iosurface_plane(&descriptor, &io_surface, 0)
+                    device.newTextureWithDescriptor_iosurface_plane(&descriptor, &io_surface, plane)
                 });
 
-                let Some(texture) = maybe_texture else {
-                    let msg = c"Failed to create MTLTexture for swap chain";
+                let Some(texture) = texture else {
+                    let msg = c"Failed to create MTLTexture from imported IOSurface";
                     gfx_critical_note(msg.as_ptr());
-                    return false;
+                    return Some(guard);
                 };
 
                 texture
             };
 
-            if let Some(label) = &desc_ref.label {
+            if let Some(ref label) = desc.label {
                 ProtocolObject::<dyn MTLResource>::from_ref(&*raw_texture)
                     .setLabel(Some(&NSString::from_str(label)));
             }
@@ -3726,18 +3681,18 @@ mod macos {
             let hal_texture = unsafe {
                 <wgh::api::Metal as wgh::Api>::Device::texture_from_raw(
                     raw_texture,
-                    wgt::TextureFormat::Bgra8Unorm,
+                    desc.format,
                     MTLTextureType::Type2D,
                     1,
                     1,
-                    wgh::CopyExtent {
-                        width: desc.size.width,
-                        height: desc.size.height,
-                        depth: 1,
-                    },
+                    wgh::CopyExtent::map_extent_to_copy_size(&desc.size, desc.dimension),
                     None,
                 )
             };
+
+            // `create_texture_from_hal` populates an invalid texture on failure, so
+            // defuse the guard now.
+            ScopeGuard::into_inner(guard);
 
             let (_, error) = unsafe {
                 self.create_texture_from_hal(
@@ -3746,8 +3701,8 @@ mod macos {
                     &desc,
                     wgt::TextureUses::UNINITIALIZED,
                     texture_id,
-                    // NOTE: We want `false`, but we can't yet, because
-                    // upstream's API isn't quite right yet.
+                    // NOTE: For swapchain textures (but not external textures), we want `false`,
+                    // but we can't yet, because upstream's API isn't quite right yet.
                     /* cleared */
                     true,
                 )
@@ -3758,10 +3713,10 @@ mod macos {
                 unsafe {
                     gfx_critical_note(msg.as_ptr());
                 }
-                return false;
+                // Texture was already populated as invalid.
             }
 
-            true
+            None
         }
     }
 }

@@ -227,6 +227,8 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
 }
 
 Element* HTMLFormControlsCollection::Item(uint32_t aIndex) {
+  MOZ_ASSERT(HTMLCollection::mElements.IsEmpty(),
+             "Base mElements is shadowed and must stay unused");
   return mElements.SafeElementAt(aIndex, nullptr);
 }
 

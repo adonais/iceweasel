@@ -45,6 +45,9 @@ support-files = [
 ["browser_ml_engine_e2e.js"]
 support-files = ["ml_engine_e2e_cancel_stub.worker.mjs"]
 
+["browser_ml_engine_initialization_failure.js"]
+support-files = ["ml_engine_initialization_failure.worker.mjs"]
+
 ["browser_ml_engine_lifetime.js"]
 
 ["browser_ml_engine_pipeline_options.js"]
@@ -52,6 +55,9 @@ support-files = ["ml_engine_e2e_cancel_stub.worker.mjs"]
 ["browser_ml_engine_process.js"]
 
 ["browser_ml_engine_rs_hub.js"]
+
+["browser_ml_hwinference_device_discovery.js"]
+skip-if = ["os == 'win' && debug && verify"] # Bug 2082990: utility process launch stalls
 
 ["browser_ml_hwinference_process.js"]
 
@@ -65,6 +71,15 @@ skip-if = [
 support-files = [
   "ml_inference_session_error_stub.worker.mjs",
 ]
+
+["browser_ml_inference_session_memory.js"]
+skip-if = [
+  "asan",
+  "debug",
+  "os == 'android'",
+  "tsan",
+]
+support-files = ["ml_inference_session_memory.worker.mjs"]
 
 ["browser_ml_llama_cancel.js"]
 
@@ -119,10 +134,12 @@ support-files = [
 ["browser_ml_textgeneration_concurrency.js"]
 
 ["browser_ml_textgeneration_engine.js"]
+skip-if = ["os == 'win' && debug && verify"] # Bug 2082990: utility process launch stalls
 
 ["browser_ml_textgeneration_markers.js"]
 
 ["browser_ml_textgeneration_telemetry.js"]
+skip-if = ["os == 'win' && debug && verify"] # Bug 2082990: utility process launch stalls
 
 ["browser_ml_textgenerator.js"]
 

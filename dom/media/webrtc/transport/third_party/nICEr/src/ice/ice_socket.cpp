@@ -82,9 +82,7 @@ static void nr_ice_socket_readable_cb(NR_SOCKET s, int how, void *cb_arg)
 
     len = (int)len_s;
 
-#ifdef USE_TURN
   re_process:
-#endif /* USE_TURN */
     r_log(LOG_ICE,LOG_DEBUG,"ICE(%s): Read %d bytes %sfrom %s",sock->ctx->label,len,(processed_indication ? "relayed " : ""),addr.as_string);
 
     /* First question: is this STUN or not? */
@@ -124,7 +122,6 @@ static void nr_ice_socket_readable_cb(NR_SOCKET s, int how, void *cb_arg)
               r=nr_stun_server_process_request(sc1->u.server,stun_srv_sock,(char *)buf,len,&addr,NR_STUN_AUTH_RULE_SHORT_TERM);
             }
             break;
-#ifdef USE_TURN
           case NR_ICE_TURN_CLIENT:
             /* data indications are ok, so don't ignore those */
             /* Check that this is from the right TURN server address. Else
@@ -166,7 +163,6 @@ static void nr_ice_socket_readable_cb(NR_SOCKET s, int how, void *cb_arg)
               }
             }
             break;
-#endif /* USE_TURN */
 
           default:
             assert(0); /* Can't happen */
@@ -391,11 +387,9 @@ void nr_ice_socket_failed(nr_ice_socket *sock)
         case NR_ICE_STUN_SERVER:
           /* Nothing to do here? */
           break;
-#ifdef USE_TURN
         case NR_ICE_TURN_CLIENT:
           nr_turn_client_failed(s1->u.turn_client.turn_client);
           break;
-#endif
         default:
           assert(0);
       }

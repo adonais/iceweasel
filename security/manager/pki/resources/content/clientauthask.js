@@ -87,6 +87,7 @@ async function onLoad() {
   }
 
   await setDetails();
+  await document.l10n.translateRoots();
   document.addEventListener("dialogaccept", doOK);
   document.addEventListener("dialogcancel", doCancel);
   document
@@ -179,4 +180,9 @@ function doCancel() {
   retVals.rememberDuration = getRememberSetting();
 }
 
-window.addEventListener("load", () => onLoad());
+// Finish populating and translating the dialog before SubDialog measures it.
+document.mozSubdialogReady = new Promise((resolve, reject) => {
+  window.addEventListener("load", () => onLoad().then(resolve, reject), {
+    once: true,
+  });
+});

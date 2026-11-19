@@ -4,7 +4,7 @@
 skip-if = [
   "debug && verify-standalone",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # bug 1111111
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt && socketprocess_networking", # bug 1111111
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt && swgl", # bug 1111111
 ]
 
 ["browser_cross_process_csp_inheritance.js"]

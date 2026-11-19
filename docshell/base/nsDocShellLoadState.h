@@ -79,8 +79,7 @@ class nsDocShellLoadState final {
       const mozilla::dom::LoadURIOptions& aLoadURIOptions,
       nsDocShellLoadState** aResult);
   static nsresult CreateFromLoadURIOptions(
-      BrowsingContext* aBrowsingContext, nsIURI* aURI,
-      const mozilla::dom::LoadURIOptions& aLoadURIOptions,
+      nsIURI* aURI, const mozilla::dom::LoadURIOptions& aLoadURIOptions,
       nsDocShellLoadState** aResult);
 
   // Getters and Setters
@@ -372,6 +371,9 @@ class nsDocShellLoadState final {
   void SetSpeculativeListener(mozilla::net::DocumentLoadListener* aListener);
   already_AddRefed<mozilla::net::DocumentLoadListener>
   TakeSpeculativeListener();
+  const mozilla::Maybe<uint64_t>& GetSpeculativeChannelId() const {
+    return mSpeculativeChannelId;
+  }
 
   void SetIsMetaRefresh(bool aMetaRefresh) { mIsMetaRefresh = aMetaRefresh; }
 
@@ -527,8 +529,7 @@ class nsDocShellLoadState final {
   const char* ValidateWithOriginalState(nsDocShellLoadState* aOriginalState);
 
   static nsresult CreateFromLoadURIOptions(
-      BrowsingContext* aBrowsingContext, nsIURI* aURI,
-      const mozilla::dom::LoadURIOptions& aLoadURIOptions,
+      nsIURI* aURI, const mozilla::dom::LoadURIOptions& aLoadURIOptions,
       uint32_t aLoadFlagsOverride, nsIInputStream* aPostDataOverride,
       nsDocShellLoadState** aResult);
 
@@ -760,8 +761,8 @@ class nsDocShellLoadState final {
   RefPtr<mozilla::net::DocumentLoadListener> mSpeculativeListener;
 
   // Optional value available in content to indicate the channel has been
-  // pre-initialized in the parent process.
-  bool mHasSpeculativeListener = false;
+  // pre-initialized in the parent process. Holds the id of that channel.
+  mozilla::Maybe<uint64_t> mSpeculativeChannelId;
 
   // True if the load was triggered by a meta refresh.
   bool mIsMetaRefresh;

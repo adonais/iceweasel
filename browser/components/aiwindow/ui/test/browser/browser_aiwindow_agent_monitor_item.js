@@ -381,7 +381,7 @@ add_task(async function test_watch_url_chip_dispatches_open() {
         e => (openDetail = e.detail)
       );
 
-      const chip = shadow.querySelector(".url-chips ai-website-chip");
+      const chip = shadow.querySelector(".url-chips smartwindow-chip");
       Assert.ok(chip, "Watched pages render as website chips");
       Assert.equal(
         chip.label,
@@ -429,7 +429,7 @@ add_task(async function test_watch_url_chip_shows_resolved_title() {
     await SpecialPowers.spawn(browser, [], async () => {
       const el = content.document.getElementById("test-agent-monitor-item");
       const chips = el.shadowRoot.querySelectorAll(
-        ".url-chips ai-website-chip"
+        ".url-chips smartwindow-chip"
       );
 
       Assert.equal(chips.length, 2, "Both watched pages render as chips");
@@ -461,7 +461,7 @@ add_task(async function test_edit_mode_shows_pages_and_scheduler() {
       const shadow = el.shadowRoot;
 
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         1,
         "Edit mode seeds a pill for the monitor's existing URL"
       );
@@ -761,7 +761,7 @@ add_task(async function test_create_mode_empty_state_inputs() {
       );
       await el.updateComplete;
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         1,
         "Adding a URL shows a pill"
       );
@@ -1097,7 +1097,7 @@ add_task(async function test_draft_restores_over_agent_values() {
         "Condition is restored from the draft, not the agent"
       );
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         2,
         "Added URLs are restored from the draft, replacing the seeded one"
       );
@@ -1149,7 +1149,7 @@ add_task(async function test_form_requests_and_shows_page_titles() {
         const chipLabels = () =>
           [
             ...el.shadowRoot.querySelectorAll(
-              ".page-pills-row ai-website-chip"
+              ".page-pills-row smartwindow-chip"
             ),
           ].map(chip => chip.label);
 
@@ -1232,7 +1232,7 @@ add_task(async function test_add_and_remove_page_pills() {
       const shadow = el.shadowRoot;
 
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         0,
         "Starts with no page pills when nothing is seeded"
       );
@@ -1243,19 +1243,19 @@ add_task(async function test_add_and_remove_page_pills() {
       shadow.querySelector("moz-button.add-page-btn").click();
       await el.updateComplete;
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         1,
         "Add button adds the typed URL as a pill"
       );
 
-      const chip = shadow.querySelector(".page-pills-row ai-website-chip");
+      const chip = shadow.querySelector(".page-pills-row smartwindow-chip");
       await chip.updateComplete;
       // The chip's remove button only becomes visible on hover, which a test
       // can't trigger reliably, so click it directly.
       chip.shadowRoot.querySelector(".chip-remove").click();
       await el.updateComplete;
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         0,
         "Pill remove button removes the URL"
       );
@@ -1286,7 +1286,7 @@ add_task(async function test_invalid_url_shows_error() {
         "A value that is not a URL shows the invalid-URL error"
       );
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         0,
         "An invalid URL is not added as a pill"
       );
@@ -1451,7 +1451,7 @@ add_task(async function test_max_watch_urls_from_host() {
       shadow.querySelector("moz-button.add-page-btn").click();
       await el.updateComplete;
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         1,
         "The first URL is added"
       );
@@ -1476,7 +1476,7 @@ add_task(async function test_max_watch_urls_from_host() {
         "Adding past the cap shows the max-pages error"
       );
       Assert.equal(
-        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
+        shadow.querySelectorAll(".page-pills-row smartwindow-chip").length,
         1,
         "A URL past the host's cap is not added"
       );
@@ -1545,9 +1545,9 @@ add_task(async function test_add_page_button_returns_below_cap() {
       );
 
       shadow
-        .querySelector(".page-pills-row ai-website-chip")
+        .querySelector(".page-pills-row smartwindow-chip")
         .dispatchEvent(
-          new content.CustomEvent("ai-website-chip:remove", { bubbles: true })
+          new content.CustomEvent("smartwindow-chip:remove", { bubbles: true })
         );
       await el.updateComplete;
 

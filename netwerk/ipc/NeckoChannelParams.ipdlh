@@ -443,41 +443,6 @@ struct ProxyInfoCloneArgs
   nsCString connectionIsolationKey;
 };
 
-struct HttpConnectionInfoCloneArgs
-{
-  nsCString host;
-  int32_t port;
-  nsCString npnToken;
-  nsCString username;
-  OriginAttributes originAttributes;
-  bool endToEndSSL;
-  nsCString routedHost;
-  int32_t routedPort;
-  bool anonymous;
-  bool aPrivate; // use prefix to avoid code generation error
-  bool insecureScheme;
-  bool noSpdy;
-  bool beConservative;
-  bool bypassProxy;
-  bool anonymousAllowClientCert;
-  bool fallbackConnection;
-  uint32_t tlsFlags;
-  bool isolated;
-  bool isTrrServiceChannel;
-  uint8_t trrMode;
-  bool isIPv4Disabled;
-  bool isIPv6Disabled;
-  uint8_t http3Policy;
-  nsCString topWindowOrigin;
-  bool isHttp3;
-  bool webTransport;
-  uint64_t webTransportId;
-  bool hasIPHintAddress;
-  nsCString echConfig;
-  bool happyEyeballsEnabled;
-  ProxyInfoCloneArgs[] proxyInfo;
-};
-
 struct ConsoleReportCollected {
   uint32_t errorFlags;
   nsCString category;
@@ -575,21 +540,6 @@ struct RedirectToRealChannelArgs {
   nullable ParentProcessChannelHandle channelHandle;
 };
 
-struct TimingStructArgs {
-  TimeStamp domainLookupStart;
-  TimeStamp domainLookupEnd;
-  TimeStamp connectStart;
-  TimeStamp tcpConnectEnd;
-  TimeStamp secureConnectionStart;
-  TimeStamp connectEnd;
-  TimeStamp requestStart;
-  TimeStamp responseStart;
-  TimeStamp firstInterimResponseStart;
-  TimeStamp finalResponseHeadersStart;
-  TimeStamp responseEnd;
-  TimeStamp transactionPending;
-};
-
 struct ResourceTimingStructArgs {
   TimeStamp domainLookupStart;
   TimeStamp domainLookupEnd;
@@ -616,43 +566,6 @@ struct ResourceTimingStructArgs {
   TimeStamp cacheReadEnd;
 
   TimeStamp transactionPending;
-};
-
-struct HttpActivity
-{
-  nsCString host;
-  int32_t port;
-  bool endToEndSSL;
-};
-
-struct HttpConnectionActivity
-{
-  nsCString connInfoKey;
-  nsCString host;
-  int32_t port;
-  bool ssl;
-  bool hasECH;
-  bool isHttp3;
-};
-
-union HttpActivityArgs
-{
-  uint64_t;
-  HttpActivity;
-  HttpConnectionActivity;
-};
-
-struct TransactionObserverResult
-{
-  bool versionOk;
-  bool authOk;
-  nsresult closeReason;
-};
-
-struct SpeculativeConnectionOverriderArgs {
-  uint32_t parallelSpeculativeConnectLimit;
-  bool ignoreIdle;
-  bool allow1918;
 };
 
 //-----------------------------------------------------------------------------

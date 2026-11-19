@@ -836,8 +836,6 @@ class RTCStatsReportVerifier {
       verifier.TestAttributeIsDefined(outbound_stream.key_frames_encoded);
       verifier.TestAttributeIsNonNegative<double>(
           outbound_stream.total_encode_time);
-      verifier.TestAttributeIsNonNegative<uint64_t>(
-          outbound_stream.total_encoded_bytes_target);
       verifier.TestAttributeIsDefined(
           outbound_stream.quality_limitation_reason);
       verifier.TestAttributeIsDefined(
@@ -880,8 +878,6 @@ class RTCStatsReportVerifier {
       verifier.TestAttributeIsUndefined(outbound_stream.frames_encoded);
       verifier.TestAttributeIsUndefined(outbound_stream.key_frames_encoded);
       verifier.TestAttributeIsUndefined(outbound_stream.total_encode_time);
-      verifier.TestAttributeIsUndefined(
-          outbound_stream.total_encoded_bytes_target);
       verifier.TestAttributeIsUndefined(
           outbound_stream.quality_limitation_reason);
       verifier.TestAttributeIsUndefined(

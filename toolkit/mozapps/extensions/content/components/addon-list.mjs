@@ -285,7 +285,7 @@ export class AddonList extends HTMLElement {
     let sectionCards = this.getCards(section);
 
     // If this is the first card in the section, create the heading.
-    if (!sectionCards.length) {
+    if (!sectionCards.length && !["mlmodel", "theme"].includes(this.type)) {
       section.appendChild(this.createSectionHeading(sectionIndex));
     }
 
@@ -480,18 +480,34 @@ export class AddonList extends HTMLElement {
   }
 
   renderSection(addons, index) {
-    const { sectionClass } = this.sections[index];
+    const { sectionClass, accordion, headingId } = this.sections[index];
 
-    let section = document.createElement("section");
+    let section = document.createElement(
+      this.type === "theme" ? "moz-card" : "section"
+    );
     section.setAttribute("section", index);
     if (sectionClass) {
       section.setAttribute("class", sectionClass);
     }
+    if (accordion) {
+      section.setAttribute("type", "accordion");
+      if (accordion.expanded) {
+        section.setAttribute("expanded", accordion.expanded);
+      }
+      section.addEventListener("toggle", accordion.ontoggle);
+    }
 
-    // Render the heading and add-ons if there are any, except for mlmodel list
-    // view which only shows installed models.
-    if (this.type != "mlmodel" && addons.length) {
+    // Render the heading and add-ons if there are any, except for:
+    // - mlmodel list view which only shows installed models
+    // - themes list view which wraps the sections in a moz-card
+    //   and so the headings are part of the moz-card attributes.
+    if (!["mlmodel", "theme"].includes(this.type) && addons.length) {
       section.appendChild(this.createSectionHeading(index));
+    }
+
+    if (this.type === "theme") {
+      section.setAttribute("data-l10n-attrs", "heading");
+      section.setAttribute("data-l10n-id", headingId);
     }
 
     for (let addon of addons) {
@@ -527,7 +543,7 @@ export class AddonList extends HTMLElement {
       this.sections[i].node = this.renderSection(sectionedAddons[i], i);
       frag.appendChild(this.sections[i].node);
       if (this.type == "theme" && i == 0) {
-        frag.appendChild(document.createElement("aboutaddons-themes-picker"));
+        frag.appendChild(document.createElement("aboutaddons-themes-pickers"));
       }
     }
 

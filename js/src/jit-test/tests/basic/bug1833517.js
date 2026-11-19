@@ -1,4 +1,4 @@
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 (function f() {
   (function () {
     f;

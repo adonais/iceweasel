@@ -2,6 +2,10 @@
 
 import os
 import signal
+import subprocess
+import time
+from queue import Empty
+from unittest import mock
 
 import mozprocess
 import mozunit
@@ -19,8 +23,22 @@ def kill(proc):
     proc.wait()
 
 
+def killing_handler(calls, name):
+    def handler(proc):
+        calls.append(name)
+        kill(proc)
+
+    return handler
+
+
 class ProcTestSimpleRunAndWait(proctest.ProcTest):
     """Class to test mozprocess.run_and_wait"""
+
+    def run_and_wait(self, args, **kwargs):
+        """mozprocess.run_and_wait that kills the process if it outlives the test"""
+        p = mozprocess.run_and_wait(args, cwd=here, **kwargs)
+        self.addCleanup(lambda: p.poll() is None and kill(p))
+        return p
 
     def test_normal_finish(self):
         """Process is started, runs to completion while we wait for it"""
@@ -64,13 +82,119 @@ class ProcTestSimpleRunAndWait(proctest.ProcTest):
             timed_out = True
             kill(p)
 
-        mozprocess.run_and_wait(
+        self.run_and_wait(
             [self.python, self.proclaunch, "process_waittimeout.ini"],
-            cwd=here,
             timeout=10,
             timeout_handler=th,
         )
         self.assertTrue(timed_out)
+
+    def test_timeout_early_wakeup(self):
+        """The timeout handler is called even if the queue wait returns
+        before the wall clock reaches the deadline (bug 1922590)
+        """
+        with mock.patch(
+            "mozprocess.mozprocess.Queue", **{"return_value.get.side_effect": Empty}
+        ):
+            self.test_timeout()
+
+    def test_shorter_timeout_wins(self):
+        """Only the handler of whichever timeout expires first is called"""
+        for timeout, output_timeout, expected in (
+            (2, 30, "timeout"),
+            (30, 2, "output"),
+        ):
+            with self.subTest(expected=expected):
+                calls = []
+                self.run_and_wait(
+                    [self.python, "-c", "import time; time.sleep(30)"],
+                    timeout=timeout,
+                    timeout_handler=killing_handler(calls, "timeout"),
+                    output_timeout=output_timeout,
+                    output_timeout_handler=killing_handler(calls, "output"),
+                )
+                self.assertEqual(calls, [expected])
+
+    def test_timeout_during_constant_output(self):
+        """The timeout handler is called even if output never pauses"""
+        calls = []
+        start = time.monotonic()
+
+        def olh(p, line):
+            if p.poll() is not None:
+                return
+            time.sleep(0.01)
+            if time.monotonic() - start > 10:
+                kill(p)
+
+        self.run_and_wait(
+            [
+                self.python,
+                "-u",
+                "-c",
+                "import time\nwhile True:\n print(0)\n time.sleep(0.001)",
+            ],
+            timeout=2,
+            timeout_handler=killing_handler(calls, "timeout"),
+            output_line_handler=olh,
+        )
+        self.assertEqual(calls, ["timeout"])
+
+    def test_undecodable_output(self):
+        """Undecodable output is replaced instead of stopping the reader"""
+        lines = []
+        self.run_and_wait(
+            [
+                self.python,
+                "-c",
+                "import sys; sys.stdout.buffer.write(b'\\x81\\n'); sys.stdout.flush(); print('after')",
+            ],
+            timeout=10,
+            output_line_handler=lambda p, line: lines.append(line),
+        )
+        self.assertEqual(lines, ["\ufffd\n", "after\n"])
+
+    def test_timeout_with_output_held(self):
+        """The timeout handler is called if the output stays open past the deadline,
+        whether the process closes it and keeps running or exits leaving it to a child
+        """
+        for name, script in (
+            (
+                "output closed",
+                "import os, time; os.close(1); os.close(2); time.sleep(30)",
+            ),
+            (
+                "child holds output",
+                "import subprocess, sys; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=sys.stdout)",
+            ),
+        ):
+            with self.subTest(name):
+                calls = []
+                self.run_and_wait(
+                    [self.python, "-c", script],
+                    timeout=2,
+                    timeout_handler=killing_handler(calls, "timeout"),
+                )
+                self.assertEqual(calls, ["timeout"])
+
+    def test_output_drained_after_exit(self):
+        """Output the process wrote before exiting is all delivered, even past the deadline"""
+        calls = []
+        lines = []
+
+        def olh(p, line):
+            lines.append(line)
+            if len(lines) == 1:
+                time.sleep(3)
+
+        self.run_and_wait(
+            [self.python, "-c", "for i in range(100): print(i)"],
+            timeout=2,
+            timeout_handler=killing_handler(calls, "timeout"),
+            output_line_handler=olh,
+        )
+        self.assertEqual(len(lines), 100)
+        self.assertEqual(calls, [])
 
     def test_waitnotimeout(self):
         """Process is started, runs to completion before our wait times out"""
@@ -110,9 +234,8 @@ print("survived sleep!")
             timed_out = True
             kill(p)
 
-        mozprocess.run_and_wait(
+        self.run_and_wait(
             [self.python, "-u", "-c", pgm],
-            cwd=here,
             output_timeout=5,
             output_timeout_handler=oth,
             output_line_handler=olh,
@@ -120,6 +243,21 @@ print("survived sleep!")
         self.assertFalse(found)
         self.assertTrue(found9)
         self.assertTrue(timed_out)
+
+    def test_line_handler_exception_propagates(self):
+        """Exceptions raised by the output line handler are not taken for a timeout"""
+        for exc in (subprocess.TimeoutExpired("olh", 1), Empty()):
+            with self.subTest(type(exc).__name__):
+
+                def olh(p, line):
+                    raise exc
+
+                with self.assertRaises(type(exc)):
+                    self.run_and_wait(
+                        [self.python, "-c", "print(1)"],
+                        timeout=10,
+                        output_line_handler=olh,
+                    )
 
 
 if __name__ == "__main__":

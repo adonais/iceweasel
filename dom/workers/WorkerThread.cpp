@@ -4,6 +4,8 @@
 
 #include "WorkerThread.h"
 
+#include <memory>
+
 #include "WorkerPrivate.h"
 #include "WorkerRunnable.h"
 #include "mozilla/Assertions.h"
@@ -12,7 +14,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/ThreadEventQueue.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
@@ -63,10 +64,10 @@ class WorkerThread::Observer final : public nsIThreadObserver {
 };
 
 WorkerThread::WorkerThread(ConstructorKey)
-    : nsThread(
-          MakeNotNull<ThreadEventQueue*>(MakeUnique<mozilla::EventQueue>()),
-          nsThread::NOT_MAIN_THREAD,
-          {.stackSize = nsIThreadManager::LargeStackSize()}),
+    : nsThread(MakeNotNull<ThreadEventQueue*>(
+                   std::make_unique<mozilla::EventQueue>()),
+               nsThread::NOT_MAIN_THREAD,
+               {.stackSize = nsIThreadManager::LargeStackSize()}),
       mLock("WorkerThread::mLock"),
       mWorkerPrivateCondVar(mLock, "WorkerThread::mWorkerPrivateCondVar"),
       mWorkerPrivate(nullptr),

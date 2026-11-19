@@ -39,6 +39,7 @@ import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toDrawable
@@ -54,7 +55,6 @@ import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlin.getValue
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.Menu
@@ -76,6 +76,9 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.CustomizeMenuPopup
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
 import org.mozilla.fenix.components.menu.compose.MenuHandleState
+import org.mozilla.fenix.components.menu.configuration.BrowserMenuConfiguration
+import org.mozilla.fenix.components.menu.configuration.CustomTabMenuConfiguration
+import org.mozilla.fenix.components.menu.configuration.HomeMenuConfiguration
 import org.mozilla.fenix.components.menu.middleware.MenuMiddleware
 import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
 import org.mozilla.fenix.ext.components
@@ -111,7 +114,11 @@ class MenuFragment : BottomSheetDialogFragment() {
                     event: KeyEvent,
                 ): Boolean {
                     if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_MENU) {
-                        dismiss()
+                        // Repeats from a held down hardware key would otherwise keep dismissing
+                        // and reopening the menu.
+                        if (event.repeatCount == 0) {
+                            dismiss()
+                        }
                         return true
                     }
                     return super.onKeyDown(keyCode, event)
@@ -267,6 +274,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                 ) {
                     Menu(
                         store = menuStore,
+                        modifier = Modifier.testTag(MenuTestTag.MAIN_MENU),
                         onHeaderDarkBackgroundChanged = { isHeaderDark = it },
                     )
                 }
@@ -279,7 +287,7 @@ class MenuFragment : BottomSheetDialogFragment() {
                         showCustomizeMenuPopup = false
                         nav(
                             id = R.id.menuFragment,
-                            directions = MenuFragmentDirections.actionMenuFragmentToFenixCustomizeMenuFragment(),
+                            directions = MenuFragmentDirections.actionMenuFragmentToCustomizeMenuFragment(),
                             options = NavOptions.Builder().setPopUpTo(R.id.menuFragment, true).build(),
                         )
                     },
@@ -373,7 +381,6 @@ class MenuFragment : BottomSheetDialogFragment() {
             summarizeEligibilityChecker = components.core.summarizationEligibilityChecker,
             translationsSettings = TranslationsEnabledSettings.dataStore(context),
             isAndroidAutomotiveAvailable = context.isAndroidAutomotiveAvailable(),
-            materialAlertDialogBuilder = MaterialAlertDialogBuilder(context),
             quitApplicationDelegate = activity::finishAndRemoveTask,
             setAsDefaultBrowserDelegate = activity::openSetDefaultBrowserOption,
             menuViewScope = viewLifecycleOwner.lifecycle.coroutineScope,
@@ -411,13 +418,14 @@ class MenuFragment : BottomSheetDialogFragment() {
     private fun buildMenuConfigurationFor(menuAccessPoint: MenuAccessPoint) =
         when (menuAccessPoint) {
             MenuAccessPoint.Browser ->
-                MenuConfigurations.browser(
+                BrowserMenuConfiguration.sections(
                     isToolbarAtBottom = requireContext().isToolbarAtBottom(),
                     isExpandedToolbarEnabled = requireComponents.settings.shouldUseExpandedToolbar,
+                    customizationInfo = requireComponents.menuCustomizationRepository.customizedMenuInfo.value,
                 )
-            MenuAccessPoint.Home -> MenuConfigurations.home()
+            MenuAccessPoint.Home -> HomeMenuConfiguration.sections()
             MenuAccessPoint.External ->
-                MenuConfigurations.customTab(
+                CustomTabMenuConfiguration.sections(
                     isToolbarAtBottom = requireContext().isToolbarAtBottom(),
                     shouldShowExtensions = requireComponents.settings.shouldShowCustomTabExtensions,
                 )

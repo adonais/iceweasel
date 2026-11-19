@@ -76,7 +76,7 @@ def preprocess(base, input, flags):
         + [f"-D{d}" for d in args.D or ()]
         + [f"-I{i}" for i in args.I or ()]
     )
-    includes = ["."] + buildconfig.substs["INCLUDE"].split(";") + (args.I or [])
+    includes = ["."] + buildconfig.substs["MSVC_INCLUDE_DIRS"] + (args.I or [])
     seen = set()
     queue = deque([input])
     if args.acf:

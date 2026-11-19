@@ -10,9 +10,6 @@ const certOverrideService = Cc[
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
 
 const ReferrerInfo = Components.Constructor(
   "@mozilla.org/referrer-info;1",
@@ -66,11 +63,6 @@ add_setup(async function setup() {
       "network.dns.https_rr.check_record_with_cname"
     );
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 
   Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRONLY);
 });

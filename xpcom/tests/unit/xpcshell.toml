@@ -108,9 +108,6 @@ skip-if = [
 ]
 
 ["test_nsIProcess_stress.js"]
-skip-if = [
-  "ccov", # bug 1394989
-]
 
 ["test_pipe.js"]
 

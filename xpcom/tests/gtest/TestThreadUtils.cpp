@@ -1611,7 +1611,7 @@ TEST(ThreadUtils, main)
 
   // Unique pointer as xvalue.
   {
-    mozilla::UniquePtr<int> upi = mozilla::MakeUnique<int>(1);
+    auto upi = std::make_unique<int>(1);
     r1 = NewRunnableMethod<mozilla::UniquePtr<int>&&>(
         "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
         &ThreadUtilsObject::Test1upi, std::move(upi));
@@ -1621,7 +1621,7 @@ TEST(ThreadUtils, main)
   EXPECT_EQ(1, rpt->mA0);
 
   {
-    mozilla::UniquePtr<int> upi = mozilla::MakeUnique<int>(1);
+    auto upi = std::make_unique<int>(1);
     r1 = NewRunnableMethod<StoreCopyPassByRRef<mozilla::UniquePtr<int>>>(
         "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
         &ThreadUtilsObject::Test1upi, std::move(upi));
@@ -1633,7 +1633,7 @@ TEST(ThreadUtils, main)
   // Unique pointer as prvalue.
   r1 = NewRunnableMethod<mozilla::UniquePtr<int>&&>(
       "TestThreadUtils::ThreadUtilsObject::Test1upi", rpt,
-      &ThreadUtilsObject::Test1upi, mozilla::MakeUnique<int>(2));
+      &ThreadUtilsObject::Test1upi, std::make_unique<int>(2));
   r1->Run();
   EXPECT_EQ(count += 2, rpt->mCount);
   EXPECT_EQ(2, rpt->mA0);

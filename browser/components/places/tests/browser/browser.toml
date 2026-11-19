@@ -20,9 +20,6 @@ prefs = [
 ]
 
 ["browser_addBookmarkForFrame.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking", # Bug 1775655
-]
 
 ["browser_autoshow_bookmarks_toolbar.js"]
 
@@ -124,9 +121,6 @@ skip-if = [
 ["browser_bug427633_no_newfolder_if_noip.js"]
 
 ["browser_bug485100-change-case-loses-tag.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1973561
-]
 
 ["browser_bug631374_tags_selector_scroll.js"]
 support-files = ["favicon-normal16.png"]
@@ -224,6 +218,14 @@ https_first_disabled = true
 ["browser_markPageAsFollowedLink.js"]
 
 ["browser_mobile_root_on_bookmark_menus.js"]
+
+["browser_native_menu_folder_limit.js"]
+run-if = ["os == 'mac'"]
+
+["browser_native_menu_query_limit.js"]
+run-if = [
+  "os == 'mac'",
+]
 
 ["browser_panelview_bookmarks_delete.js"]
 

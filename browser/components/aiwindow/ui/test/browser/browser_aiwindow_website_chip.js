@@ -15,7 +15,7 @@ const TEST_PAGE =
 async function openTestPage(pageUrl) {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-    await content.customElements.whenDefined("ai-website-chip");
+    await content.customElements.whenDefined("smartwindow-chip");
   });
   return { tab, browser: tab.linkedBrowser };
 }
@@ -94,7 +94,7 @@ add_task(async function test_website_chip_inline_click_event() {
     const chip = content.document.getElementById("test-inline-chip");
 
     let clickEvent = null;
-    chip.addEventListener("ai-website-chip:click", e => (clickEvent = e), {
+    chip.addEventListener("smartwindow-chip:click", e => (clickEvent = e), {
       once: true,
     });
 
@@ -120,7 +120,7 @@ add_task(async function test_website_chip_context_remove() {
   await SpecialPowers.spawn(browser, [], async () => {
     const chip = content.document.getElementById("test-context-chip");
 
-    Assert.equal(chip.type, "context-chip", "Chip type should be context-chip");
+    Assert.equal(chip.type, "context", "Chip type should be context");
     Assert.equal(
       chip.label,
       "Example Site",
@@ -135,7 +135,7 @@ add_task(async function test_website_chip_context_remove() {
     Assert.ok(removeIcon, "Remove button should have icon");
 
     let removeEvent = null;
-    chip.addEventListener("ai-website-chip:remove", e => (removeEvent = e), {
+    chip.addEventListener("smartwindow-chip:remove", e => (removeEvent = e), {
       once: true,
     });
 

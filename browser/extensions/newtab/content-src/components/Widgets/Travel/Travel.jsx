@@ -6,16 +6,24 @@
 import React, { useCallback } from "react";
 import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import {
+  WIDGET_REGISTRY,
+  resolveWidgetFrame,
+  resolveWidgetSize,
+} from "common/WidgetsRegistry.mjs";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { WidgetMenuButton } from "../WidgetMenuButton";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
+import { WidgetMenuPoweredBy } from "../WidgetMenuPoweredBy";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
 
 const USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
   LEARN_MORE: "learn_more",
+  POWERED_BY_KAYAK: "powered_by_kayak",
 };
+
+const KAYAK_URL = "https://www.kayak.com/";
 
 const TRAVEL_ENTRY = WIDGET_REGISTRY.find(w => w.id === "travel");
 
@@ -38,6 +46,12 @@ function Travel({
   widgetEnabledMap,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
+  const framedWidgets = useSelector(state => state.FramedWidgets);
+  const { src, state: frameState } = resolveWidgetFrame(
+    TRAVEL_ENTRY,
+    prefs,
+    framedWidgets
+  );
   const widgetSize = resolveWidgetSize(TRAVEL_ENTRY, prefs);
   const hasInteracted = prefs["widgets.travel.interaction"];
 
@@ -78,6 +92,10 @@ function Travel({
     handleInteraction();
   }
 
+  if (frameState === "hidden") {
+    return null;
+  }
+
   return (
     <article
       className={`travel widget col-4 ${widgetSize}-widget`}
@@ -105,6 +123,14 @@ function Travel({
             l10nId="newtab-travel-widget-open-menu-button"
           />
           <panel-list className="panel-list-no-icons" id="travel-context-menu">
+            <WidgetMenuPoweredBy
+              dispatch={dispatch}
+              url={KAYAK_URL}
+              l10nId="newtab-travel-menu-powered-by-kayak"
+              recordUserAction={recordUserAction}
+              userAction={USER_ACTION_TYPES.POWERED_BY_KAYAK}
+              onClick={handleInteraction}
+            />
             <WidgetMenuFooter
               dispatch={dispatch}
               widgetId={TRAVEL_ENTRY.id}
@@ -114,7 +140,6 @@ function Travel({
               widgetSize={widgetSize}
               learnMoreL10nId="newtab-travel-menu-learn-more"
               onLearnMore={handleLearnMore}
-              showDivider={false}
               sizeSubmenu={
                 widgetsMayBeMaximized ? (
                   <SizeSubmenu
@@ -129,7 +154,16 @@ function Travel({
           </panel-list>
         </div>
       </div>
-      <div className="travel-body" />
+      <div className="travel-body">
+        <iframe
+          className="travel-frame"
+          aria-labelledby="travel-widget-label"
+          src={src}
+          // Same sandbox as the Crossword frame, including allow-same-origin,
+          // which is under the same security review.
+          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        />
+      </div>
     </article>
   );
 }

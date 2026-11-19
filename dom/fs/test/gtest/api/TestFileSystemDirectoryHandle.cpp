@@ -25,7 +25,7 @@ class TestFileSystemDirectoryHandle : public ::testing::Test {
     nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
     prefs->SetBoolPref("dom.fs.enabled", false);
 
-    mRequestHandler = MakeUnique<MockFileSystemRequestHandler>();
+    mRequestHandler = std::make_unique<MockFileSystemRequestHandler>();
     mMetadata = FileSystemEntryMetadata("dir"_ns, u"Directory"_ns,
                                         /* directory */ true);
     mName = u"testDir"_ns;

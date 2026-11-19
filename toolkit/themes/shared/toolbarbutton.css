@@ -24,7 +24,8 @@ toolbarbutton {
   }
 
   &:where([disabled]) {
-    color: GrayText;
+    color: var(--button-text-color-ghost-disabled);
+    opacity: var(--button-opacity-disabled);
     text-shadow: none;
   }
 }

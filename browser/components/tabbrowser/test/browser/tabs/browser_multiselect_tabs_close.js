@@ -288,11 +288,7 @@ add_task(async function usingKeyboard() {
   ok(!unpinnedTab2.closing, "UnpinnedTab2 is not closing");
 
   is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
-  is(
-    gBrowser.tabContainer.selectedIndex,
-    gBrowser.pinnedTabCount,
-    "Selected index is correct"
-  );
+  is(gBrowser.selectedTab, unpinnedTab2, "UnpinnedTab2 is active");
 
   // Select pinned tabs only
   await BrowserTestUtils.switchTab(gBrowser, pinnedTab1);
@@ -314,11 +310,7 @@ add_task(async function usingKeyboard() {
   // Should behave like closing a single pinned tab (go to first unpinned tab)
   is(gBrowser.multiSelectedTabsCount, 0, "Zero multiselected tabs");
   ok(!gBrowser.selectedTab.pinned, "End on an unpinned tab");
-  is(
-    gBrowser.tabContainer.selectedIndex,
-    gBrowser.pinnedTabCount,
-    "Selected index is correct"
-  );
+  is(gBrowser.selectedTab, unpinnedTab2, "UnpinnedTab2 is active");
 
   // Select pinned tabs only
   await BrowserTestUtils.switchTab(gBrowser, pinnedTab1);
@@ -338,11 +330,7 @@ add_task(async function usingKeyboard() {
 
   // Should behave like closing a single pinned tab (go to first unpinned tab)
   ok(!gBrowser.selectedTab.pinned, "End on an unpinned tab");
-  is(
-    gBrowser.tabContainer.selectedIndex,
-    gBrowser.pinnedTabCount,
-    "Selected index is correct"
-  );
+  is(gBrowser.selectedTab, unpinnedTab2, "UnpinnedTab2 is active");
 
   // Closing last remaining unpinned tab to have only pinned tabs
   BrowserTestUtils.removeTab(unpinnedTab2);

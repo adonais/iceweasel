@@ -28,7 +28,6 @@
 #include "TelemetryEventData.h"
 #include "TelemetryScalar.h"
 
-using mozilla::MakeUnique;
 using mozilla::Maybe;
 using mozilla::StaticAutoPtr;
 using mozilla::StaticMutex;
@@ -1163,7 +1162,8 @@ nsresult TelemetryEvent::CreateSnapshots(uint32_t aDataset, bool aClear,
       gEventRecords.Clear();
       for (auto& pair : leftovers) {
         gEventRecords.InsertOrUpdate(
-            pair.first, MakeUnique<EventRecordArray>(std::move(pair.second)));
+            pair.first,
+            std::make_unique<EventRecordArray>(std::move(pair.second)));
       }
       leftovers.Clear();
     }

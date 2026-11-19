@@ -17,7 +17,9 @@
                      closemenu="none"
                      data-l10n-id="all-tabs-menu-new-user-context"/>
       <toolbarseparator/>
-      <vbox id="allTabsMenu-groupsView"/>
+      <vbox id="allTabsMenu-groupsView"
+            role="group"
+            aria-labelledby="allTabsMenu-groupsView-header"/>
       <toolbarseparator id="allTabsMenu-groupsSeparator"/>
       <html:h2 id="allTabsMenu-currentWindowHeader" class="subview-subheader" data-l10n-id="all-tabs-menu-current-window-header"/>
       <toolbarbutton id="allTabsMenu-hiddenTabsButton"
@@ -29,7 +31,10 @@
       <vbox id="allTabsMenu-dropIndicatorHolder">
         <vbox id="allTabsMenu-dropIndicator" collapsed="true"/>
       </vbox>
-      <vbox id="allTabsMenu-allTabsView-tabs" class="panel-subview-body"/>
+      <vbox id="allTabsMenu-allTabsView-tabs"
+            class="panel-subview-body"
+            role="group"
+            aria-labelledby="allTabsMenu-currentWindowHeader"/>
       <toolbarseparator/>
       <toolbarbutton id="allTabsMenu-viewAllTabs"
                      class="subviewbutton"

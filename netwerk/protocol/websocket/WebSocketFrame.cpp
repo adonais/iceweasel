@@ -7,6 +7,7 @@
 #include "ErrorList.h"
 #include "MainThreadUtils.h"
 #include "chrome/common/ipc_message_utils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/Assertions.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsSocketTransportService2.h"
@@ -32,8 +33,6 @@ WebSocketFrame::WebSocketFrame(bool aFinBit, bool aRsvBit1, bool aRsvBit2,
                                uint32_t aMask, const nsCString& aPayload)
     : mData(PR_Now(), aFinBit, aRsvBit1, aRsvBit2, aRsvBit3, aOpCode, aMaskBit,
             aMask, aPayload) {
-  // This could be called on the background thread when socket process is
-  // enabled.
   mData.mTimeStamp = PR_Now();
 }
 

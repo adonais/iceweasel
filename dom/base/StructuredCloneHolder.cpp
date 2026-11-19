@@ -298,7 +298,7 @@ void StructuredCloneHolderBase::Clear() {
   mClearCalled = true;
 #endif
 
-  mBuffer = nullptr;
+  mData.reset();
 }
 
 void StructuredCloneHolderBase::Write(JSContext* aCx,
@@ -311,17 +311,17 @@ void StructuredCloneHolderBase::Write(
     JSContext* aCx, JS::Handle<JS::Value> aValue,
     JS::Handle<JS::Value> aTransfer,
     const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv) {
-  MOZ_ASSERT(!mBuffer, "Double Write is not allowed");
+  MOZ_ASSERT(!mData, "Double Write is not allowed");
   MOZ_ASSERT(!mClearCalled, "This method cannot be called after Clear.");
 
   aRv.MightThrowJSException();
 
-  mBuffer = MakeUnique<JSAutoStructuredCloneBuffer>(
-      mStructuredCloneScope, &StructuredCloneHolder::sCallbacks, this);
+  mData.emplace(mStructuredCloneScope);
 
-  if (!mBuffer->write(aCx, aValue, aTransfer, aCloneDataPolicy,
-                      &StructuredCloneHolder::sCallbacks, this)) {
-    mBuffer = nullptr;
+  if (!JS_WriteStructuredClone(
+          aCx, aValue, mData.ptr(), mStructuredCloneScope, aCloneDataPolicy,
+          &StructuredCloneHolder::sCallbacks, this, aTransfer)) {
+    mData.reset();
     // NOTE: We steal the exception from the context, as SuppressException in
     // our caller cannot suppress JSContext exceptions.
     aRv.StealExceptionFromJSContext(aCx);
@@ -330,8 +330,8 @@ void StructuredCloneHolderBase::Write(
 
   // Let's update our scope to the final one. The new one could be more
   // restrictive than the current one.
-  MOZ_ASSERT(mStructuredCloneScope >= mBuffer->scope());
-  mStructuredCloneScope = mBuffer->scope();
+  MOZ_ASSERT(mStructuredCloneScope >= mData->scope());
+  mStructuredCloneScope = mData->scope();
 }
 
 void StructuredCloneHolderBase::Read(JSContext* aCx,
@@ -343,33 +343,32 @@ void StructuredCloneHolderBase::Read(JSContext* aCx,
 void StructuredCloneHolderBase::Read(
     JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
     const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv) {
-  MOZ_ASSERT(mBuffer, "Read() without Write() is not allowed.");
+  MOZ_ASSERT(mData, "Read() without Write() is not allowed.");
   MOZ_ASSERT(!mClearCalled, "This method cannot be called after Clear.");
 
   aRv.MightThrowJSException();
 
-  if (!mBuffer->read(aCx, aValue, aCloneDataPolicy,
-                     &StructuredCloneHolder::sCallbacks, this)) {
+  if (!JS_ReadStructuredClone(aCx, *mData, mData->scope(), aValue,
+                              aCloneDataPolicy,
+                              &StructuredCloneHolder::sCallbacks, this)) {
     // NOTE: We steal the exception from the context, as SuppressException in
     // our caller cannot suppress JSContext exceptions.
     aRv.StealExceptionFromJSContext(aCx);
   }
 }
 
-void StructuredCloneHolderBase::Adopt(JSStructuredCloneData&& aData,
-                                      uint32_t aVersion) {
-  MOZ_ASSERT(!mBuffer, "Double Adopt is not allowed");
+void StructuredCloneHolderBase::Adopt(JSStructuredCloneData&& aData) {
+  MOZ_ASSERT(!mData, "Double Adopt is not allowed");
   MOZ_ASSERT(!mClearCalled, "This method cannot be called after Clear.");
 
-  mBuffer = MakeUnique<JSAutoStructuredCloneBuffer>(
-      mStructuredCloneScope, &StructuredCloneHolder::sCallbacks, this);
-  mBuffer->adopt(std::move(aData), aVersion, &StructuredCloneHolder::sCallbacks,
-                 this);
+  mData.emplace(std::move(aData));
+  mData->setCallbacks(&StructuredCloneHolder::sCallbacks, this,
+                      OwnTransferablePolicy::OwnsTransferablesIfAny);
 
   // Let's update our scope to the final one. The new one could be more
   // restrictive than the current one.
-  MOZ_ASSERT(mStructuredCloneScope >= mBuffer->scope());
-  mStructuredCloneScope = mBuffer->scope();
+  MOZ_ASSERT(mStructuredCloneScope >= mData->scope());
+  mStructuredCloneScope = mData->scope();
 }
 
 bool StructuredCloneHolderBase::CustomReadTransferHandler(
@@ -469,9 +468,8 @@ void StructuredCloneHolder::MaybeClearTransferredState() {
 }
 
 void StructuredCloneHolder::Adopt(JSStructuredCloneData&& aData,
-                                  uint32_t aVersion,
                                   GeckoChildID aOriginChildID) {
-  StructuredCloneHolderBase::Adopt(std::move(aData), aVersion);
+  StructuredCloneHolderBase::Adopt(std::move(aData));
 
   mOriginChildID = aOriginChildID;
 
@@ -479,20 +477,22 @@ void StructuredCloneHolder::Adopt(JSStructuredCloneData&& aData,
 }
 
 static bool CheckExposedGlobals(JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-                                uint16_t aExposedGlobals) {
+                                uint16_t aExposedGlobals,
+                                bool aRequireSecureContext = false) {
   // Sandboxes aren't really DOM globals (though they do set the
   // JSCLASS_DOM_GLOBAL flag), and so we can't simply do the exposure check.
   // Some sandboxes do have a DOM global as their prototype, so using the
   // prototype to check for exposure will at least make it work for those
   // specific cases.
-  bool inExposureSet;
-  if (JSObject* proto = xpc::SandboxPrototypeOrNull(aCx, aGlobal)) {
-    inExposureSet = IsGlobalInExposureSet(aCx, proto, aExposedGlobals);
-  } else {
-    inExposureSet = IsGlobalInExposureSet(aCx, aGlobal, aExposedGlobals);
+  JS::Rooted<JSObject*> target(aCx, xpc::SandboxPrototypeOrNull(aCx, aGlobal));
+  if (!target) {
+    target = aGlobal;
   }
+  bool inExposureSet = IsGlobalInExposureSet(aCx, target, aExposedGlobals);
 
-  if (!inExposureSet) {
+  if (!inExposureSet ||
+      (aRequireSecureContext &&
+       !JS::GetIsSecureContext(js::GetNonCCWObjectRealm(target)))) {
     ErrorResult error;
     error.ThrowDataCloneError("Interface is not exposed.");
     MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
@@ -512,12 +512,10 @@ JSObject* StructuredCloneHolder::ReadFullySerializableObjects(
     return nullptr;
   }
 
-  Maybe<std::pair<uint16_t, WebIDLDeserializer>> deserializer =
+  Maybe<std::tuple<uint16_t, bool, WebIDLDeserializer>> deserializer =
       LookupDeserializer(StructuredCloneTags(aTag));
   if (deserializer.isSome()) {
-    uint16_t exposedGlobals;
-    WebIDLDeserializer deserialize;
-    std::tie(exposedGlobals, deserialize) = deserializer.ref();
+    const auto& [exposedGlobals, secureContext, deserialize] = *deserializer;
 
     // https://html.spec.whatwg.org/multipage/structured-data.html#structureddeserialize
     //
@@ -530,7 +528,8 @@ JSObject* StructuredCloneHolder::ReadFullySerializableObjects(
     // The special-casing for IndexedDB is because it uses a sandbox to
     // deserialize, which means we don't actually have access to exposure
     // information.
-    if (!aIsForIndexedDB && !CheckExposedGlobals(aCx, global, exposedGlobals)) {
+    if (!aIsForIndexedDB &&
+        !CheckExposedGlobals(aCx, global, exposedGlobals, secureContext)) {
       return nullptr;
     }
 

@@ -11,6 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
@@ -254,6 +255,15 @@ class RecentlyClosedTabsTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1065439
+    @Converted(
+        replacedBy =
+            [
+                "org.mozilla.fenix.ui.efficiency.tests.RecentlyClosedTabsTest#deletingBrowserHistoryClearsRecentlyClosedTabsListTest"
+            ],
+        bug = 2086562,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun deletingBrowserHistoryClearsRecentlyClosedTabsListTest() {

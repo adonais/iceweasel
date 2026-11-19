@@ -504,6 +504,9 @@ async function testCustomizableSelect(inspector, view) {
 
   info("Test ::picker-icon for select element");
   await selectNode(selectNodeFront, inspector);
+  // A pending mutation can refresh the rule view while it is selecting the node,
+  // which makes it render empty until the refresh completes (Bug 2080325).
+  await waitFor(() => getRuleViewRule(view, "#customizable-select"));
   await checkRuleViewContent(view, [
     {
       header: "Pseudo-elements",

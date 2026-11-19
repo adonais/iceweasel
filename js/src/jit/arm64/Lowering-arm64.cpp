@@ -243,6 +243,12 @@ void LIRGeneratorARM64::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
   lowerForALU(ins, mir, lhs, rhs);
 }
 
+// A constant zero is stored from the zero register.
+bool LIRGeneratorARM64::canStoreConstantWithoutRegister(MDefinition* value) {
+  return value->isConstant() &&
+         (value->toConstant()->isInt32(0) || value->toConstant()->isInt64(0));
+}
+
 bool LIRGeneratorARM64::lowerForALUWithShiftedOperand(JSOp op,
                                                       MBinaryInstruction* mir,
                                                       MDefinition* lhs,

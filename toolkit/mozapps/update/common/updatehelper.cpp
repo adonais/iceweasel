@@ -24,7 +24,6 @@
 #  include "registrycertificates.h"
 #  include "uachelper.h"
 
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 #endif
 
@@ -298,7 +297,7 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
 
   // Get the service config information, in particular we want the binary
   // path of the service.
-  UniquePtr<char[]> serviceConfigBuffer = MakeUnique<char[]>(bytesNeeded);
+  auto serviceConfigBuffer = std::make_unique<char[]>(bytesNeeded);
   if (!QueryServiceConfigW(
           svc,
           reinterpret_cast<QUERY_SERVICE_CONFIGW*>(serviceConfigBuffer.get()),

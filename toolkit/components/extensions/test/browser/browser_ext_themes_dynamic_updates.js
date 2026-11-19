@@ -1,13 +1,5 @@
 "use strict";
 
-// Nova being enabled changes some of the styling that is being tested here.
-const novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true // If the pref isn't set to false, assume Nova styles are enabled by default.
-);
-
-info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
 // PNG image data for a simple red dot.
 const BACKGROUND_1 =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";

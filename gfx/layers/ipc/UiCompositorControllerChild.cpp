@@ -185,12 +185,12 @@ bool UiCompositorControllerChild::EnableLayerUpdateNotifications(
 }
 
 void UiCompositorControllerChild::Destroy() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   layers::SynchronousTask task("UiCompositorControllerChild::Destroy");
   GetUiThread()->Dispatch(NS_NewRunnableFunction(
       "layers::UiCompositorControllerChild::Destroy", [&]() {
-        MOZ_ASSERT(GetUiThread()->IsOnCurrentThread());
+        MOZ_RELEASE_ASSERT(GetUiThread()->IsOnCurrentThread());
         AutoCompleteTask complete(&task);
 
         // Clear the process token so that we don't notify the GPUProcessManager
@@ -299,7 +299,7 @@ UiCompositorControllerChild::UiCompositorControllerChild(
 UiCompositorControllerChild::~UiCompositorControllerChild() = default;
 
 void UiCompositorControllerChild::OpenForSameProcess() {
-  MOZ_ASSERT(GetUiThread()->IsOnCurrentThread());
+  MOZ_RELEASE_ASSERT(GetUiThread()->IsOnCurrentThread());
 
   mIsOpen = Open(mParent, mozilla::layers::CompositorThread(),
                  mozilla::ipc::ChildSide);
@@ -317,7 +317,7 @@ void UiCompositorControllerChild::OpenForSameProcess() {
 
 void UiCompositorControllerChild::OpenForGPUProcess(
     Endpoint<PUiCompositorControllerChild>&& aEndpoint) {
-  MOZ_ASSERT(GetUiThread()->IsOnCurrentThread());
+  MOZ_RELEASE_ASSERT(GetUiThread()->IsOnCurrentThread());
 
   mIsOpen = aEndpoint.Bind(this);
 
@@ -338,7 +338,7 @@ void UiCompositorControllerChild::OpenForGPUProcess(
 }
 
 void UiCompositorControllerChild::SendCachedValues() {
-  MOZ_ASSERT(mIsOpen);
+  MOZ_RELEASE_ASSERT(mIsOpen);
   if (mResize) {
     bool resumed;
     SendResumeAndResize(mResize.ref().x, mResize.ref().y, mResize.ref().width,
@@ -358,8 +358,8 @@ void UiCompositorControllerChild::SendCachedValues() {
 #ifdef MOZ_WIDGET_ANDROID
 void UiCompositorControllerChild::SetCompositorSurfaceManager(
     java::CompositorSurfaceManager::Param aCompositorSurfaceManager) {
-  MOZ_ASSERT(!mCompositorSurfaceManager,
-             "SetCompositorSurfaceManager must only be called once.");
+  MOZ_RELEASE_ASSERT(!mCompositorSurfaceManager,
+                     "SetCompositorSurfaceManager must only be called once.");
   mCompositorSurfaceManager = aCompositorSurfaceManager;
 };
 

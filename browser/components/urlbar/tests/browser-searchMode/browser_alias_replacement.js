@@ -20,6 +20,9 @@ let defaultEngine, aliasEngine;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.unifiedSearchButton.historyInSearchMode", false]],
+  });
+  await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
   defaultEngine = await SearchTestUtils.installOpenSearchEngine({

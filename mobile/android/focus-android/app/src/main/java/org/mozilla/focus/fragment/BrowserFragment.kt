@@ -424,7 +424,7 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
                     store = components.store,
                     sessionId = tabId,
                     fragmentManager = parentFragmentManager,
-                    launchInApp = { requireContext().settings.openLinksInExternalApp },
+                    launchInApp = { _ -> requireContext().settings.openLinksInExternalApp },
                     loadUrlUseCase = requireContext().components.sessionUseCases.loadUrl,
                     failedToLaunchAction = { fallbackUrl ->
                         fallbackUrl?.let {
@@ -449,7 +449,7 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
                     storage = components.topSitesStorage,
                     config = {
                         TopSitesConfig(
-                            totalSites = TOP_SITES_MAX_LIMIT,
+                            targetSitesCount = TOP_SITES_MAX_LIMIT,
                             frecencyConfig = null,
                             providerConfig = null,
                         )

@@ -9,6 +9,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.ImageView
 import androidx.preference.PreferenceViewHolder
+import mozilla.components.support.ktx.android.content.pixelSizeFor
 import org.mozilla.fenix.R
 
 class RadioButtonInfoPreference
@@ -20,6 +21,9 @@ constructor(
     private var infoClickListener: (() -> Unit)? = null
     private var infoView: ImageView? = null
     var contentDescription: String? = null
+
+    override val defaultRadioMarginStart: Int
+        get() = context.pixelSizeFor(R.dimen.radio_button_info_preference_horizontal)
 
     fun onInfoClickListener(listener: (() -> Unit)) {
         infoClickListener = listener

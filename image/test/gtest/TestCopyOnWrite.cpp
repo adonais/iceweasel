@@ -192,7 +192,7 @@ TEST(ImageCopyOnWrite, WriteRecursive)
 
             // Make sure Read() inside a Write() fails.
             cow.Read(
-                [](const Value* aValue) {
+                [](const Value* /*aValue*/) {
                   // This gets called if we can read. We shouldn't get here.
                   EXPECT_TRUE(false);
                 },
@@ -203,7 +203,7 @@ TEST(ImageCopyOnWrite, WriteRecursive)
 
             // Make sure Write() inside a Write() fails.
             cow.Write(
-                [](Value* aValue) {
+                [](Value* /*aValue*/) {
                   // This gets called if we can write. We shouldn't get here.
                   EXPECT_TRUE(false);
                 },

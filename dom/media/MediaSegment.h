@@ -119,7 +119,7 @@ class MediaSegment {
    * principal id than the current one.
    */
   void SetLastPrincipalHandle(PrincipalHandle aLastPrincipalHandle) {
-    mLastPrincipalHandle = std::forward<PrincipalHandle>(aLastPrincipalHandle);
+    mLastPrincipalHandle = std::move(aLastPrincipalHandle);
   }
 
   /**

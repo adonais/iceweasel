@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<body>
+<script>
+// 2079257.xsl copies the source element x-src into a result <iframe>.
+// Appending the pending iframe fires its load event synchronously, while the
+// copy of x-src is still being started. The handler (hit) reuses the source
+// element through a custom element constructor so that its prefix changes,
+// then collects atoms, so the copy must keep the prefix atom alive itself.
+let source, reuse;
+customElements.define("x-src", class extends HTMLElement {
+  constructor() {
+    if (reuse) {
+      const element = reuse;
+      reuse = null;
+      return element;
+    }
+    super();
+  }
+});
+window.hit = function () {
+  const root = source.parentNode.parentNode;
+  source.remove();
+  source.replaceChildren();
+  root.removeAttribute("xmlns:zzqq");
+  document.adoptNode(source);
+  reuse = source;
+  document.createElementNS("http://www.w3.org/1999/xhtml", "q:x-src");
+  SpecialPowers.forceGC();
+  SpecialPowers.forceCC();
+  const scratch = document.createElement("div");
+  for (let i = 0; i < 12000; i++) {
+    scratch.setAttribute("k" + i, "");
+    scratch.removeAttribute("k" + i);
+  }
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", "2079257.xsl", false);
+  xhr.send();
+  document.documentElement.removeAttribute("class");
+};
+const frame = document.createElement("iframe");
+frame.src = "2079257.xml";
+document.body.appendChild(frame);
+frame.contentWindow.customElements.define("x-src",
+  class extends frame.contentWindow.HTMLElement {
+    constructor() {
+      super();
+      source = this;
+    }
+  });
+</script>
+</body>
+</html>

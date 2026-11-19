@@ -30,6 +30,10 @@ class SdpMediaSectionImpl : public SdpMediaSection {
   MediaTypeInfo GetMediaTypeInfo() const override final {
     return mMediaTypeInfo;
   }
+  void SetUnknownFormatString(const std::string& formatString) override final {
+    MOZ_ASSERT(mMediaTypeInfo.type == kUnknown);
+    mMediaTypeInfo.unknown->formatString = formatString;
+  }
 
   unsigned int GetPort() const override final;
   void SetPort(const unsigned int port) override final;

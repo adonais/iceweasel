@@ -13,16 +13,17 @@ transforms:
 
 kind-dependencies:
     - toolchain
-    - build-fat-aar
+    - build
 
 
 task-defaults:
+    use-gradle-cache: true
     attributes:
         build_platform: android
         build-type: debug
         retrigger: true
     dependencies:
-        build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
+        geckoview: build-android-aarch64/opt
     fetches:
         toolchain:
             - android-sdk-linux
@@ -30,7 +31,7 @@ task-defaults:
             - linux64-nimbus-fml
             - android-gradle-dependencies
             - linux64-jdk
-        build-fat-aar:
+        geckoview:
             - target.maven.zip
     run:
         # TODO Generate APKs in a build task instead

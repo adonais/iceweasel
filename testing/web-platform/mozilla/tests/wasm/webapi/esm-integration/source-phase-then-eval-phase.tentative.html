@@ -1,0 +1,21 @@
+<!doctype html>
+<title>Evaluation phase import of a module already imported at source phase</title>
+
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script type=module>
+import source mod from "./resources/empty.wasm";
+
+test(() => {
+  assert_true(mod instanceof WebAssembly.Module,
+    "source phase import produces a WebAssembly.Module");
+}, "Source phase import of wasm module");
+
+promise_test(async () => {
+  const namespace = await import("./resources/empty.wasm");
+  assert_equals(namespace[Symbol.toStringTag], "Module",
+    "evaluation phase import produces a module namespace");
+  assert_not_equals(namespace, mod,
+    "the namespace is distinct from the source phase module");
+}, "Evaluation phase import after source phase import of wasm module");
+</script>

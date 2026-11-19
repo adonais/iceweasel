@@ -56,7 +56,7 @@ inline ServoStyleSet& Document::EnsureStyleSet() const {
   MOZ_ASSERT(NS_IsMainThread());
   if (!mStyleSet) {
     Document* doc = const_cast<Document*>(this);
-    doc->mStyleSet = MakeUnique<ServoStyleSet>(*doc);
+    doc->mStyleSet = std::make_unique<ServoStyleSet>(*doc);
   }
   return *(mStyleSet.get());
 }

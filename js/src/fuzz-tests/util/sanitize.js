@@ -57,7 +57,6 @@ function sanitizeGlobal(g) {
     deterministicgc: function () { },
     fullcompartmentchecks: function () { },
     setIonCheckGraphCoherency: function () { },
-    enableShellAllocationMetadataBuilder: function () { },
     options: function () { return "tracejit,methodjit,typeinfer"; },
     setJitCompilerOption: function () { },
     clearLastWarning: function () { },
@@ -87,6 +86,8 @@ function sanitizeGlobal(g) {
     ignoreUnhandledRejections: function () { },
     enableTrackAllocations: function () { },
     disableTrackAllocations: function () { },
+    startRecordingAllocations: function () { },
+    stopRecordingAllocations: function () { return []; },
     setTestFilenameValidationCallback: function () { },
   };
 

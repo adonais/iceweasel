@@ -876,7 +876,7 @@ RefPtr<Int64Promise> FileSystemWritableFileStream::WriteImpl(
           *written += static_cast<int64_t>(aDelta);
         };
 
-        auto promiseHolder = MakeUnique<MozPromiseHolder<Int64Promise>>();
+        auto promiseHolder = std::make_unique<MozPromiseHolder<Int64Promise>>();
         RefPtr<Int64Promise> promise = promiseHolder->Ensure(__func__);
 
         auto writingCompletion =

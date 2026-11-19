@@ -25,6 +25,7 @@ import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.feature.contextmenu.R as contextMenuR
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.mozilla.fenix.Config
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -35,6 +36,7 @@ import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.ext.waitNotNull
+import org.mozilla.fenix.ui.efficiency.core.WaitPolicy
 import org.mozilla.fenix.ui.efficiency.core.driveUntil
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
@@ -327,6 +329,18 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
         return this
     }
 
+    fun clickDownloadPDFButton(): BrowserPage {
+        // Bug 2081247 to switch to new toolbar for testing
+        if (Config.channel.isNightlyOrDebug) {
+            mozClick(BrowserPageSelectors.PDF_TOOLS_DOWNLOAD_BUTTON, WaitPolicy.Poll(waitingTime))
+            verifyDownloadPrompt()
+            clickDownloadPromptConfirmButton()
+        } else {
+            mozClick(BrowserPageSelectors.PDF_DOWNLOAD_BUTTON)
+        }
+        return this
+    }
+
     /**
      * Assert the "Download completed" snackbar for [fileName] — the completion text, the "Open" action (tag and label)
      * and the file name itself, as legacy verifyDownloadCompleteSnackbar did.
@@ -495,9 +509,17 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
         return this
     }
 
-    /** Click a context-menu item (by content description) from the long-pressed display-mode toolbar. */
-    fun clickDisplayModeToolbarContextMenuItem(contentDescription: String): BrowserPage {
-        mozClick(ToolbarSelectors.DISPLAY_MODE_TOOLBAR_MENU_ITEM(contentDescription))
+    /**
+     * Load [url] by typing into the display-toolbar edit field directly, for use right after a display-mode "Copy"
+     * (which leaves navigateToPage's engineView readiness gate unavailable for ~10s). Mirrors the legacy
+     * enterURLAndEnterToBrowser.
+     */
+    fun loadUrlFromToolbar(url: String): BrowserPage {
+        mozClick(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR2)
+        // mozClear is Immediate, so wait for edit mode before clearing.
+        mozVerify(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE, timeout = waitingTime)
+        mozClearAndEnterText(url, SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
+        mozPressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
         return this
     }
 

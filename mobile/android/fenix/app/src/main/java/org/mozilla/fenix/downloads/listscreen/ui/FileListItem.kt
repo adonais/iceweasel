@@ -278,7 +278,7 @@ private fun AfterListItemAction(
             Modifier.size(24.dp).testTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM_MENU}.${fileItem.fileName}"),
     ) {
         Icon(
-            painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_more_vertical_round_24),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurface,
         )

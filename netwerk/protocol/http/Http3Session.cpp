@@ -121,7 +121,10 @@ nsresult Http3Session::Init(nsHttpConnectionInfo* aConnInfo,
   bool isOuterConnection = false;
   if (!aIsTunnel) {
     if (auto* proxyInfo = aConnInfo->ProxyInfo()) {
-      isOuterConnection = proxyInfo->IsHttp3Proxy();
+      // MASQUE, or an HTTPS CONNECT proxy reached over HTTP/3 via its HTTPS RR.
+      isOuterConnection =
+          proxyInfo->IsHttp3Proxy() ||
+          (aConnInfo->UsingHttpsProxy() && aConnInfo->UsingConnect());
     }
   }
 
@@ -132,8 +135,16 @@ nsresult Http3Session::Init(nsHttpConnectionInfo* aConnInfo,
       isOuterConnection ? aConnInfo->ProxyInfo()->Port()
                         : aConnInfo->OriginPort(),
       aProviderFlags, aConnInfo->GetOriginAttributes(), this);
-  const nsCString& alpn = isOuterConnection ? aConnInfo->GetProxyNPNToken()
-                                            : aConnInfo->GetNPNToken();
+  // An HTTPS proxy has no proxy NPN token; default the outer ALPN to "h3".
+  nsAutoCString alpn;
+  if (isOuterConnection) {
+    alpn = aConnInfo->GetProxyNPNToken();
+    if (alpn.IsEmpty()) {
+      alpn.AssignLiteral("h3");
+    }
+  } else {
+    alpn = aConnInfo->GetNPNToken();
+  }
 
   NetAddr selfAddr;
   MOZ_ALWAYS_SUCCEEDS(aSelfAddr->GetNetAddr(&selfAddr));
@@ -229,7 +240,7 @@ nsresult Http3Session::Init(nsHttpConnectionInfo* aConnInfo,
         mConnInfo->EndToEndSSL(), !mConnInfo->GetEchConfig().IsEmpty(),
         mConnInfo->IsHttp3());
     gHttpHandler->ObserveHttpActivityWithArgs(
-        activity, NS_ACTIVITY_TYPE_HTTP_CONNECTION,
+        HttpActivityArgs(activity), NS_ACTIVITY_TYPE_HTTP_CONNECTION,
         NS_HTTP_ACTIVITY_SUBTYPE_ECH_SET, PR_Now(), 0, ""_ns);
   } else {
     mEchExtensionStatus = EchExtensionStatus::kNotPresent;
@@ -1706,6 +1717,9 @@ nsresult Http3Session::TryActivating(
     }
     rv = mHttp3Connection->CreateWebTransport(aAuthorityHeader, aPathQuery,
                                               aHeaders, aStreamId);
+    if (NS_SUCCEEDED(rv)) {
+      ApplyAnticipatedWebTransportStreams(aStream, *aStreamId);
+    }
   }
 
   if (NS_FAILED(rv)) {
@@ -1752,6 +1766,25 @@ nsresult Http3Session::TryActivating(
   mTransactionCount++;
 
   return NS_OK;
+}
+
+void Http3Session::ApplyAnticipatedWebTransportStreams(Http3StreamBase* aStream,
+                                                       uint64_t aSessionId) {
+  nsHttpTransaction* trans = aStream->Transaction()->QueryHttpTransaction();
+  if (!trans) {
+    return;
+  }
+  uint16_t uni = 0;
+  uint16_t bidi = 0;
+  trans->GetWebTransportAnticipatedStreams(&uni, &bidi);
+  if (uni > 0) {
+    SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+        aSessionId, uni);
+  }
+  if (bidi > 0) {
+    SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(aSessionId,
+                                                                     bidi);
+  }
 }
 
 // This is called by Http3WebTransportStream::OnReadSegment.
@@ -3282,6 +3315,39 @@ nsresult Http3Session::GetWebTransportSessionProtocol(uint64_t aSessionId,
   return mHttp3Connection->GetWebTransportSessionProtocol(aSessionId,
                                                           aProtocol);
 }
+
+void Http3Session::
+    SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+        uint64_t aSessionId, uint16_t aValue) {
+  LOG(
+      ("Http3Session::SetWebTransportAnticipatedConcurrentIncoming"
+       "UnidirectionalStreams %p sessionId=0x%" PRIx64 " value=%u",
+       this, aSessionId, aValue));
+  nsresult rv =
+      mHttp3Connection
+          ->SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+              aSessionId, aValue);
+  if (NS_FAILED(rv)) {
+    LOG(("  failed, no live WebTransport session for that id"));
+  }
+}
+
+void Http3Session::
+    SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(
+        uint64_t aSessionId, uint16_t aValue) {
+  LOG(
+      ("Http3Session::SetWebTransportAnticipatedConcurrentIncoming"
+       "BidirectionalStreams %p sessionId=0x%" PRIx64 " value=%u",
+       this, aSessionId, aValue));
+  nsresult rv =
+      mHttp3Connection
+          ->SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(
+              aSessionId, aValue);
+  if (NS_FAILED(rv)) {
+    LOG(("  failed, no live WebTransport session for that id"));
+  }
+}
+
 void Http3Session::SendHTTPDatagram(uint64_t aStreamId,
                                     nsTArray<uint8_t>& aData,
                                     uint64_t aTrackingId) {

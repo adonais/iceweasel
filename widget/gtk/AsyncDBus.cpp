@@ -159,7 +159,7 @@ struct PortalResponseData {
 guint OnDBusPortalResponse(GDBusProxy* aProxy, const nsCString& aRequestToken,
                            PortalResponseListener aCallback) {
   nsAppShell::DBusConnectionCheck();
-  auto boxedData = MakeUnique<PortalResponseData>(std::move(aCallback));
+  auto boxedData = std::make_unique<PortalResponseData>(std::move(aCallback));
 
   nsAutoCString requestPath;
   GetPortalRequestPath(aProxy, aRequestToken, requestPath);

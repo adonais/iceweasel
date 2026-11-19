@@ -202,7 +202,7 @@ const FORM_AUTOFILL_CONFIG = {
         items: [
           {
             id: "requireOSAuthForPayments",
-            l10nId: "autofill-reauth-payment-methods-checkbox-2",
+            l10nId: "autofill-payment-methods-require-device-sign-in-checkbox",
             supportPage:
               "credit-card-autofill#w_require-authentication-for-autofill",
           },
@@ -409,6 +409,9 @@ Preferences.addSetting({
   id: "saveSecurityCodes",
   pref: ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
   visible: () => FormAutofill.isAutofillCreditCardCVVSupported,
+  onUserChange(enabled) {
+    lazy.FormAutofillPreferences.recordCvvSavingToggled(enabled, "settings");
+  },
 });
 
 Preferences.addSetting({

@@ -66,7 +66,11 @@ add_setup(async function read_real_config_records() {
     record =>
       !record.kind &&
       record.feature === MODEL_FEATURES.TITLE_GENERATION &&
-      record.is_default
+      record.is_default &&
+      checkMajorVersion(
+        record.version,
+        FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.TITLE_GENERATION]
+      )
   );
 
   const memoriesFeature = MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM;

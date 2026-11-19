@@ -963,7 +963,15 @@ class MarkupView extends EventEmitter {
 
   update() {
     const updateChildren = node => {
-      this.getContainer(node).update();
+      const container = this.getContainer(node);
+      // `updateChildren` can be called with nodeFronts for which we don't have a container:
+      // `treeChildren` returns children node fronts that were already fetched from the
+      // client, which can be done from places outside of the markup view (e.g. the Compatibility
+      // panel fetches all the node fronts on the page).
+      if (!container) {
+        return;
+      }
+      container.update();
       for (const child of node.treeChildren()) {
         updateChildren(child);
       }

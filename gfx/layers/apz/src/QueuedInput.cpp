@@ -13,26 +13,26 @@ namespace mozilla {
 namespace layers {
 
 QueuedInput::QueuedInput(const MultiTouchInput& aInput, TouchBlockState& aBlock)
-    : mInput(MakeUnique<MultiTouchInput>(aInput)), mBlock(&aBlock) {}
+    : mInput(std::make_unique<MultiTouchInput>(aInput)), mBlock(&aBlock) {}
 
 QueuedInput::QueuedInput(const ScrollWheelInput& aInput,
                          WheelBlockState& aBlock)
-    : mInput(MakeUnique<ScrollWheelInput>(aInput)), mBlock(&aBlock) {}
+    : mInput(std::make_unique<ScrollWheelInput>(aInput)), mBlock(&aBlock) {}
 
 QueuedInput::QueuedInput(const MouseInput& aInput, DragBlockState& aBlock)
-    : mInput(MakeUnique<MouseInput>(aInput)), mBlock(&aBlock) {}
+    : mInput(std::make_unique<MouseInput>(aInput)), mBlock(&aBlock) {}
 
 QueuedInput::QueuedInput(const PanGestureInput& aInput,
                          PanGestureBlockState& aBlock)
-    : mInput(MakeUnique<PanGestureInput>(aInput)), mBlock(&aBlock) {}
+    : mInput(std::make_unique<PanGestureInput>(aInput)), mBlock(&aBlock) {}
 
 QueuedInput::QueuedInput(const PinchGestureInput& aInput,
                          PinchGestureBlockState& aBlock)
-    : mInput(MakeUnique<PinchGestureInput>(aInput)), mBlock(&aBlock) {}
+    : mInput(std::make_unique<PinchGestureInput>(aInput)), mBlock(&aBlock) {}
 
 QueuedInput::QueuedInput(const KeyboardInput& aInput,
                          KeyboardBlockState& aBlock)
-    : mInput(MakeUnique<KeyboardInput>(aInput)), mBlock(&aBlock) {}
+    : mInput(std::make_unique<KeyboardInput>(aInput)), mBlock(&aBlock) {}
 
 InputData* QueuedInput::Input() { return mInput.get(); }
 

@@ -18,6 +18,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/buffer.h"
@@ -30,6 +31,7 @@ namespace webrtc {
 
 class RTC_EXPORT CopyOnWriteBuffer {
  public:
+  using value_type = uint8_t;
   using const_iterator = std::span<const uint8_t>::iterator;
 
   // An empty buffer.
@@ -56,20 +58,26 @@ class RTC_EXPORT CopyOnWriteBuffer {
   explicit CopyOnWriteBuffer(size_t size);
   CopyOnWriteBuffer(size_t size, size_t capacity);
 
+  explicit CopyOnWriteBuffer(std::span<const uint8_t> data);
+  CopyOnWriteBuffer(std::span<const uint8_t> data, size_t capacity);
+
   // Construct a buffer and copy the specified number of bytes into it. The
   // source array may be (const) uint8_t*, int8_t*, or char*.
   template <typename T,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  ABSL_DEPRECATE_AND_INLINE()
   CopyOnWriteBuffer(const T* data, size_t size)
-      : CopyOnWriteBuffer(data, size, size) {}
+      : CopyOnWriteBuffer(
+            std::span(reinterpret_cast<const uint8_t*>(data), size)) {}
   template <typename T,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  ABSL_DEPRECATE_AND_INLINE()
   CopyOnWriteBuffer(const T* data, size_t size, size_t capacity)
-      : CopyOnWriteBuffer(size, capacity) {
-    SetData(data, size);
-  }
+      : CopyOnWriteBuffer(
+            std::span(reinterpret_cast<const uint8_t*>(data), size),
+            capacity) {}
 
   // Construct a buffer from the contents of an array.
   template <typename T,
@@ -77,7 +85,7 @@ class RTC_EXPORT CopyOnWriteBuffer {
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
   CopyOnWriteBuffer(const T (&array)[N])  // NOLINT: runtime/explicit
-      : CopyOnWriteBuffer(array, N) {}
+      : CopyOnWriteBuffer(std::span(array)) {}
 
   // Construct a buffer from a vector like type.
   template <typename VecT,
@@ -88,7 +96,8 @@ class RTC_EXPORT CopyOnWriteBuffer {
                 HasDataAndSize<VecT, ElemT>::value &&
                 internal::BufferCompat<uint8_t, ElemT>::value>* = nullptr>
   explicit CopyOnWriteBuffer(const VecT& v)
-      : CopyOnWriteBuffer(v.data(), v.size()) {}
+      : CopyOnWriteBuffer(
+            std::span(reinterpret_cast<const uint8_t*>(v.data()), v.size())) {}
 
   // Construct a buffer from a vector like type and a capacity argument
   template <typename VecT,
@@ -112,8 +121,14 @@ class RTC_EXPORT CopyOnWriteBuffer {
     return cdata<T>();
   }
 
+  // Returns writable span of size `size()`. This will create a copy of the
+  // underlying data if it is shared with other buffers.
+  std::span<uint8_t> AsMutableSpan();
+
   // Get writable pointer to the data. This will create a copy of the underlying
   // data if it is shared with other buffers.
+  // TODO(bugs.webrtc.org/478086887): Deprecate after migrating all usages in
+  // webrtc to a safer `AsMutableSpan`.
   template <typename T = uint8_t,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
@@ -157,11 +172,20 @@ class RTC_EXPORT CopyOnWriteBuffer {
     return AsConstSpan()[index];
   }
 
+  // Replaces the content of the buffer with `data`.
+  // This function doesn't decrease the capacity.
+  void Set(std::span<const uint8_t> data);
+
+  // Appends `data` to the buffer.
+  // This function doesn't decrease the capacity.
+  void Append(std::span<const uint8_t> data);
+
   // Replace the contents of the buffer. Accepts the same types as the
   // constructors.
   template <typename T,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  ABSL_DEPRECATE_AND_INLINE()
   void SetData(const T* data, size_t size) {
     Set(std::span(reinterpret_cast<const uint8_t*>(data), size));
   }
@@ -170,16 +194,16 @@ class RTC_EXPORT CopyOnWriteBuffer {
             size_t N,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  ABSL_DEPRECATE_AND_INLINE()
   void SetData(const T (&array)[N]) {
-    SetData(array, N);
+    Set(std::span(reinterpret_cast<const uint8_t*>(std::data(array)), N));
   }
-
-  void SetData(const CopyOnWriteBuffer& buf) { *this = buf; }
 
   // Append data to the buffer. Accepts the same types as the constructors.
   template <typename T,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  ABSL_DEPRECATE_AND_INLINE()
   void AppendData(const T* data, size_t size) {
     Append(std::span(reinterpret_cast<const uint8_t*>(data), size));
   }
@@ -188,8 +212,9 @@ class RTC_EXPORT CopyOnWriteBuffer {
             size_t N,
             typename std::enable_if<
                 internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
+  ABSL_DEPRECATE_AND_INLINE()
   void AppendData(const T (&array)[N]) {
-    AppendData(array, N);
+    Append(std::span(reinterpret_cast<const uint8_t*>(std::data(array)), N));
   }
 
   template <typename VecT,
@@ -198,8 +223,10 @@ class RTC_EXPORT CopyOnWriteBuffer {
             typename std::enable_if_t<
                 HasDataAndSize<VecT, ElemT>::value &&
                 internal::BufferCompat<uint8_t, ElemT>::value>* = nullptr>
+  ABSL_DEPRECATE_AND_INLINE()
   void AppendData(const VecT& v) {
-    AppendData(v.data(), v.size());
+    Append(std::span(reinterpret_cast<const uint8_t*>(std::data(v)),
+                     std::size(v)));
   }
 
   // Sets the size of the buffer. If the new size is smaller than the old, the
@@ -257,9 +284,6 @@ class RTC_EXPORT CopyOnWriteBuffer {
     return buffer_->data().subspan(offset_, size_);
   }
 
-  void Set(std::span<const uint8_t> buffer);
-  void Append(std::span<const uint8_t> buffer);
-
   // Create a copy of the underlying data if it is referenced from other Buffer
   // objects or there is not enough capacity.
   void UnshareAndEnsureCapacity(size_t new_capacity);
@@ -281,6 +305,22 @@ class RTC_EXPORT CopyOnWriteBuffer {
   size_t size_;    // Size of a current slice in the original data in buffer_.
                    // Should be 0 if the buffer_ is empty.
 };
+
+//------------------------------------------------------------------------------
+// Implementation details follow
+//------------------------------------------------------------------------------
+
+inline CopyOnWriteBuffer::CopyOnWriteBuffer(std::span<const uint8_t> data)
+    : CopyOnWriteBuffer(data, data.size()) {}
+
+inline std::span<uint8_t> CopyOnWriteBuffer::AsMutableSpan() {
+  RTC_DCHECK(IsConsistent());
+  if (empty()) {
+    return {};
+  }
+  UnshareAndEnsureCapacity(capacity());
+  return buffer_->data().subspan(offset_, size_);
+}
 
 }  //  namespace webrtc
 

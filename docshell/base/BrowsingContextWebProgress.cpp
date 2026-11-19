@@ -83,7 +83,7 @@ BrowsingContext* BrowsingContextWebProgress::GetBrowsingContext() {
 }
 
 NS_IMETHODIMP BrowsingContextWebProgress::GetDOMWindow(
-    mozIDOMWindowProxy** aDOMWindow) {
+    mozIDOMWindowProxy** /*aDOMWindow*/) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
@@ -103,11 +103,13 @@ NS_IMETHODIMP BrowsingContextWebProgress::GetLoadType(uint32_t* aLoadType) {
   return NS_OK;
 }
 
-NS_IMETHODIMP BrowsingContextWebProgress::GetTarget(nsIEventTarget** aTarget) {
+NS_IMETHODIMP BrowsingContextWebProgress::GetTarget(
+    nsIEventTarget** /*aTarget*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP BrowsingContextWebProgress::SetTarget(nsIEventTarget* aTarget) {
+NS_IMETHODIMP BrowsingContextWebProgress::SetTarget(
+    nsIEventTarget* /*aTarget*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

@@ -310,9 +310,10 @@ inline EvalSharedContext* SharedContext::asEvalContext() {
 
 enum class HasHeritage { No, Yes };
 
-struct InlinedZeroField {
+struct InlinedField {
   TaggedParserAtomIndex name;
   bool isPrivate;
+  double initialValue;
 };
 
 class SuspendableContext : public SharedContext {
@@ -385,8 +386,8 @@ class FunctionBox : public SuspendableContext {
   // copy.
   MemberInitializers memberInitializers_ = MemberInitializers::Invalid();
 
-  // See: MemberInitializers::hasInlinedZeroFields
-  mozilla::Span<const InlinedZeroField> inlinedZeroFields_;
+  // See: MemberInitializers::hasInlinedFields
+  mozilla::Span<const InlinedField> inlinedFields_;
 
  public:
   // True if bytecode will be emitted for this function in the current
@@ -687,11 +688,11 @@ class FunctionBox : public SuspendableContext {
     }
   }
 
-  mozilla::Span<const InlinedZeroField> inlinedZeroFields() const {
-    return inlinedZeroFields_;
+  mozilla::Span<const InlinedField> inlinedFields() const {
+    return inlinedFields_;
   }
-  void setInlinedZeroFields(mozilla::Span<const InlinedZeroField> fields) {
-    inlinedZeroFields_ = fields;
+  void setInlinedFields(mozilla::Span<const InlinedField> fields) {
+    inlinedFields_ = fields;
   }
 
   ScriptIndex index() const { return funcDataIndex_; }

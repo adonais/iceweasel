@@ -10,6 +10,7 @@
 #include "RenderThread.h"
 #include "gfxConfig.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/Effects.h"
 #include "mozilla/layers/TextureD3D11.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
@@ -58,9 +59,20 @@ UniquePtr<RenderCompositor> RenderCompositorD3D11SWGL::Create(
   if (!compositor->Initialize(&log)) {
     gfxCriticalNote << "Failed to initialize CompositorD3D11 for SWGL: "
                     << log.get();
+    // If the device was removed, recover through the device reset. Otherwise,
+    // stop allowing D3D11 compositing with SWGL so that everything else, e.g.
+    // video decoders, knows that this window will use plain SWGL instead.
+    gfx::DeviceResetReason reason;
+    if (gfx::DeviceManagerDx::Get()->HasDeviceReset(&reason)) {
+      RenderThread::Get()->HandleDeviceReset(
+          gfx::DeviceResetDetectPlace::WR_CREATE_COMPOSITOR, reason);
+    } else {
+      RenderThread::Get()->NotifyWebRenderError(WebRenderError::SOFTWARE_D3D11);
+    }
+    wr_swgl_destroy_context(ctx);
     return nullptr;
   }
-  return MakeUnique<RenderCompositorD3D11SWGL>(compositor, aWidget, ctx);
+  return std::make_unique<RenderCompositorD3D11SWGL>(compositor, aWidget, ctx);
 }
 
 RenderCompositorD3D11SWGL::RenderCompositorD3D11SWGL(
@@ -164,7 +176,7 @@ gfx::DeviceResetReason RenderCompositorD3D11SWGL::IsContextLost(bool aForce) {
 UniquePtr<RenderCompositorLayersSWGL::Surface>
 RenderCompositorD3D11SWGL::DoCreateSurface(wr::DeviceIntSize aTileSize,
                                            bool aIsOpaque) {
-  return MakeUnique<SurfaceD3D11SWGL>(aTileSize, aIsOpaque);
+  return std::make_unique<SurfaceD3D11SWGL>(aTileSize, aIsOpaque);
 }
 
 SurfaceD3D11SWGL::SurfaceD3D11SWGL(wr::DeviceIntSize aTileSize, bool aIsOpaque)
@@ -421,7 +433,7 @@ RenderCompositorD3D11SWGL::DoCreateTile(Surface* aSurface) {
         new DataTextureSourceD3D11(gfx::SurfaceFormat::B8G8R8A8, mCompositor,
                                    layers::TextureFlags::NO_FLAGS);
     RefPtr<gfx::DataSourceSurface> surf = CreateStagingSurface(tileSize);
-    return MakeUnique<TileD3D11>(source, nullptr, surf, aSurface, this);
+    return std::make_unique<TileD3D11>(source, nullptr, surf, aSurface, this);
   }
 
   MOZ_ASSERT(mUploadMode == Upload_Staging ||
@@ -438,14 +450,16 @@ RenderCompositorD3D11SWGL::DoCreateTile(Surface* aSurface) {
   if (!texture) {
     gfxCriticalNote << "Failed to allocate Texture2D: " << aSurface->TileSize();
     RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-    return MakeUnique<TileD3D11>(nullptr, nullptr, nullptr, aSurface, this);
+    return std::make_unique<TileD3D11>(nullptr, nullptr, nullptr, aSurface,
+                                       this);
   }
 
   RefPtr<DataTextureSourceD3D11> source = new DataTextureSourceD3D11(
       GetDevice(), gfx::SurfaceFormat::B8G8R8A8, texture);
 
   RefPtr<ID3D11Texture2D> cpuTexture = CreateStagingTexture(tileSize);
-  return MakeUnique<TileD3D11>(source, cpuTexture, nullptr, aSurface, this);
+  return std::make_unique<TileD3D11>(source, cpuTexture, nullptr, aSurface,
+                                     this);
 }
 
 bool RenderCompositorD3D11SWGL::MaybeReadback(

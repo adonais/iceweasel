@@ -105,19 +105,19 @@ class Buffer final {
    * Construct a buffer of requested length.
    *
    * The contents will be initialized or uninitialized according
-   * to the behavior of mozilla::MakeUnique<T[]>(aLength) for T.
+   * to the behavior of std::make_unique<T[]>(aLength) for T.
    *
    * Allocates the internal buffer infallibly. Use Alloc for fallible
    * allocation.
    */
   explicit Buffer(size_t aLength)
-      : mData(mozilla::MakeUnique<T[]>(aLength)), mLength(aLength) {}
+      : mData(std::make_unique<T[]>(aLength)), mLength(aLength) {}
 
   /**
    * Create a new Buffer with an internal buffer of requested length.
    *
    * The contents will be initialized or uninitialized according to the
-   * behavior of mozilla::MakeUnique<T[]>(aLength) for T.
+   * behavior of std::make_unique<T[]>(aLength) for T.
    *
    * Allocates the internal buffer fallibly.
    */

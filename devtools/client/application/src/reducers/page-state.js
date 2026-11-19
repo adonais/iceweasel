@@ -6,12 +6,14 @@
 
 const {
   UPDATE_DOMAIN,
+  UPDATE_PREFETCH_STATUS,
 } = require("resource://devtools/client/application/src/constants.js");
 
 function PageState() {
   return {
     // Domain
     domain: null,
+    activatedFromNavigationalPrefetch: null,
   };
 }
 
@@ -24,9 +26,17 @@ function pageReducer(state = PageState(), action) {
     case UPDATE_DOMAIN: {
       const { url } = action;
       return {
+        ...state,
         domain: getDomainFromUrl(url),
       };
     }
+
+    case UPDATE_PREFETCH_STATUS:
+      return {
+        ...state,
+        activatedFromNavigationalPrefetch:
+          action.activatedFromNavigationalPrefetch ?? null,
+      };
 
     default:
       return state;

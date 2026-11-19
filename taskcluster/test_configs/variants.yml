@@ -211,12 +211,15 @@ geckoview-isolated-process:
             extra-options:
                 - "--enable-isolated-process"
                 # The Java MediaCodec decoders are unavailable in an isolated process,
-                # so decode and encode with the MediaCodec NDK via ffmpeg in RDD.
+                # so decode and encode with the MediaCodec NDK via ffmpeg in the GPU
+                # process, or in RDD if the GPU process is disabled.
                 - "--setpref=media.android-media-codec.enabled=false"
                 - "--setpref=media.android-media-codec.preferred=false"
                 - "--setpref=media.ffmpeg.encoder.enabled=true"
                 - "--setpref=media.ffvpx-hw.enabled=true"
                 - "--setpref=media.gmp.android.isolated-process=true"
+                - "--setpref=media.gpu-process-decoder=true"
+                - "--setpref=media.gpu-process-encoder=true"
                 - "--setpref=media.rdd-ffvpx.enabled=true"
                 - "--setpref=media.rdd-opus.enabled=true"
                 - "--setpref=media.rdd-process.enabled=true"
@@ -224,6 +227,34 @@ geckoview-isolated-process:
                 - "--setpref=media.rdd-vpx.enabled=true"
                 - "--setpref=media.rdd-wav.enabled=true"
                 - "--setpref=media.use-remote-encoder.video.platform=true"
+
+geckoview-java-media:
+    description: "{description} with the Java MediaCodec pipeline"
+    component: "Core::Audio/Video: Playback"
+    expiration: "2027-06-01"
+    when:
+        <<: *gv_e10s_filter
+    suffix: "java-media"
+    treeherder-suffix: "java"
+    merge:
+        mozharness:
+            extra-options:
+                # Nightly decodes and encodes with the MediaCodec NDK via ffmpeg in
+                # the RDD/GPU processes, but release still uses the Java MediaCodec
+                # pipeline. Restore the release values until the NDK path ships.
+                - "--setpref=media.android-media-codec.enabled=true"
+                - "--setpref=media.android-media-codec.preferred=true"
+                - "--setpref=media.ffmpeg.encoder.enabled=false"
+                - "--setpref=media.ffvpx-hw.enabled=false"
+                - "--setpref=media.gpu-process-decoder=false"
+                - "--setpref=media.gpu-process-encoder=false"
+                - "--setpref=media.rdd-ffvpx.enabled=false"
+                - "--setpref=media.rdd-opus.enabled=false"
+                - "--setpref=media.rdd-process.enabled=false"
+                - "--setpref=media.rdd-vorbis.enabled=false"
+                - "--setpref=media.rdd-vpx.enabled=false"
+                - "--setpref=media.rdd-wav.enabled=false"
+                - "--setpref=media.use-remote-encoder.video.platform=false"
 
 no-fission:
     description: "{description} without fission enabled"
@@ -298,20 +329,6 @@ conditioned_profile:
         mozharness:
             extra-options:
                 - "--conditioned-profile"
-
-socketprocess:
-    description: "{description} with socket process enabled"
-    component: "Core::Networking"
-    expiration: "2027-06-01"
-    suffix: "spi"
-    mozinfo: "socketprocess_e10s"
-    when:
-        $eval: '"mochitest-media" in task["try-name"]'
-    merge:
-        mozharness:
-            extra-options:
-                - "--setpref=media.peerconnection.mtransport_process=true"
-                - "--setpref=network.process.enabled=true"
 
 # -
 # Webrender DComp variants for Win10

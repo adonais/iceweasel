@@ -150,8 +150,7 @@ static void RemoveAllRegistryEntries() {
   // The length that RegQueryInfoKeyW returns is without a terminator.
   maxValueNameLen += 1;
 
-  mozilla::UniquePtr<wchar_t[]> valueName =
-      mozilla::MakeUnique<wchar_t[]>(maxValueNameLen);
+  auto valueName = std::make_unique<wchar_t[]>(maxValueNameLen);
 
   DWORD valueIndex = 0;
   // Set this to true if we encounter values in this key that are prefixed with

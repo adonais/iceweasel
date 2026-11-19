@@ -10,6 +10,7 @@
 #include "modules/congestion_controller/scream/scream_v2.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "api/environment/environment.h"
 #include "api/transport/ecn_marking.h"
@@ -235,24 +236,58 @@ TEST(ScreamV2Test, CalculatesL4sAlpha) {
   Timestamp start_time = clock.CurrentTime();
   TimeDelta feedback_interval = TimeDelta::Millis(25);
 
-  TransportPacketsFeedback feedback =
-      CreateFeedback(clock.CurrentTime(), /*rtt=*/TimeDelta::Millis(10),
-                     /*number_of_ect1_packets=*/20,
-                     /*number_of_packets_in_flight=*/20);
-  // CE mark 20% of packets.
-  for (int i = 0; i < 4; ++i) {
-    feedback.packet_feedbacks[i].ecn = EcnMarking::kCe;
-  }
-
   double l4s_alpha = scream.l4s_alpha();
   while (clock.CurrentTime() < start_time + TimeDelta::Seconds(2)) {
-    feedback.feedback_time = clock.CurrentTime();
+    TransportPacketsFeedback feedback =
+        CreateFeedback(clock.CurrentTime(), /*rtt=*/TimeDelta::Millis(10),
+                       /*number_of_ect1_packets=*/20,
+                       /*number_of_packets_in_flight=*/20);
+    // CE mark 20% of packets.
+    for (int i = 0; i < 4; ++i) {
+      feedback.packet_feedbacks[i].ecn = EcnMarking::kCe;
+    }
     scream.OnTransportPacketsFeedback(feedback);
     EXPECT_GT(scream.l4s_alpha(), l4s_alpha);
     clock.AdvanceTime(feedback_interval);
   }
 
   EXPECT_NEAR(scream.l4s_alpha(), 0.2, 0.01);
+}
+
+TEST(ScreamV2Test, L4sAlphaScalesUpAndDownWithRtt) {
+  SimulatedClock clock(Timestamp::Seconds(1'234));
+  Environment env = CreateTestEnvironment({.time = &clock});
+  ScreamV2 scream(env);
+
+  TimeDelta rtt = TimeDelta::Millis(100);
+  TimeDelta feedback_interval = TimeDelta::Millis(25);
+
+  // First feedback with 100% CE marks at RTT = 100ms (steps_per_rtt = 4).
+  // With L4sAvgGUp = 1/8 and steps_per_rtt = 4, g_up = (1/8) / 4 = 1/32.
+  TransportPacketsFeedback ce_feedback =
+      CreateFeedback(clock.CurrentTime(), rtt,
+                     /*number_of_ect1_packets=*/20,
+                     /*number_of_packets_in_flight=*/20);
+  for (auto& packet : ce_feedback.packet_feedbacks) {
+    packet.ecn = EcnMarking::kCe;
+  }
+  scream.OnTransportPacketsFeedback(ce_feedback);
+  EXPECT_DOUBLE_EQ(scream.l4s_alpha(), (1.0 / 8.0) / 4.0);
+
+  // Next 4 feedbacks (1 RTT) with 0% CE marks.
+  // With L4sAvgGDown = 1/16 and steps_per_rtt = 4, g_down = (1/16) / 4 = 1/64.
+  double alpha_before_decay = scream.l4s_alpha();
+  for (int i = 0; i < 4; ++i) {
+    clock.AdvanceTime(feedback_interval);
+    TransportPacketsFeedback clear_feedback =
+        CreateFeedback(clock.CurrentTime(), rtt,
+                       /*number_of_ect1_packets=*/20,
+                       /*number_of_packets_in_flight=*/20);
+    scream.OnTransportPacketsFeedback(clear_feedback);
+  }
+  double expected_decay_factor = std::pow(1.0 - (1.0 / 16.0) / 4.0, 4);
+  EXPECT_NEAR(scream.l4s_alpha(), alpha_before_decay * expected_decay_factor,
+              1e-6);
 }
 
 struct AdaptsToLinkCapacityParams {

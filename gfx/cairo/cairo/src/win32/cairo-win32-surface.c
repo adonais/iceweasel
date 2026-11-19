@@ -309,7 +309,13 @@ _cairo_win32_surface_emit_glyphs (cairo_win32_surface_t *dst,
             next_logical_y = _cairo_lround (next_user_y);
 
             dxy_buf[j] = _cairo_lround (next_logical_x - logical_x);
-            /* Note that GDI coordinate system is inverted! */
+            /* When delta-y values are present in dxy_buf (the ETO_PDY flag is used), these
+             * represent "displacement along the vertical direction of the font" (per MSDN:
+             * https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-exttextoutw)
+             * with positive values being upward (observed behavior, not explicitly documented).
+             * This is the opposite of the top-to-bottom logical coordinate space used here,
+             * so the subtraction is reversed compared to what would otherwise be expected.
+             */
             dxy_buf[j+1] = _cairo_lround (logical_y - next_logical_y);
 
             logical_x = next_logical_x;

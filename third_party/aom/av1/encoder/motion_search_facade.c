@@ -10,7 +10,7 @@
  */
 
 #include "av1/common/reconinter.h"
-
+#include "av1/common/scale.h"
 #include "av1/encoder/encodemv.h"
 #include "av1/encoder/encoder.h"
 #include "av1/encoder/interp_search.h"
@@ -692,9 +692,19 @@ int av1_joint_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     }
 
     // Do sub-pixel compound motion search on the current reference frame.
+    const struct scale_factors *orig_sf = NULL;
     if (id) {
       orig_yv12 = xd->plane[plane].pre[0];
       xd->plane[plane].pre[0] = xd->plane[plane].pre[id];
+      // Sub-pixel motion search works on raw reference frames that may not
+      // match the resolution of the current frame, so block_ref_scale_factors
+      // must be kept in sync with the frame data in order to perform the
+      // motion search correctly.
+      // Full-pixel motion search works on scaled reference frames, so it
+      // doesn't need to update block_ref_scale_factors when swapping in
+      // scaled_ref_frame.
+      orig_sf = xd->block_ref_scale_factors[0];
+      xd->block_ref_scale_factors[0] = xd->block_ref_scale_factors[id];
     }
 
     if (cpi->common.features.cur_frame_force_integer_mv) {
@@ -734,7 +744,10 @@ int av1_joint_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     }
 
     // Restore the pointer to the first prediction buffer.
-    if (id) xd->plane[plane].pre[0] = orig_yv12;
+    if (id) {
+      xd->plane[plane].pre[0] = orig_yv12;
+      xd->block_ref_scale_factors[0] = orig_sf;
+    }
     if (bestsme < last_besterr[id]) {
       cur_mv[id] = best_mv;
       last_besterr[id] = bestsme;
@@ -790,15 +803,15 @@ int av1_compound_single_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     // match the resolution of the current frame, allowing the existing
     // full-pixel motion search code to be used without additional
     // modifications.
-    for (int i = 0; i < num_planes; i++) {
-      backup_yv12[i] = xd->plane[i].pre[ref_idx];
-    }
-    const int mi_row = xd->mi_row;
-    const int mi_col = xd->mi_col;
     // The index below needs to be 0 instead of ref_idx since we assume the
     // 0th slot to be used for subsequent searches. Note that the ref_idx
     // reference buffer has been copied to the 0th slot in the code above.
     // Now we need to swap the reference frame for the 0th slot.
+    for (int i = 0; i < num_planes; i++) {
+      backup_yv12[i] = xd->plane[i].pre[0];
+    }
+    const int mi_row = xd->mi_row;
+    const int mi_col = xd->mi_col;
     av1_setup_pre_planes(xd, 0, scaled_ref_frame, mi_row, mi_col, NULL,
                          num_planes);
   }
@@ -834,6 +847,12 @@ int av1_compound_single_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+  const struct scale_factors *orig_sf = NULL;
+  if (ref_idx) {
+    orig_sf = xd->block_ref_scale_factors[0];
+    xd->block_ref_scale_factors[0] = xd->block_ref_scale_factors[ref_idx];
+  }
+
   if (cpi->common.features.cur_frame_force_integer_mv) {
     convert_fullmv_to_mv(&best_mv);
   }
@@ -856,7 +875,10 @@ int av1_compound_single_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
   }
 
   // Restore the pointer to the first unscaled prediction buffer.
-  if (ref_idx) pd->pre[0] = orig_yv12;
+  if (ref_idx) {
+    pd->pre[0] = orig_yv12;
+    xd->block_ref_scale_factors[0] = orig_sf;
+  }
 
   if (bestsme < INT_MAX) *this_mv = best_mv.as_mv;
 

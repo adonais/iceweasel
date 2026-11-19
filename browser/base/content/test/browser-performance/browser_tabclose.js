@@ -43,14 +43,7 @@ add_task(async function () {
     gBrowser.tabContainer.newTabButton.getBoundingClientRect();
   let inRange = (val, min, max) => min <= val && val <= max;
 
-  // The '+' button uses a different glyph under nova which paints 1px
-  // shorter than the proton one.
-  const kNewTabIconHeight = Services.prefs.getBoolPref(
-    "browser.nova.enabled",
-    false
-  )
-    ? 12
-    : 13;
+  const kNewTabIconHeight = 12;
 
   // Add a reflow observer and open a new tab.
   await withPerfObserver(

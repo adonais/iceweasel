@@ -944,6 +944,15 @@ TEST_P(WebRtcVoiceEngineTestFake, CreateSendStream) {
   EXPECT_EQ(SendImpl()->transport(), config.send_transport);
 }
 
+// Test that a send stream that is added after the MID has been set is created
+// with the MID.
+TEST_P(WebRtcVoiceEngineTestFake, CreateSendStreamWithMid) {
+  EXPECT_TRUE(SetupChannel());
+  send_channel_->SetMid("audio");
+  EXPECT_TRUE(send_channel_->AddSendStream(StreamParams::CreateLegacy(kSsrcX)));
+  EXPECT_EQ(GetSendStreamConfig(kSsrcX).rtp.mid, "audio");
+}
+
 // Test that we can add a receive stream and that it has the correct defaults.
 TEST_P(WebRtcVoiceEngineTestFake, CreateRecvStream) {
   EXPECT_TRUE(SetupChannel());

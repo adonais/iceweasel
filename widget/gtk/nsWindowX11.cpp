@@ -12,6 +12,7 @@
 
 #include "GLContextEGL.h"  // for GLContextEGL::FindVisual()
 #include "GLContextGLX.h"  // for GLContextGLX::FindVisual()
+#include "GUniquePtr.h"
 #include "WindowSurfaceX11Image.h"
 #include "WindowSurfaceX11SHM.h"
 #include "gfxXlibSurface.h"
@@ -53,7 +54,7 @@ void nsWindowX11::GetWorkspaceID(nsAString& workspaceID) {
   GdkAtom type_returned;
   int format_returned;
   int length_returned;
-  long* wm_desktop;
+  GUniquePtr<guchar> wm_desktop;
 
   if (!gdk_property_get(gdk_window, gdk_atom_intern("_NET_WM_DESKTOP", FALSE),
                         cardinal_atom,
@@ -61,14 +62,22 @@ void nsWindowX11::GetWorkspaceID(nsAString& workspaceID) {
                         INT32_MAX,  // length
                         FALSE,      // delete
                         &type_returned, &format_returned, &length_returned,
-                        (guchar**)&wm_desktop)) {
+                        getter_Transfers(wm_desktop))) {
     LOG("  gdk_property_get() failed, quit.");
     return;
   }
 
-  LOG("  got workspace ID %d", (int32_t)wm_desktop[0]);
-  workspaceID.AppendInt((int32_t)wm_desktop[0]);
-  g_free(wm_desktop);
+  // Any X11 client can set this property with any format and length. GDK
+  // widens format-32 items to long, so only then is the data a long array.
+  if (format_returned != 32 || length_returned < (int)sizeof(long)) {
+    LOG("  malformed _NET_WM_DESKTOP (format %d, length %d), quit.",
+        format_returned, length_returned);
+    return;
+  }
+
+  int32_t id = (int32_t)reinterpret_cast<long*>(wm_desktop.get())[0];
+  LOG("  got workspace ID %d", id);
+  workspaceID.AppendInt(id);
 }
 
 void nsWindowX11::MoveToWorkspace(const nsAString& workspaceIDStr) {

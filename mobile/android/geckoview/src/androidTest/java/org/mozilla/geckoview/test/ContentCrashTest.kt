@@ -3,11 +3,8 @@ package org.mozilla.geckoview.test
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
-import org.hamcrest.Matchers
-import org.hamcrest.Matchers.equalTo
 import org.junit.After
 import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeThat
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
@@ -34,10 +31,6 @@ class ContentCrashTest : BaseSessionTest() {
         // We need the crash reporter for this test
         assumeTrue(BuildConfig.MOZ_CRASHREPORTER)
 
-        // TODO: bug 1710940
-        assumeThat(sessionRule.env.isIsolatedProcess, Matchers.equalTo(false))
-        assumeThat(sessionRule.env.isAppZygoteProcess, equalTo(false))
-
         mainSession.loadUri(CONTENT_CRASH_URL)
         mainSession.waitUntilCalled(ContentDelegate::class, "onCrash")
 
@@ -51,10 +44,6 @@ class ContentCrashTest : BaseSessionTest() {
     fun crashContentJava() {
         // We need the crash reporter for this test
         assumeTrue(BuildConfig.MOZ_CRASHREPORTER)
-
-        // TODO: bug 1710940
-        assumeThat(sessionRule.env.isIsolatedProcess, Matchers.equalTo(false))
-        assumeThat(sessionRule.env.isAppZygoteProcess, equalTo(false))
 
         mainSession.loadUri(CONTENT_CRASH_JAVA_URL)
         // Default handler will call MOZ_CRASH by GeckoAppShell.reportJavaCrash

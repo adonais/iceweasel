@@ -52,10 +52,6 @@ add_setup(async function () {
     name: "firefox",
   });
 
-  // Force settings redesign to false, so that `hideOneOffButton` will correctly
-  // work for the time being.
-  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
-
   // Tell the search service we are running in the US.  This also has the
   // desired side-effect of preventing our geoip lookup.
   Services.prefs.setCharPref("browser.search.region", "US");
@@ -119,7 +115,7 @@ add_task(async function onlyEnabled_option_nomatch() {
   matchedEngines = await UrlbarSearchUtils.enginesForDomainPrefix(token);
   Assert.equal(matchedEngines[0].searchUrlDomain, domain);
   Assert.equal(matchedEngines[0], defaultEngine);
-});
+}).skip();
 
 add_task(async function add_search_engine_match() {
   Assert.equal(

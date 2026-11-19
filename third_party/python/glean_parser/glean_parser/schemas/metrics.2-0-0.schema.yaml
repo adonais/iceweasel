@@ -21,7 +21,7 @@ definitions:
 
   dotted_snake_case:
     type: string
-    pattern: "^[a-z_][a-z0-9_]{0,29}(\\.[a-z_][a-z0-9_]{0,29})*$"
+    pattern: "^[a-z_][a-z0-9_]*(\\.[a-z_][a-z0-9_]*)*$"
     maxLength: 40
 
   event_extra_key:

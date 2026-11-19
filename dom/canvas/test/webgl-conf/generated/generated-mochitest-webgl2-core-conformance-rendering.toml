@@ -79,9 +79,6 @@ fail-if = [
 ]
 
 ["test_2_conformance__rendering__many-draw-calls.html"]
-skip-if = [
-  "debug",
-]
 
 ["test_2_conformance__rendering__more-than-65536-indices.html"]
 

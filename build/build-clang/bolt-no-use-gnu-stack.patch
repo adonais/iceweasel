@@ -1,0 +1,15 @@
+Do not pass -use-gnu-stack to bolt when building a bolt-enhanced clang binary,
+diff --git a/clang/utils/perf-training/perf-helper.py b/clang/utils/perf-training/perf-helper.py
+index e28920f3e0c4..c814e772d19f 100644
+--- a/clang/utils/perf-training/perf-helper.py
++++ b/clang/utils/perf-training/perf-helper.py
+@@ -723,7 +723,8 @@ def bolt_optimize(args):
+             "-split-all-cold",
+             "-split-eh",
+             "-dyno-stats",
+-            "-use-gnu-stack",
++            # incompatible with dlopen, see https://github.com/llvm/llvm-project/issues/174191
++            #"-use-gnu-stack",
+             "-update-debug-sections",
+             "-ba" if opts.method == "PERF" else "",
+         ]

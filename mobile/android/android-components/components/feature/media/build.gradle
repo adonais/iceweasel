@@ -20,7 +20,8 @@ dependencies {
     implementation project(':components:ui-icons')
 
     implementation libs.androidx.core
-    implementation libs.androidx.media
+    implementation libs.androidx.media3.common
+    implementation libs.androidx.media3.session
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')

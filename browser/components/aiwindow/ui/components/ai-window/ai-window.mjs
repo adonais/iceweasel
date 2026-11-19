@@ -6,16 +6,16 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { installClientErrorListeners } from "chrome://browser/content/aiwindow/modules/ClientErrorTelemetry.mjs";
 import { isSmartPageURL } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-prompts.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-promo.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-topsites.mjs";
 import { RESUME_SECTION_EMPTY_REASON } from "chrome://browser/content/aiwindow/components/smartwindow-resume-section.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/kit-mention.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-history-menu.mjs";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
@@ -69,8 +69,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   getAllModelsData:
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  refreshModelsDataCache:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   getCurrentModelChoiceId:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -188,8 +186,6 @@ const PREF_MEMORIES_HAS_SEEN_MEMORIES =
   "browser.smartwindow.memories.hasSeenMemories";
 const PREF_MODEL_CHOICE = "browser.smartwindow.firstrun.modelChoice";
 const PREF_CUSTOM_ENDPOINT = "browser.smartwindow.customEndpoint";
-// TODO Bug 2053495: remove with mistral release pref
-const PREF_MISTRAL_RELEASE = "browser.smartwindow.mistralRelease";
 const TAB_FAVICON_CHAT =
   "chrome://browser/content/aiwindow/assets/ask-icon.svg";
 const PREF_CHAT_INTERACTION_COUNT = "browser.smartwindow.chat.interactionCount";
@@ -543,17 +539,6 @@ export class AIWindow extends MozLitElement {
       false,
       () => this.requestUpdate()
     );
-    // TODO Bug 2053495: remove with mistral release pref
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "mistralReleasePref",
-      PREF_MISTRAL_RELEASE,
-      false,
-      () => this.#onMistralReleasePrefChanged()
-    );
-    // defineLazyPreferenceGetter registers its pref observer on first read, so
-    // touch the value here to arm the onUpdate callback above.
-    void this.mistralReleasePref;
 
     this.userPrompt = "";
     this.#browser = null;
@@ -1108,23 +1093,6 @@ export class AIWindow extends MozLitElement {
       await this.#switchModel(defaultModelChoiceId, { isTabOverride: false });
     }
 
-    this.#updateSmartbarModels(this.#smartbar);
-  };
-
-  // TODO Bug 2053495: remove with mistral release pref.
-  #onMistralReleasePrefChanged = async () => {
-    await lazy.refreshModelsDataCache();
-    await this.#loadAvailableModels();
-    // The model backing a choice can change across the flip, so re-resolve the
-    // current choice's model to keep selectedModelId valid; otherwise the select
-    // can't find the selected model and renders in a stale/blank state.
-    const defaultModelChoiceId = lazy.getCurrentModelChoiceId();
-    if (
-      !this.#hasModelChoiceOverride &&
-      this.availableModels[defaultModelChoiceId]
-    ) {
-      await this.#switchModel(defaultModelChoiceId, { isTabOverride: false });
-    }
     this.#updateSmartbarModels(this.#smartbar);
   };
 
@@ -2272,7 +2240,11 @@ export class AIWindow extends MozLitElement {
    * @param {object} [options.assistantToolUIData] - Tool UI attached to the
    *   assistant message so it renders alongside the streamed response.
    * @param {string} [options.aitabSource] - Where an AI Tab page was requested
-   *   from (tab_list or tab_group), for telemetry.
+   *   from (tab_list, tab_group or fxms), for telemetry.
+   * @param {boolean} [options.untrustedInput=false] - Whether `text` includes
+   *   untrusted content, e.g. text selected on a web page.
+   * @param {boolean} [options.privateData=false] - Whether `text` includes
+   *   private data, e.g. content from the user's tabs.
    */
   submitChatMessage({
     text,
@@ -2286,6 +2258,8 @@ export class AIWindow extends MozLitElement {
     skipSystemPromptRefresh = false,
     assistantToolUIData,
     aitabSource = null,
+    untrustedInput = false,
+    privateData = false,
   }) {
     const trimmed = String(text ?? "").trim();
     if (!trimmed) {
@@ -2310,11 +2284,18 @@ export class AIWindow extends MozLitElement {
       submit_type: submitType,
       tabs: contextMentions.filter(member => !lazy.isTabGroupMember(member))
         .length,
+      auth_provider: lazy.AuthProvider.currentProviderName ?? undefined,
     });
 
     if (this.#conversation) {
       this.#conversation.lastSubmitType = submitType;
       this.#conversation.aitabSource = aitabSource;
+      if (untrustedInput) {
+        this.#conversation.securityProperties.setUntrustedInput();
+      }
+      if (privateData) {
+        this.#conversation.securityProperties.setPrivateData();
+      }
     }
 
     this.#recordChatInteraction();
@@ -3112,6 +3093,7 @@ export class AIWindow extends MozLitElement {
       http_status: httpStatus,
       model: this.modelName,
       is_retry: isRetry,
+      auth_provider: lazy.AuthProvider.currentProviderName ?? undefined,
     });
   }
 

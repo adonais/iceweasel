@@ -89,7 +89,7 @@ class WindowsDllNopSpacePatcher final : public WindowsDllPatcherBase<VMPolicy> {
       mozilla::UniquePtr<wchar_t[]> data;
       if (!status) {
         // Allocate the buffer and query for the actual data
-        data = mozilla::MakeUnique<wchar_t[]>((numBytes + 1) / sizeof(wchar_t));
+        data = std::make_unique<wchar_t[]>((numBytes + 1) / sizeof(wchar_t));
         status = RegQueryValueExW(hkey, kAppInitDLLs, nullptr, nullptr,
                                   (LPBYTE)data.get(), &numBytes);
       }

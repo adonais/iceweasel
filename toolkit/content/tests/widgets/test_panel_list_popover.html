@@ -334,6 +334,13 @@
 
           let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
           synthesizeMouseAtCenter(document.body, { type: "mouseup" });
+
+          is(
+            getComputedStyle(panelList).display,
+            "none",
+            "Panel should not render outside the top layer after light dismiss"
+          );
+
           await hidden;
 
           ok(

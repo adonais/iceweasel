@@ -37,21 +37,25 @@ class SaveToCollectionMenuItemProvider(
     private val browserStore: BrowserStore,
     private val target: MenuTarget,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        MutableStateFlow(
-            if (settings.collections) {
-                StandardMenuItem(
-                    title = MenuItemTitle(Text.Resource(R.string.browser_menu_save_to_collection_2)),
-                    icon = MenuItemIconRes(iconsR.drawable.mozac_ic_collection_24),
-                    onClickEvent =
-                        MenuAction.Navigate.SaveToCollection(
-                            hasCollection = tabCollectionStorage.cachedTabCollections.isNotEmpty()
-                        ),
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            MutableStateFlow(
+                listOfNotNull(
+                    if (settings.collections) {
+                        DEFAULT_MENU_ITEM.copy(
+                            onClickEvent =
+                                MenuAction.Navigate.SaveToCollection(
+                                    hasCollection = tabCollectionStorage.cachedTabCollections.isNotEmpty()
+                                )
+                        )
+                    } else {
+                        null
+                    }
                 )
-            } else {
-                null
-            }
-        )
+            )
+        }
 
     override fun handles(event: MenuEvent) = event is MenuAction.Navigate.SaveToCollection
 
@@ -70,5 +74,13 @@ class SaveToCollectionMenuItemProvider(
                     },
             )
         )
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_save_to_collection_2)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_collection_24),
+            )
     }
 }

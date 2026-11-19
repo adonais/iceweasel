@@ -444,7 +444,7 @@ nsresult CacheFileContextEvictor::LoadEvictInfoFromDisk() {
       continue;
     }
 
-    auto entry = MakeUnique<CacheFileContextEvictorEntry>();
+    auto entry = std::make_unique<CacheFileContextEvictorEntry>();
     entry->mInfo = std::move(info);
     entry->mPinned = pinned;
     CopyUTF8toUTF16(origin, entry->mOrigin);

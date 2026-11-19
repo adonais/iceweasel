@@ -4,9 +4,6 @@
 
 [DEFAULT]
 head = "head.js"
-run-if = [
-  "!socketprocess_networking",
-]
 # XXX figure out why android doesn't get MOZHTTP3_PORT
 skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # https://bugzilla.mozilla.org/show_bug.cgi?id=1807925

@@ -274,9 +274,6 @@ fn handle_child_process_crash(
     let parent_process = get_parent_process(process)?;
     let parent_pid = get_process_id(parent_process.as_handle())?;
 
-    let process = process.try_clone_to_owned().map_err(|_e| ())?;
-    let thread = thread.try_clone_to_owned().map_err(|_e| ())?;
-
     // SAFETY: All the pointers going into this function are guaranteed to be
     // valid and will only be read from.
     unsafe {

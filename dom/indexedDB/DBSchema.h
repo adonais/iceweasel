@@ -14,7 +14,7 @@ class mozIStorageConnection;
 namespace mozilla::dom::indexedDB {
 
 // Major schema version. Bump for almost everything.
-const uint32_t kMajorSchemaVersion = 26;
+const uint32_t kMajorSchemaVersion = 27;
 
 // Minor schema version. Should almost always be 0 (maybe bump on release
 // branches if we have to).

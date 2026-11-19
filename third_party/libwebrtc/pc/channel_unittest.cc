@@ -2140,6 +2140,17 @@ TEST_F(VoiceChannelSingleThreadTest,
   Base::TestUpdateRemoteStreamsClearsUnsignaledSinks();
 }
 
+// The send streams are added with the local offer, but the send parameters are
+// only applied with the remote answer. Test that the MID is set with the offer,
+// so that the send streams are created with it.
+TEST_F(VoiceChannelSingleThreadTest, SetsMidOnSendChannelWithLocalOffer) {
+  CreateChannels(0, 0);
+  EXPECT_TRUE(
+      channel1_->SetLocalContent(&local_media_content1_, SdpType::kOffer).ok());
+  EXPECT_EQ(media_send_channel1_impl()->send_streams().size(), 1u);
+  EXPECT_EQ(media_send_channel1_impl()->mid(), kAudioMid);
+}
+
 // VoiceChannelDoubleThreadTest
 TEST_F(VoiceChannelDoubleThreadTest, TestInit) {
   Base::TestInit();

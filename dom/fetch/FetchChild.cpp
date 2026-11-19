@@ -343,7 +343,7 @@ mozilla::ipc::IPCResult FetchChild::RecvOnReportPerformanceTiming(
     if (performanceStorage) {
       performanceStorage->AddEntry(
           aTiming.entryName(), aTiming.initiatorType(),
-          MakeUnique<PerformanceTimingData>(aTiming.timingData()));
+          std::make_unique<PerformanceTimingData>(aTiming.timingData()));
     }
   } else if (mIsKeepAliveRequest) {
     MOZ_ASSERT(mPromise->GetGlobalObject());
@@ -353,7 +353,7 @@ mozilla::ipc::IPCResult FetchChild::RecvOnReportPerformanceTiming(
       if (performance) {
         performance->AsPerformanceStorage()->AddEntry(
             aTiming.entryName(), aTiming.initiatorType(),
-            MakeUnique<PerformanceTimingData>(aTiming.timingData()));
+            std::make_unique<PerformanceTimingData>(aTiming.timingData()));
       }
     }
   }

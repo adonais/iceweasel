@@ -23,13 +23,13 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 nsIFrame* NS_NewProgressFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell) nsProgressFrame(aStyle, aPresShell->GetPresContext(),
-                                          nsProgressFrame::Type::Progress);
+  return new nsProgressFrame(aStyle, aPresShell->GetPresContext(),
+                             nsProgressFrame::Type::Progress);
 }
 
 nsIFrame* NS_NewMeterFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell) nsProgressFrame(aStyle, aPresShell->GetPresContext(),
-                                          nsProgressFrame::Type::Meter);
+  return new nsProgressFrame(aStyle, aPresShell->GetPresContext(),
+                             nsProgressFrame::Type::Meter);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsProgressFrame)
@@ -123,6 +123,17 @@ void nsProgressFrame::Reflow(nsPresContext* aPresContext,
   aStatus.Reset();  // This type of frame can't be split.
 }
 
+LogicalSide nsProgressFrame::LogicalStartSide(bool aIsVertical,
+                                              WritingMode aWM) {
+  // The bar begins at the inline-start side if it goes along the inline axis.
+  // Otherwise, it begins at the block-start side in vertical writing modes, and
+  // at the bottom (block-end) side in horizontal ones.
+  if (aIsVertical == aWM.IsVertical()) {
+    return LogicalSide::IStart;
+  }
+  return aWM.IsVertical() ? LogicalSide::BStart : LogicalSide::BEnd;
+}
+
 void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
                                        nsPresContext* aPresContext,
                                        const ReflowInput& aReflowInput,
@@ -130,34 +141,27 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
                                        nsReflowStatus& aStatus) {
   MOZ_ASSERT(aChild == mBarDiv->GetPrimaryFrame() ||
              aChild->IsPlaceholderFrame());
-  bool vertical = ResolvedOrientationIsVertical();
+  // TODO: Maybe we should enforce that the bar has the same WM as the parent?
+  // That'd simplify a bit the logic here...
+  const WritingMode parentWM = aReflowInput.GetWritingMode();
   const WritingMode wm = aChild->GetWritingMode();
-  const LogicalSize parentSizeInChildWM =
-      aParentContentBoxSize.ConvertTo(wm, aReflowInput.GetWritingMode());
-  const nsSize parentPhysicalSize = parentSizeInChildWM.GetPhysicalSize(wm);
-  LogicalSize availSize = parentSizeInChildWM;
-  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
+  const LogicalSize parentSize = aParentContentBoxSize.ConvertTo(wm, parentWM);
+  const nsSize containerSize =
+      (aParentContentBoxSize +
+       aReflowInput.ComputedLogicalBorderPadding(parentWM).Size(parentWM))
+          .GetPhysicalSize(parentWM);
+  const LogicalSize availSize(wm, parentSize.ISize(wm), NS_UNCONSTRAINEDSIZE);
   ReflowInput reflowInput(aPresContext, aReflowInput, aChild, availSize,
-                          Some(parentSizeInChildWM));
-  nscoord size =
-      vertical ? parentPhysicalSize.Height() : parentPhysicalSize.Width();
-  nscoord xoffset = aReflowInput.ComputedPhysicalBorderPadding().left;
-  nscoord yoffset = aReflowInput.ComputedPhysicalBorderPadding().top;
+                          Some(parentSize));
+
+  const LogicalSide startSide =
+      LogicalStartSide(ResolvedOrientationIsVertical(), wm);
+  const bool inlineAxis = IsInline(startSide);
 
   double position =
       mType == Type::Progress
           ? static_cast<HTMLProgressElement*>(GetContent())->Position()
           : static_cast<HTMLMeterElement*>(GetContent())->Position();
-
-  // Force the bar's size to match the current progress.
-  // When indeterminate, the progress' size will be 100%.
-  if (position >= 0.0 || mType == Type::Meter) {
-    size = NSToCoordRound(size * position);
-  }
-
-  if (!vertical && wm.IsPhysicalRTL()) {
-    xoffset += parentPhysicalSize.Width() - size;
-  }
 
   // The bar size is fixed in these cases:
   // - the progress position is determined: the bar size is fixed according
@@ -166,37 +170,42 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
   //   shown as native: the bar size is forced to 100%.
   // Otherwise (when the progress is indeterminate and the bar appearance isn't
   // native), the bar size isn't fixed and can be set by the author.
+  Maybe<nscoord> fixedSize;
   if (position != -1 || ShouldUseNativeStyle()) {
-    if (vertical) {
-      // We want the bar to begin at the bottom.
-      yoffset += parentPhysicalSize.Height() - size;
-      size -= reflowInput.ComputedPhysicalMargin().TopBottom() +
-              reflowInput.ComputedPhysicalBorderPadding().TopBottom();
-      size = std::max(size, 0);
-      reflowInput.SetComputedHeight(size);
-    } else {
-      size -= reflowInput.ComputedPhysicalMargin().LeftRight() +
-              reflowInput.ComputedPhysicalBorderPadding().LeftRight();
-      size = std::max(size, 0);
-      reflowInput.SetComputedWidth(size);
+    nscoord size = inlineAxis ? parentSize.ISize(wm) : parentSize.BSize(wm);
+    // Force the bar's size to match the current progress.
+    // When indeterminate, the progress' size will be 100%.
+    if (position >= 0.0 || mType == Type::Meter) {
+      size = NSToCoordRound(size * position);
     }
-  } else if (vertical) {
-    // For vertical progress bars, we need to position the bar specifically when
-    // the width isn't constrained (position == -1 and !ShouldUseNativeStyle())
-    // because parentPhysiscalSize.Height() - size == 0.
-    // FIXME(emilio): This assumes that the bar's height is constrained, which
-    // seems like a wrong assumption?
-    yoffset += parentPhysicalSize.Height() - reflowInput.ComputedHeight();
+    fixedSize.emplace(size);
+    const LogicalMargin mbp = reflowInput.ComputedLogicalMargin(wm) +
+                              reflowInput.ComputedLogicalBorderPadding(wm);
+    if (inlineAxis) {
+      size -= mbp.IStartEnd(wm);
+      reflowInput.SetComputedISize(std::max(size, 0));
+    } else {
+      size -= mbp.BStartEnd(wm);
+      reflowInput.SetComputedBSize(std::max(size, 0));
+    }
   }
 
-  xoffset += reflowInput.ComputedPhysicalMargin().left;
-  yoffset += reflowInput.ComputedPhysicalMargin().top;
+  // Start at the parent content edge plus child margin.
+  const LogicalMargin parentBP = aReflowInput.ComputedLogicalBorderPadding(wm);
+  const LogicalMargin margin = reflowInput.ComputedLogicalMargin(wm);
+  LogicalPoint pos(wm, parentBP.IStart(wm) + margin.IStart(wm),
+                   parentBP.BStart(wm) + margin.BStart(wm));
 
-  ReflowOutput barDesiredSize(aReflowInput);
-  ReflowChild(aChild, aPresContext, barDesiredSize, reflowInput, xoffset,
-              yoffset, ReflowChildFlags::Default, aStatus);
-  FinishReflowChild(aChild, aPresContext, barDesiredSize, &reflowInput, xoffset,
-                    yoffset, ReflowChildFlags::Default);
+  ReflowOutput barDesiredSize(reflowInput);
+  ReflowChild(aChild, aPresContext, barDesiredSize, reflowInput, wm, pos,
+              containerSize, ReflowChildFlags::Default, aStatus);
+  if (startSide == LogicalSide::BEnd) {
+    pos.B(wm) +=
+        parentSize.BSize(wm) -
+        fixedSize.valueOr(barDesiredSize.BSize(wm) + margin.BStartEnd(wm));
+  }
+  FinishReflowChild(aChild, aPresContext, barDesiredSize, &reflowInput, wm, pos,
+                    containerSize, ReflowChildFlags::Default);
 }
 
 nsresult nsProgressFrame::AttributeChanged(int32_t aNameSpaceID,

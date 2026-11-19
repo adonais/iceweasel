@@ -87,6 +87,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLAreaElement.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
@@ -1045,6 +1046,15 @@ const nsIFrame* nsLayoutUtils::GetPrimaryFrameFromStyleFrame(
     const nsIFrame* aStyleFrame) {
   return nsLayoutUtils::GetPrimaryFrameFromStyleFrame(
       const_cast<nsIFrame*>(aStyleFrame));
+}
+
+/* static */
+nsIFrame* nsLayoutUtils::GetPrimaryOrAreaImageFrame(
+    const nsIContent* aContent) {
+  if (const auto* area = HTMLAreaElement::FromNode(aContent)) {
+    return area->GetImageFrame();
+  }
+  return aContent->GetPrimaryFrame();
 }
 
 /*static*/
@@ -2673,7 +2683,6 @@ nsresult nsLayoutUtils::GetFramesForArea(RelativeTo aRelativeTo,
   nsDisplayItem::HitTestState hitTestState;
   list.HitTest(&builder, aRect, &hitTestState, &aOutFrames);
 
-  builder.SetIsDestroying();
   list.DeleteAll(&builder);
   builder.EndFrame();
   return NS_OK;
@@ -2908,7 +2917,7 @@ static void DumpBeforePaintDisplayList(UniquePtr<std::stringstream>& aStream,
     // Flush stream now to avoid reordering dump output relative to
     // messages dumped by PaintRoot below.
     fprint_stderr(gfxUtils::sDumpPaintFile, *aStream);
-    aStream = MakeUnique<std::stringstream>();
+    aStream = std::make_unique<std::stringstream>();
   }
 }
 
@@ -2940,10 +2949,7 @@ struct TemporaryDisplayListBuilder {
                               const bool aBuildCaret)
       : mBuilder(aFrame, aBuilderMode, aBuildCaret) {}
 
-  ~TemporaryDisplayListBuilder() {
-    mBuilder.SetIsDestroying();
-    mList.DeleteAll(&mBuilder);
-  }
+  ~TemporaryDisplayListBuilder() { mList.DeleteAll(&mBuilder); }
 
   nsDisplayListBuilder mBuilder;
   nsDisplayList mList;
@@ -3333,7 +3339,7 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
   UniquePtr<std::stringstream> ss;
   if (consoleNeedsDisplayList) {
-    ss = MakeUnique<std::stringstream>();
+    ss = std::make_unique<std::stringstream>();
     *ss << "Display list for " << uri << "\n";
     DumpBeforePaintDisplayList(ss, builder, list, visibleRect);
   }

@@ -4963,10 +4963,10 @@ class Toolbox extends EventEmitter {
    * @see devtools/client/framework/toolbox-options.js
    */
   listWebExtensions() {
-    // Return the array of the enabled webextensions (we can't use the prefs list here,
+    // Return an iterator of the enabled webextensions (we can't use the prefs list here,
     // because some of them may be disabled by the Addon Manager and still have a devtools
     // preference).
-    return Array.from(this.#webExtensions).map(([uuid, { name, pref }]) => {
+    return this.#webExtensions.entries().map(([uuid, { name, pref }]) => {
       return { uuid, name, pref };
     });
   }

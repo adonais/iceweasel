@@ -46,6 +46,7 @@ dependencies {
     testImplementation libs.robolectric
 
     testFixturesImplementation project(':components:support-utils')
+    testFixturesImplementation testFixtures(project(':components:support-utils'))
     testFixturesImplementation libs.androidx.room.runtime
     testFixturesImplementation libs.kotlinx.coroutines
 }

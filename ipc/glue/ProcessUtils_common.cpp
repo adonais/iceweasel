@@ -64,7 +64,7 @@ bool SharedPreferenceSerializer::SerializeToSharedMemory(
 }
 
 void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
-    mozilla::ipc::GeckoChildProcessHost& procHost,
+    mozilla::ipc::GeckoChildProcessHost& /*procHost*/,
     geckoargs::ChildProcessArgs& aExtraOpts) const {
   auto prefsHandle = GetPrefsHandle().Clone();
   MOZ_RELEASE_ASSERT(prefsHandle, "failed to clone prefs handle");
@@ -108,7 +108,7 @@ bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
   return true;
 }
 
-void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
+void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& /*procHost*/,
                         geckoargs::ChildProcessArgs& aExtraOpts) {
   auto& shmem = xpc::SelfHostedShmem::GetSingleton();
   auto handle = shmem.Handle().Clone();

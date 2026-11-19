@@ -27,6 +27,7 @@
 #include "api/scoped_refptr.h"
 #include "api/test/create_frame_generator.h"
 #include "api/test/frame_generator_interface.h"
+#include "api/test/mock_video_decoder.h"
 #include "api/test/mock_video_encoder.h"
 #include "api/units/data_rate.h"
 #include "api/units/timestamp.h"
@@ -2350,6 +2351,45 @@ TEST_F(TestVp9ImplProfile2, EncodeDecode) {
   EXPECT_GT(I420PSNR(*input_frame.video_frame_buffer()->ToI420(),
                      *decoded_frame->video_frame_buffer()->ToI420()),
             31);
+}
+
+// A 16x16 mid-gray VP9 key frame with 12-bit samples (profile 2) and the
+// BT.2020 color space, encoded by libvpx.
+constexpr uint8_t kVp9KeyFrameWith12BitDepth[] = {
+    0x92, 0x49, 0x83, 0x42, 0xd0, 0x00, 0x78, 0x00, 0x7b, 0x03, 0x1c,
+    0x12, 0x0e, 0x0c, 0x29, 0x00, 0x00, 0x10, 0x40, 0x00, 0x37, 0x80};
+
+TEST(Vp9ImplTest, DecodeReturnsNoOutputForUnsupportedBitDepth) {
+  // Decoding 12-bit samples requires libvpx to be built with high bit depth
+  // support, which VP9 profile 2 support also depends on.
+  bool profile_2_is_supported = false;
+  for (const auto& format : SupportedVP9DecoderCodecs()) {
+    if (ParseSdpForVP9Profile(format.parameters) == VP9Profile::kProfile2) {
+      profile_2_is_supported = true;
+    }
+  }
+  if (!profile_2_is_supported) {
+    GTEST_SKIP() << "libvpx is built without high bit depth support.";
+  }
+  std::optional<Vp9UncompressedHeader> header =
+      ParseUncompressedVp9Header(kVp9KeyFrameWith12BitDepth);
+  ASSERT_TRUE(header);
+  ASSERT_EQ(header->bit_detph, Vp9BitDept::k12Bit);
+  ASSERT_EQ(header->color_space, Vp9ColorSpace::CS_BT_2020);
+
+  MockDecodedImageCallback callback;
+  EXPECT_CALL(callback, Decoded(_, _, _)).Times(0);
+  std::unique_ptr<VideoDecoder> decoder = VP9Decoder::Create();
+  decoder->RegisterDecodeCompleteCallback(&callback);
+  ASSERT_TRUE(decoder->Configure(VideoDecoder::Settings()));
+
+  EncodedImage encoded_image;
+  encoded_image.SetEncodedData(EncodedImageBuffer::Create(
+      kVp9KeyFrameWith12BitDepth, sizeof(kVp9KeyFrameWith12BitDepth)));
+  encoded_image.set_frame_type(VideoFrameType::kVideoFrameKey);
+  // There are no frame buffer types that can represent 12-bit content.
+  EXPECT_EQ(decoder->Decode(encoded_image, /*render_time_ms=*/0),
+            WEBRTC_VIDEO_CODEC_NO_OUTPUT);
 }
 
 TEST_F(TestVp9Impl, EncodeWithDynamicRate) {

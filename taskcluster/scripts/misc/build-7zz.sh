@@ -4,6 +4,8 @@ set -x -e -v
 # This script is for building 7-zip.
 PROJECT=7zz
 
+patch --binary -d ${MOZ_FETCHES_DIR}/${PROJECT} -p1 < $(dirname $0)/7zz.patch
+
 cd ${MOZ_FETCHES_DIR}/${PROJECT}
 
 if [[ $(uname -o) == "Msys" ]]; then

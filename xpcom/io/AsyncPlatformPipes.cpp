@@ -116,7 +116,7 @@ PlatformPipeLink::PlatformPipeLink(UniqueFileHandle aHandle,
                                    uint32_t aBufferSize)
     : mIOThread(XRE_GetAsyncIOEventTarget()),
       mHandle(std::move(aHandle)),
-      mBuffer(MakeUnique<char[]>(aBufferSize)),
+      mBuffer(std::make_unique<char[]>(aBufferSize)),
       mBufferSize(aBufferSize) {
   MOZ_ASSERT(aBufferSize > 1, "invalid buffer size");
   MOZ_ASSERT(mHandle, "invalid handle");

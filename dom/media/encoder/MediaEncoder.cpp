@@ -411,8 +411,8 @@ MediaEncoder::MediaEncoder(
       mDriftCompensator(std::move(aDriftCompensator)),
       mEncodedAudioQueue(std::move(aEncodedAudioQueue)),
       mEncodedVideoQueue(std::move(aEncodedVideoQueue)),
-      mMuxer(MakeUnique<Muxer>(std::move(aWriter), *mEncodedAudioQueue,
-                               *mEncodedVideoQueue)),
+      mMuxer(std::make_unique<Muxer>(std::move(aWriter), *mEncodedAudioQueue,
+                                     *mEncodedVideoQueue)),
       mAudioEncoder(std::move(aAudioEncoder)),
       mVideoEncoder(std::move(aVideoEncoder)),
       mEncoderListener(MakeAndAddRef<EncoderListener>(mEncoderThread, this)),
@@ -638,8 +638,8 @@ already_AddRefed<MediaEncoder> MediaEncoder::CreateEncoder(
   UniquePtr<ContainerWriter> writer;
   UniquePtr<AudioTrackEncoder> audioEncoder;
   UniquePtr<VideoTrackEncoder> videoEncoder;
-  auto encodedAudioQueue = MakeUnique<MediaQueue<EncodedFrame>>();
-  auto encodedVideoQueue = MakeUnique<MediaQueue<EncodedFrame>>();
+  auto encodedAudioQueue = std::make_unique<MediaQueue<EncodedFrame>>();
+  auto encodedVideoQueue = std::make_unique<MediaQueue<EncodedFrame>>();
   auto driftCompensator =
       MakeRefPtr<DriftCompensator>(aEncoderThread, aTrackRate);
 
@@ -652,17 +652,17 @@ already_AddRefed<MediaEncoder> MediaEncoder::CreateEncoder(
     if (codec.EqualsLiteral("opus")) {
       MOZ_ASSERT(!audioEncoder);
       audioEncoder =
-          MakeUnique<OpusTrackEncoder>(aTrackRate, *encodedAudioQueue);
+          std::make_unique<OpusTrackEncoder>(aTrackRate, *encodedAudioQueue);
     } else if (codec.EqualsLiteral("vp8") || codec.EqualsLiteral("vp8.0")) {
       MOZ_ASSERT(!videoEncoder);
       if (Preferences::GetBool("media.recorder.video.frame_drops", true)) {
-        videoEncoder = MakeUnique<VP8TrackEncoder>(driftCompensator, aTrackRate,
-                                                   *encodedVideoQueue,
-                                                   FrameDroppingMode::ALLOW);
+        videoEncoder = std::make_unique<VP8TrackEncoder>(
+            driftCompensator, aTrackRate, *encodedVideoQueue,
+            FrameDroppingMode::ALLOW);
       } else {
-        videoEncoder = MakeUnique<VP8TrackEncoder>(driftCompensator, aTrackRate,
-                                                   *encodedVideoQueue,
-                                                   FrameDroppingMode::DISALLOW);
+        videoEncoder = std::make_unique<VP8TrackEncoder>(
+            driftCompensator, aTrackRate, *encodedVideoQueue,
+            FrameDroppingMode::DISALLOW);
       }
     } else {
       MOZ_CRASH("Unknown codec");
@@ -672,11 +672,11 @@ already_AddRefed<MediaEncoder> MediaEncoder::CreateEncoder(
   if (mimeType->Type() == MEDIAMIMETYPE(VIDEO_WEBM) ||
       mimeType->Type() == MEDIAMIMETYPE(AUDIO_WEBM)) {
     MOZ_ASSERT_IF(mimeType->Type() == MEDIAMIMETYPE(AUDIO_WEBM), !videoEncoder);
-    writer = MakeUnique<WebMWriter>();
+    writer = std::make_unique<WebMWriter>();
   } else if (mimeType->Type() == MEDIAMIMETYPE(AUDIO_OGG)) {
     MOZ_ASSERT(audioEncoder);
     MOZ_ASSERT(!videoEncoder);
-    writer = MakeUnique<OggWriter>();
+    writer = std::make_unique<OggWriter>();
   }
   NS_ENSURE_TRUE(writer, nullptr);
 

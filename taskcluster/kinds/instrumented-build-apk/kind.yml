@@ -15,6 +15,7 @@ kind-dependencies:
 
 task-defaults:
     run-on-repo-type: [hg]
+    use-gradle-cache: true
     fetches:
         toolchain:
             - linux64-android-sdk-linux-repack

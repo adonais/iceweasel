@@ -518,7 +518,8 @@ VLPrefixSet::VLPrefixSet(const PrefixStringMap& aMap) : mCount(0) {
     uint32_t size = entry.GetKey();
     MOZ_ASSERT(entry.GetData()->Length() % size == 0,
                "PrefixString must be a multiple of the prefix size.");
-    mMap.InsertOrUpdate(size, MakeUnique<PrefixString>(*entry.GetData(), size));
+    mMap.InsertOrUpdate(size,
+                        std::make_unique<PrefixString>(*entry.GetData(), size));
     mCount += entry.GetData()->Length() / size;
   }
 }

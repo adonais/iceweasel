@@ -1,0 +1,26 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * Test-only hooks into the Cocoa app shell's native event loop. Implemented by
+ * the app shell service "@mozilla.org/widget/appshell/mac;1".
+ */
+[scriptable, builtinclass, uuid(1398d18e-b1f2-4bb6-af24-f08d91da429d)]
+interface nsICocoaAppShellTestUtils : nsISupports
+{
+  /**
+   * Posts a native event; once the native event loop dequeues and dispatches
+   * it, observers of "appshell-native-test-event" are notified from within
+   * that dispatch.
+   */
+  void postNativeTestEvent();
+
+  /**
+   * Number of times a native event loop went back to waiting although a
+   * wake-up meant for it was consumed by a nested loop.
+   */
+  readonly attribute unsigned long lostNativeWakeups;
+};

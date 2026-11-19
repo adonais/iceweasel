@@ -32,5 +32,15 @@ def test_crash_count_with_or_without_logger(runner, logger):
         assert runner.crashed == 4
 
 
+def test_crash_group_passed_to_log_crashes(runner):
+    if runner.app == "chrome":
+        pytest.xfail("crash checking not implemented for ChromeRunner")
+
+    with patch("mozcrash.log_crashes", return_value=1) as mock:
+        assert runner.check_for_crashes(test_name="test_a", group="manifestA") == 1
+        assert mock.call_args.kwargs["test"] == "test_a"
+        assert mock.call_args.kwargs["group"] == "manifestA"
+
+
 if __name__ == "__main__":
     mozunit.main()

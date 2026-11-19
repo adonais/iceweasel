@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
+    use-gradle-cache: true
     attributes:
         build_platform: android
         build_type: opt

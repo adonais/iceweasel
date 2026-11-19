@@ -17,16 +17,7 @@
   <script type="application/javascript"><![CDATA[
 
   SimpleTest.waitForExplicitFinish();
-  let socketProcessRunning = 0;
-  if (SpecialPowers.Services.io.socketProcessLaunched) {
-    socketProcessRunning = 1;
-  }
-  let rddProcessRunning = 0;
-  if (window.windowUtils.rddProcessPid != -1) {
-    rddProcessRunning = 1;
-  }
   let numToOpen = 3;
-  const expectedNumRemotes = numToOpen + socketProcessRunning + rddProcessRunning;
   let numReady = 0;
 
   // Create some remote processes, and set up message-passing so that
@@ -57,6 +48,14 @@
 
   function doReports()
   {
+    // The first content process launch also launches RDD, so check which
+    // processes run after the remote windows are ready and right before
+    // getReports(), which reports on that same set.
+    let rddProcessRunning = 0;
+    if (window.windowUtils.rddProcessPid != -1) {
+      rddProcessRunning = 1;
+    }
+    const expectedNumRemotes = numToOpen + rddProcessRunning;
     let residents = {};
 
     let handleReport = function(aProcess, aPath, aKind, aUnits, aAmount) {
@@ -98,8 +97,7 @@
         if (processes[i] == "") {
           numEmptyProcesses++;
         } else {
-          ok(processes[i].startsWith("Browser (") || processes[i].startsWith("Web Content (") ||
-             (processes[i].startsWith("Socket (") && socketProcessRunning)
+          ok(processes[i].startsWith("Browser (") || processes[i].startsWith("Web Content (")
              || (processes[i].startsWith("RDD (") && rddProcessRunning)
              || processes[i].startsWith("web (") || processes[i].startsWith("Utility ("),
              "correct non-empty process name prefix: " + processes[i]);

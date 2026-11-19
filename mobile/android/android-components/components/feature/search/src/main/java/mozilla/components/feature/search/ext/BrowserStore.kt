@@ -27,8 +27,10 @@ fun BrowserStore.waitForSelectedOrDefaultSearchEngine(
     var subscription: Store.Subscription<BrowserState, BrowserAction>? = null
     subscription = observeManually { state ->
         if (state.search.complete) {
-            block(state.search.selectedOrDefaultSearchEngine)
+            // Unsubscribe before invoking the block: `Store.dispatch` notifies subscribers synchronously, so a block
+            // that dispatches (e.g. by opening a tab) would otherwise re-enter this observer and run again.
             subscription!!.unsubscribe()
+            block(state.search.selectedOrDefaultSearchEngine)
         }
     }
     subscription.resume()

@@ -533,13 +533,6 @@ static enum XML_Error doProlog(XML_Parser parser, const ENCODING *enc,
                                enum XML_Account account);
 static enum XML_Error processEntity(XML_Parser parser, ENTITY *entity,
                                     bool betweenDecl, enum EntityType type);
-/* BEGIN MOZILLA CHANGE (Bug 1746996 - Ensure that storeRawNames is always called) */
-static enum XML_Error doContentInternal(XML_Parser parser, int startTagLevel,
-                                        const ENCODING *enc, const char *start,
-                                        const char *end, const char **endPtr,
-                                        XML_Bool haveMore,
-                                        enum XML_Account account);
-/* END MOZILLA CHANGE */
 static enum XML_Error doContent(XML_Parser parser, int startTagLevel,
                                 const ENCODING *enc, const char *start,
                                 const char *end, const char **endPtr,
@@ -2376,6 +2369,8 @@ XML_SetParamEntityParsing(XML_Parser parser,
 #endif
 }
 
+/* BEGIN MOZILLA CHANGE (unused API) */
+#if 0
 /* The body of XML_SetHashSalt, so that Expat's own tests can reach it
    without tripping the deprecation of the public function. */
 XML_NONTESTING_STATIC int
@@ -2410,6 +2405,8 @@ int XMLCALL
 XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt) {
   return xmlSetHashSalt(parser, hash_salt);
 }
+#endif
+/* END MOZILLA CHANGE */
 
 XML_Bool XMLCALL
 XML_SetHashSalt16Bytes(XML_Parser parser, const uint8_t entropy[16]) {
@@ -2860,13 +2857,7 @@ XML_GetCurrentByteIndex(XML_Parser parser) {
     return (XML_Index)(parser->m_parseEndByteIndex
                        - (parser->m_parseEndPtr - parser->m_eventPtr));
   }
-/* BEGIN MOZILLA CHANGE (fix XML_GetCurrentByteIndex) */
-#if 0
   return -1;
-#else
-  return (XML_Index)parser->m_parseEndByteIndex;
-#endif
-/* END MOZILLA CHANGE */
 }
 
 /* BEGIN MOZILLA CHANGE (unused API) */
@@ -3308,14 +3299,10 @@ contentProcessor(XML_Parser parser, const char *start, const char *end,
       parser, parser->m_parentParser ? 1 : 0, parser->m_encoding, start, end,
       endPtr, (XML_Bool)! parser->m_parsingStatus.finalBuffer,
       XML_ACCOUNT_DIRECT);
-/* BEGIN MOZILLA CHANGE (Bug 1746996 - Ensure that storeRawNames is always called) */
-#if 0
   if (result == XML_ERROR_NONE) {
     if (! storeRawNames(parser))
       return XML_ERROR_NO_MEMORY;
   }
-#endif
-/* END MOZILLA CHANGE */
   return result;
 }
 
@@ -3433,14 +3420,10 @@ externalEntityContentProcessor(XML_Parser parser, const char *start,
       = doContent(parser, 1, parser->m_encoding, start, end, endPtr,
                   (XML_Bool)! parser->m_parsingStatus.finalBuffer,
                   XML_ACCOUNT_ENTITY_EXPANSION);
-/* BEGIN MOZILLA CHANGE (Bug 1746996 - Ensure that storeRawNames is always called) */
-#if 0
   if (result == XML_ERROR_NONE) {
     if (! storeRawNames(parser))
       return XML_ERROR_NO_MEMORY;
   }
-#endif
-/* END MOZILLA CHANGE */
   return result;
 }
 
@@ -3448,21 +3431,6 @@ static enum XML_Error
 doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
           const char *s, const char *end, const char **nextPtr,
           XML_Bool haveMore, enum XML_Account account) {
-/* BEGIN MOZILLA CHANGE (Bug 1746996 - Ensure that storeRawNames is always called) */
-  enum XML_Error result = doContentInternal(parser, startTagLevel, enc, s, end,
-                                            nextPtr, haveMore, account);
-  if (result == XML_ERROR_NONE) {
-    if (! storeRawNames(parser))
-      return XML_ERROR_NO_MEMORY;
-  }
-  return result;
-}
-
-static enum XML_Error
-doContentInternal(XML_Parser parser, int startTagLevel, const ENCODING *enc,
-                  const char *s, const char *end, const char **nextPtr,
-                  XML_Bool haveMore, enum XML_Account account) {
-/* END MOZILLA CHANGE */
   /* save one level of indirection */
   DTD *const dtd = parser->m_dtd;
 
@@ -6423,13 +6391,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
           entityTrackingOnOpen(parser, entity, __LINE__);
           beforeHandler(parser);
           const int status = parser->m_externalEntityRefHandler(
-/* BEGIN MOZILLA CHANGE (Bug 191482 - Add external entity inclusions to internalSubset) */
-#if 0
               parser->m_externalEntityRefHandlerArg, 0, entity->base,
-#else
-              parser->m_externalEntityRefHandlerArg, entity->name, entity->base,
-#endif
-/* END MOZILLA CHANGE */
               entity->systemId, entity->publicId);
           afterHandler(parser);
           if (! status) {

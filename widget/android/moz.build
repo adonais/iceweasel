@@ -117,11 +117,12 @@ EXPORTS.mozilla.widget += [
     "WindowEvent.h",
 ]
 
-EXPORTS.mozilla.java += ["!{}".format(c) for c in natives_from_WrapForJNI]
+if CONFIG["COMPILE_ENVIRONMENT"]:
+    EXPORTS.mozilla.java += ["!{}".format(c) for c in natives_from_WrapForJNI]
 
-EXPORTS.mozilla.java += ["!{}".format(c) for c in wrappers_from_WrapForJNI]
+    EXPORTS.mozilla.java += ["!{}".format(c) for c in wrappers_from_WrapForJNI]
 
-SOURCES += ["!{}".format(c) for c in sources_from_WrapForJNI]
+    SOURCES += ["!{}".format(c) for c in sources_from_WrapForJNI]
 
 SOURCES += [
     "MediaKeysEventSourceFactory.cpp",
@@ -185,30 +186,31 @@ generated_bindings = [
     "SurfaceTexture",
 ]
 
-SOURCES += ["!bindings/%s.cpp" % stem for stem in generated_bindings]
+if CONFIG["COMPILE_ENVIRONMENT"]:
+    SOURCES += ["!bindings/%s.cpp" % stem for stem in generated_bindings]
 
-EXPORTS += ["!bindings/%s.h" % stem for stem in generated_bindings]
+    EXPORTS += ["!bindings/%s.h" % stem for stem in generated_bindings]
 
-# The recursive make backend treats the first output specially: it's passed as
-# an open FileAvoidWrite to the invoked script.  That doesn't work well with
-# the Gradle task that generates all of the outputs, so we add a dummy first
-# output.
+    # The recursive make backend treats the first output specially: it's passed as
+    # an open FileAvoidWrite to the invoked script.  That doesn't work well with
+    # the Gradle task that generates all of the outputs, so we add a dummy first
+    # output.
 
-t = tuple(
-    ["generated_geckoview_files"]
-    + natives_from_WrapForJNI
-    + sources_from_WrapForJNI
-    + wrappers_from_WrapForJNI
-    + ["bindings/%s.cpp" % stem for stem in generated_bindings]
-    + ["bindings/%s.h" % stem for stem in generated_bindings]
-)
+    t = tuple(
+        ["generated_geckoview_files"]
+        + natives_from_WrapForJNI
+        + sources_from_WrapForJNI
+        + wrappers_from_WrapForJNI
+        + ["bindings/%s.cpp" % stem for stem in generated_bindings]
+        + ["bindings/%s.h" % stem for stem in generated_bindings]
+    )
 
-GeneratedFile(
-    *t,
-    script="/mobile/android/gradle.py",
-    inputs=["bindings/%s-classes.txt" % stem for stem in generated_bindings],
-    force=True,
-)
+    GeneratedFile(
+        *t,
+        script="/mobile/android/gradle.py",
+        inputs=["bindings/%s-classes.txt" % stem for stem in generated_bindings],
+        force=True,
+    )
 
 FINAL_LIBRARY = "xul"
 

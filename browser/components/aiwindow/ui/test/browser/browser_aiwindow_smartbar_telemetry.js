@@ -1166,7 +1166,7 @@ add_task(async function test_smartbar_telemetry_remove_tab() {
     const aiWindow = content.document.querySelector("ai-window");
     const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
     const chipContainer = smartbar.querySelector("website-chip-container");
-    const chip = chipContainer.shadowRoot.querySelector("ai-website-chip");
+    const chip = chipContainer.shadowRoot.querySelector("smartwindow-chip");
     const removeButton = chip.shadowRoot.querySelector(".chip-remove");
     removeButton.click();
   });
@@ -1251,7 +1251,8 @@ add_task(
       await ContentTaskUtils.waitForMutationCondition(
         editor.shadowRoot,
         { childList: true, subtree: true },
-        () => editor.shadowRoot.querySelectorAll("ai-website-chip").length === 2
+        () =>
+          editor.shadowRoot.querySelectorAll("smartwindow-chip").length === 2
       );
     });
 

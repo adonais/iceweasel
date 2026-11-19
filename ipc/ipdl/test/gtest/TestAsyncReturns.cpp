@@ -29,11 +29,11 @@ class TestAsyncReturnsChild : public PTestAsyncReturnsChild {
           EXPECT_EQ(std::get<1>(aParam), sMagic2);
           resolve(true);
         },
-        [](ResponseRejectReason&& aReason) { FAIL() << "sending Pong"; });
+        [](ResponseRejectReason&& /*aReason*/) { FAIL() << "sending Pong"; });
     return IPC_OK();
   }
 
-  IPCResult RecvNoReturn(NoReturnResolver&& resolve) final override {
+  IPCResult RecvNoReturn(NoReturnResolver&& /*resolve*/) final override {
     // Not calling `resolve` intentionally
     return IPC_OK();
   }
@@ -54,7 +54,7 @@ class TestAsyncReturnsParent : public PTestAsyncReturnsParent {
 
 IPDL_TEST(TestAsyncReturns, NoReturn) {
   mActor->SendNoReturn(
-      [](bool unused) { FAIL() << "resolve handler should not be called"; },
+      [](bool /*unused*/) { FAIL() << "resolve handler should not be called"; },
       [this](ResponseRejectReason&& aReason) {
         if (aReason != ResponseRejectReason::ResolverDestroyed) {
           FAIL() << "reject with wrong reason";
@@ -69,7 +69,7 @@ IPDL_TEST(TestAsyncReturns, PingPong) {
         EXPECT_TRUE(one);
         mActor->Close();
       },
-      [](ResponseRejectReason&& aReason) { FAIL() << "sending Ping"; });
+      [](ResponseRejectReason&& /*aReason*/) { FAIL() << "sending Ping"; });
 }
 
 }  // namespace mozilla::_ipdltest

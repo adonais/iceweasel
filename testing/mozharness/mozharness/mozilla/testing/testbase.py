@@ -182,6 +182,7 @@ class TestingMixin(
     test_packages_url = None
     symbols_url = None
     symbols_path = None
+    gtest_symbols_path = None
     jsshell_url = None
     minidump_stackwalk_path = None
     ssl_context = None
@@ -265,6 +266,33 @@ class TestingMixin(
             )
 
         return self.symbols_url
+
+    def query_gtest_symbols_url(self):
+        """Return the URL of the symbols for the gtest libxul, or None if the
+        build doesn't have them."""
+        if not self.installer_url and not self.test_packages_url:
+            return None
+        gtest_symbols_url = self.query_prefixed_build_dir_url(
+            ".crashreporter-symbols-gtest.zip"
+        )
+        if not gtest_symbols_url:
+            return None
+        try:
+            self._urlopen(gtest_symbols_url, timeout=120)
+        except Exception as ex:
+            self.info(
+                f"Cannot open gtest symbols url {gtest_symbols_url}: {ex}; "
+                "gtest crashes may lack symbols"
+            )
+            return None
+        return gtest_symbols_url
+
+    def query_gtest_symbols_options(self):
+        """Return the harness options for the gtest symbols that aren't
+        already part of self.symbols_path."""
+        if not self.gtest_symbols_path:
+            return []
+        return [f"--symbols-path={self.gtest_symbols_path}"]
 
     def _pre_config_lock(self, rw_config):
         for i, (target_file, target_dict) in enumerate(
@@ -533,7 +561,7 @@ You can set this by specifying --test-url URL
         )
         self.installer_path = os.path.realpath(source)
 
-    def _download_and_extract_symbols(self):
+    def _download_and_extract_symbols(self, include_gtest=False):
         dirs = self.query_abs_dirs()
         if self.config.get("download_symbols") == "ondemand":
             self.symbols_url = self.retry(
@@ -543,6 +571,10 @@ You can set this by specifying --test-url URL
                 failure_status=None,
             )
             self.symbols_path = self.symbols_url
+            if include_gtest:
+                # The harness passes both URLs to mozcrash, which only
+                # downloads them if there is a crash.
+                self.gtest_symbols_path = self.query_gtest_symbols_url()
             return
 
         else:
@@ -569,6 +601,22 @@ You can set this by specifying --test-url URL
                 self.unpack(fetched_symbols, self.symbols_path)
             elif self.symbols_url:
                 self.download_unpack(self.symbols_url, self.symbols_path)
+
+            if include_gtest:
+                # Extract the gtest symbols into the same directory, so that
+                # the harness only needs a single symbols path.
+                fetched_gtest_symbols = None
+                if "abs_fetches_dir" in dirs:
+                    fetched_gtest_symbols = os.path.join(
+                        dirs["abs_fetches_dir"],
+                        "target.crashreporter-symbols-gtest.zip",
+                    )
+                if fetched_gtest_symbols and os.path.isfile(fetched_gtest_symbols):
+                    self.unpack(fetched_gtest_symbols, self.symbols_path)
+                else:
+                    gtest_symbols_url = self.query_gtest_symbols_url()
+                    if gtest_symbols_url:
+                        self.download_unpack(gtest_symbols_url, self.symbols_path)
 
     def download_and_extract(self, extract_dirs=None, suite_categories=None):
         """
@@ -611,7 +659,9 @@ You can set this by specifying --test-url URL
 
         self._download_installer()
         if self.config.get("download_symbols"):
-            self._download_and_extract_symbols()
+            self._download_and_extract_symbols(
+                include_gtest="gtest" in (suite_categories or [])
+            )
 
     # create_virtualenv is in VirtualenvMixin.
 

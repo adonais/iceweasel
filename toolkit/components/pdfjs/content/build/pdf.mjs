@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.5.273
- * pdfjsBuild = 5d143c409
+ * pdfjsVersion = 6.5.447
+ * pdfjsBuild = c7ca8a32e
  */
 
 ;// ./src/shared/util.js
@@ -29,6 +29,8 @@ const isNodeJS = false;
 const BBOX_INIT = [Infinity, Infinity, -Infinity, -Infinity];
 const F32_BBOX_INIT = new Float32Array(BBOX_INIT);
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+const DEFAULT_VERTICAL_ORIGIN_Y = 880;
+const DEFAULT_VERTICAL_ADVANCE = 1000;
 const LINE_FACTOR = 1.35;
 const LINE_DESCENT_FACTOR = 0.35;
 const BASELINE_FACTOR = (/* unused pure expression or super */ null && (LINE_DESCENT_FACTOR / LINE_FACTOR));
@@ -547,6 +549,11 @@ class Util {
   static makeHexColor(r, g, b) {
     return `#${this.hexNums[r]}${this.hexNums[g]}${this.hexNums[b]}`;
   }
+  static get identity0to256Map() {
+    return shadow(this, "identity0to256Map", Uint8Array.from({
+      length: 256
+    }, (_, i) => i));
+  }
   static transform(m1, m2) {
     return [m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1], m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3], m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]];
   }
@@ -613,10 +620,10 @@ class Util {
       b1 += m1r2;
       b2 += m1r2;
     }
-    output[0] = Math.min(output[0], a0, a1, a2, a3);
-    output[1] = Math.min(output[1], b0, b1, b2, b3);
-    output[2] = Math.max(output[2], a0, a1, a2, a3);
-    output[3] = Math.max(output[3], b0, b1, b2, b3);
+    output[0] = Math.min(output[0], a0, a1, Math.min(a2, a3));
+    output[1] = Math.min(output[1], b0, b1, Math.min(b2, b3));
+    output[2] = Math.max(output[2], a0, a1, Math.max(a2, a3));
+    output[3] = Math.max(output[3], b0, b1, Math.max(b2, b3));
   }
   static inverseTransform(m) {
     const d = m[0] * m[3] - m[1] * m[2];
@@ -912,7 +919,6 @@ class OutputScale {
     return maxPixels;
   }
 }
-const SupportedImageMimeTypes = new Set(["image/apng", "image/avif", "image/bmp", "image/gif", "image/jpeg", "image/png", "image/svg+xml", "image/webp", "image/x-icon"]);
 function applyOpacity(color, opacity) {
   opacity = MathClamp(opacity ?? 1, 0, 1);
   const white = 255 * (1 - opacity);
@@ -1688,6 +1694,7 @@ function setLayerDimensions(div, viewport, mustFlip = false, mustRotate = true) 
     div.setAttribute("data-main-rotation", viewport.rotation);
   }
 }
+const SupportedImageMimeTypes = new Set(["image/apng", "image/avif", "image/bmp", "image/gif", "image/jpeg", "image/png", "image/svg+xml", "image/webp", "image/x-icon"]);
 class ColorScheme {
   static get isDarkMode() {
     return shadow(this, "isDarkMode", !!window?.matchMedia?.("(prefers-color-scheme: dark)").matches);
@@ -2045,7 +2052,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "fc035972-b0fa-48f2-b210-0956ed9f371d";
+const INTERNAL_EVT = "ba7bc200-d8f4-4157-9972-b20498608fe7";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2630,7 +2637,7 @@ class AnnotationEditorUIManager {
       checker: arrowChecker
     }]]));
   }
-  constructor(container, viewer, viewerAlert, altTextManager, commentManager, signatureManager, eventBus, pdfDocument, pageColors, highlightColors, enableHighlightFloatingButton, enableUpdatedAddImage, enableNewAltTextWhenAddingImage, mlManager, editorUndoBar, supportsPinchToZoom) {
+  constructor(container, viewer, viewerAlert, altTextManager, commentManager, signatureManager, eventBus, pdfDocument, pageColors, highlightColors, enableHighlightFloatingButton, enableUpdatedAddImage, enableNewAltTextWhenAddingImage, mlManager, editorUndoBar, supportsPinchToZoom, keepToolbarInPage) {
     const signal = this._signal = this.#abortController.signal;
     this.#container = container;
     this.#viewer = viewer;
@@ -2684,6 +2691,7 @@ class AnnotationEditorUIManager {
     this.isShiftKeyDown = false;
     this._editorUndoBar = editorUndoBar || null;
     this._supportsPinchToZoom = supportsPinchToZoom !== false;
+    this._keepToolbarInPage = keepToolbarInPage === true;
     commentManager?.setSidebarUiManager(this);
   }
   destroy() {
@@ -5427,6 +5435,29 @@ class AnnotationEditor {
     height *= pageHeight;
     x *= pageWidth;
     y *= pageHeight;
+    let tx = 0;
+    let ty = 0;
+    const toolbar = this._uiManager._keepToolbarInPage && this._editToolbar?.div;
+    if (toolbar?.offsetParent) {
+      const scale = this.parentScale;
+      const toolbarLeft = toolbar.offsetLeft + this.div.clientLeft;
+      const toolbarTop = toolbar.offsetTop + this.div.clientTop;
+      const left = Math.min(0, toolbarLeft) / scale;
+      const top = Math.min(0, toolbarTop) / scale;
+      const widthWithToolbar = width - left + Math.max(0, toolbarLeft + toolbar.offsetWidth - this.div.offsetWidth) / scale;
+      const heightWithToolbar = height - top + Math.max(0, toolbarTop + toolbar.offsetHeight - this.div.offsetHeight) / scale;
+      if (widthWithToolbar <= (rotation % 180 ? pageHeight : pageWidth)) {
+        width = widthWithToolbar;
+        tx = left;
+      }
+      if (heightWithToolbar <= (rotation % 180 ? pageWidth : pageHeight)) {
+        height = heightWithToolbar;
+        ty = top;
+      }
+      [tx, ty] = AnnotationEditor.#rotatePoint(tx, ty, rotation);
+      x += tx;
+      y += ty;
+    }
     if (this._mustFixPosition) {
       switch (rotation) {
         case 0:
@@ -5447,8 +5478,8 @@ class AnnotationEditor {
           break;
       }
     }
-    this.x = x /= pageWidth;
-    this.y = y /= pageHeight;
+    this.x = x = (x - tx) / pageWidth;
+    this.y = y = (y - ty) / pageHeight;
     const [bx, by] = this.getBaseTranslation();
     x += bx;
     y += by;
@@ -6529,13 +6560,20 @@ class AnnotationEditor {
     if (!this._editToolbar) {
       this.addEditToolbar().then(() => {
         if (this.div?.classList.contains("selectedEditor")) {
-          this._editToolbar?.show();
+          this.#showEditToolbar();
         }
       });
       return;
     }
-    this._editToolbar?.show();
+    this.#showEditToolbar();
     this.#altText?.toggleAltTextBadge(false);
+  }
+  #showEditToolbar() {
+    this._editToolbar?.show();
+    if (this._uiManager._keepToolbarInPage) {
+      this.fixAndSetPosition();
+      this._onTranslated();
+    }
   }
   focus() {
     if (this.div && !this.div.contains(document.activeElement)) {
@@ -7173,6 +7211,211 @@ class StatTimer {
     const longest = Math.max(...this.times.map(t => t.name.length));
     return this.times.map(t => `${t.name.padEnd(longest)} ${t.end - t.start}ms\n`).join("");
   }
+}
+
+;// ./src/display/webgpu.js
+const MESH_WGSL = `
+struct Uniforms {
+  offsetX      : f32,
+  offsetY      : f32,
+  scaleX       : f32,
+  scaleY       : f32,
+  paddedWidth  : f32,
+  paddedHeight : f32,
+  borderSize   : f32,
+  _pad         : f32,
+};
+
+@group(0) @binding(0) var<uniform> u : Uniforms;
+
+struct VertexInput {
+  @location(0) position : vec2<f32>,
+  @location(1) color    : vec4<f32>,
+};
+
+struct VertexOutput {
+  @builtin(position) position : vec4<f32>,
+  @location(0)       color    : vec3<f32>,
+};
+
+@vertex
+fn vs_main(in : VertexInput) -> VertexOutput {
+  var out : VertexOutput;
+  let cx = (in.position.x + u.offsetX) * u.scaleX;
+  let cy = (in.position.y + u.offsetY) * u.scaleY;
+  out.position = vec4<f32>(
+    ((cx + u.borderSize) / u.paddedWidth) * 2.0 - 1.0,
+    1.0 - ((cy + u.borderSize) / u.paddedHeight) * 2.0,
+    0.0,
+    1.0
+  );
+  out.color = in.color.rgb;
+  return out;
+}
+
+@fragment
+fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
+  return vec4<f32>(in.color, 1.0);
+}
+`;
+class WebGPU {
+  #initPromise = null;
+  #device = null;
+  #meshPipeline = null;
+  #preferredFormat = null;
+  async #initGPU() {
+    if (!globalThis.navigator?.gpu) {
+      return false;
+    }
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        return false;
+      }
+      this.#preferredFormat = navigator.gpu.getPreferredCanvasFormat();
+      this.#device = await adapter.requestDevice();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  init() {
+    return this.#initPromise ||= this.#initGPU();
+  }
+  get isReady() {
+    return this.#device !== null;
+  }
+  loadMeshShader() {
+    if (!this.#device || this.#meshPipeline) {
+      return;
+    }
+    const shaderModule = this.#device.createShaderModule({
+      code: MESH_WGSL
+    });
+    this.#meshPipeline = this.#device.createRenderPipeline({
+      layout: "auto",
+      vertex: {
+        module: shaderModule,
+        entryPoint: "vs_main",
+        buffers: [{
+          arrayStride: 2 * 4,
+          attributes: [{
+            shaderLocation: 0,
+            offset: 0,
+            format: "float32x2"
+          }]
+        }, {
+          arrayStride: 4,
+          attributes: [{
+            shaderLocation: 1,
+            offset: 0,
+            format: "unorm8x4"
+          }]
+        }]
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: "fs_main",
+        targets: [{
+          format: this.#preferredFormat
+        }]
+      },
+      primitive: {
+        topology: "triangle-list"
+      }
+    });
+  }
+  draw(posData, colData, vertexCount, context, backgroundColor, paddedWidth, paddedHeight, borderSize) {
+    this.loadMeshShader();
+    const device = this.#device;
+    const {
+      offsetX,
+      offsetY,
+      scaleX,
+      scaleY
+    } = context;
+    const posBuffer = device.createBuffer({
+      size: Math.max(posData.byteLength, 4),
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    if (posData.byteLength > 0) {
+      device.queue.writeBuffer(posBuffer, 0, posData);
+    }
+    const colBuffer = device.createBuffer({
+      size: Math.max(colData.byteLength, 4),
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    if (colData.byteLength > 0) {
+      device.queue.writeBuffer(colBuffer, 0, colData);
+    }
+    const uniformBuffer = device.createBuffer({
+      size: 8 * 4,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([offsetX, offsetY, scaleX, scaleY, paddedWidth, paddedHeight, borderSize, 0]));
+    const bindGroup = device.createBindGroup({
+      layout: this.#meshPipeline.getBindGroupLayout(0),
+      entries: [{
+        binding: 0,
+        resource: {
+          buffer: uniformBuffer
+        }
+      }]
+    });
+    const offscreen = new OffscreenCanvas(paddedWidth, paddedHeight);
+    const gpuCtx = offscreen.getContext("webgpu");
+    gpuCtx.configure({
+      device,
+      format: this.#preferredFormat,
+      alphaMode: backgroundColor ? "opaque" : "premultiplied"
+    });
+    const clearValue = backgroundColor ? {
+      r: backgroundColor[0] / 255,
+      g: backgroundColor[1] / 255,
+      b: backgroundColor[2] / 255,
+      a: 1
+    } : {
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 0
+    };
+    const commandEncoder = device.createCommandEncoder();
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [{
+        view: gpuCtx.getCurrentTexture().createView(),
+        clearValue,
+        loadOp: "clear",
+        storeOp: "store"
+      }]
+    });
+    if (vertexCount > 0) {
+      renderPass.setPipeline(this.#meshPipeline);
+      renderPass.setBindGroup(0, bindGroup);
+      renderPass.setVertexBuffer(0, posBuffer);
+      renderPass.setVertexBuffer(1, colBuffer);
+      renderPass.draw(vertexCount);
+    }
+    renderPass.end();
+    device.queue.submit([commandEncoder.finish()]);
+    posBuffer.destroy();
+    colBuffer.destroy();
+    uniformBuffer.destroy();
+    return offscreen.transferToImageBitmap();
+  }
+}
+const _webGPU = new WebGPU();
+function initGPU() {
+  return _webGPU.init();
+}
+function isGPUReady() {
+  return _webGPU.isReady;
+}
+function loadMeshShader() {
+  _webGPU.loadMeshShader();
+}
+function drawMeshWithGPU(posData, colData, vertexCount, context, backgroundColor, paddedWidth, paddedHeight, borderSize) {
+  return _webGPU.draw(posData, colData, vertexCount, context, backgroundColor, paddedWidth, paddedHeight, borderSize);
 }
 
 ;// ./src/shared/message_handler.js
@@ -8364,6 +8607,7 @@ function createCanvasTrackers(canvas, operationsCount, {
 /* unused harmony import specifier */ var image_utils_ImageKind;
 /* unused harmony import specifier */ var image_utils_FeatureTest;
 
+
 function convertToRGBA(params) {
   switch (params.kind) {
     case image_utils_ImageKind.GRAYSCALE_1BPP:
@@ -8426,7 +8670,7 @@ function convertRGBToRGBA({
   let i = 0;
   const len = width * height * 3;
   const byteOffset = src.byteOffset + srcPos;
-  const len32 = byteOffset % 4 === 0 ? Math.floor(len / 4) : 0;
+  const len32 = byteOffset % 4 === 0 ? Math.floor(MathClamp(src.length - srcPos, 0, len) / 4) : 0;
   const src32 = len32 > 0 ? new Uint32Array(src.buffer, byteOffset, len32) : null;
   const alphaMask = FeatureTest.isLittleEndian ? 0xff000000 : 0xff;
   if (FeatureTest.isLittleEndian) {
@@ -8471,211 +8715,6 @@ function grayToRGBA(src, dest) {
       dest[i] = src[i] * 0x1010100 | 0x000000ff;
     }
   }
-}
-
-;// ./src/display/webgpu.js
-const MESH_WGSL = `
-struct Uniforms {
-  offsetX      : f32,
-  offsetY      : f32,
-  scaleX       : f32,
-  scaleY       : f32,
-  paddedWidth  : f32,
-  paddedHeight : f32,
-  borderSize   : f32,
-  _pad         : f32,
-};
-
-@group(0) @binding(0) var<uniform> u : Uniforms;
-
-struct VertexInput {
-  @location(0) position : vec2<f32>,
-  @location(1) color    : vec4<f32>,
-};
-
-struct VertexOutput {
-  @builtin(position) position : vec4<f32>,
-  @location(0)       color    : vec3<f32>,
-};
-
-@vertex
-fn vs_main(in : VertexInput) -> VertexOutput {
-  var out : VertexOutput;
-  let cx = (in.position.x + u.offsetX) * u.scaleX;
-  let cy = (in.position.y + u.offsetY) * u.scaleY;
-  out.position = vec4<f32>(
-    ((cx + u.borderSize) / u.paddedWidth) * 2.0 - 1.0,
-    1.0 - ((cy + u.borderSize) / u.paddedHeight) * 2.0,
-    0.0,
-    1.0
-  );
-  out.color = in.color.rgb;
-  return out;
-}
-
-@fragment
-fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
-  return vec4<f32>(in.color, 1.0);
-}
-`;
-class WebGPU {
-  #initPromise = null;
-  #device = null;
-  #meshPipeline = null;
-  #preferredFormat = null;
-  async #initGPU() {
-    if (!globalThis.navigator?.gpu) {
-      return false;
-    }
-    try {
-      const adapter = await navigator.gpu.requestAdapter();
-      if (!adapter) {
-        return false;
-      }
-      this.#preferredFormat = navigator.gpu.getPreferredCanvasFormat();
-      this.#device = await adapter.requestDevice();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  init() {
-    return this.#initPromise ||= this.#initGPU();
-  }
-  get isReady() {
-    return this.#device !== null;
-  }
-  loadMeshShader() {
-    if (!this.#device || this.#meshPipeline) {
-      return;
-    }
-    const shaderModule = this.#device.createShaderModule({
-      code: MESH_WGSL
-    });
-    this.#meshPipeline = this.#device.createRenderPipeline({
-      layout: "auto",
-      vertex: {
-        module: shaderModule,
-        entryPoint: "vs_main",
-        buffers: [{
-          arrayStride: 2 * 4,
-          attributes: [{
-            shaderLocation: 0,
-            offset: 0,
-            format: "float32x2"
-          }]
-        }, {
-          arrayStride: 4,
-          attributes: [{
-            shaderLocation: 1,
-            offset: 0,
-            format: "unorm8x4"
-          }]
-        }]
-      },
-      fragment: {
-        module: shaderModule,
-        entryPoint: "fs_main",
-        targets: [{
-          format: this.#preferredFormat
-        }]
-      },
-      primitive: {
-        topology: "triangle-list"
-      }
-    });
-  }
-  draw(posData, colData, vertexCount, context, backgroundColor, paddedWidth, paddedHeight, borderSize) {
-    this.loadMeshShader();
-    const device = this.#device;
-    const {
-      offsetX,
-      offsetY,
-      scaleX,
-      scaleY
-    } = context;
-    const posBuffer = device.createBuffer({
-      size: Math.max(posData.byteLength, 4),
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-    });
-    if (posData.byteLength > 0) {
-      device.queue.writeBuffer(posBuffer, 0, posData);
-    }
-    const colBuffer = device.createBuffer({
-      size: Math.max(colData.byteLength, 4),
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-    });
-    if (colData.byteLength > 0) {
-      device.queue.writeBuffer(colBuffer, 0, colData);
-    }
-    const uniformBuffer = device.createBuffer({
-      size: 8 * 4,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-    device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([offsetX, offsetY, scaleX, scaleY, paddedWidth, paddedHeight, borderSize, 0]));
-    const bindGroup = device.createBindGroup({
-      layout: this.#meshPipeline.getBindGroupLayout(0),
-      entries: [{
-        binding: 0,
-        resource: {
-          buffer: uniformBuffer
-        }
-      }]
-    });
-    const offscreen = new OffscreenCanvas(paddedWidth, paddedHeight);
-    const gpuCtx = offscreen.getContext("webgpu");
-    gpuCtx.configure({
-      device,
-      format: this.#preferredFormat,
-      alphaMode: backgroundColor ? "opaque" : "premultiplied"
-    });
-    const clearValue = backgroundColor ? {
-      r: backgroundColor[0] / 255,
-      g: backgroundColor[1] / 255,
-      b: backgroundColor[2] / 255,
-      a: 1
-    } : {
-      r: 0,
-      g: 0,
-      b: 0,
-      a: 0
-    };
-    const commandEncoder = device.createCommandEncoder();
-    const renderPass = commandEncoder.beginRenderPass({
-      colorAttachments: [{
-        view: gpuCtx.getCurrentTexture().createView(),
-        clearValue,
-        loadOp: "clear",
-        storeOp: "store"
-      }]
-    });
-    if (vertexCount > 0) {
-      renderPass.setPipeline(this.#meshPipeline);
-      renderPass.setBindGroup(0, bindGroup);
-      renderPass.setVertexBuffer(0, posBuffer);
-      renderPass.setVertexBuffer(1, colBuffer);
-      renderPass.draw(vertexCount);
-    }
-    renderPass.end();
-    device.queue.submit([commandEncoder.finish()]);
-    posBuffer.destroy();
-    colBuffer.destroy();
-    uniformBuffer.destroy();
-    return offscreen.transferToImageBitmap();
-  }
-}
-const _webGPU = new WebGPU();
-function initGPU() {
-  return _webGPU.init();
-}
-function isGPUReady() {
-  return _webGPU.isReady;
-}
-function loadMeshShader() {
-  _webGPU.loadMeshShader();
-}
-function drawMeshWithGPU(posData, colData, vertexCount, context, backgroundColor, paddedWidth, paddedHeight, borderSize) {
-  return _webGPU.draw(posData, colData, vertexCount, context, backgroundColor, paddedWidth, paddedHeight, borderSize);
 }
 
 ;// ./src/display/pattern_helper.js
@@ -9575,15 +9614,8 @@ class TransferMapsFallback {
   #maps;
   constructor(maps) {
     const [mapR, mapG = mapR, mapB = mapR] = maps;
-    const {
-      identityMap
-    } = TransferMapsFallback;
+    const identityMap = Util.identity0to256Map.slice();
     this.#maps = [mapR || identityMap, mapG || identityMap, mapB || identityMap];
-  }
-  static get identityMap() {
-    return shadow(this, "identityMap", Uint8Array.from({
-      length: 256
-    }, (_, i) => i));
   }
   applyToColor(color) {
     if (typeof color !== "string" || !color.startsWith("#")) {
@@ -10682,8 +10714,14 @@ class CanvasGraphics {
       const dims = this.current.tilingPatternDims;
       const tileIdx = dims && fillColor.canSkipPatternCanvas(dims);
       if (tileIdx) {
-        fillColor.drawPattern(this, path, this.pendingEOFill, tileIdx, opIdx);
+        const {
+          pendingClip,
+          pendingEOFill
+        } = this;
+        this.pendingClip = null;
         this.pendingEOFill = false;
+        fillColor.drawPattern(this, path, pendingEOFill, tileIdx, opIdx);
+        this.pendingClip = pendingClip;
         if (consumePath) {
           this.consumePath(opIdx, path, intersect);
         }
@@ -10974,6 +11012,14 @@ class CanvasGraphics {
     }
     return shadow(this, "isFontSubpixelAAEnabled", enabled);
   }
+  #getTextPattern(color, pathType, opIdx) {
+    const ctx = this.ctx;
+    ctx.save();
+    const pattern = color.getPattern(ctx, this, getCurrentTransformInverse(ctx), pathType, opIdx);
+    const transform = getCurrentTransform(ctx);
+    ctx.restore();
+    return [pattern, transform];
+  }
   showText(opIdx, glyphs) {
     if (this.dependencyTracker) {
       this.dependencyTracker.recordDependencies(opIdx, Dependencies.showText).resetBBox(opIdx);
@@ -11036,18 +11082,10 @@ class CanvasGraphics {
     }
     ctx.lineWidth = lineWidth;
     if (needsFill && current.patternFill) {
-      ctx.save();
-      const pattern = current.fillColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.FILL, opIdx);
-      patternFillTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.fillStyle = pattern;
+      [ctx.fillStyle, patternFillTransform] = this.#getTextPattern(current.fillColor, PathType.FILL, opIdx);
     }
     if (needsStroke && current.patternStroke) {
-      ctx.save();
-      const pattern = current.strokeColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.STROKE, opIdx);
-      patternStrokeTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.strokeStyle = pattern;
+      [ctx.strokeStyle, patternStrokeTransform] = this.#getTextPattern(current.strokeColor, PathType.STROKE, opIdx);
     }
     if (font.isInvalidPDFjsFont) {
       const chars = [];
@@ -11069,7 +11107,8 @@ class CanvasGraphics {
       return;
     }
     let x = 0,
-      i;
+      i,
+      glyphPatterns = null;
     for (i = 0; i < glyphsLength; ++i) {
       const glyph = glyphs[i];
       if (typeof glyph === "number") {
@@ -11080,7 +11119,7 @@ class CanvasGraphics {
       const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
       const character = glyph.fontChar;
       const accent = glyph.accent;
-      let scaledX, scaledY;
+      let scaledX, scaledY, measure;
       let width = glyph.width;
       if (vertical) {
         const vmetric = glyph.vmetric;
@@ -11089,23 +11128,41 @@ class CanvasGraphics {
         width = -vmetric[0];
         scaledX = vx / fontSizeScale;
         scaledY = (x + vy) / fontSizeScale;
+        if (glyph.isRotated) {
+          measure = ctx.measureText(character);
+          const glyphScale = widthAdvanceScale / fontSizeScale;
+          const halfWidth = glyph.width / 2 * glyphScale;
+          const centerX = scaledX + halfWidth;
+          scaledX = scaledY - ((/* inlined export .DEFAULT_VERTICAL_ORIGIN_Y */880) - (/* inlined export .DEFAULT_VERTICAL_ADVANCE */1000) / 2) * glyphScale - halfWidth;
+          scaledY = (measure.actualBoundingBoxAscent - measure.actualBoundingBoxDescent) / 2 - centerX;
+          restoreNeeded = true;
+          ctx.save();
+          ctx.rotate(Math.PI / 2);
+        }
       } else {
         scaledX = x / fontSizeScale;
         scaledY = 0;
       }
-      let measure;
-      if (font.remeasure && width > 0) {
-        measure = ctx.measureText(character);
+      const glyphWidth = glyph.isRotated ? glyph.width : width;
+      let characterScaleX = 1;
+      if ((font.remeasure || glyph.isRotated) && glyphWidth > 0) {
+        measure ??= ctx.measureText(character);
         const measuredWidth = measure.width * 1000 / fontSize * fontSizeScale;
-        if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
-          const characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
+        if (glyphWidth < measuredWidth && this.isFontSubpixelAAEnabled) {
+          characterScaleX = glyphWidth / measuredWidth;
+          if (!restoreNeeded) {
+            restoreNeeded = true;
+            ctx.save();
+          }
           ctx.scale(characterScaleX, 1);
           scaledX /= characterScaleX;
-        } else if (width !== measuredWidth) {
-          scaledX += (width - measuredWidth) / 2000 * fontSize / fontSizeScale;
+        } else if (glyphWidth !== measuredWidth) {
+          scaledX += (glyphWidth - measuredWidth) / 2000 * fontSize / fontSizeScale;
         }
+      }
+      if (restoreNeeded && font.missingFile && (patternFillTransform || patternStrokeTransform)) {
+        glyphPatterns ||= new Map();
+        [ctx.fillStyle, ctx.strokeStyle] = glyphPatterns.getOrInsertComputed(glyph.isRotated ? -characterScaleX : characterScaleX, () => [patternFillTransform ? this.#getTextPattern(current.fillColor, PathType.FILL, opIdx)[0] : ctx.fillStyle, patternStrokeTransform ? this.#getTextPattern(current.strokeColor, PathType.STROKE, opIdx)[0] : ctx.strokeStyle]);
       }
       if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
         if (simpleFillText && !accent) {
@@ -11150,9 +11207,9 @@ class CanvasGraphics {
     const textHScale = current.textHScale * fontDirection;
     const fontMatrix = current.fontMatrix || FONT_IDENTITY_MATRIX;
     const glyphsLength = glyphs.length;
-    const isTextInvisible = current.textRenderingMode === TextRenderingMode.INVISIBLE;
+    const isTextVisible = current.textRenderingMode !== TextRenderingMode.INVISIBLE;
     let i, glyph, width, spacingLength;
-    if (isTextInvisible || fontSize === 0) {
+    if (fontSize === 0) {
       return;
     }
     this._cachedScaleForStroking[0] = -1;
@@ -11177,20 +11234,14 @@ class CanvasGraphics {
         const operatorList = font.charProcOperatorList.get(glyph.operatorListId);
         if (!operatorList) {
           warn(`Type3 character "${glyph.operatorListId}" is not available.`);
-        } else if (this.contentVisible) {
+        } else if (this.contentVisible && isTextVisible) {
           this.save();
-          if (operatorList.fnArray[0] === OPS.setCharWidth) {
-            this.current.fillAlpha = this.current.strokeAlpha = 1;
-            ctx.globalAlpha = 1;
-          }
           ctx.scale(fontSize, fontSize);
           ctx.transform(...fontMatrix);
           this.executeOperatorList(operatorList);
           this.restore();
         }
-        const p = [glyph.width, 0];
-        Util.applyTransform(p, fontMatrix);
-        width = p[0] * fontSize + spacing;
+        width = glyph.width * fontMatrix[0] * fontSize + spacing * fontDirection;
         ctx.translate(width, 0);
         current.x += width * textHScale;
       }
@@ -14567,7 +14618,7 @@ class RendererWorker {
         terminateEarly("TypedArray transfer test failed.");
         return;
       }
-      const apiVersion = "6.5.273";
+      const apiVersion = "6.5.447";
       if (apiVersion !== data.workerVersion) {
         terminateEarly(`The API version "${apiVersion}" does not match the Worker version "${data.workerVersion}".`);
         return;
@@ -15158,7 +15209,9 @@ function getDocument(src = {}) {
   const BinaryDataFactory = src.BinaryDataFactory || (/* inlined export .DOMBinaryDataFactory */null);
   const enableHWA = src.enableHWA === true;
   const enableWebGPU = src.enableWebGPU === true;
-  const gpuPromise = enableWebGPU ? initGPU() : Promise.resolve(false);
+  if (enableWebGPU) {
+    initGPU();
+  }
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
   const styleElement = null;
@@ -15201,7 +15254,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.5.273",
+    apiVersion: "6.5.447",
     data,
     password,
     disableAutoFetch,
@@ -15223,8 +15276,7 @@ function getDocument(src = {}) {
       cMapPacked,
       iccUrl,
       standardFontDataUrl,
-      wasmUrl,
-      hasGPU: false
+      wasmUrl
     }
   };
   const transportParams = {
@@ -15232,16 +15284,16 @@ function getDocument(src = {}) {
     pdfBug,
     styleElement,
     rendererWorker: task._rendererWorker,
+    enableWebGPU,
     loadingParams: {
       disableAutoFetch,
       enableXfa
     }
   };
-  Promise.all([worker.promise, gpuPromise]).then(function ([, hasGPU]) {
+  worker.promise.then(function () {
     if (worker.destroyed) {
       throw new Error("Worker was destroyed");
     }
-    docParams.evaluatorOptions.hasGPU = hasGPU;
     const workerIdPromise = worker.messageHandler.sendWithPromise("GetDocRequest", docParams, data ? [data.buffer] : null);
     let networkStream;
     if (data) {} else if (rangeTransport) {
@@ -15667,7 +15719,8 @@ class PDFPageProxy {
       pdfBug: this._pdfBug,
       pageColors,
       operationsFilter,
-      rendererWorker: this._transport.rendererWorker
+      rendererWorker: this._transport.rendererWorker,
+      waitForGPU: () => this._transport.waitForGPU()
     });
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
     const renderTask = internalRenderTask.task;
@@ -15716,12 +15769,20 @@ class PDFPageProxy {
       return this.getXfa().then(xfa => XfaText.textContent(xfa));
     }
     const readableStream = this.streamTextContent(params);
+    const reader = readableStream.getReader();
     const textContent = {
       items: [],
       styles: Object.create(null),
       lang: null
     };
-    for await (const value of readableStream) {
+    while (true) {
+      const {
+        value,
+        done
+      } = await reader.read();
+      if (done) {
+        break;
+      }
       textContent.lang ??= value.lang;
       Object.assign(textContent.styles, value.styles);
       textContent.items.push(...value.items);
@@ -16073,6 +16134,7 @@ class PDFWorker {
 class WorkerTransport {
   downloadInfoCapability = Promise.withResolvers();
   #fullReader = null;
+  #hasMeshPattern = false;
   #methodPromises = new Map();
   #networkStream = null;
   #pageCache = new Map();
@@ -16351,12 +16413,18 @@ class WorkerTransport {
       rendererWorker?.sendCommonObj(id, type, exportedData);
       if (!this.commonObjs.has(id)) {
         objectHandler.resolveCommonObject(id, type, exportedData);
+        if (type === "Pattern" && this.commonObjs.get(id)[0] === "Mesh") {
+          this.#hasMeshPattern = true;
+        }
       }
       return null;
     });
     messageHandler.on("obj", ([id, pageProxyId, type, imageData]) => {
       if (this.destroyed) {
         return;
+      }
+      if (type === "Pattern" && imageData[0] === "Mesh") {
+        this.#hasMeshPattern = true;
       }
       if (objectHandler.resolveObject(id, pageProxyId, type, imageData)) {
         this.rendererWorker?.sendObj(id, pageProxyId, type, imageData);
@@ -16444,6 +16512,9 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("ExtractPages", params, transfer).finally(() => {
       this.annotationStorage.resetModified();
     });
+  }
+  waitForGPU() {
+    return this._params.enableWebGPU && this.#hasMeshPattern && !isGPUReady() ? initGPU() : null;
   }
   getPage(pageNumber) {
     if (!Number.isInteger(pageNumber) || pageNumber <= 0 || pageNumber > this.pagesMapper.pagesNumber) {
@@ -16661,6 +16732,7 @@ class InternalRenderTask {
   #imagesTracker = null;
   #rAF = null;
   #rendererTask = null;
+  #waitForGPU = null;
   static #canvasInUse = new WeakSet();
   constructor({
     callback,
@@ -16677,7 +16749,8 @@ class InternalRenderTask {
     pdfBug = false,
     pageColors = null,
     operationsFilter = null,
-    rendererWorker = null
+    rendererWorker = null,
+    waitForGPU = null
   }) {
     this.callback = callback;
     this.params = params;
@@ -16705,6 +16778,7 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._operationsFilter = operationsFilter;
+    this.#waitForGPU = waitForGPU;
     this.#rendererTask = rendererWorker?.createRenderTask({
       pageProxyId,
       operatorList,
@@ -16843,6 +16917,15 @@ class InternalRenderTask {
     if (this.cancelled) {
       return;
     }
+    if (!this.#rendererTask) {
+      const gpuPromise = this.#waitForGPU?.();
+      if (gpuPromise) {
+        await gpuPromise;
+        if (this.cancelled) {
+          return;
+        }
+      }
+    }
     const {
       operatorList
     } = this;
@@ -16871,8 +16954,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.5.273";
-const build = "5d143c409";
+const version = "6.5.447";
+const build = "c7ca8a32e";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -17383,9 +17466,9 @@ class AnnotationElement {
     this.downloadManager = parameters.downloadManager;
     this.imageResourcesPath = parameters.imageResourcesPath;
     this.renderForms = parameters.renderForms;
-    this.svgFactory = parameters.svgFactory;
     this.annotationStorage = parameters.annotationStorage;
     this.enableComment = parameters.enableComment;
+    this.enableAnnotationEditing = parameters.enableAnnotationEditing !== false;
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
     this._fieldObjects = parameters.fieldObjects;
@@ -17404,8 +17487,11 @@ class AnnotationElement {
   }) {
     return !!(contentsObj?.str || richText?.str);
   }
+  static get _svgFactory() {
+    return shadow(this, "_svgFactory", new DOMSVGFactory());
+  }
   get _isEditable() {
-    return this.data.isEditable;
+    return this.enableAnnotationEditing && this.data.isEditable;
   }
   get hasPopupData() {
     return AnnotationElement._hasPopupData(this.data) || this.enableComment && !!this.commentText;
@@ -17833,9 +17919,7 @@ class AnnotationElement {
     }
     const width = rectTrX - rectBlX;
     const height = rectTrY - rectBlY;
-    const {
-      svgFactory
-    } = this;
+    const svgFactory = AnnotationElement._svgFactory;
     const svg = svgFactory.createElement("svg");
     svg.classList.add("quadrilateralsContainer");
     svg.setAttribute("width", 0);
@@ -19902,8 +19986,9 @@ class LineAnnotationElement extends AnnotationElement {
       width,
       height
     } = this;
-    const svg = this.svgFactory.create(width, height, true);
-    const line = this.#line = this.svgFactory.createElement("svg:line");
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, true);
+    const line = this.#line = svgFactory.createElement("svg:line");
     line.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
     line.setAttribute("y1", data.rect[3] - data.lineCoordinates[1]);
     line.setAttribute("x2", data.rect[2] - data.lineCoordinates[2]);
@@ -19941,9 +20026,10 @@ class SquareAnnotationElement extends AnnotationElement {
       width,
       height
     } = this;
-    const svg = this.svgFactory.create(width, height, true);
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, true);
     const borderWidth = data.borderStyle.width;
-    const square = this.#square = this.svgFactory.createElement("svg:rect");
+    const square = this.#square = svgFactory.createElement("svg:rect");
     square.setAttribute("x", borderWidth / 2);
     square.setAttribute("y", borderWidth / 2);
     square.setAttribute("width", width - borderWidth);
@@ -19981,9 +20067,10 @@ class CircleAnnotationElement extends AnnotationElement {
       width,
       height
     } = this;
-    const svg = this.svgFactory.create(width, height, true);
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, true);
     const borderWidth = data.borderStyle.width;
-    const circle = this.#circle = this.svgFactory.createElement("svg:ellipse");
+    const circle = this.#circle = svgFactory.createElement("svg:ellipse");
     circle.setAttribute("cx", width / 2);
     circle.setAttribute("cy", height / 2);
     circle.setAttribute("rx", width / 2 - borderWidth / 2);
@@ -20031,7 +20118,8 @@ class PolylineAnnotationElement extends AnnotationElement {
     if (!vertices) {
       return this.container;
     }
-    const svg = this.svgFactory.create(width, height, true);
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, true);
     let points = [];
     for (let i = 0, ii = vertices.length; i < ii; i += 2) {
       const x = vertices[i] - rect[0];
@@ -20039,7 +20127,7 @@ class PolylineAnnotationElement extends AnnotationElement {
       points.push(`${x},${y}`);
     }
     points = points.join(" ");
-    const polyline = this.#polyline = this.svgFactory.createElement(this.svgElementName);
+    const polyline = this.#polyline = svgFactory.createElement(this.svgElementName);
     polyline.setAttribute("points", points);
     polyline.setAttribute("stroke-width", borderStyle.width || 1);
     polyline.setAttribute("stroke", "transparent");
@@ -20138,8 +20226,9 @@ class InkAnnotationElement extends AnnotationElement {
       width,
       height
     } = this.#getTransform(rotation, rect);
-    const svg = this.svgFactory.create(width, height, true);
-    const g = this.#polylinesGroupElement = this.svgFactory.createElement("svg:g");
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, true);
+    const g = this.#polylinesGroupElement = svgFactory.createElement("svg:g");
     svg.append(g);
     g.setAttribute("stroke-width", borderStyle.width || 1);
     g.setAttribute("stroke-linecap", "round");
@@ -20149,7 +20238,7 @@ class InkAnnotationElement extends AnnotationElement {
     g.setAttribute("fill", "transparent");
     g.setAttribute("transform", transform);
     for (const inkList of inkLists) {
-      const polyline = this.svgFactory.createElement(this.svgElementName);
+      const polyline = svgFactory.createElement(this.svgElementName);
       this.#polylines.push(polyline);
       polyline.setAttribute("points", inkList.join(","));
       g.append(polyline);
@@ -20575,9 +20664,9 @@ class AnnotationLayer {
       downloadManager: params.downloadManager,
       imageResourcesPath: params.imageResourcesPath || "",
       renderForms: params.renderForms !== false,
-      svgFactory: new DOMSVGFactory(),
       annotationStorage: this.#annotationStorage,
       enableComment: params.enableComment === true,
+      enableAnnotationEditing: params.enableAnnotationEditing !== false,
       enableScripting: params.enableScripting === true,
       hasJSActions: params.hasJSActions,
       fieldObjects: params.fieldObjects,
@@ -20730,7 +20819,6 @@ class AnnotationLayer {
       data: null,
       layer: this.div,
       linkService: this.#linkService,
-      svgFactory: new DOMSVGFactory(),
       parent: this
     };
     for (const data of annotations) {
@@ -22229,7 +22317,7 @@ class DrawingEditor extends AnnotationEditor {
     parent.toggleDrawing();
     uiManager._editorUndoBar?.hide();
     if (DrawingEditor.#currentDraw) {
-      parent.drawLayer.updateProperties(this._currentDrawId, DrawingEditor.#currentDraw.startNew(x, y, parentWidth, parentHeight, rotation));
+      parent.drawLayer.updateProperties(this._currentDrawId, DrawingEditor.#currentDraw.startNew(x, y, parentWidth, parentHeight, rotation, event.timeStamp));
       return;
     }
     uiManager.updateUIForDefaultProperties(this);
@@ -22239,7 +22327,8 @@ class DrawingEditor extends AnnotationEditor {
       box: [boxX, boxY, parentWidth, parentHeight],
       rotation,
       parent,
-      isLTR
+      isLTR,
+      timeStamp: event.timeStamp
     });
     DrawingEditor.#currentDrawingOptions = this.getDefaultDrawingOptions();
     this._currentParent = parent;
@@ -22263,12 +22352,14 @@ class DrawingEditor extends AnnotationEditor {
     const coalesced = event.getCoalescedEvents?.();
     if (coalesced?.length) {
       const points = [];
+      const timeStamps = [];
       for (const sample of coalesced) {
         points.push(...this._getPointerCoords(sample, event));
+        timeStamps.push(sample.timeStamp);
       }
-      properties = DrawingEditor.#currentDraw.addPoints(points);
+      properties = DrawingEditor.#currentDraw.addPoints(points, timeStamps);
     } else {
-      properties = DrawingEditor.#currentDraw.add(...this._getPointerCoords(event));
+      properties = DrawingEditor.#currentDraw.add(...this._getPointerCoords(event), event.timeStamp);
     }
     this._currentParent.drawLayer.updateProperties(this._currentDrawId, properties);
     CurrentPointers.setTimeStamp(event.timeStamp);
@@ -22296,7 +22387,7 @@ class DrawingEditor extends AnnotationEditor {
     }
     parent.toggleDrawing(true);
     this._cleanup(false);
-    parent.drawLayer.updateProperties(this._currentDrawId, event?.target === parent.div ? DrawingEditor.#currentDraw.end(...this._getPointerCoords(event)) : DrawingEditor.#currentDraw.end());
+    parent.drawLayer.updateProperties(this._currentDrawId, event?.target === parent.div ? DrawingEditor.#currentDraw.end(...this._getPointerCoords(event), event.timeStamp) : DrawingEditor.#currentDraw.end());
     if (this.supportMultipleDrawings) {
       const draw = DrawingEditor.#currentDraw;
       const drawId = this._currentDrawId;
@@ -22469,20 +22560,30 @@ class Outline {
   static svgRound(x) {
     return Math.round(x * 10000);
   }
-  static _normalizePoint(x, y, parentWidth, parentHeight, rotation) {
+  static _normalizePoint(x, y, parentWidth, parentHeight, rotation, dest = []) {
     switch (rotation) {
       case 90:
-        return [1 - y / parentWidth, x / parentHeight];
+        dest[0] = 1 - y / parentWidth;
+        dest[1] = x / parentHeight;
+        break;
       case 180:
-        return [1 - x / parentWidth, 1 - y / parentHeight];
+        dest[0] = 1 - x / parentWidth;
+        dest[1] = 1 - y / parentHeight;
+        break;
       case 270:
-        return [y / parentWidth, 1 - x / parentHeight];
+        dest[0] = y / parentWidth;
+        dest[1] = 1 - x / parentHeight;
+        break;
       default:
-        return [x / parentWidth, y / parentHeight];
+        dest[0] = x / parentWidth;
+        dest[1] = y / parentHeight;
+        break;
     }
+    return dest;
   }
-  static createBezierPoints(x1, y1, x2, y2, x3, y3) {
-    return [(x1 + 5 * x2) / 6, (y1 + 5 * y2) / 6, (5 * x2 + x3) / 6, (5 * y2 + y3) / 6, (x2 + x3) / 2, (y2 + y3) / 2];
+  static createBezierPoints(x1, y1, x2, y2, x3, y3, dest = []) {
+    dest.push((x1 + 5 * x2) / 6, (y1 + 5 * y2) / 6, (5 * x2 + x3) / 6, (5 * y2 + y3) / 6, (x2 + x3) / 2, (y2 + y3) / 2);
+    return dest;
   }
 }
 
@@ -23766,147 +23867,295 @@ class HighlightEditor extends DrawingEditor {
   }
 }
 
+;// ./src/display/editor/drawers/input_smoother.js
+class InputSmoother {
+  static #HALF_WINDOW = 10;
+  static #UPSAMPLING_PERIOD = 1000 / 180;
+  static #MAX_DIVISIONS = 100;
+  static #TIME_EPSILON = 1e-3;
+  #samples;
+  #firstTime;
+  #lastTime;
+  constructor(x, y, timeStamp) {
+    this.#samples = [x, y, timeStamp];
+    this.#firstTime = this.#lastTime = timeStamp;
+  }
+  add(x, y, timeStamp) {
+    const samples = this.#samples;
+    const lastTime = samples.at(-1);
+    timeStamp = timeStamp > lastTime ? timeStamp : lastTime + InputSmoother.#TIME_EPSILON;
+    samples.push(x, y, timeStamp);
+    const points = this.#smooth(timeStamp - InputSmoother.#HALF_WINDOW, true);
+    const start = this.#getSampleIndex(this.#lastTime - InputSmoother.#HALF_WINDOW);
+    if (start >= samples.length / 2) {
+      samples.copyWithin(0, start);
+      samples.length -= start;
+    }
+    return points;
+  }
+  get pendingPoints() {
+    return this.#smooth(Infinity, false);
+  }
+  end() {
+    return this.#smooth(Infinity, true);
+  }
+  #smooth(maxTime, isStable) {
+    const samples = this.#samples;
+    const firstTime = this.#firstTime;
+    const lastTime = samples.at(-1);
+    const points = [];
+    const time = this.#lastTime;
+    for (let i = this.#getSampleIndex(time) + 3; i < samples.length; i += 3) {
+      const startTime = samples[i - 1];
+      const dt = samples[i + 2] - startTime;
+      const n = Math.min(Math.ceil(dt / InputSmoother.#UPSAMPLING_PERIOD), InputSmoother.#MAX_DIVISIONS);
+      for (let k = 1; k <= n; k++) {
+        const t = k === n ? samples[i + 2] : startTime + dt * k / n;
+        if (t <= time) {
+          continue;
+        }
+        if (t > maxTime) {
+          return points;
+        }
+        const halfWindow = Math.min(InputSmoother.#HALF_WINDOW, t - firstTime, lastTime - t);
+        this.#average(t - halfWindow, t + halfWindow, points);
+        if (isStable) {
+          this.#lastTime = t;
+        }
+      }
+    }
+    return points;
+  }
+  #getSampleIndex(time) {
+    const samples = this.#samples;
+    let start = 0;
+    let end = samples.length / 3 - 1;
+    while (start < end) {
+      const middle = start + end + 1 >> 1;
+      if (samples[3 * middle + 2] <= time) {
+        start = middle;
+      } else {
+        end = middle - 1;
+      }
+    }
+    return 3 * start;
+  }
+  #average(startTime, endTime, points) {
+    const samples = this.#samples;
+    const index = this.#getSampleIndex(startTime);
+    let sumX = 0,
+      sumY = 0,
+      duration = 0;
+    for (let i = index; i < samples.length - 3 && samples[i + 2] < endTime; i += 3) {
+      const x1 = samples[i],
+        y1 = samples[i + 1],
+        t1 = samples[i + 2],
+        t2 = samples[i + 5];
+      const start = Math.max(t1, startTime);
+      const end = Math.min(t2, endTime);
+      if (end <= start) {
+        continue;
+      }
+      const dt = end - start;
+      const ratio = (start + end - 2 * t1) / (t2 - t1);
+      sumX += dt * (x1 + ratio * (samples[i + 3] - x1) / 2);
+      sumY += dt * (y1 + ratio * (samples[i + 4] - y1) / 2);
+      duration += dt;
+    }
+    if (duration === 0) {
+      points.push(samples[index], samples[index + 1]);
+    } else {
+      points.push(sumX / duration, sumY / duration);
+    }
+  }
+}
+
 ;// ./src/display/editor/drawers/inkdraw.js
 
 
 
+
+function svgPoint(data, i) {
+  return `${Outline.svgRound(data[i])} ${Outline.svgRound(data[i + 1])}`;
+}
+function pushCurves(buffer, line, start) {
+  for (let i = start, ii = line.length; i < ii; i += 6) {
+    buffer.push(`C${svgPoint(line, i)} ${svgPoint(line, i + 2)} ${svgPoint(line, i + 4)}`);
+  }
+}
+function lineToSVGPath(line) {
+  const start = `M${svgPoint(line, 4)}`;
+  if (line.length === 6) {
+    return `${start}Z`;
+  }
+  if (line.length === 12 && isNaN(line[6])) {
+    return `${start}L${svgPoint(line, 10)}`;
+  }
+  const buffer = [start];
+  pushCurves(buffer, line, 6);
+  return buffer.join("");
+}
 class InkDrawOutliner {
   #last = new Float64Array(6);
   #tip = new Float64Array(2);
   #line;
   #lines;
   #rotation;
+  #smoother = null;
   #thickness;
   #points;
+  #inputCount = 1;
+  #lastInput = new Float64Array(2);
   #lastSVGPath = "";
   #lastIndex = 0;
   #outlines = new InkDrawOutline();
   #parentWidth;
   #parentHeight;
-  constructor(x, y, parentWidth, parentHeight, rotation, thickness) {
+  constructor(x, y, parentWidth, parentHeight, rotation, thickness, timeStamp) {
     this.#parentWidth = parentWidth;
     this.#parentHeight = parentHeight;
     this.#rotation = rotation;
     this.#thickness = thickness;
-    [x, y] = this.#normalizePoint(x, y);
+    this.#lines = [];
+    this.#startLine(x, y, timeStamp);
+  }
+  #startLine(x, y, timeStamp) {
+    [x, y] = this.#normalizeToTip(x, y);
     const line = this.#line = [NaN, NaN, NaN, NaN, x, y];
     this.#points = [x, y];
-    this.#lines = [{
-      line,
-      points: this.#points
-    }];
-    this.#last.set(line, 0);
-    this.#tip.set([x, y], 0);
-  }
-  updateProperty(name, value) {
-    if (name === "stroke-width") {
-      this.#thickness = value;
-    }
-  }
-  #normalizePoint(x, y) {
-    return Outline._normalizePoint(x, y, this.#parentWidth, this.#parentHeight, this.#rotation);
-  }
-  isEmpty() {
-    return !this.#lines?.length;
-  }
-  isCancellable() {
-    return this.#points.length <= 10;
-  }
-  add(x, y) {
-    if (this.#add(x, y)) {
-      this.toSVGPath();
-    }
-    return {
-      path: {
-        d: this.#toSVGPathWithTip()
-      }
-    };
-  }
-  addPoints(points) {
-    let needsPathUpdate = false;
-    for (let i = 0, ii = points.length; i < ii; i += 2) {
-      if (!this.#add(points[i], points[i + 1])) {
-        continue;
-      }
-      needsPathUpdate = true;
-      if (this.#points.length <= 6) {
-        this.toSVGPath();
-        needsPathUpdate = false;
-      }
-    }
-    if (needsPathUpdate) {
-      this.toSVGPath();
-    }
-    return {
-      path: {
-        d: this.#toSVGPathWithTip()
-      }
-    };
-  }
-  #add(x, y) {
-    [x, y] = this.#normalizePoint(x, y);
-    this.#tip.set([x, y], 0);
-    const [x1, y1, x2, y2] = this.#last.subarray(2, 6);
-    const diffX = x - x2;
-    const diffY = y - y2;
-    const d = Math.hypot(this.#parentWidth * diffX, this.#parentHeight * diffY);
-    if (d <= 2) {
-      return false;
-    }
-    this.#points.push(x, y);
-    if (isNaN(x1)) {
-      this.#last.set([x2, y2, x, y], 2);
-      this.#line.push(NaN, NaN, NaN, NaN, x, y);
-      return true;
-    }
-    if (isNaN(this.#last[0])) {
-      this.#line.splice(6, 6);
-    }
-    this.#last.set([x1, y1, x2, y2, x, y], 0);
-    this.#line.push(...Outline.createBezierPoints(x1, y1, x2, y2, x, y));
-    return true;
-  }
-  end(x, y) {
-    if (x !== undefined && this.#add(x, y)) {
-      return {
-        path: {
-          d: this.toSVGPath()
-        }
-      };
-    }
-    if (this.#points.length === 2) {
-      return {
-        path: {
-          d: this.toSVGPath()
-        }
-      };
-    }
-    return {
-      path: {
-        d: this.#lastSVGPath
-      }
-    };
-  }
-  startNew(x, y, parentWidth, parentHeight, rotation) {
-    this.#parentWidth = parentWidth;
-    this.#parentHeight = parentHeight;
-    this.#rotation = rotation;
-    [x, y] = this.#normalizePoint(x, y);
-    const line = this.#line = [NaN, NaN, NaN, NaN, x, y];
-    this.#points = [x, y];
-    this.#tip.set([x, y], 0);
-    const last = this.#lines.at(-1);
-    if (last) {
-      last.line = new Float32Array(last.line);
-      last.points = new Float32Array(last.points);
-    }
     this.#lines.push({
       line,
       points: this.#points
     });
     this.#last.set(line, 0);
     this.#lastIndex = 0;
-    this.toSVGPath();
+    this.#inputCount = 1;
+    this.#lastInput.set(this.#tip);
+    this.#smoother = timeStamp === undefined ? null : new InputSmoother(x, y, timeStamp);
+  }
+  updateProperty(name, value) {
+    if (name === "stroke-width") {
+      this.#thickness = value;
+    }
+  }
+  #normalizeToTip(x, y) {
+    return Outline._normalizePoint(x, y, this.#parentWidth, this.#parentHeight, this.#rotation, this.#tip);
+  }
+  isEmpty() {
+    return !this.#lines?.length;
+  }
+  isCancellable() {
+    return this.#inputCount <= 5;
+  }
+  add(x, y, timeStamp) {
+    this.#addSample(x, y, timeStamp);
+    return {
+      path: {
+        d: this.#toSVGPathWithTip()
+      }
+    };
+  }
+  addPoints(points, timeStamps) {
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      this.#addSample(points[i], points[i + 1], timeStamps?.[i / 2]);
+    }
+    return {
+      path: {
+        d: this.#toSVGPathWithTip()
+      }
+    };
+  }
+  #addSample(x, y, timeStamp) {
+    [x, y] = this.#normalizeToTip(x, y);
+    const [lastX, lastY] = this.#lastInput;
+    if (!this.#isTooClose(x, y, lastX, lastY)) {
+      this.#inputCount++;
+      this.#lastInput.set(this.#tip);
+    }
+    if (this.#smoother) {
+      this.#addSmoothedPoints(this.#smoother.add(x, y, timeStamp));
+    } else {
+      this.#addPoint(x, y);
+    }
+  }
+  #isTooClose(x, y, lastX, lastY) {
+    return Math.hypot(this.#parentWidth * (x - lastX), this.#parentHeight * (y - lastY)) <= 2;
+  }
+  #addSmoothedPoints(points) {
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      this.#addPoint(points[i], points[i + 1]);
+    }
+  }
+  #addPoint(x, y) {
+    const [,, x1, y1, x2, y2] = this.#last;
+    if (this.#isTooClose(x, y, x2, y2)) {
+      return;
+    }
+    this.#points.push(x, y);
+    if (isNaN(x1)) {
+      this.#line.push(NaN, NaN, NaN, NaN, x, y);
+    } else {
+      if (isNaN(this.#last[0])) {
+        this.#line.splice(6, 6);
+      }
+      Outline.createBezierPoints(x1, y1, x2, y2, x, y, this.#line);
+    }
+    this.#last.copyWithin(0, 2);
+    this.#last[4] = x;
+    this.#last[5] = y;
+  }
+  #updatePath() {
+    const line = this.#line;
+    if (this.#points.length < 6 || this.#lastIndex === line.length) {
+      return;
+    }
+    const buffer = [this.#lastSVGPath];
+    if (this.#lastIndex === 0) {
+      buffer.push(`M${svgPoint(line, 4)}`);
+      this.#lastIndex = 6;
+    }
+    pushCurves(buffer, line, this.#lastIndex);
+    this.#lastSVGPath = buffer.join("");
+    this.#lastIndex = line.length;
+  }
+  #endLine() {
+    if (!this.#line) {
+      return;
+    }
+    if (this.#smoother) {
+      this.#addSmoothedPoints(this.#smoother.end());
+      this.#smoother = null;
+    }
+    if (this.#points.length < 6) {
+      this.#lastSVGPath += lineToSVGPath(this.#line);
+    } else {
+      const [,, x1, y1, x2, y2] = this.#last;
+      Outline.createBezierPoints(x1, y1, x2, y2, x2, y2, this.#line);
+      this.#updatePath();
+    }
+    this.#line = this.#points = null;
+  }
+  end(x, y, timeStamp) {
+    if (this.#line && x !== undefined) {
+      this.#addSample(x, y, timeStamp);
+    }
+    this.#endLine();
+    return {
+      path: {
+        d: this.#lastSVGPath
+      }
+    };
+  }
+  startNew(x, y, parentWidth, parentHeight, rotation, timeStamp) {
+    this.#parentWidth = parentWidth;
+    this.#parentHeight = parentHeight;
+    this.#rotation = rotation;
+    const last = this.#lines.at(-1);
+    if (last) {
+      last.line = new Float32Array(last.line);
+      last.points = new Float32Array(last.points);
+    }
+    this.#startLine(x, y, timeStamp);
     return null;
   }
   getLastElement() {
@@ -23917,12 +24166,10 @@ class InkDrawOutliner {
       return this.#outlines.setLastElement(element);
     }
     this.#lines.push(element);
-    this.#line = element.line;
-    this.#points = element.points;
-    this.#lastIndex = 0;
+    this.#lastSVGPath += lineToSVGPath(element.line);
     return {
       path: {
-        d: this.toSVGPath()
+        d: this.#lastSVGPath
       }
     };
   }
@@ -23930,18 +24177,11 @@ class InkDrawOutliner {
     if (!this.#lines) {
       return this.#outlines.removeLastElement();
     }
+    this.#line = this.#points = this.#smoother = null;
     this.#lines.pop();
-    this.#lastSVGPath = "";
-    for (let i = 0, ii = this.#lines.length; i < ii; i++) {
-      const {
-        line,
-        points
-      } = this.#lines[i];
-      this.#line = line;
-      this.#points = points;
-      this.#lastIndex = 0;
-      this.toSVGPath();
-    }
+    this.#lastSVGPath = this.#lines.map(({
+      line
+    }) => lineToSVGPath(line)).join("");
     return {
       path: {
         d: this.#lastSVGPath
@@ -23949,48 +24189,25 @@ class InkDrawOutliner {
     };
   }
   #toSVGPathWithTip() {
-    const tipX = Outline.svgRound(this.#tip[0]);
-    const tipY = Outline.svgRound(this.#tip[1]);
-    if (this.#points.length === 2) {
-      const firstX = Outline.svgRound(this.#line[4]);
-      const firstY = Outline.svgRound(this.#line[5]);
-      return `${this.#lastSVGPath} M ${firstX} ${firstY} L ${tipX} ${tipY}`;
-    }
-    return `${this.#lastSVGPath} L ${tipX} ${tipY}`;
-  }
-  toSVGPath() {
-    const firstX = Outline.svgRound(this.#line[4]);
-    const firstY = Outline.svgRound(this.#line[5]);
-    if (this.#points.length === 2) {
-      this.#lastSVGPath = `${this.#lastSVGPath} M ${firstX} ${firstY} Z`;
-      return this.#lastSVGPath;
-    }
-    if (this.#points.length <= 6) {
-      const i = this.#lastSVGPath.lastIndexOf("M");
-      this.#lastSVGPath = `${this.#lastSVGPath.slice(0, i)} M ${firstX} ${firstY}`;
-      this.#lastIndex = 6;
-    }
-    if (this.#points.length === 4) {
-      const secondX = Outline.svgRound(this.#line[10]);
-      const secondY = Outline.svgRound(this.#line[11]);
-      this.#lastSVGPath = `${this.#lastSVGPath} L ${secondX} ${secondY}`;
-      this.#lastIndex = 12;
-      return this.#lastSVGPath;
-    }
-    const buffer = [];
+    this.#updatePath();
+    const buffer = [this.#lastSVGPath];
     if (this.#lastIndex === 0) {
-      buffer.push(`M ${firstX} ${firstY}`);
-      this.#lastIndex = 6;
+      buffer.push(`M${svgPoint(this.#line, 4)}`);
+      if (this.#points.length === 4) {
+        buffer.push(`L${svgPoint(this.#line, 10)}`);
+      }
     }
-    for (let i = this.#lastIndex, ii = this.#line.length; i < ii; i += 6) {
-      const [c1x, c1y, c2x, c2y, x, y] = this.#line.slice(i, i + 6).map(Outline.svgRound);
-      buffer.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${x} ${y}`);
+    let points = this.#smoother?.pendingPoints;
+    if (!points?.length) {
+      points = this.#tip;
     }
-    this.#lastSVGPath += buffer.join(" ");
-    this.#lastIndex = this.#line.length;
-    return this.#lastSVGPath;
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      buffer.push(`L${svgPoint(points, i)}`);
+    }
+    return buffer.join("");
   }
   getOutlines(parentWidth, parentHeight, scale, innerMargin) {
+    this.#endLine();
     const last = this.#lines.at(-1);
     last.line = new Float32Array(last.line);
     last.points = new Float32Array(last.points);
@@ -24053,25 +24270,9 @@ class InkDrawOutline extends Outline {
     };
   }
   toSVGPath() {
-    const buffer = [];
-    for (const {
+    return this.#lines.map(({
       line
-    } of this.#lines) {
-      buffer.push(`M${Outline.svgRound(line[4])} ${Outline.svgRound(line[5])}`);
-      if (line.length === 6) {
-        buffer.push("Z");
-        continue;
-      }
-      if (line.length === 12 && isNaN(line[6])) {
-        buffer.push(`L${Outline.svgRound(line[10])} ${Outline.svgRound(line[11])}`);
-        continue;
-      }
-      for (let i = 6, ii = line.length; i < ii; i += 6) {
-        const [c1x, c1y, c2x, c2y, x, y] = line.subarray(i, i + 6).map(Outline.svgRound);
-        buffer.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${x} ${y}`);
-      }
-    }
-    return buffer.join("");
+    }) => lineToSVGPath(line)).join("");
   }
   serialize([pageX, pageY, pageWidth, pageHeight], isForCopying) {
     const serializedLines = [];
@@ -24189,13 +24390,14 @@ class InkDrawOutline extends Outline {
           lines.push(new Float32Array([NaN, NaN, NaN, NaN, point[0], point[1], NaN, NaN, NaN, NaN, point[2], point[3]]));
           continue;
         }
-        const line = new Float32Array(3 * (len - 2));
+        const line = new Float32Array(3 * len);
         lines.push(line);
         let [x1, y1, x2, y2] = point.subarray(0, 4);
         line.set([NaN, NaN, NaN, NaN, x1, y1], 0);
-        for (let i = 4; i < len; i += 2) {
-          const x = point[i];
-          const y = point[i + 1];
+        for (let i = 4; i <= len; i += 2) {
+          const j = Math.min(i, len - 2);
+          const x = point[j];
+          const y = point[j + 1];
           line.set(Outline.createBezierPoints(x1, y1, x2, y2, x, y), (i - 2) * 3);
           [x1, y1, x2, y2] = [x2, y2, x, y];
         }
@@ -24534,9 +24736,10 @@ class InkEditor extends DrawingEditor {
     x,
     y,
     box: [,, width, height],
-    rotation
+    rotation,
+    timeStamp
   }) {
-    return new InkDrawOutliner(x, y, width, height, rotation, this._defaultDrawingOptions["stroke-width"]);
+    return new InkDrawOutliner(x, y, width, height, rotation, this._defaultDrawingOptions["stroke-width"], timeStamp);
   }
   static deserializeDraw(pageX, pageY, pageWidth, pageHeight, innerMargin, data) {
     return InkDrawOutline.deserialize(pageX, pageY, pageWidth, pageHeight, innerMargin, data);

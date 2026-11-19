@@ -45,7 +45,6 @@
 #include "api/rtp_packet_infos.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -264,7 +263,6 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   const Environment env_;
   TaskQueueBase* const worker_thread_;
-  ScopedTaskSafety worker_safety_;
 
   // Methods accessed from audio and video threads are checked for sequential-
   // only access. We don't necessarily own and control these threads, so thread
@@ -275,7 +273,8 @@ class ChannelReceive : public ChannelReceiveInterface,
   bool playing_ RTC_GUARDED_BY(worker_thread_checker_) = false;
 
   // Indexed by payload type.
-  std::map<uint8_t, int> payload_type_frequencies_;
+  std::map<uint8_t, int> payload_type_frequencies_
+      RTC_GUARDED_BY(worker_thread_checker_);
 
   const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   const std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
@@ -312,9 +311,11 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   mutable Mutex ts_stats_lock_;
 
-  RtpTimestampUnwrapper rtp_ts_wraparound_handler_;
+  RtpTimestampUnwrapper rtp_ts_wraparound_handler_
+      RTC_GUARDED_BY(audio_thread_race_checker_);
   // The rtp timestamp of the first played out audio frame.
-  int64_t capture_start_rtp_time_stamp_;
+  int64_t capture_start_rtp_time_stamp_
+      RTC_GUARDED_BY(audio_thread_race_checker_);
   // The capture ntp time (in local timebase) of the first played out audio
   // frame.
   int64_t capture_start_ntp_time_ms_ RTC_GUARDED_BY(ts_stats_lock_);
@@ -352,7 +353,8 @@ class ChannelReceive : public ChannelReceiveInterface,
   RtcpPacketTypeCounter rtcp_packet_type_counter_
       RTC_GUARDED_BY(worker_thread_checker_);
 
-  std::map<int, SdpAudioFormat> payload_type_map_;
+  std::map<int, SdpAudioFormat> payload_type_map_
+      RTC_GUARDED_BY(worker_thread_checker_);
 
   std::unique_ptr<NackTracker> nack_tracker_
       RTC_GUARDED_BY(worker_thread_checker_);
@@ -402,7 +404,7 @@ void ChannelReceive::InitFrameTransformerDelegate(
     scoped_refptr<FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK(frame_transformer);
   RTC_DCHECK(!frame_transformer_delegate_);
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
 
   // Pass a callback to ChannelReceive::OnReceivedPayloadData, to be called by
   // the delegate to receive transformed audio.
@@ -430,6 +432,13 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
   Timestamp now = env_.clock().CurrentTime();
   env_.event_log().Log(std::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
 
+  const bool report_histograms =
+      ++audio_frame_interval_count_ >= kHistogramReportingInterval;
+  if (report_histograms) {
+    audio_frame_interval_count_ = 0;
+  }
+  int target_delay_ms = 0;
+  int jitter_buffer_delay_ms = 0;
   {
     MutexLock lock(&neteq_mutex_);
     if (neteq_->GetAudio(audio_frame) != NetEq::kOK) {
@@ -444,14 +453,22 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
       return AudioMixer::Source::AudioFrameInfo::kError;
     }
     last_playout_time_ = now;
+    // Sample the delays for the histograms while the lock is held anyway.
+    if (report_histograms) {
+      target_delay_ms = neteq_->TargetDelayMs();
+      jitter_buffer_delay_ms = neteq_->FilteredCurrentDelayMs();
+    }
   }
 
-  resampler_helper_.MaybeResample(sample_rate_hz, audio_frame);
-
+  // Update the stats with NetEq's muted state before MaybeResample(), which
+  // unmutes a frame whose resampled output can still hold the tail of the
+  // audio before it.
   {
     MutexLock lock(&call_stats_mutex_);
     call_stats_.DecodedByNetEq(audio_frame->speech_type_, audio_frame->muted());
   }
+
+  resampler_helper_.MaybeResample(sample_rate_hz, audio_frame);
 
   bool has_capture_time = false;
   for (const auto& packet_info : audio_frame->packet_infos_) {
@@ -545,27 +562,11 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
     on_frame_delivered_callback_(audio_frame->packet_infos_, now);
   }
 
-  ++audio_frame_interval_count_;
-  if (audio_frame_interval_count_ >= kHistogramReportingInterval) {
-    audio_frame_interval_count_ = 0;
-    worker_thread_->PostTask(SafeTask(worker_safety_.flag(), [this]() {
-      RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-      int jitter_buffer_delay, target_delay;
-      {
-        MutexLock lock(&neteq_mutex_);
-        target_delay = neteq_->TargetDelayMs();
-        jitter_buffer_delay = neteq_->FilteredCurrentDelayMs();
-      }
-      uint16_t delay_ms = 0;
-      audio_device_module_->PlayoutDelay(&delay_ms);
-      RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.TargetJitterBufferDelayMs",
-                                target_delay);
-      RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverDelayEstimateMs",
-                                jitter_buffer_delay + delay_ms);
-      RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverJitterBufferDelayMs",
-                                jitter_buffer_delay);
-      RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverDeviceDelayMs", delay_ms);
-    }));
+  if (report_histograms) {
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.TargetJitterBufferDelayMs",
+                              target_delay_ms);
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverJitterBufferDelayMs",
+                              jitter_buffer_delay_ms);
   }
 
   TRACE_EVENT_END2("webrtc", "ChannelReceive::GetAudioFrameWithInfo", "gain",
@@ -700,6 +701,9 @@ std::optional<std::pair<int, SdpAudioFormat>> ChannelReceive::GetReceiveCodec()
 void ChannelReceive::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  // Rebuild, so that payload types which are no longer negotiated are dropped
+  // in OnRtpPacket(), consistent with `payload_type_map_` and NetEq.
+  payload_type_frequencies_.clear();
   for (const auto& kv : codecs) {
     RTC_DCHECK_GE(kv.second.clockrate_hz, 1000);
     payload_type_frequencies_[kv.first] = kv.second.clockrate_hz;

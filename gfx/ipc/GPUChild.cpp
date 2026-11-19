@@ -290,7 +290,7 @@ bool GPUChild::SendRequestMemoryReport(const uint32_t& aGeneration,
                                        const bool& aAnonymize,
                                        const bool& aMinimizeMemoryUsage,
                                        const Maybe<FileDescriptor>& aDMDFile) {
-  mMemoryReportRequest = MakeUnique<MemoryReportRequestHost>(aGeneration);
+  mMemoryReportRequest = std::make_unique<MemoryReportRequestHost>(aGeneration);
 
   PGPUChild::SendRequestMemoryReport(aGeneration, aAnonymize,
                                      aMinimizeMemoryUsage, aDMDFile)
@@ -326,7 +326,8 @@ mozilla::ipc::IPCResult GPUChild::RecvAddMemoryReport(
 }
 
 void GPUChild::ActorDestroy(ActorDestroyReason aWhy) {
-  if (aWhy == AbnormalShutdown || mUnexpectedShutdown) {
+  if ((aWhy == AbnormalShutdown || mUnexpectedShutdown) &&
+      !mHost->WasKilledForTesting()) {
     nsAutoCString processType(
         XRE_GeckoProcessTypeToString(GeckoProcessType_GPU));
     glean::subprocess::abnormal_abort.Get(processType).Add(1);

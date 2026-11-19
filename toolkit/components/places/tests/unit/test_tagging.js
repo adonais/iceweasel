@@ -2,11 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Notice we use createInstance because later we will have to terminate the
-// service and restart it.
-var tagssvc = Cc["@mozilla.org/browser/tagging-service;1"]
-  .createInstance()
-  .QueryInterface(Ci.nsITaggingService);
+var tagssvc = PlacesUtils.tagging;
 
 function run_test() {
   var options = PlacesUtils.history.getNewQueryOptions();
@@ -94,15 +90,12 @@ function run_test() {
   tags = tagssvc.getTagsForURI(uri3);
   Assert.equal(tags.length, 0);
 
-  // Terminate tagging service, fire up a new instance and check that existing
-  // tags are there.  This will ensure that any internal caching system is
-  // correctly filled at startup and we are not losing previously existing tags.
+  // Purge caches and check that existing tags are there.  This will ensure
+  // that any internal caching system is correctly filled from the database
+  // and we are not losing previously existing tags.
   var uri4 = uri("http://testuri/4");
   tagssvc.tagURI(uri4, [tagId, "tag 3", "456"]);
-  tagssvc = null;
-  tagssvc = Cc["@mozilla.org/browser/tagging-service;1"].getService(
-    Ci.nsITaggingService
-  );
+  PlacesObservers.notifyListeners([new PlacesPurgeCaches()]);
   var uri4Tags = tagssvc.getTagsForURI(uri4);
   Assert.equal(uri4Tags.length, 3);
   Assert.ok(uri4Tags.includes(tagTitle));

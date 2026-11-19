@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-disable import/no-unassigned-import */
+/* eslint-disable import-x/no-unassigned-import */
 
 import {
   gHasSts,
@@ -19,6 +19,7 @@ import {
   getFilePath,
   gOffline,
   gNoConnectivity,
+  getLoopbackInfo,
   retryThis,
   VPN_ACTIVE,
   detectClockSkew,
@@ -587,6 +588,7 @@ export class NetErrorCard extends MozLitElement {
       filePath: getFilePath(),
       showOSXPermissionWarning:
         !gIsCertError && RPMShowOSXLocalNetworkPermissionWarning(),
+      loopback: gErrorCode === "connectionFailure" ? getLoopbackInfo() : null,
     });
 
     if (errorConfig.checkClockSkew && gIsCertError) {
@@ -821,7 +823,6 @@ export class NetErrorCard extends MozLitElement {
         ? html` <moz-button
             id="exception-button"
             data-l10n-id="fp-certerror-override-exception-button-2"
-            data-l10n-attrs="accesskey"
             data-l10n-args=${JSON.stringify({ hostname: this.hostname })}
             data-telemetry-id="exception_button"
             @click=${this.handleProceedToUrlClick}
@@ -914,7 +915,6 @@ export class NetErrorCard extends MozLitElement {
     return html`<moz-button
       type="primary"
       data-l10n-id="fp-certerror-return-to-previous-page-recommended-button-2"
-      data-l10n-attrs="accesskey"
       data-telemetry-id="return_button_adv"
       id="returnButton"
       @click=${this.handleGoBackClick}
@@ -926,7 +926,6 @@ export class NetErrorCard extends MozLitElement {
       id="tryAgainButton"
       type="primary"
       data-l10n-id="neterror-try-again-button-2"
-      data-l10n-attrs="accesskey"
       data-telemetry-id="try_again_button"
       @click=${this.handleTryAgain}
     ></moz-button>`;
@@ -1009,7 +1008,6 @@ export class NetErrorCard extends MozLitElement {
       type="primary"
       iconSrc="chrome://global/skin/icons/search-glass.svg"
       data-l10n-id="neterror-search-cta-search-button"
-      data-l10n-attrs="accesskey"
       @click=${this.handleSearchCTAClick}
     ></moz-button>`;
   }
@@ -1019,7 +1017,6 @@ export class NetErrorCard extends MozLitElement {
       id="reloadButton"
       iconSrc="chrome://global/skin/icons/reload.svg"
       data-l10n-id="neterror-search-cta-reload-button"
-      data-l10n-attrs="accesskey"
       data-telemetry-id="try_again_button"
       @click=${this.handleReloadClick}
     ></moz-button>`;
@@ -1061,7 +1058,13 @@ export class NetErrorCard extends MozLitElement {
       whatCanYouDoSection = html`<div>
         <h3 data-l10n-id="fp-certerror-what-can-you-do"></h3>
         <ul class="what-can-you-do-list">
-          ${whatCanYouDoItems.map(id => html`<li data-l10n-id=${id}></li>`)}
+          ${whatCanYouDoItems.map(item => {
+            const { id, args } = typeof item === "string" ? { id: item } : item;
+            return html`<li
+              data-l10n-id=${id}
+              data-l10n-args=${args ? JSON.stringify(args) : null}
+            ></li>`;
+          })}
         </ul>
       </div>`;
     } else if (whatCanYouDoL10nId) {

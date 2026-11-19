@@ -41,6 +41,21 @@
         await boxGroup.updateComplete;
       }
 
+      function waitForAnnouncement() {
+        return new Promise(resolve => {
+          let observer = {
+            observe(subject) {
+              let event = subject.QueryInterface(nsIAccessibleEvent);
+              if (event.eventType == nsIAccessibleEvent.EVENT_ANNOUNCEMENT) {
+                Services.obs.removeObserver(observer, "accessible-event");
+                resolve(event.QueryInterface(nsIAccessibleAnnouncementEvent));
+              }
+            },
+          };
+          Services.obs.addObserver(observer, "accessible-event");
+        });
+      }
+
       add_setup(async function setup() {
         ({ html } = await testHelpers.setupLit());
         ({ MozLitElement } =
@@ -921,9 +936,21 @@
         **/
         boxGroup.reorderableList.getItems();
         let reordered = BrowserTestUtils.waitForEvent(boxGroup, "reorder");
+        let announced = waitForAnnouncement();
         await moveItem(item3, "up");
         await reordered;
         await reorderableWrapper.updateComplete;
+        let announcement = await announced;
+        is(
+          announcement.announcement,
+          "Item moved to position 2 of 3",
+          "Moving item3 up announces its new position."
+        );
+        is(
+          announcement.priority,
+          nsIAccessibleAnnouncementEvent.POLITE,
+          "Reorder announcement is polite."
+        );
 
         is(
           boxGroup.querySelector("moz-box-item:nth-of-type(2)").label,
@@ -937,9 +964,15 @@
         );
 
         reordered = BrowserTestUtils.waitForEvent(boxGroup, "reorder");
+        announced = waitForAnnouncement();
         await moveItem(item1, "down");
         await reordered;
         await reorderableWrapper.updateComplete;
+        is(
+          (await announced).announcement,
+          "Item moved to position 2 of 3",
+          "Moving item1 down announces the same position again."
+        );
 
         is(
           boxGroup.querySelector("moz-box-item:nth-of-type(1)").label,
@@ -1175,9 +1208,15 @@
         boxGroup.reorderableList.getItems();
         item1.focus();
         let reordered = BrowserTestUtils.waitForEvent(boxGroup, "reorder");
+        let announced = waitForAnnouncement();
         synthesizeKey("KEY_ArrowDown", { shiftKey: true, ctrlKey: true });
         await reordered;
         await wrapper.updateComplete;
+        is(
+          (await announced).announcement,
+          "Item moved to position 2 of 3",
+          "Static items count toward the announced total."
+        );
 
         is(
           boxGroup.querySelector("moz-box-item:nth-of-type(2)").label,

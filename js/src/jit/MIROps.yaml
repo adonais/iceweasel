@@ -3969,15 +3969,15 @@
   alias_set: none
   generate_lir: true
 
-# Load the JSValueTag on all platforms except ARM64 and RISCV64.
+# Load the JSValueTag on all platforms except ARM64, RISCV64, and LOONG64.
 #
 # See the comments in MacroAssembler-arm64.h for the |cmpTag(Register, ImmTag)|
 # method for why ARM64 doesn't use the raw JSValueTag, but instead a modified
 # tag value. That modified tag value can't be directly compared against
 # JSValueTag constants.
 #
-# RISCV64 uses a similar scheme, see comments in MacroAssembler-riscv64.h for
-# the |splitSignExtTag(...)| method.
+# RISCV64 and LOONG64 use a similar scheme, see comments in
+# MacroAssembler-riscv64.h for the |splitSignExtTag(...)| method.
 - name: LoadValueTag
   operands:
     value: Value

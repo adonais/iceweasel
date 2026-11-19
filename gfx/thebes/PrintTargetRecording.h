@@ -19,15 +19,14 @@ namespace gfx {
  */
 class PrintTargetRecording final : public PrintTarget {
  public:
-  static already_AddRefed<PrintTargetRecording> CreateOrNull(
-      const IntSize& aSize);
+  static already_AddRefed<PrintTargetRecording> CreateOrNull();
 
   already_AddRefed<DrawTarget> MakeDrawTarget(
       const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) override;
   already_AddRefed<DrawTarget> GetReferenceDrawTarget() override;
 
  private:
-  explicit PrintTargetRecording(const IntSize& aSize);
+  PrintTargetRecording();
 
   already_AddRefed<DrawTarget> CreateWrapAndRecordDrawTarget(
       DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget);

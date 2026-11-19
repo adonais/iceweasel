@@ -13,6 +13,7 @@
 #import <AppKit/NSApplication.h>
 
 #include "nsBaseAppShell.h"
+#include "nsICocoaAppShellTestUtils.h"
 #include "nsTArray.h"
 
 class ProfilingStack;
@@ -31,8 +32,11 @@ class nsAvailableMemoryWatcherBase;
 
 @class AppShellDelegate;
 
-class nsAppShell : public nsBaseAppShell {
+class nsAppShell : public nsBaseAppShell, public nsICocoaAppShellTestUtils {
  public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSICOCOAAPPSHELLTESTUTILS
+
   NS_IMETHOD ResumeNative(void) override;
 
   nsAppShell();
@@ -86,6 +90,10 @@ class nsAppShell : public nsBaseAppShell {
   bool mTerminated;
   bool mSkippedNativeCallback;
   bool mRunningCocoaEmbedded;
+
+  // Incremented whenever ProcessGeckoEvents() wakes a waiting native loop.
+  uint32_t mNativeWakeups = 0;
+  uint32_t mLostNativeWakeups = 0;
 
   int32_t mNativeEventCallbackDepth;
   // Can be set from different threads, so must be modified atomically

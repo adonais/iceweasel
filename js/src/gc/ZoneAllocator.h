@@ -398,14 +398,6 @@ class BufferAllocPolicy : public AllocPolicyBase {
   void reportAllocOverflow() const;
 };
 
-namespace gc {
-template <typename T, typename... Args>
-T* NewBuffer(Cell* owner, Args&&... args) {
-  return NewSizedBuffer<T>(owner->zone(), sizeof(T), IsInsideNursery(owner),
-                           std::forward<Args>(args)...);
-}
-}  // namespace gc
-
 // Functions for memory accounting on the zone.
 
 // Associate malloc memory with a GC thing. This call should be matched by a

@@ -531,43 +531,16 @@
 
   // Search Active
   &.weather-search-active {
+    // Paint above the sticky search bar (z-index 3) so the suggestions
+    // dropdown isn't hidden behind it.
+    z-index: 4;
+
     .weather-search-container {
       position: relative;
     }
 
-    .location-input {
-      padding: var(--space-small);
-      outline: 1px solid var(--border-color-selected);
-      border-radius: var(--border-radius-circle);
-      padding-inline-start: calc(var(--space-medium) * 4);
-      border: 0;
-      width: 100%;
-    }
-
     .location-input-wrapper {
       margin-block-end: var(--space-small);
-      position: relative;
-    }
-
-    .search-icon {
-      content: url('chrome://global/skin/icons/search-glass.svg');
-      -moz-context-properties: fill;
-      fill: var(--icon-color);
-      position: absolute;
-      inset-block-start: 50%;
-      transform: translateY(-50%);
-      inset-inline-start: var(--space-large);
-    }
-
-    .close-icon {
-      position: absolute;
-      inset-block-start: 50%;
-      transform: translateY(-50%);
-      inset-inline-end: var(--space-medium);
-
-      &:focus-visible {
-        outline: var(--focus-outline);
-      }
     }
 
     // Hide other UI when search is active

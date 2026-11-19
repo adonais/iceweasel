@@ -167,8 +167,20 @@ sealed class AppAction : Action {
         /** Restores the [Message] state from the storage. */
         object Restore : MessagingAction()
 
-        /** Evaluates if a new messages should be shown to users. */
-        data class Evaluate(val surface: MessageSurfaceId) : MessagingAction()
+        /**
+         * Evaluates if a new messages should be shown to users.
+         *
+         * For example, `Evaluate(FenixMessageSurfaceId.HOMESCREEN, mapOf("source" to "launcher"))` allows messages to
+         * trigger based on local trigger context (beyond global custom attributes).
+         *
+         * @property surface The surface to evaluate messages for.
+         * @property triggerContext Optional values added to the custom attributes under the key `triggerContext` when
+         *   the message triggers are evaluated.
+         */
+        data class Evaluate(
+            val surface: MessageSurfaceId,
+            val triggerContext: Map<String, Any?>? = null,
+        ) : MessagingAction()
 
         /** Updates [MessagingState.messageToShow] with the given [message]. */
         data class UpdateMessageToShow(val message: Message) : MessagingAction()
@@ -368,10 +380,12 @@ sealed class AppAction : Action {
         /**
          * [ShortcutAction] dispatched when a shortcut is added.
          *
+         * @property url The URL of the added shortcut.
          * @property source The [AddShortcutSource] of how the shortcut was added.
          * @property entryPoint The [AddShortcutEntryPoint] from where the add flow was started from.
          */
         data class ShortcutAdded(
+            val url: String,
             val source: AddShortcutSource,
             val entryPoint: AddShortcutEntryPoint,
         ) : ShortcutAction()
@@ -386,8 +400,19 @@ sealed class AppAction : Action {
         /** [ShortcutAction] dispatched when the manual add website dialog is shown. */
         data object AddWebsiteDialogShown : ShortcutAction()
 
-        /** [ShortcutAction] dispatched when a frecent top site is promoted to a pinned shortcut. */
-        data object FrecencyTopSitePromoted : ShortcutAction()
+        /**
+         * [ShortcutAction] dispatched when a frecent top site is promoted to a pinned shortcut.
+         *
+         * @property url The URL of the pinned shortcut.
+         */
+        data class FrecencyTopSitePromoted(val url: String) : ShortcutAction()
+
+        /**
+         * [ShortcutAction] dispatched when a default top site is promoted to a pinned shortcut.
+         *
+         * @property url The URL of the pinned shortcut.
+         */
+        data class DefaultTopSitePromoted(val url: String) : ShortcutAction()
     }
 
     /** [AppAction]s related to the share feature. */

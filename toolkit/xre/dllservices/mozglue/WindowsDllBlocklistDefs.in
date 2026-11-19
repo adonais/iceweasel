@@ -4,13 +4,13 @@
 
 # This file exposes these lists:
 # ALL_PROCESSES, BROWSER_PROCESS, CHILD_PROCESSES, GMPLUGIN_PROCESSES,
-# GPU_PROCESSES, UTILITY_PROCESSES, SOCKET_PROCESSES, and RDD_PROCESSES.
+# GPU_PROCESSES, UTILITY_PROCESSES, and RDD_PROCESSES.
 #
 # In addition, each of those lists supports a special variant for test-only
 # entries:
 # ALL_PROCESSES_TESTS, BROWSER_PROCESS_TESTS, CHILD_PROCESSES_TESTS,
 # GMPLUGIN_PROCESSES_TESTS, GPU_PROCESSES_TESTS, UTILITY_PROCESSES_TESTS,
-# SOCKET_PROCESSES_TESTS, and RDD_PROCESSES_TESTS.
+# and RDD_PROCESSES_TESTS.
 #
 # Choose the list that is applicable to the applicable process type(s) for your
 # DLL block.
@@ -416,6 +416,16 @@ CHILD_PROCESSES += [
     DllBlocklistEntry("TmUmEvt64.dll", ALL_VERSIONS),
     DllBlocklistEntry("tmmon.dll", ALL_VERSIONS),
     DllBlocklistEntry("TmUmEvt.dll", ALL_VERSIONS),
+
+    # Caused crashes in the socket process, bug 1760668
+    DllBlocklistEntry("ipseng64.dll", (17, 2, 6, 25)),
+    DllBlocklistEntry("ipseng32.dll", (17, 2, 6, 25)),
+
+    # Caused crashes in the socket process, bug 1807038 and bug 1845111
+    DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
+
+    # Bug 2007362
+    DllBlocklistEntry("windhawk.dll", (1, 6, 1, 0)),
 ]
 
 GPU_PROCESSES += [
@@ -427,23 +437,6 @@ GPU_PROCESSES_TESTS += [
     # DLLs used by TestDllBlocklist* gTests
     DllBlocklistEntry("testdllblocklist_gpuprocessonly.dll", ALL_VERSIONS),
     DllBlocklistEntry("testdllblocklist_multipleentries_differentprocesses.dll", ALL_VERSIONS)
-]
-
-SOCKET_PROCESSES += [
-    # Causes crashes in the socket process, bug 1760668
-    DllBlocklistEntry("ipseng64.dll", (17, 2, 6, 25)),
-    DllBlocklistEntry("ipseng32.dll", (17, 2, 6, 25)),
-
-    # Causes crashes in the socket process, bug 1807038 and bug 1845111
-    DllBlocklistEntry("kwsui64.dll", ALL_VERSIONS),
-
-    # Bug 2007362
-    DllBlocklistEntry("windhawk.dll", (1, 6, 1, 0)),
-]
-
-SOCKET_PROCESSES_TESTS += [
-    # DLLs used by TestDllBlocklist* gTests
-    DllBlocklistEntry("testdllblocklist_socketprocessonly.dll", ALL_VERSIONS),
 ]
 
 UTILITY_PROCESSES += [

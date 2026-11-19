@@ -609,6 +609,39 @@ def test_exisiting_tasks_rev(responses):
     assert params == {"existing_tasks": label_to_taskid}
 
 
+def test_exisiting_tasks_project(responses):
+    parser = ArgumentParser()
+    cfg = all_task_configs["existing-tasks"]()
+    cfg.add_arguments(parser)
+
+    task_id = "abc"
+    label_to_taskid = {"task-foo": "123", "task-bar": "456"}
+
+    args = ["--use-existing-tasks", "project=mozilla-central"]
+    args = parser.parse_args(args)
+
+    responses.add(
+        responses.GET,
+        f"{TC_URL}/api/index/v1/task/gecko.v2.mozilla-central.latest.taskgraph.decision",
+        json={"taskId": task_id},
+    )
+
+    responses.add(
+        responses.GET,
+        f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public%2flabel-to-taskid.json",
+        status=303,
+        json={"url": f"{TC_URL}/artifacts/label-to-taskid.json"},
+    )
+    responses.add(
+        responses.GET,
+        f"{TC_URL}/artifacts/label-to-taskid.json",
+        json=label_to_taskid,
+    )
+
+    params = cfg.get_parameters(**vars(args))
+    assert params == {"existing_tasks": label_to_taskid}
+
+
 def test_use_indexed_tasks(responses):
     parser = ArgumentParser()
     cfg = all_task_configs["existing-tasks"]()
@@ -655,6 +688,101 @@ def test_use_indexed_tasks_overrides_use_existing_tasks(mocker):
 
     params = cfg.get_parameters(**vars(args))
     assert params == {"existing_tasks": {"task-foo": "789", "task-bar": "456"}}
+
+
+@pytest.mark.parametrize(
+    "filters,expected",
+    [
+        (
+            ["--existing-tasks-include", "^(docker-image|toolchain)-"],
+            {
+                "docker-image-ubuntu2404-test": "1",
+                "docker-image-debian12-base": "2",
+                "toolchain-linux64-clang": "3",
+            },
+        ),
+        (
+            ["--existing-tasks-exclude", "^build-"],
+            {
+                "docker-image-ubuntu2404-test": "1",
+                "docker-image-debian12-base": "2",
+                "toolchain-linux64-clang": "3",
+                "fetch-psutil": "4",
+            },
+        ),
+        (
+            [
+                "--existing-tasks-include",
+                "^docker-image-",
+                "--existing-tasks-include",
+                "^fetch-",
+                "--existing-tasks-exclude",
+                "^docker-image-ubuntu2404-test$",
+            ],
+            {"docker-image-debian12-base": "2", "fetch-psutil": "4"},
+        ),
+    ],
+)
+def test_existing_tasks_filters(mocker, filters, expected):
+    parser = ArgumentParser()
+    cfg = all_task_configs["existing-tasks"]()
+    cfg.add_arguments(parser)
+
+    args = parser.parse_args(["--use-existing-tasks", "task-id=abc"] + filters)
+
+    mocker.patch(
+        "taskgraph.util.taskcluster.get_artifact",
+        return_value={
+            "docker-image-ubuntu2404-test": "1",
+            "docker-image-debian12-base": "2",
+            "toolchain-linux64-clang": "3",
+            "fetch-psutil": "4",
+            "build-linux64/opt": "5",
+        },
+    )
+
+    params = cfg.get_parameters(**vars(args))
+    assert params == {"existing_tasks": expected}
+
+
+def test_existing_tasks_filters_dont_apply_to_indexed_tasks(mocker):
+    parser = ArgumentParser()
+    cfg = all_task_configs["existing-tasks"]()
+    cfg.add_arguments(parser)
+
+    args = parser.parse_args([
+        "--use-existing-tasks",
+        "task-id=abc",
+        "--existing-tasks-include",
+        "^toolchain-",
+        "--use-indexed-tasks",
+        "build-linux64/opt=gecko.v2.foo.latest",
+    ])
+
+    mocker.patch(
+        "taskgraph.util.taskcluster.get_artifact",
+        return_value={"toolchain-linux64-clang": "3", "build-linux64/opt": "5"},
+    )
+    mocker.patch("taskgraph.util.taskcluster.find_task_id", return_value="789")
+
+    params = cfg.get_parameters(**vars(args))
+    assert params == {
+        "existing_tasks": {"toolchain-linux64-clang": "3", "build-linux64/opt": "789"}
+    }
+
+
+@pytest.mark.parametrize(
+    "filters",
+    [["--existing-tasks-include", "^toolchain-"], ["--existing-tasks-exclude", "x"]],
+)
+def test_existing_tasks_filters_require_use_existing_tasks(filters):
+    parser = ArgumentParser()
+    cfg = all_task_configs["existing-tasks"]()
+    cfg.add_arguments(parser)
+
+    args = parser.parse_args(filters)
+    with pytest.raises(SystemExit):
+        cfg.get_parameters(**vars(args))
 
 
 @pytest.mark.parametrize("label_and_index", ["task-foo", "=gecko.v2.foo", "task-foo="])

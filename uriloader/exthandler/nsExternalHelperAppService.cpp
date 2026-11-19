@@ -1290,6 +1290,14 @@ void nsExternalHelperAppService::ExpungeTemporaryPrivateFiles() {
   ExpungeTemporaryFilesHelper(mTemporaryPrivateFilesList);
 }
 
+void nsExternalHelperAppService::OnPrivateBrowsingSessionEnd() {
+  if (StaticPrefs::browser_download_enableDeletePrivate() &&
+      StaticPrefs::browser_download_deletePrivate()) {
+    ExpungePrivateFiles();
+  }
+  ExpungeTemporaryPrivateFiles();
+}
+
 static const char kExternalWarningPrefPrefix[] =
     "network.protocol-handler.warn-external.";
 static const char kExternalWarningDefaultPref[] =
@@ -1360,12 +1368,11 @@ nsExternalHelperAppService::Observe(nsISupports* aSubject, const char* aTopic,
                                     const char16_t* someData) {
   if (!strcmp(aTopic, "profile-before-change")) {
     ExpungeTemporaryFiles();
+    // "last-pb-context-exited" is not notified in permanent private browsing
+    // mode, so the private browsing session also ends at shutdown.
+    OnPrivateBrowsingSessionEnd();
   } else if (!strcmp(aTopic, "last-pb-context-exited")) {
-    if (StaticPrefs::browser_download_enableDeletePrivate() &&
-        StaticPrefs::browser_download_deletePrivate()) {
-      ExpungePrivateFiles();
-    }
-    ExpungeTemporaryPrivateFiles();
+    OnPrivateBrowsingSessionEnd();
   }
   return NS_OK;
 }
@@ -2399,9 +2406,8 @@ nsresult nsExternalAppHandler::CreateTransfer() {
   // Also, release our reference to mDialog. We don't need it anymore, and we
   // need to break the reference cycle.
   mDialog = nullptr;
-  if (!mDialogProgressListener) {
-    NS_WARNING("The dialog should nullify the dialog progress listener");
-  }
+  MOZ_ASSERT(!mDialogProgressListener,
+             "The dialog should nullify the dialog progress listener");
   // In case of a non acceptable download, we need to cancel the request and
   // pass a FailedTransfer for the Download UI.
   if (mDownloadClassification != nsITransfer::DOWNLOAD_ACCEPTABLE) {

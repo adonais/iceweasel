@@ -69,7 +69,7 @@ class ScopedTestResultReporterImpl
 
 UniquePtr<ScopedTestResultReporter> ScopedTestResultReporter::Create(
     ExitMode aExitMode) {
-  return MakeUnique<ScopedTestResultReporterImpl>(aExitMode);
+  return std::make_unique<ScopedTestResultReporterImpl>(aExitMode);
 }
 
 }  // namespace mozilla::gtest

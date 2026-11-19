@@ -41,6 +41,7 @@ class SVGScriptElement final : public SVGScriptElementBase,
   void FreezeExecutionAttrs(const Document* aOwnerDoc) override;
   CORSMode GetCORSMode() const override;
   FetchPriority GetFetchPriority() const override;
+  mozilla::dom::ReferrerPolicy GetReferrerPolicy() override;
 
   // ScriptElement
   bool HasExternalScriptContent() override;
@@ -71,6 +72,12 @@ class SVGScriptElement final : public SVGScriptElementBase,
   void GetFetchPriority(nsAString& aFetchPriority) const;
   void SetFetchPriority(const nsAString& aFetchPriority) {
     SetAttr(nsGkAtoms::fetchpriority, aFetchPriority, IgnoreErrors());
+  }
+  void SetReferrerPolicy(const nsAString& aPolicy, mozilla::ErrorResult& rv) {
+    SetAttr(nsGkAtoms::referrerpolicy, aPolicy, rv);
+  }
+  void GetReferrerPolicy(nsAString& aPolicy) {
+    GetEnumAttr(nsGkAtoms::referrerpolicy, "", aPolicy);
   }
 
  protected:

@@ -7,9 +7,12 @@
 #include <type_traits>
 
 #include "mozilla/ElementAnimationData.h"
+#include "mozilla/TimelineManager.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScrollTimeline.h"
 #include "mozilla/dom/ViewTimeline.h"
+#include "nsContentUtils.h"
+#include "nsPresContext.h"
 
 namespace mozilla {
 
@@ -17,8 +20,14 @@ template <class TimelineType>
 TimelineCollection<TimelineType>::~TimelineCollection() {
   MOZ_COUNT_DTOR(TimelineCollection);
 
-  // FIXME: Bug 1774060. We have to restyle the animations which use the
-  // timelines associtated with this TimelineCollection.
+  // The TimelineManager refers to our timelines by name, whether we are
+  // destroyed through it or with our element (e.g. when it is unbound from the
+  // tree).
+  if (auto* presContext = nsContentUtils::GetContextForContent(&mElement)) {
+    if (auto* manager = presContext->TimelineManager()) {
+      manager->UnregisterTimelines(*this);
+    }
+  }
 
   LinkedListElement<SelfType>::remove();
 }

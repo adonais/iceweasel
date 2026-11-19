@@ -15,6 +15,7 @@
 #include "nsITlsHandshakeListener.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
+#include "nsNetCID.h"
 #include "secerr.h"
 #include "ssl.h"
 #include "sslt.h"

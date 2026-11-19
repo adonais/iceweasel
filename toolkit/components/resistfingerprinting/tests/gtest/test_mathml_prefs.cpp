@@ -22,7 +22,6 @@ static const struct {
     {"mathml.mathvariant_styling_fallback.disabled", "var"},
     {"mathml.operator_dictionary_accent.disabled", "acc"},
     {"mathml.legacy_mathvariant_attribute.disabled", "leg"},
-    {"mathml.font_family_math.enabled", "fnt"},
 };
 
 static void ClearAllMathMLPrefs() {

@@ -185,11 +185,8 @@ function startClient(port, useGREASE, beConservative) {
     req.onload = () => {
       equal(req.responseText, "OK", "response text should be 'OK'");
 
-      // Only check telemetry if network process is disabled.
-      if (!mozinfo.socketprocess_networking) {
-        HandshakeTelemetryHelpers.checkSuccess(flavors);
-        HandshakeTelemetryHelpers.checkEmpty(nonflavors);
-      }
+      HandshakeTelemetryHelpers.checkSuccess(flavors);
+      HandshakeTelemetryHelpers.checkEmpty(nonflavors);
 
       resolve();
     };

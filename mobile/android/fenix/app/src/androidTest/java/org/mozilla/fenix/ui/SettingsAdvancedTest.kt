@@ -18,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertYoutubeAppOpens
@@ -262,6 +263,12 @@ class SettingsAdvancedTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1058617
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsOpenLinksInAppsTest#dismissOpenLinksInAppCFRTest"],
+        bug = 2087470,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun dismissOpenLinksInAppCFRTest() {
         composeTestRule.activityRule.applySettingsExceptions {

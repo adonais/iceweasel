@@ -1016,10 +1016,11 @@ function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
 
   let applyDir = getApplyDirFile().parent;
 
-  // Try to remove the directory used to apply updates and the updates directory
-  // on platforms other than Windows. This is non-fatal for the test since if
-  // this fails a different directory will be used.
-  if (applyDir.exists()) {
+  // Try to remove the directory used to apply updates in Program Files. This is
+  // non-fatal for the test since if this fails a different directory will be
+  // used. Elsewhere, its parent is the per-test temp dir, which the harness
+  // creates and removes.
+  if (usesProgramFilesApplyDir() && applyDir.exists()) {
     debugDump("attempting to remove directory. Path: " + applyDir.path);
     try {
       removeDirRecursive(applyDir);
@@ -1229,8 +1230,9 @@ function cleanupTestCommon() {
   let applyDir = getApplyDirFile().parent;
 
   // Try to remove the directory used to apply updates. Since the test has
-  // already finished this is non-fatal for the test.
-  if (applyDir.exists()) {
+  // already finished this is non-fatal for the test. Outside of Program Files,
+  // the parent is the per-test temp dir, which the harness removes.
+  if (usesProgramFilesApplyDir() && applyDir.exists()) {
     debugDump("attempting to remove directory. Path: " + applyDir.path);
     try {
       removeDirRecursive(applyDir);
@@ -1638,28 +1640,37 @@ function getAppVersion() {
   return iniParser.getString("App", "Version");
 }
 
+function usesProgramFilesApplyDir() {
+  return gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED;
+}
+
 /**
  * Helper function for getting the path to the directory where the
- * application binary is located (e.g. <test_file_leafname>/dir.app/).
+ * application binary is located (e.g. <per_test_temp_dir>/dir.app).
  *
- * Note: The dir.app subdirectory under <test_file_leafname> is needed for
- *       platforms other than Mac OS X so the tests can run in parallel due to
- *       update staging creating a lock file named moz_update_in_progress.lock in
- *       the parent directory of the installation directory.
+ * Note: The dir.app subdirectory is needed for platforms other than Mac OS X
+ *       so the tests can run in parallel due to update staging creating a lock
+ *       file named moz_update_in_progress.lock in the parent directory of the
+ *       installation directory.
  * Note: For service tests with IS_AUTHENTICODE_CHECK_ENABLED we use an absolute
- *       path inside Program Files because the service itself will refuse to
- *       update an installation not located in Program Files.
+ *       path inside Program Files (<maintenance_service_dir>/<test_file_leafname>/dir.app)
+ *       because the service itself will refuse to update an installation not
+ *       located in Program Files.
  *
  * @return  The path to the directory where application binary is located.
  */
 function getApplyDirPath() {
-  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
-    let dir = getMaintSvcDir();
+  let dir;
+  if (usesProgramFilesApplyDir()) {
+    dir = getMaintSvcDir();
     dir.append(gTestID);
-    dir.append("dir.app");
-    return dir.path;
+  } else {
+    dir = do_get_tempdir();
+    // Resolve symlinks (e.g. /var on macOS) so paths match the updater's.
+    dir.normalize();
   }
-  return gTestID + "/dir.app/";
+  dir.append("dir.app");
+  return dir.path;
 }
 
 /**
@@ -1679,23 +1690,18 @@ function getApplyDirPath() {
  *          applied.
  */
 function getApplyDirFile(aRelPath) {
-  // do_get_file only supports relative paths, but under these conditions we
-  // need to use an absolute path in Program Files instead.
-  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
-    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-    file.initWithPath(getApplyDirPath());
-    if (aRelPath) {
-      if (aRelPath == "..") {
+  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  file.initWithPath(getApplyDirPath());
+  if (aRelPath) {
+    for (let part of aRelPath.split("/")) {
+      if (part == "..") {
         file = file.parent;
-      } else {
-        aRelPath = aRelPath.replace(/\//g, "\\");
-        file.appendRelativePath(aRelPath);
+      } else if (part) {
+        file.append(part);
       }
     }
-    return file;
   }
-  let relpath = getApplyDirPath() + (aRelPath ? aRelPath : "");
-  return do_get_file(relpath, true);
+  return file;
 }
 
 /**
@@ -2496,8 +2502,10 @@ function runTestHelperSync(aArgs) {
  * Creates a symlink for updater tests.
  */
 function createSymlink() {
+  let baseDir = do_get_tempdir().path;
   let args = [
     "setup-symlink",
+    baseDir,
     "moz-foo",
     "moz-bar",
     "target",
@@ -2510,6 +2518,7 @@ function createSymlink() {
   file.permissions = 0o666;
   args = [
     "setup-symlink",
+    baseDir,
     "moz-foo2",
     "moz-bar2",
     "target2",
@@ -2524,8 +2533,10 @@ function createSymlink() {
  * Removes a symlink for updater tests.
  */
 function removeSymlink() {
+  let baseDir = do_get_tempdir().path;
   let args = [
     "remove-symlink",
+    baseDir,
     "moz-foo",
     "moz-bar",
     "target",
@@ -2535,6 +2546,7 @@ function removeSymlink() {
   Assert.equal(exitValue, 0, "the helper process exit value should be 0");
   args = [
     "remove-symlink",
+    baseDir,
     "moz-foo2",
     "moz-bar2",
     "target2",
@@ -3284,7 +3296,7 @@ async function runHelperFileInUse(aRelPath, aCopyTestHelper) {
   }
   fileInUseBin.permissions = PERMS_DIRECTORY;
   let args = [
-    getApplyDirPath() + DIR_RESOURCES,
+    getApplyDirFile(DIR_RESOURCES).path,
     "input",
     "output",
     "-s",
@@ -3322,7 +3334,7 @@ async function runHelperPIDPersists(aRelPath, aCopyTestHelper) {
   }
   pidPersistsBin.permissions = PERMS_DIRECTORY;
   let args = [
-    getApplyDirPath() + DIR_RESOURCES,
+    getApplyDirFile(DIR_RESOURCES).path,
     "input",
     "output",
     "-s",
@@ -3362,7 +3374,7 @@ async function runHelperLockFile(aTestFile) {
   }
   lockFileRelPath = lockFileRelPath.join("/") + "/" + aTestFile.fileName;
   let args = [
-    getApplyDirPath() + DIR_RESOURCES,
+    getApplyDirFile(DIR_RESOURCES).path,
     "input",
     "output",
     "-s",
@@ -4904,7 +4916,7 @@ function getProcessArgs(aExtraArgs) {
   // override that path with the per-test temp directory that xpcshell provides,
   // which should be user writable.
   let profileDir = appBin.parent.parent;
-  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
+  if (usesProgramFilesApplyDir()) {
     profileDir = do_get_tempdir();
   }
   profileDir.append("profile");
@@ -4953,7 +4965,8 @@ function getProcessArgs(aExtraArgs) {
  * @return  the file for the application to dump its arguments into.
  */
 function getAppArgsLogPath() {
-  let appArgsLog = do_get_file("/" + gTestID + "_app_args_log", true);
+  let appArgsLog = do_get_tempdir();
+  appArgsLog.append(gTestID + "_app_args_log");
   if (appArgsLog.exists()) {
     appArgsLog.remove(false);
   }
@@ -4971,7 +4984,8 @@ function getAppArgsLogPath() {
  * @return  the nsIFile for the shell script to launch the application.
  */
 function getLaunchScript() {
-  let launchScript = do_get_file("/" + gTestID + "_launch.sh", true);
+  let launchScript = do_get_tempdir();
+  launchScript.append(gTestID + "_launch.sh");
   if (launchScript.exists()) {
     launchScript.remove(false);
   }

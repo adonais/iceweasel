@@ -140,7 +140,7 @@ nsresult nsZipHeader::Init(const nsACString& aPath, PRTime aDate,
   // Store modification timestamp as extra field
   // First fill CDS extra field
   mFieldLength = 9;
-  mExtraField = MakeUnique<uint8_t[]>(mFieldLength);
+  mExtraField = std::make_unique<uint8_t[]>(mFieldLength);
   if (!mExtraField) {
     mFieldLength = 0;
   } else {
@@ -151,7 +151,7 @@ nsresult nsZipHeader::Init(const nsACString& aPath, PRTime aDate,
     WRITE32(mExtraField.get(), &pos, aDate / PR_USEC_PER_SEC);
 
     // Fill local extra field
-    mLocalExtraField = MakeUnique<uint8_t[]>(mFieldLength);
+    mLocalExtraField = std::make_unique<uint8_t[]>(mFieldLength);
     if (mLocalExtraField) {
       mLocalFieldLength = mFieldLength;
       memcpy(mLocalExtraField.get(), mExtraField.get(), mLocalFieldLength);
@@ -275,7 +275,7 @@ nsresult nsZipHeader::ReadCDSHeader(nsIInputStream* stream) {
   mOffset = READ32(buf, &pos);
 
   if (namelength > 0) {
-    auto field = MakeUnique<char[]>(namelength);
+    auto field = std::make_unique<char[]>(namelength);
     NS_ENSURE_TRUE(field, NS_ERROR_OUT_OF_MEMORY);
     rv = ZW_ReadData(stream, field.get(), namelength);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -284,14 +284,14 @@ nsresult nsZipHeader::ReadCDSHeader(nsIInputStream* stream) {
     mName.Truncate();
 
   if (mFieldLength > 0) {
-    mExtraField = MakeUnique<uint8_t[]>(mFieldLength);
+    mExtraField = std::make_unique<uint8_t[]>(mFieldLength);
     NS_ENSURE_TRUE(mExtraField, NS_ERROR_OUT_OF_MEMORY);
     rv = ZW_ReadData(stream, (char*)mExtraField.get(), mFieldLength);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   if (commentlength > 0) {
-    auto field = MakeUnique<char[]>(commentlength);
+    auto field = std::make_unique<char[]>(commentlength);
     NS_ENSURE_TRUE(field, NS_ERROR_OUT_OF_MEMORY);
     rv = ZW_ReadData(stream, field.get(), commentlength);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -362,7 +362,7 @@ nsresult nsZipHeader::PadExtraField(uint32_t aOffset, uint16_t aAlignSize) {
   UniquePtr<uint8_t[]> field = std::move(mLocalExtraField);
   uint32_t pos = mLocalFieldLength;
 
-  mLocalExtraField = MakeUnique<uint8_t[]>(mLocalFieldLength + pad_size);
+  mLocalExtraField = std::make_unique<uint8_t[]>(mLocalFieldLength + pad_size);
   memcpy(mLocalExtraField.get(), field.get(), mLocalFieldLength);
   // Use 0xFFFF as tag ID to avoid conflict with other IDs.
   // For more information, please read "Extensible data fields" section in:

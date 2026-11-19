@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -117,12 +116,10 @@ fun TermsOfServiceOnboardingPage(
             FilledButton(
                 text = pageState.primaryButton.text,
                 modifier =
-                    Modifier.width(width = FirefoxTheme.layout.size.maxWidth.small)
-                        .defaultMinSize(minHeight = FirefoxTheme.layout.size.static600)
-                        .semantics {
-                            testTag = pageState.title + "onboarding_card.positive_button"
-                        },
-                onClick = pageState.primaryButton.onClick,
+                    Modifier.width(width = FirefoxTheme.layout.size.maxWidth.small).semantics {
+                        testTag = pageState.title + "onboarding_card.positive_button"
+                    },
+                onClick = hapticOnClick(pageState.primaryButton.onClick),
             )
         }
     }
@@ -202,7 +199,7 @@ private fun BodyText(
                 LinkTextState(
                     text = lineOneLinkText,
                     url = lineOneLinkUrl,
-                    onClick = eventHandler::onTermsOfServiceLinkClicked,
+                    onClick = hapticOnLinkClick(eventHandler::onTermsOfServiceLinkClicked),
                 )
             BodyLinkText(
                 lineOneText.updateFirstPlaceholder(lineOneLinkText),
@@ -213,7 +210,7 @@ private fun BodyText(
                 LinkTextState(
                     text = lineTwoLinkText,
                     url = lineTwoLinkUrl,
-                    onClick = eventHandler::onPrivacyNoticeLinkClicked,
+                    onClick = hapticOnLinkClick(eventHandler::onPrivacyNoticeLinkClicked),
                 )
             BodyLinkText(
                 lineTwoText.updateFirstPlaceholder(lineTwoLinkText),
@@ -224,7 +221,7 @@ private fun BodyText(
                 LinkTextState(
                     text = lineThreeLinkText,
                     url = "", // No URL
-                    onClick = { _ -> eventHandler.onManagePrivacyPreferencesLinkClicked() },
+                    onClick = hapticOnLinkClick { eventHandler.onManagePrivacyPreferencesLinkClicked() },
                 )
             BodyLinkText(
                 lineThreeText.updateFirstPlaceholder(lineThreeLinkText),

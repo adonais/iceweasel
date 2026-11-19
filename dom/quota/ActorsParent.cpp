@@ -1920,6 +1920,7 @@ QuotaManager::QuotaManager(const nsAString& aBasePath,
       mCacheRequiresFullScan(false) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!gInstance);
+  glean::quotamanager::had_temporary_storage_usage_underflow.Set(false);
 }
 
 QuotaManager::~QuotaManager() {
@@ -2817,7 +2818,9 @@ void QuotaManager::InitQuotaForOrigin(
   // state. Enqueuing here ensures the corrected metadata is flushed back.
   //
   // We set mMetadataDirty directly because the OriginInfo is not yet
-  // registered in GroupInfo, so DirtyTrackingAutoLock cannot look it up.
+  // registered in GroupInfo, so DirtyTrackingAutoLock cannot look it up. Set
+  // mLastModifiedTime here as well to match OriginInfo::MakeDirty; otherwise,
+  // FlushDirtyOriginInfos subtracts a null TimeStamp from now.
   //
   // Enqueue for storage-database flush when the existing row is stale or
   // missing.
@@ -2833,6 +2836,7 @@ void QuotaManager::InitQuotaForOrigin(
   if (!aFullOriginMetadata.mIsPrivate && !cacheRowMatches &&
       (fullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
       aDirectoryExists && !mUsageModificationDisabled.load()) {
+    originInfo->mLastModifiedTime = TimeStamp::Now();
     originInfo->mMetadataDirty = true;
     auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
     message->data = originInfo;
@@ -6228,14 +6232,15 @@ void QuotaManager::FlushDirtyOriginInfos() {
       continue;
     }
 
-    if (!IsOriginInitialized(groupInfo->GetPersistenceType(), info->Origin())) {
-      continue;
-    }
-
     // The OriginInfo may have been cleaned by a direct CreateDirectoryMetadata2
     // call (e.g. via InitializeOrigin) since it was queued. Skip the redundant
     // write in that case.
     if (!info->LockedDirty()) {
+      continue;
+    }
+
+    if (!IsOriginInitialized(groupInfo->GetPersistenceType(), info->Origin())) {
+      itemsToRequeue.AppendElement(std::move(info));
       continue;
     }
 
@@ -8801,6 +8806,8 @@ void QuotaManager::LockedMaybeRecordTemporaryStorageUsageUnderflow(
     return;
   }
 
+  glean::quotamanager::had_temporary_storage_usage_underflow.Set(true);
+
   if (!ThrottleCounter(mTemporaryStorageUsageUnderflowCount)) {
     return;
   }
@@ -9641,6 +9648,9 @@ Result<nsCString, nsresult> QuotaManager::EnsureStorageOriginFromOrigin(
       auto storageOrigin,
       mOriginToStorageOriginMap.TryLookupOrInsertWith(
           aOrigin, [this, &aOrigin]() -> Result<nsCString, nsresult> {
+            // Validate that the origin is well formed. Nothing of it is
+            // carried over into the storage origin, which is entirely
+            // synthesized below.
             OriginAttributes originAttributes;
 
             nsCString originNoSuffix;
@@ -9649,12 +9659,9 @@ Result<nsCString, nsresult> QuotaManager::EnsureStorageOriginFromOrigin(
 
             nsCOMPtr<nsIURI> uri;
             QM_TRY(MOZ_TO_RESULT(
-                NS_MutateURI(NS_STANDARDURLMUTATOR_CONTRACTID)
-                    .SetSpec(originNoSuffix)
-                    .SetScheme(kUUIDOriginScheme)
-                    .SetHost(NSID_TrimBracketsASCII(nsID::GenerateUUID()))
-                    .SetPort(-1)
-                    .Finalize(uri)));
+                NS_NewURI(getter_AddRefs(uri),
+                          kUUIDOriginScheme + "://"_ns +
+                              NSID_TrimBracketsASCII(nsID::GenerateUUID()))));
 
             nsCOMPtr<nsIPrincipal> principal =
                 BasePrincipal::CreateContentPrincipal(uri, OriginAttributes{});

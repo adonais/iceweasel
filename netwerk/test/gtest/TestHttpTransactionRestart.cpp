@@ -85,8 +85,7 @@ static already_AddRefed<nsHttpTransaction> MakeTransaction(
       /*eventsink*/ nullptr, /*browserId*/ 0, HttpTrafficCategory::eInvalid,
       /*requestContext*/ nullptr, ClassOfService(), /*initialRwin*/ 0,
       /*responseTimeoutEnabled*/ false, /*channelId*/ 0,
-      /*transactionObserver*/ nullptr, nsILoadInfo::IPAddressSpace::Unknown,
-      LNAPerms{});
+      nsILoadInfo::IPAddressSpace::Unknown, LNAPerms{});
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
   return trans.forget();
 }

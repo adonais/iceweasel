@@ -65,6 +65,7 @@ pub struct Profile {
     pub(crate) mAB: Option<Box<lutmABType>>,
     pub(crate) mBA: Option<Box<lutmABType>>,
     pub(crate) chromaticAdaption: Option<Matrix>,
+    pub(crate) description: Option<String>,
     pub(crate) precache_output: Option<Arc<PrecacheOuput>>,
     is_srgb: bool,
 }
@@ -456,6 +457,7 @@ pub const TAG_kTRC: u32 = 0x6b545243;
 pub const TAG_A2B0: u32 = 0x41324230;
 pub const TAG_B2A0: u32 = 0x42324130;
 pub const TAG_CHAD: u32 = 0x63686164;
+pub const TAG_desc: u32 = 0x64657363;
 
 fn find_tag(index: &TagIndex, tag_id: u32) -> Option<&Tag> {
     for t in index {
@@ -474,6 +476,60 @@ pub const LUT8_TYPE: u32 = 0x6d667431; // 'mft1'
 pub const LUT_MAB_TYPE: u32 = 0x6d414220; // 'mAB '
 pub const LUT_MBA_TYPE: u32 = 0x6d424120; // 'mBA '
 pub const CHROMATIC_TYPE: u32 = 0x73663332; // 'sf32'
+pub const TEXT_DESCRIPTION_TYPE: u32 = 0x64657363; // 'desc'
+pub const MULTI_LOCALIZED_UNICODE_TYPE: u32 = 0x6d6c7563; // 'mluc'
+
+/// Reads a textDescriptionType (v2) or multiLocalizedUnicodeType (v4) tag.
+/// The description is informational only, so malformed data returns None
+/// instead of invalidating the profile.
+fn read_tag_description(buf: &[u8], tag: &Tag) -> Option<String> {
+    const MAX_DESCRIPTION_CHARS: usize = 256;
+    let start = tag.offset as usize;
+    let data = buf.get(start..start.checked_add(tag.size as usize)?)?;
+    let read_u32 = |at: usize| -> Option<u32> {
+        Some(u32::from_be_bytes(data.get(at..at.checked_add(4)?)?.try_into().ok()?))
+    };
+    let text = match read_u32(0)? {
+        TEXT_DESCRIPTION_TYPE => {
+            let count = read_u32(8)? as usize;
+            String::from_utf8_lossy(data.get(12..12usize.checked_add(count)?)?).into_owned()
+        }
+        MULTI_LOCALIZED_UNICODE_TYPE => {
+            const RECORDS_START: usize = 16;
+            let record_size = read_u32(12)? as usize;
+            if record_size < 12 {
+                return None;
+            }
+            let num_records = (read_u32(8)? as usize).min(data.len() / record_size);
+            // Prefer an English record, otherwise use the first one.
+            let record = (0..num_records)
+                .map(|i| RECORDS_START + i * record_size)
+                .find(|&r| data.get(r..r + 2) == Some(b"en"))
+                .unwrap_or(RECORDS_START);
+            let length = read_u32(record + 4)? as usize;
+            let offset = read_u32(record + 8)? as usize;
+            let units: Vec<u16> = data
+                .get(offset..offset.checked_add(length)?)?
+                .chunks_exact(2)
+                .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                .collect();
+            String::from_utf16_lossy(&units)
+        }
+        _ => return None,
+    };
+    let text: String = text
+        .split('\0')
+        .next()?
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_DESCRIPTION_CHARS)
+        .collect();
+    if text.is_empty() {
+        None
+    } else {
+        Some(text)
+    }
+}
 
 fn read_tag_s15Fixed16ArrayType(src: &mut MemSource, tag: &Tag) -> Matrix {
     let mut matrix: Matrix = Matrix { m: [[0.; 3]; 3] };
@@ -1507,6 +1563,11 @@ impl Profile {
         self.is_srgb
     }
 
+    /// Returns the profile's description tag, if it has a readable one.
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
     /// Returns the chromaticities of the RGB colorants and of the white they
     /// sum to. If the profile has a chromatic adaptation tag it is undone, so
     /// the values describe the device rather than the D50 PCS.
@@ -1751,6 +1812,9 @@ impl Profile {
         } else {
             profile.chromaticAdaption = None; //Signal the data is not present
         }
+
+        profile.description =
+            find_tag(&index, TAG_desc).and_then(|tag| read_tag_description(src.buf, tag));
 
         if profile.class_type == DISPLAY_DEVICE_PROFILE
             || profile.class_type == INPUT_DEVICE_PROFILE

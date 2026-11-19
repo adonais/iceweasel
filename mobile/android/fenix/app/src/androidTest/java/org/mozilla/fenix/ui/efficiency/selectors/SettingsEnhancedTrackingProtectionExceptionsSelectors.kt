@@ -60,4 +60,12 @@ object SettingsEnhancedTrackingProtectionExceptionsSelectors : SelectorContainer
             value = host,
             description = "Exceptions list entry for '$host'",
         )
+
+    // Per-row delete button (one row = one match);
+    val REMOVE_SITE_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_CONTENT_DESC,
+            value = getStringResource(R.string.history_delete_item),
+            description = "Remove one site exception button",
+        )
 }

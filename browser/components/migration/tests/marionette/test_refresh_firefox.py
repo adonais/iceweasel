@@ -659,7 +659,7 @@ class TestFirefoxRefresh(MarionetteTestCase):
             """
           try {
             global.formAutofillStorage = ChromeUtils.importESModule(
-              "resource://formautofill/FormAutofillStorage.sys.mjs"
+              "resource://autofill/FormAutofillStorage.sys.mjs"
             ).formAutofillStorage;
           } catch(e) {
             return false;
@@ -1012,6 +1012,109 @@ class TestSelectableProfileFirefoxRefresh(TestFirefoxRefresh):
             self.checkSession()
             self.checkStartupMigrationStateCleared()
             self.checkRefreshPromptDisabled()
+
+
+class TestFirefoxRefreshRustAutofill(TestFirefoxRefresh):
+    """Refresh a profile whose addresses and credit cards are served from
+    autofill.db.
+
+    Once they move to the Rust store, autofill-profiles.json is no longer
+    written, so the migrator has to carry autofill.db and the rust.active prefs
+    into the new profile. rust.enabled is kept across the refresh as it is once
+    Nimbus enrolls the new profile, so the new profile serves the copied
+    autofill.db as is.
+    """
+
+    _addressEnabledPref = "extensions.formautofill.addresses.storage.rust.enabled"
+    _creditCardEnabledPref = "extensions.formautofill.creditCards.storage.rust.enabled"
+
+    _rustAddressGuid = None
+    _rustCreditCardGuid = None
+
+    # Inherited test that does not involve autofill data.
+    testFxANoSync = None
+
+    def doReset(self):
+        # Without rust.enabled the new profile copies its credit cards back to
+        # autofill-profiles.json at startup, which needs the OS key store.
+        self.runCode(
+            """
+          let [prefs] = arguments;
+          let name = "MOZ_MARIONETTE_REQUIRED_PREFS";
+          let kept = JSON.parse(Services.env.get(name)).concat(prefs);
+          Services.env.set(name, JSON.stringify(kept));
+        """,
+            script_args=([self._addressEnabledPref, self._creditCardEnabledPref],),
+        )
+        return super().doReset()
+
+    def createFormAutofill(self):
+        super().createFormAutofill()
+        # Credit cards switch before any is saved: copying a JSON card into the
+        # Rust store waits for the OS key store to be unlocked.
+        result = self.runAsyncCode(
+            """
+          let [addressPref, creditCardPref, resolve] = arguments;
+          let storage = global.formAutofillStorage;
+          (async () => {
+            await storage.initialize();
+            Services.prefs.setBoolPref(addressPref, true);
+            Services.prefs.setBoolPref(creditCardPref, true);
+            await storage._addressSwitch;
+            await storage._creditCardSwitch;
+            let addressGuid = await storage.addresses.add({
+              "given-name": "Jane",
+              "family-name": "Doe",
+              "street-address": "1 Rust Street",
+              "address-level2": "Toronto",
+              "address-level1": "ON",
+              "postal-code": "M5V 2T6",
+              country: "CA",
+            });
+            let creditCardGuid = await storage.creditCards.add({
+              "cc-name": "Jane Doe",
+              "cc-number": "4111111111111111",
+              "cc-exp-month": 4,
+              "cc-exp-year": 2050,
+            });
+            return [addressGuid, creditCardGuid];
+          })().then(resolve, e => resolve("Unexpected error in adding autofill data: " + e));
+        """,
+            script_args=(self._addressEnabledPref, self._creditCardEnabledPref),
+        )
+        if type(result) is str:
+            self.fail(result)
+            return
+        [self._rustAddressGuid, self._rustCreditCardGuid] = result
+
+    def checkFormAutofill(self):
+        result = self.runAsyncCode(
+            """
+          let resolve = arguments[arguments.length - 1];
+          let storage = global.formAutofillStorage;
+          (async () => {
+            await storage.initialize();
+            let addresses = await storage.addresses.getAll();
+            let creditCards = await storage.creditCards.getAll();
+            return [addresses.map(a => a.guid), creditCards.map(c => c.guid)];
+          })().then(resolve, e => resolve("Unexpected error in fetching autofill data: " + e));
+        """
+        )
+        if type(result) is str:
+            self.fail(result)
+            return
+        [addressGuids, creditCardGuids] = result
+
+        self.assertCountEqual(
+            addressGuids,
+            [self._formAutofillAddressGuid, self._rustAddressGuid],
+            "Both the address saved before and after the switch should be present",
+        )
+        self.assertEqual(
+            creditCardGuids,
+            [self._rustCreditCardGuid],
+            "The credit card saved after the switch should be present",
+        )
 
 
 class TestFirefoxRefreshEncryptedSession(TestFirefoxRefresh):

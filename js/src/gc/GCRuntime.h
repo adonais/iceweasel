@@ -612,6 +612,7 @@ class GCRuntime {
 
   bool areGrayBitsValid() const { return grayBitsInvalid == 0; }
   void setGrayBitsInvalid();
+  void setGrayBitsInvalidForReset();
 
   mozilla::TimeStamp lastGCStartTime() const { return lastGCStartTime_; }
   mozilla::TimeStamp lastGCEndTime() const { return lastGCEndTime_; }

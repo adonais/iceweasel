@@ -250,6 +250,7 @@ mod test {
                 "BlockedDllList": "Foo.dll;bar.dll;rawr.dll",
                 "CrashTime": "1234",
                 "InstallTime": "1784641473",
+                "JumpListShellCallStart": "1234",
                 "LastInteractionDuration": "100",
                 "NimbusEnrollments": "a,b,c,d,e",
                 "QuotaManagerShutdownTimeout": "line1\nline2\nline3",

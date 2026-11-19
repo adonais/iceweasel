@@ -19,7 +19,7 @@ TEST(ThreadProfile, InsertOneEntry)
       2 * (1 + uint32_t(sizeof(ProfileBufferEntry))));
   mozilla::ProfileChunkedBuffer profileChunkedBuffer(
       mozilla::ProfileChunkedBuffer::ThreadSafety::WithMutex, chunkManager);
-  auto pb = mozilla::MakeUnique<ProfileBuffer>(profileChunkedBuffer);
+  auto pb = std::make_unique<ProfileBuffer>(profileChunkedBuffer);
   pb->AddEntry(ProfileBufferEntry::Time(123.1));
   ProfileBufferEntry entry = pb->GetEntry(pb->BufferRangeStart());
   ASSERT_TRUE(entry.IsTime());
@@ -34,7 +34,7 @@ TEST(ThreadProfile, InsertEntriesNoWrap)
       100 * (1 + uint32_t(sizeof(ProfileBufferEntry))) / 4);
   mozilla::ProfileChunkedBuffer profileChunkedBuffer(
       mozilla::ProfileChunkedBuffer::ThreadSafety::WithMutex, chunkManager);
-  auto pb = mozilla::MakeUnique<ProfileBuffer>(profileChunkedBuffer);
+  auto pb = std::make_unique<ProfileBuffer>(profileChunkedBuffer);
   const int test_size = 50;
   for (int i = 0; i < test_size; i++) {
     pb->AddEntry(ProfileBufferEntry::Time(i));
@@ -61,7 +61,7 @@ TEST(ThreadProfile, DuplicateLastSampleWithJitReturnAddrs)
   mozilla::ProfileBufferChunkManagerWithLocalLimit chunkManager(4096, 256);
   mozilla::ProfileChunkedBuffer profileChunkedBuffer(
       mozilla::ProfileChunkedBuffer::ThreadSafety::WithMutex, chunkManager);
-  auto pb = mozilla::MakeUnique<ProfileBuffer>(profileChunkedBuffer);
+  auto pb = std::make_unique<ProfileBuffer>(profileChunkedBuffer);
   const ProfilerThreadId threadId = ProfilerThreadId::FromNumber(1);
 
   mozilla::Maybe<uint64_t> lastSample =

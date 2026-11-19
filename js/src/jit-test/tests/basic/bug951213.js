@@ -1,5 +1,5 @@
 
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 function foo(x, y) {
   this.g = x + y;
 }

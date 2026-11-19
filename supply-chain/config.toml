@@ -19,6 +19,10 @@ url = "https://raw.githubusercontent.com/divviup/libprio-rs/main/supply-chain/au
 [imports.mozilla]
 url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 
+[policy."aa-stroke:0.1.0@git:5776bdfc8ad664a1503db668fab397d818a5f98a"]
+audit-as-crates-io = false
+notes = "aa-stroke is not on crates.io yet, and is written by us."
+
 [policy.allocator-api2]
 audit-as-crates-io = true
 notes = "This is the upstream code with a fix for rust 1.89."
@@ -35,13 +39,33 @@ notes = "This is a first-party crate which is developed in mozilla-central, see 
 audit-as-crates-io = true
 notes = "This is the upstream code plus a few local fixes, see bug 1685697."
 
+[policy."base64:0.21.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for base64 0.21."
+
+[policy."bindgen:0.72.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for bindgen 0.72."
+
 [policy."bindgen:0.73.1"]
 audit-as-crates-io = true
 notes = "Upstream code with a backported fix"
 
+[policy."bitflags:1.999.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for bitflags 1."
+
 [policy.cc]
 audit-as-crates-io = true
 notes = "This is the upstream code plus a fix for https://github.com/rust-lang/cc-rs/issues/1883"
+
+[policy."core-foundation:0.9.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for core-foundation 0.9."
+
+[policy."core-graphics-types:0.1.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for core-graphics-types 0.1."
 
 [policy.cose]
 audit-as-crates-io = true
@@ -67,6 +91,10 @@ audit-as-crates-io = false
 criteria = "safe-to-run"
 notes = "This is a first-party crate which is also published to crates.io. We certify audits for this crate as part of the documented release process, but that step happens after the version bump lands on central so we don't enforce it here. It's also used only for automation, so its subtree can be safe-to-run."
 
+[policy."getrandom:0.2.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for getrandom 0.2."
+
 [policy.gkrust-gtest]
 criteria = "safe-to-run"
 notes = "Used for testing."
@@ -83,6 +111,10 @@ notes = "This is upstream plus a build fix from rust-windowing/gl-rs#566. Can be
 criteria = "safe-to-run"
 notes = "Used for fuzzing."
 
+[policy."goblin:0.8.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for goblin 0.8."
+
 [policy.harfbuzz]
 audit-as-crates-io = true
 notes = "Patched version of upstream to fix Android build"
@@ -94,6 +126,30 @@ notes = "Patched version of upstream to remove bundled HarfBuzz"
 [policy.harfbuzz-traits]
 audit-as-crates-io = true
 notes = "Vendored with harfbuzz to avoid duplicates"
+
+[policy."hashbrown:0.13.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for hashbrown 0.13."
+
+[policy."hashbrown:0.14.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for hashbrown 0.14."
+
+[policy."hashbrown:0.15.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for hashbrown 0.15."
+
+[policy."hashbrown:0.16.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for hashbrown 0.16."
+
+[policy."hashlink:0.10.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for hashlink 0.10."
+
+[policy."hermit-abi:0.3.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for hermit-abi 0.3."
 
 [policy.http3server]
 criteria = "safe-to-run"
@@ -135,6 +191,14 @@ notes = "Patched version of upstream"
 audit-as-crates-io = true
 notes = "Patched version of upstream"
 
+[policy."itertools:0.13.0"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for itertools 0.13.0."
+
+[policy."itertools:0.14.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for itertools 0.14."
+
 [policy.jxl_simd]
 audit-as-crates-io = true
 notes = "Upstream 0.8.0 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
@@ -158,6 +222,10 @@ notes = "Patched version of upstream to avoid vendoring unnecessary massive libd
 [policy.libudev-sys]
 audit-as-crates-io = false
 notes = "This override is an api-compatible fork with an orthogonal implementation."
+
+[policy."mach2:0.4.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for mach2 0.4."
 
 [policy.malloc_size_of_derive]
 audit-as-crates-io = false
@@ -265,6 +333,10 @@ it publicly (so it is on crates.io now).
 [policy."process-reader:0.1.0@git:3ab1604f91db05ec3f3a84d779a2871df7d9afd7"]
 audit-as-crates-io = false
 
+[policy."procfs-core:0.17.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for procfs-core 0.17."
+
 [policy.pulse]
 audit-as-crates-io = false
 notes = "This is a first-party crate which is entirely unrelated to the crates.io package of the same name."
@@ -273,9 +345,21 @@ notes = "This is a first-party crate which is entirely unrelated to the crates.i
 audit-as-crates-io = true
 notes = "This is a first-party crate which is also published to crates.io, but we should publish audits for it for the benefit of the ecosystem."
 
+[policy."redox_syscall:0.5.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for redox_syscall 0.5."
+
 [policy.rure]
 audit-as-crates-io = true
 notes = "Identical to upstream, but with cdylib and staticlib targets disabled to avoid unnecessary build artifacts and linker errors."
+
+[policy."rusqlite:0.31.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for rusqlite 0.31."
+
+[policy."rustc-hash:1.999.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for rustc-hash 1."
 
 [policy.selectors]
 audit-as-crates-io = true
@@ -301,6 +385,10 @@ notes = "This is an in-tree first-party crate that is published to crates.io by 
 audit-as-crates-io = false
 notes = "This is a first-party crate, maintained by the appservices team, which is entirely unrelated to the crates.io package of the same name."
 
+[policy."thiserror:1.999.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for thiserror 1."
+
 [policy.to_shmem]
 audit-as-crates-io = true
 notes = "This is a first-party crate which is also published to crates.io"
@@ -309,18 +397,24 @@ notes = "This is a first-party crate which is also published to crates.io"
 audit-as-crates-io = true
 notes = "This is a first-party crate which is also published to crates.io"
 
+[policy."toml:0.5.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for toml 0.5."
+
+[policy."toml:0.9.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for toml 0.9."
+
 [policy.unicode-bidi]
-audit-as-crates-io = true
-
-[policy.utf16_iter]
-audit-as-crates-io = true
-
-[policy.utf8_iter]
 audit-as-crates-io = true
 
 [policy.viaduct]
 audit-as-crates-io = false
 notes = "This is a first-party crate, maintained by the appservices team, which is entirely unrelated to the crates.io package of the same name."
+
+[policy."wasi:0.11.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for wasi 0.11."
 
 [policy.webdriver]
 audit-as-crates-io = false
@@ -369,12 +463,24 @@ notes = "Upstream project which we pin."
 audit-as-crates-io = true
 notes = "Local override of the crates.io crate that uses a non-vendored local copy of the downloaded crate"
 
+[policy."windows-targets:0.52.999"]
+audit-as-crates-io = false
+notes = "Backwards-compatible patching crate for windows-targets 0.52."
+
+[policy."wpf-gpu-raster:0.1.0@git:99979da091fd58fba8477e7fcdf5ec0727102916"]
+audit-as-crates-io = true
+notes = "Unpublished changes to wpf-gpu-raster"
+
 [policy.wr_glyph_rasterizer]
 audit-as-crates-io = false
 notes = "This is an in-tree first-party crate that is published to crates.io by others."
 
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
+
+[policy."zip:2.4.2"]
+audit-as-crates-io = true
+notes = "Upstream zip with a patch for omnijars."
 
 [policy.zlib-rs]
 audit-as-crates-io = true

@@ -59,6 +59,21 @@ var gViewSourceUtils = {
         return;
       } catch (data) {}
     }
+
+    try {
+      // Don't open a new tab if its URL would start with `view-source:javascript:`.
+      const uri = Services.io.newURI("view-source:" + aArgs.URL);
+      if (
+        uri instanceof Ci.nsINestedURI &&
+        uri.QueryInterface(Ci.nsINestedURI).innermostURI.schemeIs("javascript")
+      ) {
+        return;
+      }
+    } catch (e) {
+      // we just want to prevent javascript protocol, so if anything threw,
+      // let's continue, as we might fix up the URL later in ViewSourceChild.sys.mjs.
+    }
+
     // Try existing browsers first.
     let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
     if (browserWin && browserWin.BrowserCommands.viewSourceOfDocument) {

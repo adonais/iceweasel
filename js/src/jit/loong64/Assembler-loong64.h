@@ -896,6 +896,11 @@ enum OpcodeField {
   op_vmskltz_d = 0x1ca713U << 10,
   op_vmskgez_b = 0x1ca714U << 10,
   op_vmsknz_b = 0x1ca718U << 10,
+  op_vsetnez_v = 0x1ca727U << 10,
+  op_vsetallnez_b = 0x1ca72cU << 10,
+  op_vsetallnez_h = 0x1ca72dU << 10,
+  op_vsetallnez_w = 0x1ca72eU << 10,
+  op_vsetallnez_d = 0x1ca72fU << 10,
   op_vfsqrt_s = 0x1ca739U << 10,
   op_vfsqrt_d = 0x1ca73aU << 10,
   op_vfrecip_s = 0x1ca73dU << 10,
@@ -1041,6 +1046,36 @@ class BOffImm16 {
   Instruction* getDest(Instruction* src) const;
 
   explicit BOffImm16(InstImm inst);
+};
+
+// A BOffImm21 is a 21-bit immediate that is used for beqz, bnez, bceqz, and
+// bcnez.
+class BOffImm21 {
+  uint32_t data;
+
+ public:
+  uint32_t encode() {
+    MOZ_ASSERT(!isInvalid());
+    return data;
+  }
+  int32_t decode() {
+    MOZ_ASSERT(!isInvalid());
+    return (int32_t(data << 11) >> 9);
+  }
+
+  explicit BOffImm21(int offset) : data((offset) >> 2 & Imm21Mask) {
+    MOZ_ASSERT((offset & 0x3) == 0);
+    MOZ_ASSERT(IsInRange(offset));
+  }
+  static bool IsInRange(int offset) {
+    return is_intN(offset, 21 + /* 2'b0 */ 2);
+  }
+  static const uint32_t INVALID = 0x00200000;
+  BOffImm21() : data(INVALID) {}
+
+  bool isInvalid() { return data == INVALID; }
+
+  explicit BOffImm21(InstImm inst);
 };
 
 // A JOffImm26 is a 26 bit immediate that is used for unconditional jumps.
@@ -1415,11 +1450,14 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_jirl(Register rd, Register rj, BOffImm16 off);
   BufferOffset as_jirl(Register rd, Register rj, BOffImm16 off, LabelDoc doc);
 
-  InstImm getBranchCode(JumpOrCall jumpOrCall);  // b, bl
-  InstImm getBranchCode(Register rd, Register rj,
-                        Condition c);  // beq, bne, bge, bgeu, blt, bltu
-  InstImm getBranchCode(Register rj, Condition c);  // beqz, bnez
-  InstImm getBranchCode(FPConditionBit cj);         // bceqz, bcnez
+  // For b, bl
+  InstImm getBranchCode(JumpOrCall jumpOrCall);
+  // For beq, bne, bge, bgeu, blt, bltu
+  InstImm getBranchCode(Register rj, Register rd, Condition c);
+  // For beq $zero, bne $zero, blt $zero, bge $zero
+  InstImm getBranchCode(Register rj, Condition c);
+  // For bceqz, bcnez
+  InstImm getBranchCode(FPConditionBit cj, Condition c = NonZero);
 
   // Arithmetic instructions
   BufferOffset as_add_w(Register rd, Register rj, Register rk);
@@ -2031,6 +2069,11 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_vmskltz_d(FloatRegister vd, FloatRegister vj);
   BufferOffset as_vmskgez_b(FloatRegister vd, FloatRegister vj);
   BufferOffset as_vmsknz_b(FloatRegister vd, FloatRegister vj);
+  BufferOffset as_vsetnez_v(FPConditionBit cd, FloatRegister vj);
+  BufferOffset as_vsetallnez_b(FPConditionBit cd, FloatRegister vj);
+  BufferOffset as_vsetallnez_h(FPConditionBit cd, FloatRegister vj);
+  BufferOffset as_vsetallnez_w(FPConditionBit cd, FloatRegister vj);
+  BufferOffset as_vsetallnez_d(FPConditionBit cd, FloatRegister vj);
   BufferOffset as_vfsqrt_s(FloatRegister vd, FloatRegister vj);
   BufferOffset as_vfsqrt_d(FloatRegister vd, FloatRegister vj);
   BufferOffset as_vfrecip_s(FloatRegister vd, FloatRegister vj);
@@ -2211,7 +2254,7 @@ class AssemblerLOONG64 : public AssemblerShared {
   }
 
  protected:
-  InstImm invertBranch(InstImm branch, BOffImm16 skipOffset);
+  InstImm invertBranch(InstImm branch, int32_t skipOffset);
   void addPendingJump(BufferOffset src, ImmPtr target, RelocationKind kind) {
     enoughMemory_ &= jumps_.append(RelativePatch(src, target.value, kind));
     if (kind == RelocationKind::JITCODE) {
@@ -2281,14 +2324,13 @@ class Instruction {
   }
 
   // Extract the one particular bit.
-  uint32_t extractBit(uint32_t bit) { return (encode() >> bit) & 1; }
+  uint32_t extractBit(uint32_t bit) const { return (encode() >> bit) & 1; }
   // Extract a bit field out of the instruction
-  uint32_t extractBitField(uint32_t hi, uint32_t lo) {
+  uint32_t extractBitField(uint32_t hi, uint32_t lo) const {
     return (encode() >> lo) & ((2 << (hi - lo)) - 1);
   }
 
   // Get the next instruction in the instruction stream.
-  // This does neat things like ignoreconstant pools and their guards.
   Instruction* next();
 
   // Sometimes, an api wants a uint32_t (or a pointer to it) rather than
@@ -2354,7 +2396,9 @@ class InstReg : public Instruction {
   }
   InstReg(OpcodeField op, FloatRegister fj, AssemblerLOONG64::FPConditionBit cd)
       : Instruction(op | FJ(fj) | cd) {
-    MOZ_ASSERT(op == op_movfr2cf);
+    MOZ_ASSERT(op == op_movfr2cf || op == op_vsetnez_v ||
+               op == op_vsetallnez_b || op == op_vsetallnez_h ||
+               op == op_vsetallnez_w || op == op_vsetallnez_d);
   }
   InstReg(OpcodeField op, AssemblerLOONG64::FPConditionBit cj, FloatRegister fd)
       : Instruction(op | (cj << CJShift) | FD(fd)) {
@@ -2382,19 +2426,19 @@ class InstReg : public Instruction {
     MOZ_ASSERT(is_uintN(cond, 5));
   }
 
-  uint32_t extractRK() {
+  uint32_t extractRK() const {
     return extractBitField(RKShift + RKBits - 1, RKShift);
   }
-  uint32_t extractRJ() {
+  uint32_t extractRJ() const {
     return extractBitField(RJShift + RJBits - 1, RJShift);
   }
-  uint32_t extractRD() {
+  uint32_t extractRD() const {
     return extractBitField(RDShift + RDBits - 1, RDShift);
   }
-  uint32_t extractSA2() {
+  uint32_t extractSA2() const {
     return extractBitField(SAShift + SA2Bits - 1, SAShift);
   }
-  uint32_t extractSA3() {
+  uint32_t extractSA3() const {
     return extractBitField(SAShift + SA3Bits - 1, SAShift);
   }
 };
@@ -2402,8 +2446,7 @@ class InstReg : public Instruction {
 // Class for branch, load and store instructions with immediate offset.
 class InstImm : public Instruction {
  public:
-  void extractImm16(BOffImm16* dest);
-  uint32_t genImm(int32_t value, uint32_t value_bits) {
+  static uint32_t genImm(int32_t value, uint32_t value_bits) {
     uint32_t imm = value & Imm5Mask;
     if (value_bits == 6) {
       imm = value & Imm6Mask;
@@ -2412,8 +2455,96 @@ class InstImm : public Instruction {
     } else if (value_bits == 14) {
       imm = value & Imm14Mask;
     }
-
     return imm;
+  }
+
+  // For LSX (128-bit SIMD) immediates.  The immediate always starts at bit
+  // 10; its width varies per instruction format (2RI1 .. 2RI12).
+  static uint32_t genSimdImm(uint32_t value, uint32_t bits) {
+    MOZ_ASSERT(bits >= 1 && bits <= 21);
+    return value & ((uint32_t(1) << bits) - 1);
+  }
+
+  void setOpcode(OpcodeField op, uint32_t opBits) {
+    // opBits not greater than 24.
+    MOZ_ASSERT(opBits < 25);
+    uint32_t OpcodeShift = 32 - opBits;
+    uint32_t OpcodeMask = ((1 << opBits) - 1) << OpcodeShift;
+    data = (data & ~OpcodeMask) | op;
+  }
+  uint32_t extractRK() const {
+    return extractBitField(RKShift + RKBits - 1, RKShift);
+  }
+  uint32_t extractRJ() const {
+    return extractBitField(RJShift + RJBits - 1, RJShift);
+  }
+  void setRJ(uint32_t rj) {
+    data = (data & ~(RJMask << RJShift)) | (rj << RJShift);
+  }
+  uint32_t extractRD() const {
+    return extractBitField(RDShift + RDBits - 1, RDShift);
+  }
+  BOffImm16 extractImm16() const { return BOffImm16(*this); }
+  uint32_t extractImm16Value() const {
+    return extractBitField(Imm16Shift + Imm16Bits - 1, Imm16Shift);
+  }
+  void setBOffImm16(BOffImm16 off) {
+    // Reset immediate field and replace it
+    data = (data & ~BOffImm16Mask) | (off.encode() << Imm16Shift);
+  }
+  bool hasBOffImm16() const {
+    switch (extractBitField(31, 26)) {
+      case static_cast<uint32_t>(op_beq) >> 26:
+      case static_cast<uint32_t>(op_bne) >> 26:
+      case static_cast<uint32_t>(op_blt) >> 26:
+      case static_cast<uint32_t>(op_bge) >> 26:
+      case static_cast<uint32_t>(op_bltu) >> 26:
+      case static_cast<uint32_t>(op_bgeu) >> 26:
+      case static_cast<uint32_t>(op_jirl) >> 26:
+        return true;
+      default:
+        return false;
+    }
+  }
+  void setBOffImm21(BOffImm21 off) {
+    // Reset immediate field and replace it
+    uint32_t value = off.encode();
+    uint32_t fcc_info = (data >> 5) & 0x1F;
+    data = (data & ~BOffImm26Mask) | ((value & Imm16Mask) << Imm16Shift) |
+           (value >> 16) | (fcc_info << 5);
+  }
+  bool hasBOffImm21() const {
+    switch (extractBitField(31, 26)) {
+      case static_cast<uint32_t>(op_beqz) >> 26:
+      case static_cast<uint32_t>(op_bnez) >> 26:
+      case static_cast<uint32_t>(op_bcz) >> 26:
+        return true;
+      default:
+        return false;
+    }
+  }
+  bool isShortJump() const { return hasBOffImm21() || hasBOffImm16(); }
+  bool isShortJumpInRange(int32_t offset) const {
+    if (hasBOffImm21()) {
+      return BOffImm21::IsInRange(offset);
+    }
+    MOZ_ASSERT(hasBOffImm16());
+    return BOffImm16::IsInRange(offset);
+  }
+  int32_t extractShortJumpOffset() const {
+    if (hasBOffImm21()) {
+      return BOffImm21(*this).decode();
+    }
+    MOZ_ASSERT(hasBOffImm16());
+    return BOffImm16(*this).decode();
+  }
+  void setShortJumpOffset(int32_t offset) {
+    if (hasBOffImm21()) {
+      setBOffImm21(BOffImm21(offset));
+      return;
+    }
+    MOZ_ASSERT(hasBOffImm16());
+    setBOffImm16(BOffImm16(offset));
   }
 
   InstImm(OpcodeField op, int32_t value, Register rj, Register rd,
@@ -2459,7 +2590,6 @@ class InstImm : public Instruction {
       : Instruction(op | (bit15 & Imm15Mask)) {
     MOZ_ASSERT(is_uintN(bit15, 15));
   }
-
   InstImm(OpcodeField op, int32_t bit26, bool jump)
       : Instruction(op | (bit26 & Imm16Mask) << Imm16Shift |
                     (bit26 & Imm26Mask) >> 16) {
@@ -2492,47 +2622,7 @@ class InstImm : public Instruction {
     MOZ_ASSERT(is_intN(si12, 12));
   }
 
-  // For LSX (128-bit SIMD) immediates.  The immediate always starts at bit
-  // 10; its width varies per instruction format (2RI1 .. 2RI12).
-  static uint32_t genSimdImm(uint32_t value, uint32_t bits) {
-    MOZ_ASSERT(bits >= 1 && bits <= 21);
-    return value & ((uint32_t(1) << bits) - 1);
-  }
-
-  void setOpcode(OpcodeField op, uint32_t opBits) {
-    // opBits not greater than 24.
-    MOZ_ASSERT(opBits < 25);
-    uint32_t OpcodeShift = 32 - opBits;
-    uint32_t OpcodeMask = ((1 << opBits) - 1) << OpcodeShift;
-    data = (data & ~OpcodeMask) | op;
-  }
-  uint32_t extractRK() {
-    return extractBitField(RKShift + RKBits - 1, RKShift);
-  }
-  uint32_t extractRJ() {
-    return extractBitField(RJShift + RJBits - 1, RJShift);
-  }
-  void setRJ(uint32_t rj) {
-    data = (data & ~(RJMask << RJShift)) | (rj << RJShift);
-  }
-  uint32_t extractRD() {
-    return extractBitField(RDShift + RDBits - 1, RDShift);
-  }
-  uint32_t extractImm16Value() {
-    return extractBitField(Imm16Shift + Imm16Bits - 1, Imm16Shift);
-  }
-  void setBOffImm16(BOffImm16 off) {
-    // Reset immediate field and replace it
-    data = (data & ~BOffImm16Mask) | (off.encode() << Imm16Shift);
-  }
-  void setImm21(int32_t off) {
-    // Reset immediate field and replace it
-    uint32_t low16 = (off >> 2) & Imm16Mask;
-    int32_t high5 = (off >> 18) & Imm5Mask;
-    uint32_t fcc_info = (data >> 5) & 0x1F;
-    data = (data & ~BOffImm26Mask) | (low16 << Imm16Shift) | high5 |
-           (fcc_info << 5);
-  }
+  // For SIMD
   InstImm(OpcodeField op, uint32_t imm, FloatRegister vj, FloatRegister vd,
           uint32_t imm_bits)
       : Instruction(op | genSimdImm(imm, imm_bits) << RKShift | FJ(vj) |
@@ -2758,7 +2848,7 @@ class InstJump : public Instruction {
            ((off.encode() & Imm16Mask) << Imm16Shift) |
            ((off.encode() >> 16) & 0x3ff);
   }
-  uint32_t extractImm26Value() {
+  uint32_t extractImm26Value() const {
     return extractBitField(Imm26Shift + Imm26Bits - 1, Imm26Shift);
   }
 };

@@ -23,6 +23,9 @@ const TEST_VERSION_PREF =
 const { RustAutofillCreditCardsAdapter } = ChromeUtils.importESModule(
   "resource://autofill/RustAutofillCreditCardStorage.sys.mjs"
 );
+const { MIGRATION_SAFE_POINT_TOPIC } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofillStorage.sys.mjs"
+);
 
 const rustActive = () => Services.prefs.getBoolPref(ACTIVE_PREF, false);
 
@@ -76,6 +79,8 @@ const EXPECTED_FILL_AMEX = {
  * @param {boolean} rust Whether the Rust store should serve afterwards.
  */
 async function switchTo(rust) {
+  // The pref observer that runs the switch is added by initialize().
+  await formAutofillStorage.initialize();
   Services.prefs.setBoolPref(ENABLED_PREF, rust);
   await formAutofillStorage._creditCardSwitch;
   Assert.equal(
@@ -397,9 +402,9 @@ add_task(async function test_a_copy_back_does_not_wait_for_the_key_store() {
   }
   Assert.equal(dialogs.count, 0, "without the user being asked anything");
   Assert.equal(
-    [...Services.obs.enumerateObservers(OSKeyStore.UNLOCKED_TOPIC)].length,
+    [...Services.obs.enumerateObservers(MIGRATION_SAFE_POINT_TOPIC)].length,
     0,
-    "the copy back did not wait for an unlock"
+    "the copy back did not wait for the key store"
   );
   Assert.deepEqual(
     await fillFromStorage(),
@@ -478,9 +483,9 @@ add_task(
     }
     Assert.equal(dialogs.count, 0, "without the user being asked anything");
     Assert.equal(
-      [...Services.obs.enumerateObservers(OSKeyStore.UNLOCKED_TOPIC)].length,
+      [...Services.obs.enumerateObservers(MIGRATION_SAFE_POINT_TOPIC)].length,
       0,
-      "the switch did not wait for an unlock"
+      "the switch did not wait for the key store"
     );
     Assert.deepEqual(
       await fillFromStorage(),
@@ -548,9 +553,9 @@ add_task(async function test_an_empty_profile_switches_without_the_key_store() {
   }
   Assert.equal(touched, 0, "the key store was not consulted");
   Assert.equal(
-    [...Services.obs.enumerateObservers(OSKeyStore.UNLOCKED_TOPIC)].length,
+    [...Services.obs.enumerateObservers(MIGRATION_SAFE_POINT_TOPIC)].length,
     0,
-    "nor is its unlock waited for"
+    "nor is the key store waited for"
   );
 });
 
@@ -718,3 +723,175 @@ add_task(async function test_removing_the_password_lets_the_profile_migrate() {
 
   await removeAllRecords();
 });
+
+/**
+ * Leave the profile with one card, on JSON, with the copy into Rust waiting
+ * for the OS key store, as a session starts on macOS and Linux.
+ */
+async function waitForTheKeyStore() {
+  await switchTo(false);
+  await removeAllRecords();
+  await setStorage(TEST_CARD);
+  lockOSKeyStore();
+  Services.prefs.setBoolPref(ENABLED_PREF, true);
+  await formAutofillStorage._creditCardSwitch;
+  Assert.ok(!rustActive(), "the copy waits for the key store");
+}
+
+async function waitForTheCopy() {
+  await TestUtils.waitForCondition(rustActive, "the profile moves to Rust");
+  await formAutofillStorage._creditCardSwitch;
+}
+
+const servingNames = async () =>
+  (await formAutofillStorage.creditCards.getAll()).map(c => c["cc-name"]);
+
+const AMEX_VALUES = {
+  "#cc-name": EXPECTED_FILL_AMEX["cc-name"],
+  "#cc-number": EXPECTED_FILL_AMEX["cc-number"],
+  "#cc-exp-month": EXPECTED_FILL_AMEX["cc-exp-month"],
+  "#cc-exp-year": EXPECTED_FILL_AMEX["cc-exp-year"],
+};
+
+add_task(
+  { skip_if: () => !KEY_STORE_WAITS },
+  async function test_a_submitted_saved_card_migrates_with_its_use() {
+    await waitForTheKeyStore();
+
+    // Typing a saved card rather than filling it: the submission's duplicate
+    // check is what unlocks the key store, and the use it then records is
+    // carried by the copy that follows.
+    await BrowserTestUtils.withNewTab(CC_FORM_URL, async browser => {
+      await focusUpdateSubmitForm(browser, {
+        focusSelector: "#cc-name",
+        newValues: {
+          "#cc-name": EXPECTED_FILL["cc-name"],
+          "#cc-number": EXPECTED_FILL["cc-number"],
+          "#cc-exp-month": EXPECTED_FILL["cc-exp-month"],
+          "#cc-exp-year": EXPECTED_FILL["cc-exp-year"],
+        },
+      });
+    });
+    await waitForTheCopy();
+
+    const [card] = await formAutofillStorage.creditCards.getAll();
+    Assert.equal(card.timesUsed, 1, "with the use the submission recorded");
+
+    await removeAllRecords();
+  }
+);
+
+add_task(
+  { skip_if: () => !KEY_STORE_WAITS },
+  async function test_a_card_saved_from_the_doorhanger_migrates() {
+    await waitForTheKeyStore();
+
+    // The doorhanger's save comes after the unlock its submission caused, and
+    // the copy waits for it rather than leaving it behind in JSON.
+    await BrowserTestUtils.withNewTab(CC_FORM_URL, async browser => {
+      const onPopupShown = waitForPopupShown();
+      await focusUpdateSubmitForm(browser, {
+        focusSelector: "#cc-name",
+        newValues: AMEX_VALUES,
+      });
+      await onPopupShown;
+      await clickDoorhangerButton(MAIN_BUTTON);
+    });
+    await waitForTheCopy();
+
+    Assert.ok(
+      (await servingNames()).includes(TEST_CARD_AMEX["cc-name"]),
+      "the saved card reached Rust"
+    );
+
+    await removeAllRecords();
+  }
+);
+
+add_task(
+  { skip_if: () => !KEY_STORE_WAITS },
+  async function test_a_dismissed_doorhanger_lets_the_copy_run() {
+    await waitForTheKeyStore();
+
+    await BrowserTestUtils.withNewTab(CC_FORM_URL, async browser => {
+      const onPopupShown = waitForPopupShown();
+      await focusUpdateSubmitForm(browser, {
+        focusSelector: "#cc-name",
+        newValues: AMEX_VALUES,
+      });
+      await onPopupShown;
+      await clickDoorhangerButton(SECONDARY_BUTTON);
+    });
+    await waitForTheCopy();
+
+    Assert.deepEqual(
+      await servingNames(),
+      [TEST_CARD["cc-name"]],
+      "with nothing saved from the dismissed doorhanger"
+    );
+
+    await removeAllRecords();
+  }
+);
+
+add_task(
+  { skip_if: () => !KEY_STORE_WAITS },
+  async function test_a_card_added_in_settings_migrates() {
+    await waitForTheKeyStore();
+
+    // The save's encryption is what unlocks the key store, and the copy waits
+    // for the editor to close.
+    await testDialog(EDIT_CREDIT_CARD_DIALOG_URL, async win => {
+      EventUtils.synthesizeKey("VK_TAB", {}, win);
+      EventUtils.synthesizeKey(TEST_CARD_AMEX["cc-number"], {}, win);
+      EventUtils.synthesizeKey("VK_TAB", {}, win);
+      EventUtils.synthesizeKey(TEST_CARD_AMEX["cc-name"], {}, win);
+      EventUtils.synthesizeKey("VK_TAB", {}, win);
+      EventUtils.synthesizeKey(EXPECTED_FILL_AMEX["cc-exp-month"], {}, win);
+      await win.document.activeElement.updateComplete;
+      EventUtils.synthesizeKey("VK_TAB", {}, win);
+      EventUtils.synthesizeKey(EXPECTED_FILL_AMEX["cc-exp-year"], {}, win);
+      await win.document.activeElement.updateComplete;
+      win.document.querySelector("#save").click();
+    });
+    await waitForTheCopy();
+
+    Assert.ok(
+      (await servingNames()).includes(TEST_CARD_AMEX["cc-name"]),
+      "the added card reached Rust"
+    );
+
+    await removeAllRecords();
+  }
+);
+
+add_task(
+  { skip_if: () => !KEY_STORE_WAITS },
+  async function test_a_card_edited_in_settings_migrates() {
+    await waitForTheKeyStore();
+
+    // Opening the card decrypts its number, which unlocks the key store; the
+    // copy waits until the editor has saved and closed.
+    const [record] = await formAutofillStorage.creditCards.getAll();
+    await testDialog(
+      EDIT_CREDIT_CARD_DIALOG_URL,
+      async win => {
+        const name = win.document.querySelector("#cc-name");
+        name.focus();
+        name.select();
+        EventUtils.synthesizeKey("Edited Name", {}, win);
+        win.document.querySelector("#save").click();
+      },
+      { record }
+    );
+    await waitForTheCopy();
+
+    Assert.deepEqual(
+      await servingNames(),
+      ["Edited Name"],
+      "the edit reached Rust"
+    );
+
+    await removeAllRecords();
+  }
+);

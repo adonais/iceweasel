@@ -99,6 +99,7 @@ add_heuristic_tests([
       await assertTelemetry({
         cc_exp_month: "ml",
         cc_exp_year: "ml",
+        cc_csc: "ml",
       });
     },
     expectedResult: [
@@ -136,6 +137,7 @@ add_heuristic_tests([
       await assertTelemetry({
         cc_exp_month: "0",
         cc_exp_year: "0",
+        cc_csc: "ml",
       });
     },
     expectedResult: [
@@ -170,6 +172,7 @@ add_heuristic_tests([
       await assertTelemetry({
         cc_exp_month: "ml",
         cc_exp_year: "ml",
+        cc_csc: "ml",
       });
     },
     expectedResult: [
@@ -203,6 +206,7 @@ add_heuristic_tests([
       await assertTelemetry({
         cc_exp_month: "0",
         cc_exp_year: "0",
+        cc_csc: "ml",
       });
     },
     expectedResult: [

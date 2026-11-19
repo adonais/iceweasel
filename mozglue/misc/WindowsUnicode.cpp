@@ -20,7 +20,7 @@ mozilla::UniquePtr<char[]> WideToUTF8(const wchar_t* aStr,
   }
 
   // Include room for the null terminator by adding one
-  auto buf = mozilla::MakeUnique<char[]>(numConv + 1);
+  auto buf = std::make_unique<char[]>(numConv + 1);
 
   numConv = ::WideCharToMultiByte(CP_UTF8, 0, aStr, aStrLenExclNul, buf.get(),
                                   numConv, nullptr, nullptr);

@@ -121,6 +121,9 @@ private:
 
 #if defined(MOZ_OXIDIZED_BREAKPAD)
   std::function<GetAuxvInfoCallback> get_auxv_info_;
+  // Use the remote executor even for processes we could ptrace directly,
+  // for testing purposes.
+  bool force_remote_executor_;
 #endif // defined(MOZ_OXIDIZED_BREAKPAD)
 
   std::function<OnClientDumpRequestCallback> dump_callback_;

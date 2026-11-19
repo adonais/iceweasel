@@ -12,6 +12,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.RecentlyClosedTabsSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
 
 class RecentlyClosedTabsTest : BaseTest() {
 
@@ -74,5 +75,33 @@ class RecentlyClosedTabsTest : BaseTest() {
         on.history
             .mozVerify(HistorySelectors.RECENTLY_CLOSED_TABS_NUMBER_OF_TABS(1))
             .mozVerifyElementsByGroup(HistorySelectors.Group.HISTORY_MENU_VIEW_WITH_HISTORY_ITEMS)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1065439
+    @Critical
+    @Test
+    fun deletingBrowserHistoryClearsRecentlyClosedTabsListTest() {
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
+
+        on.browserPage.navigateToPage(firstPage.url.toString())
+        on.tabDrawer.navigateToPage().closeAllTabs()
+        on.home.navigateToPage()
+        on.recentlyClosedTabs
+            .navigateToPage()
+            .mozVerify(RecentlyClosedTabsSelectors.RECENTLY_CLOSED_ITEM(firstPage.title))
+        on.history
+            .navigateToPage()
+            .mozVerifyElementsByGroup(HistorySelectors.Group.HISTORY_MENU_VIEW_WITH_HISTORY_ITEMS)
+            .mozClick(HistorySelectors.DELETE_ALL_HISTORY_BUTTON)
+            .mozClick(HistorySelectors.DELETE_EVERYTHING_OPTION_BUTTON)
+            .mozClick(HistorySelectors.DELETE_CONFIRM_BUTTON)
+            .mozVerify(HistorySelectors.RECENTLY_CLOSED_TABS_NUMBER_OF_TABS(0))
+        on.browserPage.navigateToPage(secondPage.url.toString())
+        on.tabDrawer
+            .navigateToPage()
+            .mozClick(TabDrawerSelectors.THREE_DOT_BUTTON)
+            .mozClick(TabDrawerSelectors.RECENTLY_CLOSED_TABS_BUTTON)
+        on.recentlyClosedTabs.mozVerify(RecentlyClosedTabsSelectors.EMPTY_RECENTLY_CLOSED_TABS_LIST)
     }
 }

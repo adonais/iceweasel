@@ -299,6 +299,8 @@ main(int argc, char **argv)
     if (displayAll) {
         if (SV_PrintPKCS7ContentInfo(outFile, &pkcs7der))
             result = 1;
+        else if (!doVerify)
+            result = 0;
     }
 
 cleanup:

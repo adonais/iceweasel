@@ -6,7 +6,7 @@ import { RecommendedSection } from "./recommended-section.mjs";
 
 // NOTE: importing recommended-extensions-footer webcomponent because it is
 // used in this webcomponent template.
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "./recommended-extensions-footer.mjs";
 
 // NOTE: this class is inheriting its `render` method from RecommendedSection.

@@ -1,4 +1,4 @@
 function callback(obj) {}
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 gczeal(7);
 var statusitems = [];

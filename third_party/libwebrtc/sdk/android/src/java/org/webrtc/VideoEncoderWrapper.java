@@ -35,10 +35,34 @@ class VideoEncoderWrapper {
     return scalingSettings.high;
   }
 
+  /**
+   * Forwards encoded frames to the native VideoEncoderWrapper until the callback is invalidated.
+   * Frames delivered after that are dropped.
+   */
+  static class NativeEncoderCallback implements VideoEncoder.Callback {
+    private final NativeLifecycleLock lifecycleLock;
+
+    NativeEncoderCallback(long nativeEncoder) {
+      lifecycleLock = new NativeLifecycleLock("VideoEncoderWrapper", nativeEncoder);
+    }
+
+    @Override
+    public void onEncodedFrame(EncodedImage frame, VideoEncoder.CodecSpecificInfo info) {
+      lifecycleLock.runIfAlive(
+          (long nativeEncoder) -> nativeOnEncodedFrame(nativeEncoder, frame));
+    }
+
+    // Called by the native VideoEncoderWrapper. Blocks until an ongoing onEncodedFrame() call, if
+    // any, has returned. Frames delivered after this call are dropped.
+    @CalledByNative
+    void invalidate() {
+      lifecycleLock.dispose((long nativeEncoder) -> {});
+    }
+  }
+
   @CalledByNative
-  static VideoEncoder.Callback createEncoderCallback(final long nativeEncoder) {
-    return (EncodedImage frame,
-               VideoEncoder.CodecSpecificInfo info) -> nativeOnEncodedFrame(nativeEncoder, frame);
+  static NativeEncoderCallback createEncoderCallback(final long nativeEncoder) {
+    return new NativeEncoderCallback(nativeEncoder);
   }
 
   private static native void nativeOnEncodedFrame(

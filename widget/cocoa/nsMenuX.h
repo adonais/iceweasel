@@ -170,6 +170,11 @@ class nsMenuX final : public nsMenuParentX,
 
   void SetRebuild(bool aMenuEvent);
   void SetupIcon();
+
+  // Calls nsMenuItemX::CopyUserKeyEquivalentToKeyElement on every item in this
+  // menu and its submenus.
+  void CopyAllUserKeyEquivalentsToKeyElements();
+
   nsIContent* Content() { return mContent; }
   NSMenuItem* NativeNSMenuItem() { return mNativeMenuItem; }
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }

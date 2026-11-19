@@ -8,7 +8,6 @@
 #include "BaseWebSocketChannel.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/net/WebSocketConnectionListener.h"
 #include "nsCOMPtr.h"
 #include "nsDeque.h"
 #include "nsIAsyncInputStream.h"
@@ -45,7 +44,6 @@ class CallOnStop;
 class CallOnServerClose;
 class CallAcknowledge;
 class WebSocketEventService;
-class WebSocketConnectionBase;
 
 [[nodiscard]] extern nsresult CalculateWebSocketHashedSecret(
     const nsACString& aKey, nsACString& aHash);
@@ -71,8 +69,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
                          public nsIProtocolProxyCallback,
                          public nsIInterfaceRequestor,
                          public nsIChannelEventSink,
-                         public nsINamed,
-                         public WebSocketConnectionListener {
+                         public nsINamed {
   friend class WebSocketFrame;
 
  public:
@@ -115,11 +112,6 @@ class WebSocketChannel : public BaseWebSocketChannel,
   void GetEffectiveURL(nsAString& aEffectiveURL) const override;
   bool IsEncrypted() const override;
 
-  nsresult OnTransportAvailableInternal();
-  void OnError(nsresult aStatus) override;
-  void OnTCPClosed() override;
-  nsresult OnDataReceived(uint8_t* aData, uint32_t aCount) override;
-
   const static uint32_t kControlFrameMask = 0x8;
 
   // First byte of the header
@@ -153,7 +145,6 @@ class WebSocketChannel : public BaseWebSocketChannel,
 
   void EnqueueOutgoingMessage(nsDeque<OutboundMessage>& aQueue,
                               OutboundMessage* aMsg);
-  void DoEnqueueOutgoingMessage();
 
   void PrimeNewOutgoingMessage();
   void DeleteCurrentOutGoingMessage();
@@ -253,7 +244,6 @@ class WebSocketChannel : public BaseWebSocketChannel,
   nsCOMPtr<nsISocketTransport> mTransport;
   nsCOMPtr<nsIAsyncInputStream> mSocketIn;
   nsCOMPtr<nsIAsyncOutputStream> mSocketOut;
-  RefPtr<WebSocketConnectionBase> mConnection;
 
   // Only used on IO Thread (accessed when known-to-be-null in DoStopSession
   // on MainThread before mDataStarted)
@@ -353,7 +343,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   uint8_t mOutHeader[kCopyBreak + 16]{0};
 
   // Set on MainThread in OnStartRequest (before mDataStarted), or in
-  // HandleExtensions() or OnTransportAvailableInternal(),used on IO Thread
+  // HandleExtensions() or OnTransportAvailable(), used on IO Thread
   // (after mDataStarted), cleared in DoStopSession on IOThread or on
   // MainThread (if mDataStarted == false).
   Mutex mCompressorMutex;

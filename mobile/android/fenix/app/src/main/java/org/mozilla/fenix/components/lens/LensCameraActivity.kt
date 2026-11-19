@@ -47,8 +47,8 @@ internal const val LENS_IMAGES_DIR = "lens_images"
 
 /**
  * Activity that hosts [LensCameraFragment] for capturing images for Google Lens. Handles camera permission and gallery
- * picking. A captured image is returned as an image URI. A photo picker image is uploaded here by [LensUploadOverlay]
- * and returned as the Lens result URL, so a cancelled or failed upload can fall back to the camera.
+ * picking. A captured or photo picker image is uploaded here by [LensUploadOverlay] and returned as the Lens result
+ * URL, so a cancelled or failed upload can fall back to the camera.
  */
 class LensCameraActivity : AppCompatActivity() {
 
@@ -113,7 +113,11 @@ class LensCameraActivity : AppCompatActivity() {
     @VisibleForTesting
     internal fun handleGalleryResult(uri: Uri?) {
         if (uri == null) return
-        uploadOverlay.start(uri, isPrivate = intent.getBooleanExtra(EXTRA_IS_PRIVATE, false))
+        uploadOverlay.start(
+            uri,
+            isPrivate = intent.getBooleanExtra(EXTRA_IS_PRIVATE, false),
+            source = IMAGE_SOURCE_PHOTO_PICKER,
+        )
     }
 
     private val qrGalleryLauncher =
@@ -182,15 +186,14 @@ class LensCameraActivity : AppCompatActivity() {
                     Uri::class.java,
                 )
             if (imageUri != null) {
-                val resultIntent =
-                    Intent().apply {
-                        data = imageUri
-                        putExtra(EXTRA_IMAGE_SOURCE, IMAGE_SOURCE_CAMERA)
-                    }
-                setResult(RESULT_OK, resultIntent)
-            } else {
-                setResult(RESULT_CANCELED)
+                uploadOverlay.start(
+                    imageUri,
+                    isPrivate = intent.getBooleanExtra(EXTRA_IS_PRIVATE, false),
+                    source = IMAGE_SOURCE_CAMERA,
+                )
+                return@setFragmentResultListener
             }
+            setResult(RESULT_CANCELED)
             finish()
         }
 
@@ -485,19 +488,13 @@ class LensCameraActivity : AppCompatActivity() {
 
         private const val STATE_PERMISSION_REQUESTED = "permission_requested"
 
-        /**
-         * Result intent extra naming the upload method that produced the image, read by `LensFeature` to attribute the
-         * Google Lens search telemetry.
-         */
-        internal const val EXTRA_IMAGE_SOURCE = "lens_image_source"
-
-        @VisibleForTesting internal const val IMAGE_SOURCE_CAMERA = "camera"
+        internal const val IMAGE_SOURCE_CAMERA = "camera"
 
         internal const val IMAGE_SOURCE_PHOTO_PICKER = "photo_picker"
 
         /**
-         * Result intent extra carrying the Lens results URL of an image this activity already uploaded. When present,
-         * the result carries no image URI and the search telemetry has already been recorded.
+         * Result intent extra carrying the Lens results URL of the image this activity uploaded. The search telemetry
+         * has already been recorded.
          */
         internal const val EXTRA_LENS_RESULT_URL = "lens_result_url"
 

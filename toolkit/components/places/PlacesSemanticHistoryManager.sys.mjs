@@ -150,6 +150,7 @@ const ONE_MiB = 1024 * 1024;
 const MIN_TITLE_LENGTH = 4;
 
 const DEFAULT_QUERY_OVERSAMPLE = 50;
+const MAX_QUERY_RESULTS = 2;
 
 /**
  * PlacesSemanticHistoryManager manages the semantic.sqlite database and provides helper
@@ -991,13 +992,119 @@ class PlacesSemanticHistoryManager {
    *   The result of the engine's inference pipeline.
    */
   async infer(queryContext) {
+    return this.#inferWith(queryContext.searchString, async (conn, vector) => {
+      await conn.execute(`INSERT INTO vec_history(vec_history) VALUES(:cmd)`, {
+        cmd: `oversample=${DEFAULT_QUERY_OVERSAMPLE}`,
+      });
+      return conn.executeCached(
+        `
+          WITH
+          matches AS (
+            SELECT rowid AS vec_rowid, url_hash
+            FROM vec_history_mapping
+            JOIN vec_history USING (rowid)
+            WHERE embedding MATCH (:vector)
+            AND k=${MAX_QUERY_RESULTS}
+            ORDER BY distance
+          ),
+          scored AS (
+            SELECT matches.url_hash,
+                   vec_distance_cosine(vec_history.embedding, :vector) AS distance
+            FROM matches
+            JOIN vec_history ON vec_history.rowid = matches.vec_rowid
+          )
+          SELECT id,
+                 title,
+                 url,
+                 distance,
+                 frecency,
+                 last_visit_date
+          FROM moz_places
+          JOIN scored USING (url_hash)
+          WHERE ${lazy.PAGES_FRECENCY_FIELD} <> 0
+          AND distance <= :distanceThreshold
+          ORDER BY distance
+          `,
+        { vector, distanceThreshold: this.#distanceThreshold }
+      );
+    });
+  }
+
+  /**
+   * Like `infer`, but only searches pages in a domain and its subdomains.
+   *
+   * @param {string} searchText
+   *   The text to search for.
+   * @param {string} host
+   *   The domain to search in, like "example.com".
+   * @returns {Promise<?object>}
+   *   The result of the engine's inference pipeline, or null if no page in the
+   *   domain has been indexed, so the caller can fall back to `infer`.
+   */
+  async inferWithDomain(searchText, host) {
+    // Find if domain is used at all. Selects every page whose host is the
+    // domain itself or one of its subdomains.
+    let reversedHost = host.split("").reverse().join("");
+    let conn = await this.getConnection();
+    let rows = await conn.executeCached(
+      `
+      SELECT EXISTS(
+        SELECT 1
+        FROM moz_places
+        JOIN vec_history_mapping USING (url_hash)
+        WHERE rev_host BETWEEN :reversedHost || '.' AND :reversedHost || '/'
+        AND ${lazy.PAGES_FRECENCY_FIELD} <> 0
+      ) AS indexed
+      `,
+      { reversedHost }
+    );
+    if (!rows[0].getResultByName("indexed")) {
+      return null;
+    }
+    // The domain's entries are scored directly instead of going through the
+    // KNN index, since the nearest neighbors across all of history may not
+    // include any page from the domain.
+    return this.#inferWith(searchText, (queryConn, vector) =>
+      queryConn.executeCached(
+        `
+        SELECT * FROM (
+          SELECT id,
+                 title,
+                 url,
+                 vec_distance_cosine(vec_history.embedding, :vector) AS distance,
+                 frecency,
+                 last_visit_date
+          FROM moz_places
+          JOIN vec_history_mapping USING (url_hash)
+          JOIN vec_history ON vec_history.rowid = vec_history_mapping.rowid
+          WHERE rev_host BETWEEN :reversedHost || '.' AND :reversedHost || '/'
+          AND ${lazy.PAGES_FRECENCY_FIELD} <> 0
+        )
+        WHERE distance <= :distanceThreshold
+        ORDER BY distance
+        LIMIT ${MAX_QUERY_RESULTS}
+        `,
+        { vector, reversedHost, distanceThreshold: this.#distanceThreshold }
+      )
+    );
+  }
+
+  /**
+   * Embeds a search text and runs a query to find the closest pages.
+   *
+   * @param {string} searchText
+   * @param {(conn: object, vector: any) => Promise<mozIStorageRow[]>} query
+   *   Runs the query, binding `vector` to the embedding of `searchText`.
+   * @returns {Promise<object>}
+   */
+  async #inferWith(searchText, query) {
     const inferStartTime = ChromeUtils.now();
     let results = [];
     await this.embedder.ensureEngine();
 
     let tensor;
     try {
-      tensor = await this.embedder.embed(queryContext.searchString);
+      tensor = await this.embedder.embed(searchText);
       tensor = this.#convertTensor(tensor, 1);
     } catch (ex) {
       lazy.logger.error(`Error processing tensor: ${ex}`);
@@ -1007,44 +1114,9 @@ class PlacesSemanticHistoryManager {
     let metrics = tensor.metrics;
 
     let conn = await this.getConnection();
-
-    await conn.execute(`INSERT INTO vec_history(vec_history) VALUES(:cmd)`, {
-      cmd: `oversample=${DEFAULT_QUERY_OVERSAMPLE}`,
-    });
-
-    let rows = await conn.executeCached(
-      `
-      WITH
-      matches AS (
-        SELECT rowid AS vec_rowid, url_hash
-        FROM vec_history_mapping
-        JOIN vec_history USING (rowid)
-        WHERE embedding MATCH (:vector)
-        AND k=2
-        ORDER BY distance
-      ),
-      scored AS (
-        SELECT matches.url_hash,
-               vec_distance_cosine(vec_history.embedding, :vector) AS distance
-        FROM matches
-        JOIN vec_history ON vec_history.rowid = matches.vec_rowid
-      )
-      SELECT id,
-             title,
-             url,
-             distance,
-             frecency,
-             last_visit_date
-      FROM moz_places
-      JOIN scored USING (url_hash)
-      WHERE ${lazy.PAGES_FRECENCY_FIELD} <> 0
-      AND distance <= :distanceThreshold
-      ORDER BY distance
-      `,
-      {
-        vector: lazy.PlacesUtils.tensorToSQLBindable(tensor.values[0]),
-        distanceThreshold: this.#distanceThreshold,
-      }
+    let rows = await query(
+      conn,
+      lazy.PlacesUtils.tensorToSQLBindable(tensor.values[0])
     );
 
     for (let row of rows) {

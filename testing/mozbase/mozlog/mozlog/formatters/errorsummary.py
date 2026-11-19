@@ -148,6 +148,7 @@ class ErrorSummaryFormatter(BaseFormatter):
         test = self._clean_test_name(item["test"])
         group = item.get("group", self.test_to_group.get(test, None))
         if group:
+            self.test_to_group[test] = group
             self.groups[group]["test_starts"][test] = item["time"]
 
     def test_status(self, item):
@@ -260,7 +261,7 @@ class ErrorSummaryFormatter(BaseFormatter):
                 if self._clean_test_name(item["test"]) in self.groups:
                     data["group"] = self._clean_test_name(item["test"])
 
-        if "group" in data:
+        if data.get("group"):
             # unlike test group summary, if we crash expect error unless expected
             # or logged quietly (e.g. the test will be retried)
             if item.get("quiet"):

@@ -31,8 +31,7 @@ const std::string& SipccSdpParser::ParserName() {
 }
 
 UniquePtr<SdpParser::Results> SipccSdpParser::Parse(const std::string& aText) {
-  UniquePtr<InternalResults> results =
-      std::make_unique<InternalResults>(Name());
+  auto results = std::make_unique<InternalResults>(Name());
   sdp_conf_options_t* sipcc_config = sdp_init_config();
   if (!sipcc_config) {
     return UniquePtr<SdpParser::Results>();

@@ -60,7 +60,7 @@ nsBMPEncoder::InitFromData(const uint8_t* aData,
                            uint32_t aWidth, uint32_t aHeight, uint32_t aStride,
                            uint32_t aInputFormat,
                            const nsAString& aOutputOptions,
-                           const nsACString& aRandomizationKey) {
+                           const nsACString& /*aRandomizationKey*/) {
   // validate input format
   if (aInputFormat != INPUT_FORMAT_RGB && aInputFormat != INPUT_FORMAT_RGBA &&
       aInputFormat != INPUT_FORMAT_HOSTARGB) {
@@ -176,11 +176,10 @@ nsBMPEncoder::GetImageBuffer(char** aOutputBuffer) {
 }
 
 NS_IMETHODIMP
-nsBMPEncoder::AddImageFrame(const uint8_t* aData,
-                            uint32_t aLength,  // (unused, req'd by JS)
-                            uint32_t aWidth, uint32_t aHeight, uint32_t aStride,
-                            uint32_t aInputFormat,
-                            const nsAString& aFrameOptions) {
+nsBMPEncoder::AddImageFrame(const uint8_t* aData, uint32_t /*aLength*/,
+                            uint32_t /*aWidth*/, uint32_t /*aHeight*/,
+                            uint32_t aStride, uint32_t aInputFormat,
+                            const nsAString& /*aFrameOptions*/) {
   // must be initialized
   if (!mImageBufferStart || !mImageBufferCurr) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -416,7 +415,7 @@ nsBMPEncoder::AsyncWait(nsIInputStreamCallback* aCallback, uint32_t aFlags,
 }
 
 NS_IMETHODIMP
-nsBMPEncoder::CloseWithStatus(nsresult aStatus) { return Close(); }
+nsBMPEncoder::CloseWithStatus(nsresult /*aStatus*/) { return Close(); }
 
 // nsBMPEncoder::ConvertHostARGBRow
 //

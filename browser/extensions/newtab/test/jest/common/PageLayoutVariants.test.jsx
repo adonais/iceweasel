@@ -32,8 +32,16 @@ import {
   resolveThematicSpaceWidgets,
   sideBySideBandClasses,
   spacesBandClasses,
+  isWidgetPlacementActive,
+  resolveHomeWidgetIds,
+  resolveWidgetPlacement,
+  WIDGET_PLACEMENTS,
 } from "common/PageLayoutVariants.mjs";
-import { resolveWidgetSize, WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
+import {
+  PREF_HOME_WIDGETS,
+  resolveWidgetSize,
+  WIDGET_REGISTRY,
+} from "common/WidgetsRegistry.mjs";
 
 // The gates isSideBySideActive checks besides the variant itself.
 const STORIES_ON = {
@@ -1304,11 +1312,186 @@ describe("the thematic spaces variant", () => {
       expect(ids("medium")).toContain("weather");
     });
 
+    it("leaves out Weather in the sidebar when the experiment overrides the master toggle", () => {
+      const ids = resolveThematicSpaceWidgets(CONFIG, "home", {
+        ...thematic,
+        ...ALL_ON,
+        "widgets.enabled": false,
+        "widgets.system.weather.enabled": true,
+        "widgets.weather.enabled": true,
+        "widgets.weather.size": "small",
+        "system.showWeather": true,
+        showWeather: true,
+        trainhopConfig: {
+          ...thematic.trainhopConfig,
+          widgets: { enabled: true },
+        },
+      });
+      expect(ids).toContain("clocks");
+      expect(ids).not.toContain("weather");
+    });
+
     it("is empty for every space when the widgets container is hidden", () => {
       const hidden = { ...ALL_ON, "widgets.system.enabled": false };
       for (const id of ["home", "games", "living"]) {
         expect(resolveThematicSpaceWidgets(CONFIG, id, hidden)).toEqual([]);
       }
+    });
+
+    describe("with a widget library", () => {
+      const LIBRARY = normalizeSpacesConfig({
+        ...RAW_CONFIG,
+        widgetLibrary: "living",
+      });
+      const home = homePref =>
+        resolveThematicSpaceWidgets(LIBRARY, "home", {
+          ...ALL_ON,
+          [PREF_HOME_WIDGETS]: homePref,
+        });
+
+      it("shows the config's Home widgets until the user changes them", () => {
+        expect(home("")).toEqual(["pictureOfTheDay"]);
+        expect(home("not json")).toEqual(["pictureOfTheDay"]);
+      });
+
+      it("shows the user's Home list on Home", () => {
+        expect(home(JSON.stringify(["crossword", "clocks"])).sort()).toEqual([
+          "clocks",
+          "crossword",
+        ]);
+      });
+
+      // An empty list is the user hiding everything, not an unset pref.
+      it("shows nothing on Home once the user empties the list", () => {
+        expect(home("[]")).toEqual([]);
+      });
+
+      it("drops a Home widget that is turned off", () => {
+        expect(
+          resolveThematicSpaceWidgets(LIBRARY, "home", {
+            ...ALL_ON,
+            "widgets.pictureOfTheDay.enabled": false,
+          })
+        ).toEqual([]);
+      });
+
+      // A widget is pinned to Home or in the library, never both.
+      it("shows every enabled widget not on Home in the library", () => {
+        expect(
+          resolveThematicSpaceWidgets(LIBRARY, "living", ALL_ON).sort()
+        ).toEqual(["clocks", "crossword", "focusTimer", "lists", "stocks"]);
+      });
+
+      // How many start on Home is the config's call, not a limit in code.
+      it("shows every pinned widget on Home", () => {
+        const pinned = ["lists", "clocks", "stocks", "focusTimer"];
+        const prefs = {
+          ...ALL_ON,
+          [PREF_HOME_WIDGETS]: JSON.stringify(pinned),
+        };
+        expect(
+          resolveThematicSpaceWidgets(LIBRARY, "home", prefs).sort()
+        ).toEqual([...pinned].sort());
+        expect(
+          resolveThematicSpaceWidgets(LIBRARY, "living", prefs).sort()
+        ).toEqual(["crossword", "pictureOfTheDay"]);
+      });
+
+      it("leaves a turned-off pinned widget out of Home", () => {
+        expect(
+          resolveThematicSpaceWidgets(LIBRARY, "home", {
+            ...ALL_ON,
+            "widgets.lists.enabled": false,
+            [PREF_HOME_WIDGETS]: JSON.stringify(["lists", "clocks", "stocks"]),
+          }).sort()
+        ).toEqual(["clocks", "stocks"]);
+      });
+
+      it("leaves the other spaces to the config", () => {
+        expect(resolveThematicSpaceWidgets(LIBRARY, "games", ALL_ON)).toEqual([
+          "crossword",
+        ]);
+      });
+    });
+  });
+
+  describe("widget placement", () => {
+    it("names a widget library only when it is another kept space", () => {
+      expect(
+        normalizeSpacesConfig({ ...RAW_CONFIG, widgetLibrary: "living" })
+          .widgetLibrary
+      ).toBe("living");
+      expect(CONFIG.widgetLibrary).toBe(null);
+      expect(
+        normalizeSpacesConfig({ ...RAW_CONFIG, widgetLibrary: "home" })
+          .widgetLibrary
+      ).toBe(null);
+      expect(
+        normalizeSpacesConfig({ ...RAW_CONFIG, widgetLibrary: "nope" })
+          .widgetLibrary
+      ).toBe(null);
+    });
+
+    // So a widget no space names lands in the library rather than on Home.
+    it("makes the library the widget catch-all unless one is named", () => {
+      expect(
+        normalizeSpacesConfig({ ...RAW_CONFIG, widgetLibrary: "living" })
+          .widgetCatchAll
+      ).toBe("living");
+      expect(
+        normalizeSpacesConfig({
+          ...RAW_CONFIG,
+          widgetLibrary: "living",
+          widgetCatchAll: "games",
+        }).widgetCatchAll
+      ).toBe("games");
+    });
+
+    it("gives Home and the library their roles", () => {
+      const config = normalizeSpacesConfig({
+        ...RAW_CONFIG,
+        widgetLibrary: "living",
+      });
+      expect(resolveWidgetPlacement(config, "home")).toBe(
+        WIDGET_PLACEMENTS.HOME
+      );
+      expect(resolveWidgetPlacement(config, "living")).toBe(
+        WIDGET_PLACEMENTS.LIBRARY
+      );
+      expect(resolveWidgetPlacement(config, "games")).toBe(null);
+      expect(resolveWidgetPlacement(CONFIG, "home")).toBe(null);
+    });
+
+    it("is active only for a thematic config with a library", () => {
+      expect(isWidgetPlacementActive(thematic)).toBe(false);
+      expect(
+        isWidgetPlacementActive({
+          ...thematic,
+          "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.NOVA_FULL_WIDTH,
+          trainhopConfig: {
+            spaces: { ...RAW_CONFIG, widgetLibrary: "living" },
+          },
+        })
+      ).toBe(false);
+      expect(
+        isWidgetPlacementActive({
+          ...thematic,
+          trainhopConfig: {
+            spaces: { ...RAW_CONFIG, widgetLibrary: "living" },
+          },
+        })
+      ).toBe(true);
+    });
+
+    it("reads the Home list from the pref, else the config", () => {
+      const config = normalizeSpacesConfig({
+        ...RAW_CONFIG,
+        widgetLibrary: "living",
+      });
+      expect(resolveHomeWidgetIds({}, config)).toEqual(["pictureOfTheDay"]);
+      expect(
+        resolveHomeWidgetIds({ [PREF_HOME_WIDGETS]: '["lists", 3]' }, config)
+      ).toEqual(["lists"]);
     });
   });
 });

@@ -773,8 +773,8 @@ bool IsValidAbsoluteUri(absl::string_view uri) {
       if (i + 2 >= uri.size()) {
         return false;
       }
-      char decoded[1];
-      if (hex_decode(decoded, uri.substr(i + 1, 2)) != 1) {
+      uint8_t decoded[1];
+      if (HexDecode(decoded, uri.substr(i + 1, 2)).size() != 1) {
         return false;
       }
       if (absl::ascii_iscntrl(decoded[0])) {

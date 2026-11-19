@@ -126,7 +126,7 @@ class GMPDiskStorage : public GMPStorage {
       }
 
       mRecords.InsertOrUpdate(recordName,
-                              MakeUnique<Record>(filename, recordName));
+                              std::make_unique<Record>(filename, recordName));
     }
 
     return NS_OK;
@@ -144,7 +144,7 @@ class GMPDiskStorage : public GMPStorage {
             if (NS_WARN_IF(NS_FAILED(rv))) {
               return nullptr;
             }
-            return entry.Insert(MakeUnique<Record>(filename, aRecordName))
+            return entry.Insert(std::make_unique<Record>(filename, aRecordName))
                 .get();
           }
 

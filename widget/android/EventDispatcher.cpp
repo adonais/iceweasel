@@ -289,7 +289,7 @@ nsresult UnboxData(jni::String::Param aEvent, JSContext* aCx,
 }
 
 class JavaCallbackDelegate final : public nsIGeckoViewEventCallback {
-  const java::EventCallback::GlobalRef mCallback;
+  java::EventCallback::GlobalRef mCallback;
 
   virtual ~JavaCallbackDelegate() {}
 
@@ -298,14 +298,21 @@ class JavaCallbackDelegate final : public nsIGeckoViewEventCallback {
                       const) {
     MOZ_ASSERT(NS_IsMainThread());
 
+    if (!mCallback) {
+      MOZ_ASSERT(false, "JavaCallbackDelegate called more than once");
+      return NS_ERROR_UNEXPECTED;
+    }
+
     jni::Object::LocalRef data(jni::GetGeckoThreadEnv());
     nsresult rv = BoxData(u"callback"_ns, aCx, aData, data,
                           /* ObjectOnly */ false);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    java::EventCallback::GlobalRef callback(std::move(mCallback));
+
     dom::AutoNoJSAPI nojsapi;
 
-    (java::EventCallback(*mCallback).*aCall)(data);
+    (java::EventCallback(*callback).*aCall)(data);
     return NS_OK;
   }
 
@@ -437,7 +444,7 @@ nsresult EventDispatcher::DispatchToEmbedder(
   if (aCallback) {
     callback = java::EventDispatcher::NativeCallbackDelegate::New();
     NativeCallbackDelegateSupport::AttachNative(
-        callback, MakeUnique<NativeCallbackDelegateSupport>(aCallback));
+        callback, std::make_unique<NativeCallbackDelegateSupport>(aCallback));
   }
 
   dom::AutoNoJSAPI nojsapi;

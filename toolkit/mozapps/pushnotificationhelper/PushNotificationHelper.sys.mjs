@@ -26,6 +26,7 @@ ChromeUtils.defineLazyGetter(lazy, "gImpl", () => {
   return {
     start() {},
     stop() {},
+    async stopForProfile() {},
   };
 });
 
@@ -105,5 +106,19 @@ export const PushNotificationHelper = {
    */
   stop() {
     lazy.gImpl.stop();
+  },
+
+  /**
+   * Stops all helpers for a profile.
+   *
+   * Different Firefox installations (for example, Release and Nightly) may
+   * share the same profile and both have the push notification helper enabled.
+   * This stops every push notification helper recorded for the given profile,
+   * regardless of which installation it belongs to.
+   *
+   * @param {string} profileDir - Profile directory.
+   */
+  async stopForProfile(profileDir) {
+    await lazy.gImpl.stopForProfile(profileDir);
   },
 };

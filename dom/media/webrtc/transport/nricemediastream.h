@@ -221,6 +221,8 @@ class NrIceMediaStream {
 
   void OnGatheringStarted(nr_ice_media_stream* stream);
   void OnGatheringComplete(nr_ice_media_stream* stream);
+  // Gathering could not be started. Called by the NrIceCtx.
+  void GatheringFailed();
 
   // Close the stream. Called by the NrIceCtx.
   // Different from the destructor because other people

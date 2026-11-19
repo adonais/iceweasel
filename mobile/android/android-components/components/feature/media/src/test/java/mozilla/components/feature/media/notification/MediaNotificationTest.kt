@@ -8,20 +8,30 @@ import android.app.Notification
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaSession
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.UUID
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.MediaSessionState
 import mozilla.components.browser.state.state.createTab
-import mozilla.components.concept.engine.mediasession.MediaSession
+import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.mediasession.MediaSession as MozMediaSession
 import mozilla.components.feature.media.R
+import mozilla.components.feature.media.player.BrowserStorePlayer
 import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
+import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,9 +39,12 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
 
+@OptIn(UnstableApi::class)
 @RunWith(AndroidJUnit4::class)
 class MediaNotificationTest {
     private lateinit var context: Context
+    private lateinit var player: BrowserStorePlayer
+    private lateinit var mediaSession: MediaSession
 
     @Before
     fun setUp() {
@@ -41,6 +54,14 @@ class MediaNotificationTest {
                 doReturn(Intent()).`when`(packageManager).getLaunchIntentForPackage(ArgumentMatchers.anyString())
                 doReturn(packageManager).`when`(it).packageManager
             }
+        player = BrowserStorePlayer(context, BrowserStore())
+        mediaSession = MediaSession.Builder(context, player).setId("MediaNotificationTest-${UUID.randomUUID()}").build()
+    }
+
+    @After
+    fun tearDown() {
+        mediaSession.release()
+        player.release()
     }
 
     @Test
@@ -54,13 +75,14 @@ class MediaNotificationTest {
                             id = "test-tab",
                             title = "Mozilla",
                             mediaSessionState =
-                                MediaSessionState(mock(), playbackState = MediaSession.PlaybackState.PLAYING),
+                                MediaSessionState(mock(), playbackState = MozMediaSession.PlaybackState.PLAYING),
                         )
                     )
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals("https://www.mozilla.org", notification.text)
         assertEquals("Mozilla", notification.title)
@@ -78,13 +100,14 @@ class MediaNotificationTest {
                             id = "test-tab",
                             title = "Mozilla",
                             mediaSessionState =
-                                MediaSessionState(mock(), playbackState = MediaSession.PlaybackState.PAUSED),
+                                MediaSessionState(mock(), playbackState = MozMediaSession.PlaybackState.PAUSED),
                         )
                     )
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals("https://www.mozilla.org", notification.text)
         assertEquals("Mozilla", notification.title)
@@ -102,13 +125,14 @@ class MediaNotificationTest {
                             id = "test-tab",
                             title = "Mozilla",
                             mediaSessionState =
-                                MediaSessionState(mock(), playbackState = MediaSession.PlaybackState.STOPPED),
+                                MediaSessionState(mock(), playbackState = MozMediaSession.PlaybackState.STOPPED),
                         )
                     )
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals("", notification.text)
         assertEquals("", notification.title)
@@ -126,13 +150,14 @@ class MediaNotificationTest {
                             title = "Mozilla",
                             private = true,
                             mediaSessionState =
-                                MediaSessionState(mock(), playbackState = MediaSession.PlaybackState.PLAYING),
+                                MediaSessionState(mock(), playbackState = MozMediaSession.PlaybackState.PLAYING),
                         )
                     )
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals("", notification.text)
         assertEquals("A site is playing media", notification.title)
@@ -151,13 +176,14 @@ class MediaNotificationTest {
                             title = "Mozilla",
                             private = true,
                             mediaSessionState =
-                                MediaSessionState(mock(), playbackState = MediaSession.PlaybackState.PAUSED),
+                                MediaSessionState(mock(), playbackState = MozMediaSession.PlaybackState.PAUSED),
                         )
                     )
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals("", notification.text)
         assertEquals("A site is playing media", notification.title)
@@ -167,10 +193,10 @@ class MediaNotificationTest {
     @Test
     fun `media session notification with metadata in non private mode`() = runTest {
         val mediaSessionState: MediaSessionState = mock()
-        val metadata: MediaSession.Metadata = mock()
+        val metadata: MozMediaSession.Metadata = mock()
         whenever(mediaSessionState.metadata).thenReturn(metadata)
-        whenever(mediaSessionState.playbackState).thenReturn(MediaSession.PlaybackState.PAUSED)
-        whenever(mediaSessionState.features).thenReturn(MediaSession.Feature())
+        whenever(mediaSessionState.playbackState).thenReturn(MozMediaSession.PlaybackState.PAUSED)
+        whenever(mediaSessionState.features).thenReturn(MozMediaSession.Feature())
         whenever(metadata.title).thenReturn("test title")
 
         val state =
@@ -188,11 +214,27 @@ class MediaNotificationTest {
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals("https://www.mozilla.org", notification.text)
         assertEquals("test title", notification.title)
         assertEquals(R.drawable.mozac_feature_media_paused, notification.iconResource)
+    }
+
+    @Test
+    fun `GIVEN artwork WHEN creating the notification THEN the artwork is the large icon`() {
+        val tab =
+            createTab(
+                "https://www.mozilla.org",
+                mediaSessionState = MediaSessionState(mock(), playbackState = MozMediaSession.PlaybackState.PLAYING),
+            )
+        val helper = MediaNotification(context, AbstractMediaSessionService::class.java)
+
+        assertNull(helper.create(tab, mediaSession, null).getLargeIcon())
+        assertNotNull(
+            helper.create(tab, mediaSession, Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)).getLargeIcon()
+        )
     }
 
     @Test
@@ -209,14 +251,15 @@ class MediaNotificationTest {
                                 mediaSessionState =
                                     MediaSessionState(
                                         mock(),
-                                        playbackState = MediaSession.PlaybackState.PLAYING,
+                                        playbackState = MozMediaSession.PlaybackState.PLAYING,
                                     ),
                             )
                         )
                 )
 
             val notification =
-                MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+                MediaNotification(context, AbstractMediaSessionService::class.java)
+                    .create(state.tabs[0], mediaSession, null)
 
             assertEquals(1, notification.actions.size)
             assertEquals(
@@ -239,15 +282,16 @@ class MediaNotificationTest {
                             mediaSessionState =
                                 MediaSessionState(
                                     mock(),
-                                    playbackState = MediaSession.PlaybackState.PLAYING,
-                                    features = MediaSession.Feature(MediaSession.Feature.NEXT_TRACK),
+                                    playbackState = MozMediaSession.PlaybackState.PLAYING,
+                                    features = MozMediaSession.Feature(MozMediaSession.Feature.NEXT_TRACK),
                                 ),
                         )
                     )
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals(2, notification.actions.size)
         assertEquals(
@@ -275,15 +319,16 @@ class MediaNotificationTest {
                                 mediaSessionState =
                                     MediaSessionState(
                                         mock(),
-                                        playbackState = MediaSession.PlaybackState.PAUSED,
-                                        features = MediaSession.Feature(MediaSession.Feature.PREVIOUS_TRACK),
+                                        playbackState = MozMediaSession.PlaybackState.PAUSED,
+                                        features = MozMediaSession.Feature(MozMediaSession.Feature.PREVIOUS_TRACK),
                                     ),
                             )
                         )
                 )
 
             val notification =
-                MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+                MediaNotification(context, AbstractMediaSessionService::class.java)
+                    .create(state.tabs[0], mediaSession, null)
 
             assertEquals(2, notification.actions.size)
             assertEquals(
@@ -311,10 +356,11 @@ class MediaNotificationTest {
                                 mediaSessionState =
                                     MediaSessionState(
                                         mock(),
-                                        playbackState = MediaSession.PlaybackState.PLAYING,
+                                        playbackState = MozMediaSession.PlaybackState.PLAYING,
                                         features =
-                                            MediaSession.Feature(
-                                                MediaSession.Feature.PREVIOUS_TRACK or MediaSession.Feature.NEXT_TRACK
+                                            MozMediaSession.Feature(
+                                                MozMediaSession.Feature.PREVIOUS_TRACK or
+                                                    MozMediaSession.Feature.NEXT_TRACK
                                             ),
                                     ),
                             )
@@ -322,7 +368,8 @@ class MediaNotificationTest {
                 )
 
             val notification =
-                MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+                MediaNotification(context, AbstractMediaSessionService::class.java)
+                    .create(state.tabs[0], mediaSession, null)
 
             assertEquals(3, notification.actions.size)
             assertEquals(
@@ -343,10 +390,10 @@ class MediaNotificationTest {
     @Test
     fun `media session notification with metadata in private mode`() = runTest {
         val mediaSessionState: MediaSessionState = mock()
-        val metadata: MediaSession.Metadata = mock()
+        val metadata: MozMediaSession.Metadata = mock()
         whenever(mediaSessionState.metadata).thenReturn(metadata)
-        whenever(mediaSessionState.playbackState).thenReturn(MediaSession.PlaybackState.PAUSED)
-        whenever(mediaSessionState.features).thenReturn(MediaSession.Feature())
+        whenever(mediaSessionState.playbackState).thenReturn(MozMediaSession.PlaybackState.PAUSED)
+        whenever(mediaSessionState.features).thenReturn(MozMediaSession.Feature())
         whenever(metadata.title).thenReturn("test title")
 
         val state =
@@ -364,7 +411,8 @@ class MediaNotificationTest {
             )
 
         val notification =
-            MediaNotification(context, AbstractMediaSessionService::class.java).create(state.tabs[0], mock())
+            MediaNotification(context, AbstractMediaSessionService::class.java)
+                .create(state.tabs[0], mediaSession, null)
 
         assertEquals("", notification.text)
         assertEquals("A site is playing media", notification.title)

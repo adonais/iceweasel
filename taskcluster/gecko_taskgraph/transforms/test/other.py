@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
 import hashlib
 import re
 from typing import Literal, Optional
@@ -111,25 +110,6 @@ def setup_talos(config, tasks):
 
         if config.params.get("project", None):
             extra_options.append("--project=%s" % config.params["project"])
-
-        if "pdfpaint" in task["try-name"]:
-            max_chunks = 10
-            for chunk in range(1, max_chunks + 1):
-                new_task = copy.deepcopy(task)
-                new_task["mozharness"]["extra-options"].append(
-                    f"--pdfPaintChunk={chunk}"
-                )
-                new_task["test-name"] = task["test-name"].replace(
-                    "pdfpaint", f"pdfpaint-{chunk}"
-                )
-                new_task["try-name"] = task["try-name"].replace(
-                    "pdfpaint", f"pdfpaint-{chunk}"
-                )
-                new_task["treeherder-symbol"] = task["treeherder-symbol"].replace(
-                    "pdfpaint", f"pdfpaint-{chunk}"
-                )
-                yield new_task
-            continue
 
         yield task
 
@@ -455,10 +435,12 @@ def setup_browsertime(config, tasks):
             "android-(?!em-14-arm64).*": ["linux64-cft-cd-canary"],
         }
 
+        # Stable, Beta and backup chromedrivers are extracted into directories prefixed
+        # with their major version, which raptor fills in from the Chrome being tested.
         cd_extracted_name = {
-            "windows": "{}chromedriver.exe",
-            "mac": "{}chromedriver",
-            "default": "{}chromedriver",
+            "windows": "{}cft-chromedriver-win64/chromedriver.exe",
+            "mac": "{}cft-chromedriver-mac/chromedriver",
+            "default": "{}cft-chromedriver-linux/chromedriver",
         }
 
         if "--app=chrome" in extra_options or "--app=chrome-m" in extra_options:
@@ -819,34 +801,6 @@ def disable_try_only_platforms(config, tasks):
     for task in tasks:
         if any(re.match(k + "$", task["test-platform"]) for k in try_only_platforms):
             task["run-on-projects"] = []
-        yield task
-
-
-@transforms.add
-def ensure_spi_disabled_on_all_but_spi(config, tasks):
-    for task in tasks:
-        variant = task["attributes"].get("unittest_variant") or ""
-        has_no_setpref = (
-            "gtest",
-            "cppunit",
-            "jittest",
-            "junit",
-            "raptor",
-            "reftest",
-            "web-platform-tests",
-        )
-
-        if (
-            all(s not in task["suite"] for s in has_no_setpref)
-            and "socketprocess" not in variant
-        ):
-            task["mozharness"]["extra-options"].append(
-                "--setpref=media.peerconnection.mtransport_process=false"
-            )
-            task["mozharness"]["extra-options"].append(
-                "--setpref=network.process.enabled=false"
-            )
-
         yield task
 
 
@@ -1279,6 +1233,59 @@ def add_symbols_to_xpcshell_mochitest(config, tests):
                     "artifact": "target.crashreporter-symbols.zip",
                     "extract": False,
                 })
+        yield test
+
+
+SYMBOLS_ARTIFACTS = (
+    "target.crashreporter-symbols.zip",
+    "target.crashreporter-symbols-gtest.zip",
+)
+
+
+def get_single_arch_build_label(config, task):
+    """Return the label of the build for the test platform's architecture, if
+    the task's build is a macOS universal build that unifies two single-arch
+    builds. Return None otherwise."""
+    build_label = task.get("dependencies", {}).get("build", task["build-label"])
+    build_task = config.kind_dependencies_tasks.get(build_label)
+    if not build_task:
+        return None
+    builds_by_arch = {}
+    for dep_label in build_task.dependencies.values():
+        dep = config.kind_dependencies_tasks.get(dep_label)
+        if not dep or dep.kind != "build":
+            continue
+        build_platform = dep.attributes.get("build_platform", "")
+        if "aarch64" in build_platform:
+            builds_by_arch["aarch64"] = dep_label
+        elif "-x64-" in build_platform:
+            builds_by_arch["x86_64"] = dep_label
+    if len(builds_by_arch) != 2:
+        return None
+    arch = "aarch64" if "aarch64" in task["test-platform"] else "x86_64"
+    return builds_by_arch[arch]
+
+
+@transforms.add
+def fetch_single_arch_symbols(config, tests):
+    """The symbols of a macOS universal build contain the symbols for both
+    architectures. A test only runs one of them, so fetch the symbols of the
+    matching single-arch build instead, which are half the size."""
+    for test in tests:
+        build_fetches = test.get("fetches", {}).get("build", [])
+        symbols_fetches = [
+            f for f in build_fetches if f.get("artifact") in SYMBOLS_ARTIFACTS
+        ]
+        if symbols_fetches and "macosx" in test["test-platform"]:
+            label = get_single_arch_build_label(config, test)
+            if label:
+                build_fetches = [f for f in build_fetches if f not in symbols_fetches]
+                if build_fetches:
+                    test["fetches"]["build"] = build_fetches
+                else:
+                    del test["fetches"]["build"]
+                test["fetches"]["build-symbols"] = symbols_fetches
+                test.setdefault("dependencies", {})["build-symbols"] = label
         yield test
 
 

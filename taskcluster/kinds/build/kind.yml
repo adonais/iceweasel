@@ -58,7 +58,6 @@ task-defaults:
                 esr.*: release
                 default: nightly
     run:
-        clone-with: hg
         # Note: These settings are only honored by nightly (i.e. shipping) builds
         update-channel:
             by-release-type:

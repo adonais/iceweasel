@@ -504,7 +504,7 @@ nsresult nsCocoaUtils::CreateNSImageFromImageContainer(
 
     UniquePtr<SVGImageContext> svgContext;
     if (!aSVGContext) {
-      svgContext = MakeUnique<SVGImageContext>();
+      svgContext = std::make_unique<SVGImageContext>();
       aSVGContext = svgContext.get();
     }
 
@@ -1060,6 +1060,34 @@ uint32_t nsCocoaUtils::ConvertGeckoKeyCodeToMacCharCode(uint32_t aKeyCode) {
   }
 
   return 0;
+}
+
+bool nsCocoaUtils::GetGeckoKeyCodeNameForMacCharCode(uint32_t aCharCode,
+                                                     nsAString& aKeyCodeName) {
+  switch (aCharCode) {
+    case 0x1B:
+      aKeyCodeName.AssignLiteral("VK_ESCAPE");
+      return true;
+    case NSDeleteCharacter:
+      aCharCode = NSBackspaceCharacter;
+      break;
+    case NSCarriageReturnCharacter:
+    case NSNewlineCharacter:
+      aCharCode = NSEnterCharacter;
+      break;
+    default:
+      break;
+  }
+  if (!aCharCode) {
+    return false;
+  }
+  for (const KeyConversionData& entry : gKeyConversions) {
+    if (entry.charCode == aCharCode) {
+      aKeyCodeName.AssignASCII(entry.str, entry.strLength);
+      return true;
+    }
+  }
+  return false;
 }
 
 NSEventModifierFlags nsCocoaUtils::ConvertWidgetModifiersToMacModifierFlags(

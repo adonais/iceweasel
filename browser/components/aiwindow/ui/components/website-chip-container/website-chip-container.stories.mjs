@@ -45,7 +45,6 @@ const makeWebsites = count =>
 
 export const Default = () => html`
   <website-chip-container
-    .chipType=${"context-chip"}
     .websites=${makeWebsites(3)}
     .removable=${true}
   ></website-chip-container>

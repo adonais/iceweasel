@@ -414,11 +414,11 @@ add_task(async function test_messageEvent_user_context_mentions() {
         chipContainer.shadowRoot,
         { childList: true, subtree: true },
         () => {
-          chip = chipContainer.shadowRoot?.querySelector("ai-website-chip");
+          chip = chipContainer.shadowRoot?.querySelector("smartwindow-chip");
           return chip;
         }
       );
-      Assert.ok(chip, "ai-website-chip should be rendered");
+      Assert.ok(chip, "smartwindow-chip should be rendered");
 
       const chipJS = chip.wrappedJSObject || chip;
       Assert.equal(chipJS.label, "Example", "Chip should have correct label");

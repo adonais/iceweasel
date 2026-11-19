@@ -176,7 +176,6 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     PeerConnectionFactoryDependencies factory_dependencies;
 
     factory_dependencies.network_thread = Thread::Current();
-    factory_dependencies.worker_thread = Thread::Current();
     factory_dependencies.signaling_thread = Thread::Current();
     EnableFakeMedia(factory_dependencies, std::move(media_engine));
     factory_dependencies.event_log_factory =

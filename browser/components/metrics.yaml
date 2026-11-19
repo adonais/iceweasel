@@ -99,10 +99,23 @@ taskbar:
           - `error_get_taskbar_manager`: Failed to get the TaskbarManager.
           - `error_schedule_request_pin`: Failed to schedule the pin request.
           - `error_request_pin`: The pin request failed.
+      hresult:
+        type: string
+        description: >
+          The HRESULT of the Windows error as a hex string (e.g.
+          `0x80070490`). Only recorded when `result` is an `error_*` value.
+      com_fallback:
+        type: boolean
+        description: >
+          Whether pinning fell back to the undocumented COM API after the
+          WinRT attempt failed. False when WinRT succeeded or when the caller
+          requested prompt-only pinning.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1890634
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2084830
     data_reviews:
       - https://phabricator.services.mozilla.com/D311921
+      - https://phabricator.services.mozilla.com/D336270
     data_sensitivity:
       - interaction
     notification_emails:
@@ -609,6 +622,11 @@ os.environment:
       - rtestard@mozilla.com
       - shong@mozilla.com
     expires: never
+    send_in_pings:
+      - metrics
+      - events # Temporary until bug 2087139
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
 
   launched_to_handle:
     type: labeled_counter
@@ -635,6 +653,11 @@ os.environment:
     notification_emails:
       - application-update-telemetry-alerts@mozilla.com
     expires: never
+    send_in_pings:
+      - metrics
+      - events # Temporary until bug 2087139
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
 
   invoked_to_handle:
     type: labeled_counter
@@ -661,6 +684,11 @@ os.environment:
     notification_emails:
       - application-update-telemetry-alerts@mozilla.com
     expires: never
+    send_in_pings:
+      - metrics
+      - events # Temporary until bug 2087139
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
 
   is_default_handler:
     type: labeled_boolean
@@ -683,6 +711,11 @@ os.environment:
     notification_emails:
       - application-update-telemetry-alerts@mozilla.com
     expires: never
+    send_in_pings:
+      - metrics
+      - events # Temporary until bug 2087139
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
 
   is_kept_in_dock:
     type: boolean
@@ -699,6 +732,11 @@ os.environment:
       - shong@mozilla.com
     expires: never
     telemetry_mirror: OS_ENVIRONMENT_IS_KEPT_IN_DOCK
+    send_in_pings:
+      - metrics
+      - events # Temporary until bug 2087139
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
 
   is_taskbar_pinned:
     type: boolean
@@ -717,6 +755,11 @@ os.environment:
       - application-update-telemetry-alerts@mozilla.com
       - shong@mozilla.com
     expires: never
+    send_in_pings:
+      - metrics
+      - events # Temporary until bug 2087139
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
 
   is_taskbar_pinned_private:
     type: boolean
@@ -749,6 +792,11 @@ os.environment:
     notification_emails:
       - drubino@mozilla.com
     expires: never
+    send_in_pings:
+      - metrics
+      - events # Temporary until bug 2087139
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
 
 security:
   https_only_mode_enabled:

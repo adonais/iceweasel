@@ -21,6 +21,7 @@ contextual-manager-passwords-command-import-from-browser = Import from another b
 contextual-manager-passwords-command-import = Import from a file…
 contextual-manager-passwords-command-export = Export passwords
 contextual-manager-passwords-command-remove-all = Remove all passwords
+contextual-manager-passwords-command-delete-all = Delete all passwords
 contextual-manager-passwords-command-options = Options
 contextual-manager-passwords-command-help = Help
 
@@ -124,6 +125,14 @@ contextual-manager-passwords-remove-all-title =
     *[other] Remove all { $total } passwords?
   }
 
+# Confirm the deletion of all saved passwords when per-device sync is enabled
+#   $total (number) - Total number of passwords
+contextual-manager-passwords-delete-all-title =
+  { $total ->
+     [one] Delete { $total } password?
+    *[other] Delete { $total } passwords?
+  }
+
 # Checkbox label to confirm the removal of saved passwords
 #   $total (number) - Total number of passwords
 contextual-manager-passwords-remove-all-confirm =
@@ -140,6 +149,14 @@ contextual-manager-passwords-remove-all-confirm-button =
     *[other] Remove all
   }
 
+# Button label to confirm deletion of saved passwords when per-device sync is enabled
+#   $total (number) - Total number of passwords
+contextual-manager-passwords-delete-all-confirm-button =
+  { $total ->
+     [1] Delete
+    *[other] Delete all
+  }
+
 # Message to confirm the removal of all saved passwords when user DOES NOT HAVE SYNC
 #   $total (number) - Total number of passwords
 contextual-manager-passwords-remove-all-message =
@@ -154,6 +171,14 @@ contextual-manager-passwords-remove-all-message-sync =
   { $total ->
      [1] This will remove the password saved to { -brand-short-name } on all your synced devices and remove any breach alerts. You cannot undo this action.
     *[other] This will remove all passwords saved to { -brand-short-name } on all your synced devices and remove any breach alerts. You cannot undo this action.
+  }
+
+# Message for modal to confirm the deletion of all saved passwords when user HAS SYNC with per-device sync
+#   $total (number) - Total number of passwords
+contextual-manager-passwords-delete-all-message-sync =
+  { $total ->
+     [1] This deletes it from { -brand-short-name } on every device that syncs your passwords. You can’t undo this.
+    *[other] This deletes them from { -brand-short-name } on every device that syncs your passwords. You can’t undo this.
   }
 
 contextual-manager-passwords-origin-label = Website
@@ -206,12 +231,16 @@ contextual-manager-passwords-radiobutton-alerts = Alerts ({ $total })
 
 # This message is displayed to make sure that a user wants to delete an existing login.
 contextual-manager-passwords-remove-login-card-title = Remove password?
+# This message is displayed to make sure that a user wants to delete an existing login when per-device sync is enabled.
+contextual-manager-passwords-delete-login-card-title = Delete password?
 # This message warns the user that deleting a login is permanent.
 contextual-manager-passwords-remove-login-card-message = You can’t undo this.
 # This message gives the user an option to go back to the edit login form.
 contextual-manager-passwords-remove-login-card-back-message = Back
 # This message confirms that the user wants to remove an existing login.
 contextual-manager-passwords-remove-login-card-remove-button = Remove
+# This message confirms that the user wants to delete an existing login when per-device sync is enabled.
+contextual-manager-passwords-delete-login-card-delete-button = Delete
 # This message gives the user the option to cancel their attempt to remove a login.
 contextual-manager-passwords-remove-login-card-cancel-button = Cancel
 
@@ -247,6 +276,9 @@ contextual-manager-passwords-update-label =
   .label = Update password
 contextual-manager-passwords-remove-label =
   .title = Remove password
+# Tooltip for the delete button in the edit password form when per-device sync is enabled
+contextual-manager-passwords-delete-label =
+  .title = Delete password
 
 contextual-manager-passwords-origin-field =
   .label = Website address
@@ -364,6 +396,14 @@ contextual-manager-passwords-remove-all-passwords-checkbox =
   { $total ->
      [1] Yes, remove password
     *[other] Yes, remove passwords
+  }
+
+# Checkbox label to confirm the deletion of saved passwords when per-device sync is enabled
+#   $total (number) - Total number of passwords
+contextual-manager-passwords-delete-all-passwords-checkbox =
+  { $total ->
+     [1] Yes, delete password
+    *[other] Yes, delete passwords
   }
 
 # This string informs the user they need to provide their primary password for FireFox to access their saved passwords in Firefox.

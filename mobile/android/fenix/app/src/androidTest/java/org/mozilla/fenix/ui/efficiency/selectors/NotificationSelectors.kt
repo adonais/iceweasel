@@ -58,6 +58,14 @@ object NotificationSelectors : SelectorContainer {
             description = "Download notification Cancel button",
         )
 
+    // The "Download completed" title a download notification shows once the file has transferred.
+    val DOWNLOAD_COMPLETED_NOTIFICATION =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = getStringResource(downloadsR.string.mozac_feature_downloads_completed_notification_text2),
+            description = "Download completed notification text",
+        )
+
     // The "Download paused" line a download notification shows once it is paused.
     val DOWNLOAD_PAUSED_NOTIFICATION =
         Selector(

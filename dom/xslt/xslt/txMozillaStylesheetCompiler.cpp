@@ -465,7 +465,7 @@ static nsresult handleNode(nsINode* aNode, txStylesheetCompiler* aCompiler) {
     uint32_t attsCount = element->GetAttrCount();
     UniquePtr<txStylesheetAttr[]> atts;
     if (attsCount > 0) {
-      atts = MakeUnique<txStylesheetAttr[]>(attsCount);
+      atts = std::make_unique<txStylesheetAttr[]>(attsCount);
       uint32_t counter;
       for (counter = 0; counter < attsCount; ++counter) {
         txStylesheetAttr& att = atts[counter];

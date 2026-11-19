@@ -237,15 +237,6 @@ That command looks like:
     hg update $MOZ_NEW_CENTRAL
   fi
 
-  ERROR_HELP=$"
-Running ./mach bootstrap has failed.  For details, see:
-$LOG_DIR/log-bootstrap.txt
-"
-  echo "Running ./mach bootstrap..."
-  ./mach bootstrap --application=browser --no-system-changes &> $LOG_DIR/log-bootstrap.txt
-  echo "Done running ./mach bootstrap"
-  ERROR_HELP=""
-
   echo "Running ./mach clobber..."
   ./mach clobber &> $LOG_DIR/log-sanity-clobber.txt
   echo "Done running ./mach clobber"

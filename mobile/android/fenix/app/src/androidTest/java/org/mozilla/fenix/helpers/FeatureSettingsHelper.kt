@@ -66,9 +66,6 @@ interface FeatureSettingsHelper {
     /** Accept or not the terms of service. */
     var isTermsOfServiceAccepted: Boolean
 
-    /** Enable or disable the private mode and stories entry point. */
-    var isPrivateModeAndStoriesEntryPointEnabled: Boolean
-
     /**
      * The Open links in External apps settings, between the following options:
      * - Ask before opening
@@ -109,6 +106,9 @@ interface FeatureSettingsHelper {
 
     /** Whether FxSuggest feature is enabled. */
     var isFxSuggestEnabled: Boolean
+
+    /** Whether the Android PDF tools are shown in the PDF viewer. */
+    var isPdfToolsEnabled: Boolean
 
     /** Whether the current URL is shown separate from the addressbar when tapped. */
     var showAddressBarInFocusMode: Boolean

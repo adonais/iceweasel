@@ -638,6 +638,15 @@ export class UrlbarTelemetryUtils {
       .map(r => UrlbarShared.searchEngagementTelemetryAction(r))
       .filter(v => v)
       .join(",");
+    let semanticDistanceExtras = visibleResults.some(
+      r => r.payload.semanticDistance !== undefined
+    )
+      ? {
+          semantic_distances: visibleResults
+            .map(r => r.payload.semanticDistance ?? "")
+            .join(","),
+        }
+      : {};
 
     switch (method) {
       case "engagement": {
@@ -656,6 +665,7 @@ export class UrlbarTelemetryUtils {
           numResults = 0;
           groups = "";
           results = "";
+          semanticDistanceExtras = {};
         }
         return {
           metric: "engagement",
@@ -680,6 +690,7 @@ export class UrlbarTelemetryUtils {
             groups,
             results,
             actions,
+            ...semanticDistanceExtras,
             window_mode: windowMode,
             ...smartbarExtras,
           },
@@ -698,6 +709,7 @@ export class UrlbarTelemetryUtils {
             groups,
             results,
             actions,
+            ...semanticDistanceExtras,
             window_mode: windowMode,
             ...smartbarExtras,
           },

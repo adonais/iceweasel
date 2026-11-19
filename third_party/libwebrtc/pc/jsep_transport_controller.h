@@ -159,6 +159,14 @@ class JsepTransportController final {
     bool needs_ice_restart = false;
   };
 
+  // Per-mid transport states, captured on the network thread. `version` is
+  // incremented for every snapshot, which allows the signaling thread to
+  // ignore snapshots that are older than the one it already has.
+  struct TransportStateSnapshot {
+    uint64_t version = 0;
+    flat_map<std::string, TransportState> states;
+  };
+
   // The ICE related events are fired on the `network_thread`.
   // All the transport related methods are called on the `network_thread`
   // and destruction of the JsepTransportController must occur on the
@@ -262,11 +270,12 @@ class JsepTransportController final {
   // Must be called on the signaling thread.
   std::optional<SSLRole> GetDtlsRole(absl::string_view mid) const;
 
-  // Must be called on the signaling thread.
-  void SetTransportStates(flat_map<std::string, TransportState> states);
+  // Must be called on the signaling thread. A snapshot that is older than the
+  // current one is ignored.
+  void SetTransportStates(TransportStateSnapshot snapshot);
 
   // Must be called on the network thread.
-  flat_map<std::string, TransportState> GetTransportStates_n();
+  TransportStateSnapshot GetTransportStates_n();
 
   bool GetStats(absl::string_view transport_name, TransportStats* stats) const;
 
@@ -473,8 +482,9 @@ class JsepTransportController final {
 
   BundleManager bundles_;
 
-  flat_map<std::string, TransportState> transport_states_
-      RTC_GUARDED_BY(signaling_thread_);
+  // Version of the most recent snapshot taken by GetTransportStates_n().
+  uint64_t transport_states_version_n_ RTC_GUARDED_BY(network_thread_) = 0;
+  TransportStateSnapshot transport_states_ RTC_GUARDED_BY(signaling_thread_);
 
   scoped_refptr<PendingTaskSafetyFlag> role_update_safety_flag_s_
       RTC_GUARDED_BY(signaling_thread_);

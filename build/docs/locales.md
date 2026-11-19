@@ -91,48 +91,6 @@ the `MOZ_CHROME_MULTILOCALE` variable set, like:
 env MOZ_CHROME_MULTILOCALE=en-US,de,it,zh-TW ./mach android install-geckoview_example
 ```
 
-#### Multi-locale builds without compiling
-
-For deep technical reasons, artifact builds do not support multi-locale builds.
-However, with a little work, we can achieve the same effect:
-
-1. Arrange a `mozconfig` without a compilation environment but with support
-   for the `RecursiveMake` build backend, like:
-
-   ```shell
-   ac_add_options --disable-compile-environment
-   export BUILD_BACKENDS=FasterMake,RecursiveMake
-   ... other options ...
-   ```
-
-2. Configure.
-
-   ```shell
-   ./mach configure
-   ```
-
-3. Manually provide compiled artifacts.
-
-   ```shell
-   ./mach artifact install [-v]
-   ```
-
-4. Build.
-
-   ```shell
-   ./mach build
-   ```
-
-5. Produce a multi-locale package.
-
-   ```shell
-   ./mach package-multi-locale --locales de it zh-TW
-   ```
-
-This build configuration is fragile and not generally useful for active
-development (for that, use a full/compiled build), but it certainly speeds
-testing multi-locale packaging.
-
 ### General flow of repacks
 
 The general flow of the locale repacks is controlled by

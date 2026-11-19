@@ -165,7 +165,7 @@ void ServoStyleRuleMap::FillTableFromRule(css::Rule& aRule) {
     }
     case StyleCssRuleType::Import: {
       auto& rule = static_cast<CSSImportRule&>(aRule);
-      if (auto* sheet = rule.GetStyleSheet()) {
+      if (auto* sheet = rule.GetImportedSheet()) {
         FillTableFromStyleSheet(*sheet);
       }
       break;

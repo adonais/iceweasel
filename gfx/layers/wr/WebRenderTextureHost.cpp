@@ -26,7 +26,7 @@ class ScheduleHandleRenderTextureOps : public wr::NotificationHandler {
 
   virtual void Notify(wr::Checkpoint aCheckpoint) override {
     if (aCheckpoint == wr::Checkpoint::FrameTexturesUpdated) {
-      MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
+      MOZ_RELEASE_ASSERT(wr::RenderThread::IsInRenderThread());
       wr::RenderThread::Get()->HandleRenderTextureOps();
     } else {
       MOZ_ASSERT(aCheckpoint == wr::Checkpoint::TransactionDropped);
@@ -135,7 +135,7 @@ void WebRenderTextureHost::MaybeNotifyForUse(wr::TransactionBuilder& aTxn) {
       !mWrappedTextureHost->AsRemoteTextureHostWrapper()) {
     wr::RenderThread::Get()->NotifyForUse(GetExternalImageKey());
     aTxn.Notify(wr::Checkpoint::FrameTexturesUpdated,
-                MakeUnique<ScheduleHandleRenderTextureOps>());
+                std::make_unique<ScheduleHandleRenderTextureOps>());
   }
 #endif
 }

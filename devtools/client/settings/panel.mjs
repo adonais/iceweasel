@@ -6,7 +6,7 @@ import { SettingChangedEvent } from "./events.mjs";
 import { callbacks } from "./inventory.mjs";
 
 /**
- * @import { Toolbox } from "../framework/toolbox.js"
+ * @import { Toolbox } from "./types/toolbox.d.ts"
  */
 
 /** The redesigned devtools settings panel. */
@@ -25,6 +25,7 @@ export class SettingsPanel {
 
   /** @returns {this} */
   open() {
+    this.element?.setToolbox(this.toolbox);
     this.element?.addEventListener(
       SettingChangedEvent.eventName,
       this.#onSettingChanged,
@@ -42,11 +43,12 @@ export class SettingsPanel {
       // the panel might have been destroyed already
       return;
     }
-    callbacks[event.action]({ toolbox: this.toolbox });
+    callbacks[event.action]({ toolbox: this.toolbox, event });
   };
 
   destroy() {
     this.#abortController.abort();
+    this.element?.setToolbox(null);
     this.element = null;
     this.toolbox = null;
   }

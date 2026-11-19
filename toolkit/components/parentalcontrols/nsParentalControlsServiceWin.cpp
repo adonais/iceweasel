@@ -15,9 +15,9 @@
 #include "nsIXULAppInfo.h"
 #include "nsWindowsHelpers.h"
 #include "nsIWindowsRegKey.h"
-#include "mozilla/UniquePtr.h"
 
 #include <sddl.h>
+#include <memory>
 
 using namespace mozilla;
 
@@ -40,7 +40,7 @@ static nsAutoString GetUserSid() {
     return ret;
   }
 
-  UniquePtr<char[]> buf = MakeUnique<char[]>(bufLen);
+  auto buf = std::make_unique<char[]>(bufLen);
   success = ::GetTokenInformation(token, TokenUser, buf.get(), bufLen, &bufLen);
   MOZ_ASSERT(success);
 

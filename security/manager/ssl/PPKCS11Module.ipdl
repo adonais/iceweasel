@@ -74,7 +74,7 @@ protocol PPKCS11Module
 
     async CancelProtectedAuth(uint64_t id);
 
-    async FindObjects(SearchingFor searchingFor) returns (IPCClientCertObject[] objects);
+    async FindObjects(SearchingFor searchingFor) returns (CryptokiObject[] objects);
 
     async Sign(uint8_t[] certificate, uint8_t[] data, uint8_t[] params)
         returns (uint8_t[] signature);

@@ -395,7 +395,7 @@ UniquePtr<OffscreenCanvasCloneData> OffscreenCanvas::ToCloneData(
     return nullptr;
   }
 
-  auto cloneData = MakeUnique<OffscreenCanvasCloneData>(
+  auto cloneData = std::make_unique<OffscreenCanvasCloneData>(
       mDisplay, mLang, mWidth, mHeight, mCompositorBackendType, mNeutered,
       mIsWriteOnly, mExpandedReader);
   SetNeutered();

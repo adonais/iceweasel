@@ -973,6 +973,17 @@ void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
   j(cond, label);
 }
 
+void MacroAssembler::branchTestNullOrUndefined(Condition cond,
+                                               const ValueOperand& value,
+                                               Label* label) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  ScratchRegisterScope scratch(*this);
+  movq(value.valueReg(), scratch);
+  shrq(Imm32(JS::detail::ValueNullOrUndefinedShift), scratch);
+  cmp32(scratch, Imm32(JS::detail::ValueNullOrUndefinedBits));
+  j(cond, label);
+}
+
 template <typename T>
 void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {

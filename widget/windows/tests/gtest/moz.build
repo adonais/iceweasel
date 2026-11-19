@@ -6,6 +6,7 @@ UNIFIED_SOURCES += [
     "TestAclAceRange.cpp",
     "TestJumpListBuilder.cpp",
     "TestNativePointerLock.cpp",
+    "TestTaskbarConcealer.cpp",
     "TestWinDND.cpp",
     "TestWindowGfx.cpp",
     "TestWinUtils.cpp",

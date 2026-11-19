@@ -182,33 +182,6 @@ export class UrlbarParentControllerProxy {
   }
 
   /**
-   * Ships a search to the parent recorder, which resolves the engine by name.
-   * The counterpart to the controller's `recordSearch()`.
-   *
-   * @param {Parameters<UrlbarParentController["recordSearch"]>[0]} options
-   */
-  recordSearch(options) {
-    this.#port.sendAsyncMessage("RecordSearch", {
-      instanceId: this.#instanceId,
-      ...options,
-    });
-  }
-
-  /**
-   * Records a search opening in a new tab, against that tab's browser resolved
-   * parent-side. The counterpart to the controller's `recordSearchInOpenedTab()`.
-   *
-   * @param {Parameters<UrlbarParentController["recordSearch"]>[0]} searchData
-   *   The data for `recordSearch`.
-   */
-  recordSearchInOpenedTab(searchData) {
-    this.#port.sendAsyncMessage("RecordSearchInOpenedTab", {
-      instanceId: this.#instanceId,
-      searchData,
-    });
-  }
-
-  /**
    * Ships a zero-prefix view event to the parent recorder. The counterpart to
    * the controller's `recordZeroPrefix()`.
    *
@@ -483,14 +456,7 @@ export class UrlbarParentControllerProxy {
   }
 
   /** @type {UrlbarParentController["openSERP"]} */
-  openSERP(
-    engineId,
-    searchTerms,
-    where,
-    inBackground,
-    browserId,
-    tracksBounce
-  ) {
+  openSERP(engineId, searchTerms, where, inBackground, browserId, searchData) {
     this.#port.sendAsyncMessage("OpenSERP", {
       instanceId: this.#instanceId,
       engineId,
@@ -498,7 +464,7 @@ export class UrlbarParentControllerProxy {
       where,
       inBackground,
       browserId,
-      tracksBounce,
+      searchData,
     });
   }
 

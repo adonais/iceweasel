@@ -191,8 +191,7 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
     return MoveNodeResult(aNextInsertionPoint, false);
   }
   static MoveNodeResult IgnoredResult(EditorDOMPoint&& aNextInsertionPoint) {
-    return MoveNodeResult(std::forward<EditorDOMPoint>(aNextInsertionPoint),
-                          false);
+    return MoveNodeResult(std::move(aNextInsertionPoint), false);
   }
 
   /*****************************************************************************
@@ -206,8 +205,7 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
   }
 
   static MoveNodeResult HandledResult(EditorDOMPoint&& aNextInsertionPoint) {
-    return MoveNodeResult(std::forward<EditorDOMPoint>(aNextInsertionPoint),
-                          true);
+    return MoveNodeResult(std::move(aNextInsertionPoint), true);
   }
 
   static MoveNodeResult HandledResult(const EditorDOMPoint& aNextInsertionPoint,
@@ -217,34 +215,30 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
 
   static MoveNodeResult HandledResult(EditorDOMPoint&& aNextInsertionPoint,
                                       const EditorDOMPoint& aPointToPutCaret) {
-    return MoveNodeResult(std::forward<EditorDOMPoint>(aNextInsertionPoint),
-                          aPointToPutCaret);
+    return MoveNodeResult(std::move(aNextInsertionPoint), aPointToPutCaret);
   }
 
   static MoveNodeResult HandledResult(const EditorDOMPoint& aNextInsertionPoint,
                                       EditorDOMPoint&& aPointToPutCaret) {
-    return MoveNodeResult(aNextInsertionPoint,
-                          std::forward<EditorDOMPoint>(aPointToPutCaret));
+    return MoveNodeResult(aNextInsertionPoint, std::move(aPointToPutCaret));
   }
 
   static MoveNodeResult HandledResult(EditorDOMPoint&& aNextInsertionPoint,
                                       EditorDOMPoint&& aPointToPutCaret) {
-    return MoveNodeResult(std::forward<EditorDOMPoint>(aNextInsertionPoint),
-                          std::forward<EditorDOMPoint>(aPointToPutCaret));
+    return MoveNodeResult(std::move(aNextInsertionPoint),
+                          std::move(aPointToPutCaret));
   }
   // A factory method when consecutive siblings are moved once.
   static MoveNodeResult HandledResult(const nsIContent& aFirstMovedContent,
                                       EditorDOMPoint&& aNextInsertionPoint) {
-    return MoveNodeResult(aFirstMovedContent,
-                          std::forward<EditorDOMPoint>(aNextInsertionPoint));
+    return MoveNodeResult(aFirstMovedContent, std::move(aNextInsertionPoint));
   }
   // A factory method when consecutive siblings are moved once.
   static MoveNodeResult HandledResult(const nsIContent& aFirstMovedContent,
                                       EditorDOMPoint&& aNextInsertionPoint,
                                       EditorDOMPoint&& aPointToPutCaret) {
-    return MoveNodeResult(aFirstMovedContent,
-                          std::forward<EditorDOMPoint>(aNextInsertionPoint),
-                          std::forward<EditorDOMPoint>(aPointToPutCaret));
+    return MoveNodeResult(aFirstMovedContent, std::move(aNextInsertionPoint),
+                          std::move(aPointToPutCaret));
   }
 
  private:
@@ -283,7 +277,7 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
   }
   explicit MoveNodeResult(const EditorDOMPoint& aNextInsertionPoint,
                           EditorDOMPoint&& aPointToPutCaret)
-      : CaretPoint(std::forward<EditorDOMPoint>(aPointToPutCaret)),
+      : CaretPoint(std::move(aPointToPutCaret)),
         EditActionResult(false, aNextInsertionPoint.IsSet()),
         mNextInsertionPoint(aNextInsertionPoint) {
     if (Handled()) {
@@ -292,9 +286,9 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
   }
   explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint,
                           EditorDOMPoint&& aPointToPutCaret)
-      : CaretPoint(std::forward<EditorDOMPoint>(aPointToPutCaret)),
+      : CaretPoint(std::move(aPointToPutCaret)),
         EditActionResult(false, aNextInsertionPoint.IsSet()),
-        mNextInsertionPoint(std::forward<EditorDOMPoint>(aNextInsertionPoint)) {
+        mNextInsertionPoint(std::move(aNextInsertionPoint)) {
     if (Handled()) {
       mMovedContentRange = EditorDOMRange(mNextInsertionPoint);
     }
@@ -302,7 +296,7 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
   explicit MoveNodeResult(const nsIContent& aFirstMovedContent,
                           EditorDOMPoint&& aNextInsertionPoint)
       : EditActionResult(false, aNextInsertionPoint.IsSet()),
-        mNextInsertionPoint(std::forward<EditorDOMPoint>(aNextInsertionPoint)) {
+        mNextInsertionPoint(std::move(aNextInsertionPoint)) {
     if (Handled()) {
       EditorDOMPoint pointAfterFirstMovedContent =
           EditorDOMPoint::After(aFirstMovedContent);
@@ -319,9 +313,9 @@ class MOZ_STACK_CLASS MoveNodeResult final : public CaretPoint,
   explicit MoveNodeResult(const nsIContent& aFirstMovedContent,
                           EditorDOMPoint&& aNextInsertionPoint,
                           EditorDOMPoint&& aPointToPutCaret)
-      : CaretPoint(std::forward<EditorDOMPoint>(aPointToPutCaret)),
+      : CaretPoint(std::move(aPointToPutCaret)),
         EditActionResult(false, aNextInsertionPoint.IsSet()),
-        mNextInsertionPoint(std::forward<EditorDOMPoint>(aNextInsertionPoint)) {
+        mNextInsertionPoint(std::move(aNextInsertionPoint)) {
     if (Handled()) {
       EditorDOMPoint pointAfterFirstMovedContent =
           EditorDOMPoint::After(aFirstMovedContent);

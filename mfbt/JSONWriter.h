@@ -43,7 +43,7 @@
 // Assume that |MyWriteFunc| is a class that implements |JSONWriteFunc|. The
 // following code:
 //
-//   JSONWriter w(MakeUnique<MyWriteFunc>());
+//   JSONWriter w(std::make_unique<MyWriteFunc>());
 //   w.Start();
 //   {
 //     w.NullProperty("null");
@@ -211,7 +211,7 @@ class JSONWriter {
       }
 
       // Escapes are needed. We'll create a new string.
-      mOwnedStr = MakeUnique<char[]>(mStringSpan.Length() + nExtra);
+      mOwnedStr = std::make_unique<char[]>(mStringSpan.Length() + nExtra);
 
       size_t i = 0;
       for (const char c : mStringSpan) {

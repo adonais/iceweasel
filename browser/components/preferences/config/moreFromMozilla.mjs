@@ -131,13 +131,13 @@ function getProducts() {
       },
     },
     {
-      id: "solo-ai",
-      l10nId: "more-from-moz-solo-card-1",
+      id: "firefox-enterprise",
+      l10nId: "more-from-moz-firefox-enterprise-card",
       region: "global",
       link: {
-        l10nId: "more-from-moz-solo-box-link",
-        iconSrc: "chrome://browser/skin/preferences/solo-ai-logo.svg",
-        actionURL: "https://soloist.ai/?utm_type=more_from_mozilla",
+        l10nId: "more-from-moz-firefox-enterprise-box-link",
+        iconSrc: "chrome://browser/content/logos/firefox-enterprise.svg",
+        actionURL: "https://www.firefox.com/enterprise/",
       },
     },
     {

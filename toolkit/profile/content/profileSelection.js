@@ -394,6 +394,14 @@ async function ConfirmDelete() {
 
   let { storeID } = selectedProfile;
 
+  if (AppConstants.MOZ_PUSH_NOTIFICATION_HELPER) {
+    // The helper has to be stopped before the profile directory is removed
+    const { PushNotificationHelper } = ChromeUtils.importESModule(
+      "resource://gre/modules/PushNotificationHelper.sys.mjs"
+    );
+    await PushNotificationHelper.stopForProfile(selectedProfile.rootDir.path);
+  }
+
   try {
     selectedProfile.remove(deleteFiles);
     gNeedsFlush = true;

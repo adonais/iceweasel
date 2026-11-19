@@ -592,10 +592,6 @@ struct DIGroup {
     mVisibleRect = mVisibleRect.Intersect(ViewAs<LayerPixel>(
         mActualBounds, PixelCastJustification::LayerIsImage));
 
-    if (mVisibleRect.IsEmpty()) {
-      return;
-    }
-
     // Invalidate any unused items
     GP("mDisplayItems\n");
     mDisplayItems.RemoveIf([&](BlobItemData* data) {
@@ -610,6 +606,10 @@ struct DIGroup {
       data->mUsed = false;
       return false;
     });
+
+    if (mVisibleRect.IsEmpty()) {
+      return;
+    }
 
     IntSize dtSize = mVisibleRect.Size().ToUnknownSize();
     // The actual display item's size shouldn't have the scale factored in
@@ -751,6 +751,7 @@ struct DIGroup {
         return;
       }
     }
+    mInvalidRect.SetEmpty();
     mFonts = std::move(fonts);
     aResources.SetBlobImageVisibleArea(
         *mKey,
@@ -1424,8 +1425,6 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
           aCommandBuilder->CreateOrRecycleWebRenderUserData<WebRenderGroupData>(
               item);
 
-      groupData->mFollowingGroup.mInvalidRect.SetEmpty();
-
       // Initialize groupData->mFollowingGroup with data from currentGroup.
       // We want to copy out this information before calling EndGroup because
       // EndGroup will set mLastVisibleRect depending on whether
@@ -1449,6 +1448,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
         // The group changed size
         GP("Inner group size change\n");
         groupData->mFollowingGroup.ClearItems();
+        groupData->mFollowingGroup.mInvalidRect.SetEmpty();
         groupData->mFollowingGroup.ClearImageKey(
             aCommandBuilder->mManager->GetRenderRootStateManager());
       }
@@ -1756,7 +1756,6 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
 
   GP("Inherited scale %f %f\n", scale.xScale, scale.yScale);
 
-  group.mInvalidRect.SetEmpty();
   if (group.mAppUnitsPerDevPixel != appUnitsPerDevPixel ||
       group.mScale != scale || group.mResidualOffset != residualOffset) {
     GP("Property change. Deleting blob\n");
@@ -1778,6 +1777,7 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
     }
 
     group.ClearItems();
+    group.mInvalidRect.SetEmpty();
     group.ClearImageKey(mManager->GetRenderRootStateManager());
   }
 
@@ -2390,6 +2390,21 @@ void WebRenderCommandBuilder::PushOverrideForASR(
 void WebRenderCommandBuilder::PopOverrideForASR(
     const ActiveScrolledRoot* aASR) {
   mClipManager.PopOverrideForASR(aASR);
+}
+
+DefinedReferenceFrame WebRenderCommandBuilder::DefineReferenceFrame(
+    wr::DisplayListBuilder& aBuilder, nsIFrame* aFrame,
+    FrameReferenceFrame aKind, const LayoutDevicePoint& aOrigin,
+    const wr::ReferenceFrameParams& aParams) {
+  const wr::LayoutVector2D parentScrollOffset =
+      aBuilder.CurrentAccumulatedScrollOffset();
+  DefinedReferenceFrame frame;
+  frame.mId =
+      aBuilder.DefineReferenceFrame(wr::ToLayoutPoint(aOrigin), aParams);
+  frame.mOrigin =
+      aOrigin + LayoutDevicePoint(parentScrollOffset.x, parentScrollOffset.y);
+  frame.mShouldSnap = aParams.should_snap;
+  return frame;
 }
 
 static wr::WrRotation ToWrRotation(VideoRotation aRotation) {

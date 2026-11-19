@@ -22,7 +22,9 @@
 #if defined(__OpenBSD__)
 #  include <sys/stat.h>
 #endif
-#include "mozilla/UniquePtr.h"
+
+#include <memory>
+
 #include "mozilla/UniquePtrExtensions.h"
 
 #ifdef MOZILLA_INTERNAL_API
@@ -217,7 +219,7 @@ class BinaryPath {
       return NS_ERROR_FAILURE;
     }
 
-    auto argv = MakeUnique<const char*[]>(len / sizeof(const char*));
+    auto argv = std::make_unique<const char*[]>(len / sizeof(const char*));
     if (sysctl(mib, 4, argv.get(), &len, nullptr, 0) < 0) {
       return NS_ERROR_FAILURE;
     }

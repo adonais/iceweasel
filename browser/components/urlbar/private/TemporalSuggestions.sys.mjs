@@ -15,6 +15,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
+const RESULT_MENU_COMMAND = Object.freeze({
+  DISMISS: "dismiss",
+  NOT_INTERESTED: "not_interested",
+});
+
 /**
  * Maps each supported temporal type to the pref that controls whether
  * suggestions of that type are shown.
@@ -55,6 +60,23 @@ const PREFS_BY_TYPE = new Map([["seasonal", "suggest.temporal.seasonal"]]);
  */
 export class TemporalSuggestions extends SuggestProvider {
   /**
+   * Whether temporal search suggestions are enabled: the feature gate,
+   * `suggest.temporal` and search suggestions are on and at least one temporal
+   * type is enabled.
+   *
+   * @type {boolean}
+   */
+  static get isEnabled() {
+    return (
+      lazy.UrlbarPrefs.get("temporal.featureGate") &&
+      lazy.UrlbarPrefs.get("suggest.temporal") &&
+      lazy.UrlbarPrefs.get("suggest.searches") &&
+      lazy.UrlbarPrefs.get("browser.search.suggest.enabled") &&
+      [...PREFS_BY_TYPE.values()].some(p => lazy.UrlbarPrefs.get(p))
+    );
+  }
+
+  /**
    * The queries picked since the last time every query was picked, shared by
    * all windows.
    *
@@ -66,6 +88,7 @@ export class TemporalSuggestions extends SuggestProvider {
     return [
       "temporal.featureGate",
       "suggest.temporal",
+      "suggest.quicksuggest.all",
       "suggest.searches",
       "browser.search.suggest.enabled",
     ];
@@ -137,13 +160,10 @@ export class TemporalSuggestions extends SuggestProvider {
   async makeResult(queryContext, suggestion) {
     // The Rust component is queried with the search string trimmed at the
     // start, so a whitespace-only search string matches the empty keyword.
-    // Eligibility is determined for the default engine, so only show results in
-    // search mode for that engine.
     if (
       queryContext.searchString ||
       queryContext.sapName != "urlbar" ||
-      (queryContext.searchMode &&
-        queryContext.searchMode.engineName != suggestion.engine)
+      queryContext.searchMode
     ) {
       return null;
     }
@@ -152,12 +172,13 @@ export class TemporalSuggestions extends SuggestProvider {
     return new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
       source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
-      isSuggestedIndexRelativeToGroup: true,
-      suggestedIndex: -1,
-      hideRowLabel: true,
+      group: lazy.UrlbarShared.RESULT_GROUP.TEMPORAL_SUGGESTION,
+      rowLabel: { id: "urlbar-group-temporal-seasonal" },
       payload: {
         engine: suggestion.engine,
         suggestion: query,
+        lowerCaseSuggestion: query.toLocaleLowerCase(),
+        trending: false,
         title: query,
         icon: lazy.UrlbarShared.ICON.SEARCH_GLASS,
       },
@@ -171,21 +192,43 @@ export class TemporalSuggestions extends SuggestProvider {
   getResultCommands(_result) {
     return [
       {
-        name: "dismiss",
+        name: RESULT_MENU_COMMAND.DISMISS,
         l10n: { id: "urlbar-result-menu-dismiss-suggestion2" },
+      },
+      {
+        name: RESULT_MENU_COMMAND.NOT_INTERESTED,
+        l10n: { id: "urlbar-result-menu-dont-show-temporal-seasonal" },
       },
     ];
   }
 
   /**
-   * @param {UrlbarQueryContext} _queryContext
+   * @param {UrlbarQueryContext} queryContext
    * @param {UrlbarParentController} controller
    * @param {object} details
    */
-  onEngagement(_queryContext, controller, details) {
-    if (details.selType == "dismiss") {
+  onEngagement(queryContext, controller, details) {
+    if (details.selType == RESULT_MENU_COMMAND.DISMISS) {
       lazy.QuickSuggest.dismissResult(details.result);
       controller.removeResult(details.result);
+    } else if (details.selType == RESULT_MENU_COMMAND.NOT_INTERESTED) {
+      let type = getTemporalType(details.result);
+      lazy.UrlbarPrefs.set(PREFS_BY_TYPE.get(type), false);
+      // Remove the engaged result last so its acknowledgment isn't removed.
+      for (let result of [...queryContext.results]) {
+        if (
+          lazy.QuickSuggest.getFeatureByResult(result) == this &&
+          getTemporalType(result) == type &&
+          result.id != details.result.id
+        ) {
+          controller.removeResult(result);
+        }
+      }
+      controller.removeResult(details.result, {
+        acknowledgeDismissalL10n: {
+          id: "urlbar-temporal-seasonal-dismissal-acknowledgment",
+        },
+      });
     }
   }
 
@@ -300,6 +343,16 @@ export class TemporalSuggestions extends SuggestProvider {
   #randomIndex(length) {
     return Math.floor(this._random() * length);
   }
+}
+
+/**
+ * @param {UrlbarResult} result
+ *   A temporal result.
+ * @returns {string}
+ *   The temporal type of the result's suggestion, e.g. "seasonal".
+ */
+function getTemporalType(result) {
+  return result.payload.suggestionObject.data.type;
 }
 
 function isNonEmptyString(value) {

@@ -121,6 +121,9 @@
 ["include:tests/nav-bench/browsertime-nav-bench.toml"]
 # Navigation benchmark (LoadLine2-style, 6 sites x 50 reps x 2 marks)
 
+["include:tests/nav-bench/browsertime-nav-bench-m.toml"]
+# Navigation benchmark, mobile (Android Fenix)
+
 ["include:tests/tp6/desktop/browsertime-tp6.toml"]
 # raptor-browsertime desktop page-load tests
 

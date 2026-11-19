@@ -649,7 +649,7 @@ TEST(SandboxBrokerMisc, FileDescLeak)
 
   pid_t pid = getpid();
   for (size_t i = 0; i < kCycles; ++i) {
-    auto policy = MakeUnique<SandboxBroker::Policy>();
+    auto policy = std::make_unique<SandboxBroker::Policy>();
     // Currently nothing in `Create` tries to check for or
     // special-case an empty policy, but just in case:
     policy->AddPath(SandboxBroker::MAY_READ, "/dev/null",
@@ -689,7 +689,7 @@ TEST(SandboxBrokerMisc, DISABLED_StackLeak)
 
   pid_t pid = getpid();
   for (size_t i = 0; i < kCycles; ++i) {
-    auto policy = MakeUnique<SandboxBroker::Policy>();
+    auto policy = std::make_unique<SandboxBroker::Policy>();
     // Currently nothing in `Create` tries to check for or
     // special-case an empty policy, but just in case:
     policy->AddPath(SandboxBroker::MAY_READ, "/dev/null",

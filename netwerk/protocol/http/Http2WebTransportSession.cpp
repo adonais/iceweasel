@@ -67,7 +67,7 @@ void Http2WebTransportSessionImpl::CloseSession(uint32_t aStatus,
   mHandler->SetSentFin();
 
   Capsule capsule = Capsule::CloseWebTransportSession(aStatus, aReason);
-  UniquePtr<CapsuleEncoder> encoder = MakeUnique<CapsuleEncoder>();
+  auto encoder = std::make_unique<CapsuleEncoder>();
   encoder->EncodeCapsule(capsule);
   EnqueueOutCapsule(CapsuleTransmissionPriority::Important, std::move(encoder));
 }
@@ -119,6 +119,14 @@ void Http2WebTransportSessionImpl::GetNegotiatedProtocol(
   aProtocol.Truncate();
 }
 
+// HTTP/2 WebTransport raises stream limits with WT_MAX_STREAMS capsules
+// rather than QUIC MAX_STREAMS frames; not wired up yet.
+void Http2WebTransportSessionImpl::
+    SetAnticipatedConcurrentIncomingUnidirectionalStreams(uint16_t aValue) {}
+
+void Http2WebTransportSessionImpl::
+    SetAnticipatedConcurrentIncomingBidirectionalStreams(uint16_t aValue) {}
+
 void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
                                                 uint64_t aTrackingId,
                                                 uint64_t aSendGroupId,
@@ -133,7 +141,7 @@ void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
 
   Capsule capsule = Capsule::WebTransportDatagram(std::move(aData));
 
-  UniquePtr<CapsuleEncoder> encoder = MakeUnique<CapsuleEncoder>();
+  auto encoder = std::make_unique<CapsuleEncoder>();
   encoder->EncodeCapsule(capsule);
   EnqueueOutCapsule(CapsuleTransmissionPriority::Normal, std::move(encoder));
 }
@@ -195,7 +203,7 @@ void Http2WebTransportSessionImpl::CreateOutgoingBidirectionalStream(
   auto id = mLocalStreamsFlowControl.TakeStreamId(WebTransportStreamType::BiDi);
   if (!id) {
     mBidiPendingStreamCallbacks.Push(
-        MakeUnique<PendingStreamCallback>(std::move(aCallback)));
+        std::make_unique<PendingStreamCallback>(std::move(aCallback)));
     return;
   }
 
@@ -209,7 +217,7 @@ void Http2WebTransportSessionImpl::CreateOutgoingUnidirectionalStream(
       mLocalStreamsFlowControl.TakeStreamId(WebTransportStreamType::UniDi);
   if (!id) {
     mUnidiPendingStreamCallbacks.Push(
-        MakeUnique<PendingStreamCallback>(std::move(aCallback)));
+        std::make_unique<PendingStreamCallback>(std::move(aCallback)));
     return;
   }
 
@@ -231,33 +239,39 @@ void Http2WebTransportSessionImpl::SendMaintenanceCapsules(
     CapsuleTransmissionPriority aPriority) {
   auto encoder = mSessionDataFc.CreateSessionDataBlockedCapsule();
   if (encoder) {
-    mCapsuleQueue[aPriority].Push(MakeUnique<CapsuleEncoder>(encoder.ref()));
+    mCapsuleQueue[aPriority].Push(
+        std::make_unique<CapsuleEncoder>(encoder.ref()));
   }
   encoder = mReceiverFc.CreateMaxDataCapsule();
   if (encoder) {
-    mCapsuleQueue[aPriority].Push(MakeUnique<CapsuleEncoder>(encoder.ref()));
+    mCapsuleQueue[aPriority].Push(
+        std::make_unique<CapsuleEncoder>(encoder.ref()));
   }
   encoder = mLocalStreamsFlowControl[WebTransportStreamType::BiDi]
                 .CreateStreamsBlockedCapsule();
   if (encoder) {
-    mCapsuleQueue[aPriority].Push(MakeUnique<CapsuleEncoder>(encoder.ref()));
+    mCapsuleQueue[aPriority].Push(
+        std::make_unique<CapsuleEncoder>(encoder.ref()));
   }
   encoder = mLocalStreamsFlowControl[WebTransportStreamType::UniDi]
                 .CreateStreamsBlockedCapsule();
   if (encoder) {
-    mCapsuleQueue[aPriority].Push(MakeUnique<CapsuleEncoder>(encoder.ref()));
+    mCapsuleQueue[aPriority].Push(
+        std::make_unique<CapsuleEncoder>(encoder.ref()));
   }
   encoder = mRemoteStreamsFlowControl[WebTransportStreamType::BiDi]
                 .FlowControl()
                 .CreateMaxStreamsCapsule();
   if (encoder) {
-    mCapsuleQueue[aPriority].Push(MakeUnique<CapsuleEncoder>(encoder.ref()));
+    mCapsuleQueue[aPriority].Push(
+        std::make_unique<CapsuleEncoder>(encoder.ref()));
   }
   encoder = mRemoteStreamsFlowControl[WebTransportStreamType::UniDi]
                 .FlowControl()
                 .CreateMaxStreamsCapsule();
   if (encoder) {
-    mCapsuleQueue[aPriority].Push(MakeUnique<CapsuleEncoder>(encoder.ref()));
+    mCapsuleQueue[aPriority].Push(
+        std::make_unique<CapsuleEncoder>(encoder.ref()));
   }
   for (const auto& stream : mOutgoingStreams.Values()) {
     stream->WriteMaintenanceCapsules(mCapsuleQueue[aPriority]);
@@ -617,7 +631,7 @@ Http2WebTransportSession::Http2WebTransportSession(
     Http2WebTransportInitialSettings aSettings)
     : Http2StreamTunnel(aSession, aPriority, aBcId, aConnectionInfo),
       mImpl(MakeRefPtr<Http2WebTransportSessionImpl>(this, aSettings)),
-      mCapsuleParser(MakeUnique<CapsuleParser>(mImpl)) {
+      mCapsuleParser(std::make_unique<CapsuleParser>(mImpl)) {
   LOG(("Http2WebTransportSession ctor:%p", this));
 }
 

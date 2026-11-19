@@ -1612,6 +1612,10 @@ interface nsILoadInfo : nsISupports
   const uint32_t BLOCKING_REASON_EXTENSION_WEBREQUEST = 6000;
   // The reason used when a request is cancelled via WebDriver BiDi network interception.
   const uint32_t BLOCKING_REASON_WEBDRIVER_BIDI = 7000;
+  const uint32_t BLOCKING_REASON_CONNECTION_ALLOWLIST = 8000;
+  // !!!
+  // Remember to update BLOCKED_REASON_MESSAGES in devtools.
+  // !!!
 
   /**
    * If the request associated with this load info was blocked by some of

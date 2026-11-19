@@ -36,7 +36,6 @@ support-files = [
 skip-if = [
   "http2",
   "http3",
-  "socketprocess_networking",
 ]
 
 ["browser_https_telemetry2.js"]
@@ -46,7 +45,6 @@ support-files = [
 skip-if = [
   "http2",
   "http3",
-  "socketprocess_networking",
 ]
 
 ["browser_httpsfirst.js"]

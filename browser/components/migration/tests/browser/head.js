@@ -185,6 +185,8 @@ async function waitForTestMigration(
     history: EXPECTED_QUANTITY,
     logins: EXPECTED_QUANTITY,
     cards: EXPECTED_QUANTITY,
+    extensions: EXPECTED_QUANTITY,
+    formdata: EXPECTED_QUANTITY,
   });
 
   sandbox

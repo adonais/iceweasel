@@ -294,7 +294,7 @@ nsresult Http2WebTransportStream::ReadRequestSegment(
   data.AppendElements(buf, count);
   Capsule capsule = Capsule::WebTransportStreamData(wtStream->mStreamId, false,
                                                     std::move(data));
-  UniquePtr<CapsuleEncoder> encoder = MakeUnique<CapsuleEncoder>();
+  auto encoder = std::make_unique<CapsuleEncoder>();
   encoder->EncodeCapsule(capsule);
   wtStream->mCapsuleQueue.Push(std::move(encoder));
   *countRead = count;
@@ -318,14 +318,14 @@ void Http2WebTransportStream::TakeOutputCapsule(
 void Http2WebTransportStream::WriteMaintenanceCapsules(
     mozilla::Queue<UniquePtr<CapsuleEncoder>>& aOutput) {
   if (mStopSendingCapsule) {
-    UniquePtr<CapsuleEncoder> encoder = MakeUnique<CapsuleEncoder>();
+    auto encoder = std::make_unique<CapsuleEncoder>();
     encoder->EncodeCapsule(*mStopSendingCapsule);
     mStopSendingCapsule = Nothing();
     aOutput.Push(std::move(encoder));
   }
 
   if (mStreamResetCapsule) {
-    UniquePtr<CapsuleEncoder> encoder = MakeUnique<CapsuleEncoder>();
+    auto encoder = std::make_unique<CapsuleEncoder>();
     encoder->EncodeCapsule(*mStreamResetCapsule);
     mStreamResetCapsule = Nothing();
     aOutput.Push(std::move(encoder));
@@ -333,12 +333,12 @@ void Http2WebTransportStream::WriteMaintenanceCapsules(
 
   auto dataBlocked = mFc.CreateStreamDataBlockedCapsule();
   if (dataBlocked) {
-    aOutput.Push(MakeUnique<CapsuleEncoder>(dataBlocked.ref()));
+    aOutput.Push(std::make_unique<CapsuleEncoder>(dataBlocked.ref()));
   }
 
   auto maxStreamData = mReceiverFc.CreateMaxStreamDataCapsule();
   if (maxStreamData) {
-    aOutput.Push(MakeUnique<CapsuleEncoder>(maxStreamData.ref()));
+    aOutput.Push(std::make_unique<CapsuleEncoder>(maxStreamData.ref()));
   }
 
   // Keep reading data from the consumer.
@@ -460,7 +460,7 @@ nsresult Http2WebTransportStream::HandleStreamData(bool aFin,
             LOG(("Exceed session flow control limit"));
             mSocketInCondition = NS_ERROR_NOT_AVAILABLE;
           } else {
-            mOutgoingQueue.Push(MakeUnique<StreamData>(std::move(aData)));
+            mOutgoingQueue.Push(std::make_unique<StreamData>(std::move(aData)));
             mSocketInCondition = OnOutputStreamReady(mReceiveStreamPipeOut);
           }
         }

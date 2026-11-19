@@ -130,8 +130,12 @@
 /* Primary toolbar buttons */
 
 .toolbarbutton-1 {
-  :root:not([customizing]) &[disabled] {
+  &[disabled] {
     opacity: var(--toolbarbutton-opacity-disabled);
+
+    :root[customizing] & {
+      opacity: 1;
+    }
   }
 
   /* Special-case the overflow and the hamburger button so they show up disabled
@@ -302,7 +306,7 @@ toolbar .toolbarbutton-1 {
 
 #PanelUI-menu-button {
   /* Adds padding to end of toolbar while making that space click the first button */
-  padding-inline-end: var(--toolbar-padding-inline);
+  padding-inline-end: var(--toolbar-end-edge-padding, var(--toolbar-padding-inline));
 }
 
 toolbar .toolbaritem-combined-buttons {

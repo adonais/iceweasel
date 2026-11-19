@@ -12,8 +12,8 @@ namespace mozilla {
 // If the USE_TIMESTAMP flag is set, then we use the timestamp from
 // the IMAGE_FILE_HEADER in lieu of a version number.
 //
-// If the UTILITY_PROCESSES_ONLY, SOCKET_PROCESSES_ONLY, GPU_PROCESSES_ONLY,
-// GMPLUGIN_PROCESSES_ONLY, or RDD_PROCESSES_ONLY flags are set, the dll
+// If the UTILITY_PROCESSES_ONLY, GPU_PROCESSES_ONLY, GMPLUGIN_PROCESSES_ONLY,
+// or RDD_PROCESSES_ONLY flags are set, the dll
 // will only be blocked for these specific child processes.
 // Note that these are a subset of CHILD_PROCESSES_ONLY.
 enum DllBlockInfoFlags : uint32_t {
@@ -23,7 +23,7 @@ enum DllBlockInfoFlags : uint32_t {
   BROWSER_PROCESS_ONLY = 1 << 2,
   REDIRECT_TO_NOOP_ENTRYPOINT = 1 << 3,
   UTILITY_PROCESSES_ONLY = 1 << 4,
-  SOCKET_PROCESSES_ONLY = 1 << 5,
+  // 1 << 5 is unused and can be reused.
   GPU_PROCESSES_ONLY = 1 << 6,
   GMPLUGIN_PROCESSES_ONLY = 1 << 7,
   RDD_PROCESSES_ONLY = 1 << 8,
@@ -54,8 +54,8 @@ struct DllBlockInfoT {
   // If the USE_TIMESTAMP flag is set, then we use the timestamp from
   // the IMAGE_FILE_HEADER in lieu of a version number.
   //
-  // If the UTILITY_PROCESSES_ONLY, SOCKET_PROCESSES_ONLY, GPU_PROCESSES_ONLY,
-  // GMPLUGIN_PROCESSES_ONLY, or RDD_PROCESSES_ONLY flags are set, the dll will
+  // If the UTILITY_PROCESSES_ONLY, GPU_PROCESSES_ONLY, GMPLUGIN_PROCESSES_ONLY,
+  // or RDD_PROCESSES_ONLY flags are set, the dll will
   // only be blocked for these specific child processes. Note that these are a
   // subset of CHILD_PROCESSES_ONLY. These flags cannot be combined.
   DllBlockInfoFlags mFlags;

@@ -1,0 +1,256 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test how the html copy encoder handles the inline style attribute</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2002879">Mozilla Bug 2002879</a>
+<p id="display"></p>
+<div id="content" style="display: none">
+</div>
+<div id="container"></div>
+<style>
+/* Ensure styles from global style sheets are not serialized into the style
+   attribute when copying. */
+span {
+  background-color: green;
+}
+</style>
+<script>
+
+const de = SpecialPowers.Ci.nsIDocumentEncoder;
+
+const TESTS = [
+  // Importance on declarations is preserved.
+  {
+    innerHTML: `<span style="color: red !important">text</span>`,
+    normalizedResult: `<span style="color: red !important;">text</span>`,
+    description: "important declarations should be preserved"
+  },
+  // An unparseable style attribute serializes to nothing and is dropped.
+  {
+    innerHTML: `<span style="foo">text</span>`,
+    normalizedResult: `<span>text</span>`,
+    description: "an invalid style attribute should be dropped"
+  },
+  // An empty style attribute serializes to nothing and is dropped.
+  {
+    innerHTML: `<span style="">text</span>`,
+    normalizedResult: `<span>text</span>`,
+    description: "an empty style attribute should be dropped"
+  },
+  // A style attribute with only whitespace serializes to nothing and is
+  // dropped.
+  {
+    innerHTML: `<span style="   ">text</span>`,
+    normalizedResult: `<span>text</span>`,
+    description: "a whitespace-only style attribute should be dropped"
+  },
+  // Invalid declarations are dropped, valid ones are kept.
+  {
+    innerHTML: `<span style="color: red; foo: bar; font-weight: bold">text</span>`,
+    normalizedResult: `<span style="color: red; font-weight: bold;">text</span>`,
+    description: "invalid declarations should be dropped"
+  },
+  // Whitespace and comments are normalized away.
+  {
+    innerHTML: `<span style="  color:red  ; /* comment */ font-weight:bold  ">text</span>`,
+    normalizedResult: `<span style="color: red; font-weight: bold;">text</span>`,
+    description: "whitespace and comments should be normalized"
+  },
+  // Only the last of duplicated declarations is kept.
+  {
+    innerHTML: `<span style="color: red; color: blue">text</span>`,
+    normalizedResult: `<span style="color: blue;">text</span>`,
+    description: "only the last duplicated declaration should be kept"
+  },
+  // Colors are serialized in their normalized form.
+  {
+    innerHTML: `<span style="color: #ff0000">text</span>`,
+    normalizedResult: `<span style="color: rgb(255, 0, 0);">text</span>`,
+    description: "hex colors should be normalized"
+  },
+  // Shorthands are kept as shorthands.
+  {
+    innerHTML: `<span style="margin: 1px 2px; border: 1px solid red">text</span>`,
+    normalizedResult: `<span style="margin: 1px 2px; border: 1px solid red;">text</span>`,
+    description: "shorthands should be preserved"
+  },
+  // Longhands overriding part of a shorthand are merged into the shorthand.
+  {
+    innerHTML: `<span style="margin: 1px; margin-left: 2px">text</span>`,
+    normalizedResult: `<span style="margin: 1px 1px 1px 2px;">text</span>`,
+    description: "longhands should be merged into the shorthand"
+  },
+  // Quotes added by the normalization are escaped in the attribute value.
+  {
+    innerHTML: `<span style="background-image: url(foo.png)">text</span>`,
+    normalizedResult: `<span style='background-image: url("foo.png");'>text</span>`,
+    description: "quotes in url() should be escaped"
+  },
+  {
+    innerHTML: `<span style="font-family: 'Times New Roman'">text</span>`,
+    normalizedResult: `<span style="font-family: Times New Roman;">text</span>`,
+    description: "quotes in strings should be escaped"
+  },
+  // Custom properties and var() references are preserved.
+  {
+    innerHTML: `<span style="--foo: 1px; margin: var(--foo)">text</span>`,
+    normalizedResult: `<span style="--foo: 1px; margin: var(--foo);">text</span>`,
+    description: "custom properties and var() should be preserved"
+  },
+  // Extra semicolons are removed.
+  {
+    innerHTML: `<span style="color: red;;;">text</span>`,
+    normalizedResult: `<span style="color: red;">text</span>`,
+    description: "extra semicolons should be removed"
+  },
+  // Property names, keywords and units are serialized in lowercase.
+  {
+    innerHTML: `<span style="COLOR: red; DISPLAY: BLOCK; WIDTH: 10PX">text</span>`,
+    normalizedResult: `<span style="color: red; display: block; width: 10px;">text</span>`,
+    description: "property names, keywords and units should be lowercased"
+  },
+  {
+    innerHTML: `<span style="color: currentColor">text</span>`,
+    normalizedResult: `<span style="color: currentcolor;">text</span>`,
+    description: "currentColor should be lowercased"
+  },
+  // Custom property names are case-sensitive and kept as is.
+  {
+    innerHTML: `<span style="--Foo: Bar">text</span>`,
+    normalizedResult: `<span style="--Foo: Bar;">text</span>`,
+    description: "custom property names and values should keep their case"
+  },
+  // The !important flag is normalized.
+  {
+    innerHTML: `<span style="color: red ! IMPORTANT">text</span>`,
+    normalizedResult: `<span style="color: red !important;">text</span>`,
+    description: "the !important flag should be normalized"
+  },
+  // Numbers are serialized in their shortest form.
+  {
+    innerHTML: `<span style="width: 0.50px; height: +1px; line-height: 1e1px">text</span>`,
+    normalizedResult: `<span style="width: 0.5px; height: 1px; line-height: 10px;">text</span>`,
+    description: "numbers should be normalized"
+  },
+  // Unitless zero lengths get a unit.
+  {
+    innerHTML: `<span style="margin: 0">text</span>`,
+    normalizedResult: `<span style="margin: 0px;">text</span>`,
+    description: "unitless zero should be serialized with a unit"
+  },
+  // calc() is simplified.
+  {
+    innerHTML: `<span style="width: calc(1px + 2px)">text</span>`,
+    normalizedResult: `<span style="width: calc(3px);">text</span>`,
+    description: "calc() should be simplified"
+  },
+  // Other color syntaxes are normalized as well.
+  {
+    innerHTML: `<span style="color: #F00; background-color: rgb(0,128,0)">text</span>`,
+    normalizedResult: `<span style="color: rgb(255, 0, 0); background-color: rgb(0, 128, 0);">text</span>`,
+    description: "short hex and rgb() colors should be normalized"
+  },
+  {
+    innerHTML: `<span style="color: hsl(0, 100%, 50%)">text</span>`,
+    normalizedResult: `<span style="color: rgb(255, 0, 0);">text</span>`,
+    description: "hsl() colors should be normalized"
+  },
+  {
+    innerHTML: `<span style="color: rgba(255, 0, 0, 1); background-color: rgba(255,0,0,0.5)">text</span>`,
+    normalizedResult: `<span style="color: rgb(255, 0, 0); background-color: rgba(255, 0, 0, 0.5);">text</span>`,
+    description: "rgba() colors should be normalized"
+  },
+  // Longhands covering a whole shorthand are merged into the shorthand.
+  {
+    innerHTML: `<span style="margin-top: 1px; margin-right: 1px; margin-bottom: 1px; margin-left: 1px">text</span>`,
+    normalizedResult: `<span style="margin: 1px;">text</span>`,
+    description: "longhands covering a whole shorthand should be merged"
+  },
+  // Aliases are serialized as the property they alias.
+  {
+    innerHTML: `<span style="-webkit-transform: rotate(45deg)">text</span>`,
+    normalizedResult: `<span style="transform: rotate(45deg);">text</span>`,
+    description: "prefixed aliases should be serialized as the unprefixed property"
+  },
+  {
+    innerHTML: `<span style="word-wrap: break-word">text</span>`,
+    normalizedResult: `<span style="overflow-wrap: break-word;">text</span>`,
+    description: "legacy aliases should be serialized as the standard property"
+  },
+  // CSS escapes are resolved.
+  {
+    innerHTML: `<span style="font-family: \\66oo">text</span>`,
+    normalizedResult: `<span style="font-family: foo;">text</span>`,
+    description: "CSS escapes should be resolved"
+  },
+  // Whitespace in url() is removed.
+  {
+    innerHTML: `<span style="background-image: url( foo.png )">text</span>`,
+    normalizedResult: `<span style='background-image: url("foo.png");'>text</span>`,
+    description: "whitespace in url() should be removed"
+  },
+  // Strings are serialized with double quotes, so the attribute switches to
+  // single quotes instead of escaping them.
+  {
+    innerHTML: `<span style="quotes: 'a' &quot;b&quot;">text</span>`,
+    normalizedResult: `<span style='quotes: "a" "b";'>text</span>`,
+    description: "single quotes in strings should be normalized to double quotes"
+  },
+  // The style attribute of SVG and MathML elements is normalized as well.
+  {
+    innerHTML: `<svg style="color:red"></svg>`,
+    normalizedResult: `<svg style="color: red;"></svg>`,
+    description: "the style attribute of SVG elements should be normalized"
+  },
+  {
+    innerHTML: `<math style="color:red"></math>`,
+    normalizedResult: `<math style="color: red;"></math>`,
+    description: "the style attribute of MathML elements should be normalized"
+  },
+];
+
+function encodeNode(aNode) {
+  const encoder = SpecialPowers.Cu.createHTMLCopyEncoder();
+  // Use the OutputLFLineBreak flag to avoid the platform's default line break
+  // in the result, so the test can pass on all platforms.
+  encoder.init(
+    document,
+    "text/html",
+    de.OutputLFLineBreak | de.OutputSelectionOnly
+  );
+  encoder.setNode(aNode);
+  return encoder.encodeToString();
+}
+
+add_setup(async function init() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.serializer.normalize_inline_style_when_copying.enabled", false]],
+  });
+});
+
+[true, false].forEach((pref) => {
+  TESTS.forEach((test) => {
+    add_task(async function test_inline_style() {
+      info(`Testing ${JSON.stringify(test.innerHTML)} with pref ${ pref ? "enabled" : "disabled" }`);
+      await SpecialPowers.pushPrefEnv({
+        set: [["dom.serializer.normalize_inline_style_when_copying.enabled", pref]],
+      });
+
+      const container = document.getElementById("container");
+      container.innerHTML = test.innerHTML;
+
+      is(
+        encodeNode(container.firstChild),
+        pref ? test.normalizedResult : test.innerHTML,
+        test.description);
+    });
+  });
+});
+
+</script>
+</body>
+</html>

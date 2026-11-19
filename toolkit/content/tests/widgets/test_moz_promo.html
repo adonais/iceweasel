@@ -45,6 +45,11 @@
       >
         <a slot="support-link" href="#learn-more">Learn more</a>
       </moz-promo>
+      <moz-promo id="imageSlotPromo" heading="Image slot">
+        <div slot="image">
+          <img src="" alt="" />
+        </div>
+      </moz-promo>
       <moz-promo
         id="dismissablePromo"
         heading="Dismissable"
@@ -397,6 +402,60 @@
           supportLinkPromo.supportLinkSlot.assignedElements()[0],
           supportLink,
           "Adding the support link back to the promo element updates the slotted element correctly"
+        );
+      });
+
+      add_task(async function test_image_slot() {
+        let imageSlotPromo = document.getElementById("imageSlotPromo");
+        ok(
+          imageSlotPromo,
+          "Promo element should exist when using an element for the image slot"
+        );
+        let slottedImage = imageSlotPromo.querySelector("[slot=image]");
+        let container = imageSlotPromo.shadowRoot.querySelector(".container");
+        is(
+          imageSlotPromo.imageSlot.assignedElements()[0],
+          slottedImage,
+          "Slotted image content is assigned when imageSrc is not set"
+        );
+        is(
+          container.children[0],
+          imageSlotPromo.imageSlot,
+          "The image slot is before the text container when aligned at the start"
+        );
+
+        for (let alignment of ["end", "center"]) {
+          imageSlotPromo.imageAlignment = alignment;
+          await imageSlotPromo.updateComplete;
+          is(
+            container.children[1],
+            imageSlotPromo.imageSlot,
+            `The image slot is after the text container when aligned at the ${alignment}`
+          );
+        }
+
+        imageSlotPromo.imageSrc =
+          "chrome://global/skin/illustrations/about-license.svg";
+        await imageSlotPromo.updateComplete;
+        ok(
+          !imageSlotPromo.imageSlot,
+          "The image slot is not rendered when imageSrc is set"
+        );
+        ok(
+          imageSlotPromo.shadowRoot.querySelector(".image-container"),
+          "The image container is rendered when imageSrc is set"
+        );
+        ok(
+          !slottedImage.assignedSlot,
+          "Slotted image content is not assigned when imageSrc is set"
+        );
+
+        imageSlotPromo.imageSrc = "";
+        await imageSlotPromo.updateComplete;
+        is(
+          imageSlotPromo.imageSlot.assignedElements()[0],
+          slottedImage,
+          "Slotted image content is assigned again when imageSrc is cleared"
         );
       });
     </script>

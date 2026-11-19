@@ -147,124 +147,6 @@ describe("<WallpaperFeatureHighlight>", () => {
     );
   });
 
-  it("renders the World Cup variant when messageType is WorldCupWallpaperHighlight", () => {
-    const state = {
-      ...INITIAL_STATE,
-      Prefs: {
-        ...INITIAL_STATE.Prefs,
-        values: {
-          ...INITIAL_STATE.Prefs.values,
-          "nova.enabled": true,
-        },
-      },
-      Messages: {
-        ...INITIAL_STATE.Messages,
-        messageData: {
-          content: {
-            feature: "WALLPAPER",
-            messageType: "WorldCupWallpaperHighlight",
-          },
-        },
-      },
-    };
-    const { container } = render(
-      <WrapWithProvider state={state}>
-        <WallpaperFeatureHighlight
-          dispatch={jest.fn()}
-          handleDismiss={jest.fn()}
-          handleClick={jest.fn()}
-          handleBlock={jest.fn()}
-        />
-      </WrapWithProvider>
-    );
-    expect(
-      container.querySelector(".wallpaper-feature-highlight.world-cup-variant")
-    ).toBeInTheDocument();
-    expect(container.querySelector(".title").getAttribute("data-l10n-id")).toBe(
-      "newtab-sports-widget-message-wallpapers-title"
-    );
-    expect(
-      container.querySelector(".subtitle").getAttribute("data-l10n-id")
-    ).toBe("newtab-sports-widget-message-wallpapers-body");
-    expect(
-      container.querySelector('source[media="(prefers-color-scheme: light)"]')
-        .srcset
-    ).toContain("wallpaper-callout.png");
-  });
-
-  it("renders the semi-finals copy when messageType is WorldCupSemiFinalWallpaperHighlight", () => {
-    const state = {
-      ...INITIAL_STATE,
-      Prefs: {
-        ...INITIAL_STATE.Prefs,
-        values: {
-          ...INITIAL_STATE.Prefs.values,
-          "nova.enabled": true,
-        },
-      },
-      Messages: {
-        ...INITIAL_STATE.Messages,
-        messageData: {
-          content: {
-            feature: "WALLPAPER",
-            messageType: "WorldCupSemiFinalWallpaperHighlight",
-          },
-        },
-      },
-    };
-    const { container } = render(
-      <WrapWithProvider state={state}>
-        <WallpaperFeatureHighlight
-          dispatch={jest.fn()}
-          handleDismiss={jest.fn()}
-          handleClick={jest.fn()}
-          handleBlock={jest.fn()}
-        />
-      </WrapWithProvider>
-    );
-    expect(
-      container.querySelector(".wallpaper-feature-highlight.world-cup-variant")
-    ).toBeInTheDocument();
-    expect(container.querySelector(".title").getAttribute("data-l10n-id")).toBe(
-      "newtab-sports-widget-message-wallpapers-semifinals-title"
-    );
-    expect(
-      container.querySelector(".subtitle").getAttribute("data-l10n-id")
-    ).toBe("newtab-sports-widget-message-wallpapers-semifinals-body");
-    expect(
-      container.querySelector('source[media="(prefers-color-scheme: light)"]')
-        .srcset
-    ).toContain("wallpaper-callout.png");
-  });
-
-  it("does not apply the World Cup variant outside Nova mode", () => {
-    const state = {
-      ...INITIAL_STATE,
-      Messages: {
-        ...INITIAL_STATE.Messages,
-        messageData: {
-          content: {
-            feature: "WALLPAPER",
-            messageType: "WorldCupWallpaperHighlight",
-          },
-        },
-      },
-    };
-    const { container } = render(
-      <WrapWithProvider state={state}>
-        <WallpaperFeatureHighlight
-          dispatch={jest.fn()}
-          handleDismiss={jest.fn()}
-          handleClick={jest.fn()}
-          handleBlock={jest.fn()}
-        />
-      </WrapWithProvider>
-    );
-    expect(
-      container.querySelector(".wallpaper-feature-highlight.world-cup-variant")
-    ).not.toBeInTheDocument();
-  });
-
   it("deep-links the CTA into the Firefox wallpaper category", () => {
     const dispatch = jest.fn();
     const state = {
@@ -281,7 +163,7 @@ describe("<WallpaperFeatureHighlight>", () => {
         messageData: {
           content: {
             feature: "WALLPAPER",
-            messageType: "WorldCupSemiFinalWallpaperHighlight",
+            messageType: "CustomWallpaperHighlight",
           },
         },
       },
@@ -319,7 +201,7 @@ describe("<WallpaperFeatureHighlight>", () => {
         messageData: {
           content: {
             feature: "WALLPAPER",
-            messageType: "WorldCupWallpaperHighlight",
+            messageType: "CustomWallpaperHighlight",
             wallpaperCategory: "celestial",
           },
         },
@@ -358,7 +240,7 @@ describe("<WallpaperFeatureHighlight>", () => {
         messageData: {
           content: {
             feature: "WALLPAPER",
-            messageType: "WorldCupWallpaperHighlight",
+            messageType: "CustomWallpaperHighlight",
             wallpaperCategory: null,
           },
         },
@@ -397,7 +279,7 @@ describe("<WallpaperFeatureHighlight>", () => {
         messageData: {
           content: {
             feature: "WALLPAPER",
-            messageType: "WorldCupWallpaperHighlight",
+            messageType: "CustomWallpaperHighlight",
             wallpaperCategory: "not-a-real-category",
           },
         },
@@ -436,7 +318,7 @@ describe("<WallpaperFeatureHighlight>", () => {
         messageData: {
           content: {
             feature: "WALLPAPER",
-            messageType: "WorldCupWallpaperHighlight",
+            messageType: "CustomWallpaperHighlight",
             wallpaperCategory: "custom-wallpaper",
           },
         },

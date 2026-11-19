@@ -16,6 +16,8 @@ dictionary WebTransportOptions {
   boolean requireUnreliable = false;
   sequence<WebTransportHash> serverCertificateHashes;
   WebTransportCongestionControl congestionControl = "default";
+  [EnforceRange] unsigned short? anticipatedConcurrentIncomingUnidirectionalStreams = null;
+  [EnforceRange] unsigned short? anticipatedConcurrentIncomingBidirectionalStreams = null;
   sequence<DOMString> protocols = [];
   // The spec says "= {}", but the WebIDL parser cannot coerce {} to a union
   // containing a record.  See bug 2081884.
@@ -90,6 +92,8 @@ interface WebTransport {
   readonly attribute Promise<undefined> ready;
   readonly attribute WebTransportReliabilityMode reliability;
   readonly attribute WebTransportCongestionControl congestionControl;
+  attribute [EnforceRange] unsigned short? anticipatedConcurrentIncomingUnidirectionalStreams;
+  attribute [EnforceRange] unsigned short? anticipatedConcurrentIncomingBidirectionalStreams;
   [SameObject] readonly attribute Headers? responseHeaders;
   readonly attribute DOMString protocol;
   readonly attribute Promise<WebTransportCloseInfo> closed;

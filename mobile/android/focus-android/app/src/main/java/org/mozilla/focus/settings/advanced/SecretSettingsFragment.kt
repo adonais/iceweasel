@@ -56,6 +56,12 @@ class SecretSettingsFragment : BaseSettingsFragment(), SharedPreferences.OnShare
                     }
                 }
         }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_use_search_config_v3).apply {
+            isVisible = true
+            isChecked = context.settings.useSearchConfigV3
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {

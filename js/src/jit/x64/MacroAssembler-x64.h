@@ -712,8 +712,8 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   FaultingCodeRange store64(Register64 src, const BaseIndex& address) {
     return storePtr(src.reg, address);
   }
-  void store64(Imm64 imm, Address address) {
-    storePtr(ImmWord(imm.value), address);
+  FaultingCodeRange store64(Imm64 imm, Address address) {
+    return storePtr(ImmWord(imm.value), address);
   }
   void store64(Imm64 imm, const BaseIndex& address) {
     storePtr(ImmWord(imm.value), address);

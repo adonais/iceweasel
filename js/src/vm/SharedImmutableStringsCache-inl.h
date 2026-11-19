@@ -14,7 +14,8 @@ template <typename IntoOwnedChars>
     const char* chars, size_t length, IntoOwnedChars intoOwnedChars) {
   MOZ_ASSERT(inner_);
   MOZ_ASSERT(chars);
-  Hasher::Lookup lookup(Hasher::hashLongString(chars, length), chars, length);
+  HashNumber hash = Hasher::hashLongString(chars, length);
+  Hasher::Lookup lookup(hash, chars, length);
 
   auto locked = inner_->lock();
   auto entry = locked->set.lookupForAdd(lookup);
@@ -25,7 +26,7 @@ template <typename IntoOwnedChars>
     }
     MOZ_ASSERT(ownedChars.get() == chars ||
                memcmp(ownedChars.get(), chars, length) == 0);
-    auto box = StringBox::Create(std::move(ownedChars), length, inner_);
+    auto box = StringBox::Create(std::move(ownedChars), length, hash, inner_);
     if (!box || !locked->set.add(entry, std::move(box))) {
       return SharedImmutableString();
     }
@@ -58,7 +59,7 @@ SharedImmutableStringsCache::getOrCreate(
         memcmp(ownedTwoByteChars.get(), chars, length * sizeof(char16_t)) == 0);
     OwnedChars ownedChars(reinterpret_cast<char*>(ownedTwoByteChars.release()));
     auto box = StringBox::Create(std::move(ownedChars),
-                                 length * sizeof(char16_t), inner_);
+                                 length * sizeof(char16_t), hash, inner_);
     if (!box || !locked->set.add(entry, std::move(box))) {
       return SharedImmutableTwoByteString();
     }

@@ -434,6 +434,13 @@ add_task(async function test_chat_with_url_opens_sidebar() {
       AIWindowUI.isSidebarOpen(newTab.documentGlobal),
       "Sidebar should be open in the new tab"
     );
+    Assert.equal(
+      newTab.documentGlobal.document
+        .getElementById("ai-window-browser")
+        .getAttribute("data-conversation-id"),
+      chat.id,
+      "Sidebar should show the reopened chat"
+    );
 
     // Clean up
     AIWindowUI.closeSidebar(newTab.documentGlobal);

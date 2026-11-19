@@ -262,7 +262,7 @@ async function testMouseClick(node, prefValue) {
 
 async function testToggleWebExtensions() {
   const disabledExtensions = new Set();
-  const toggleableWebExtensions = toolbox.listWebExtensions();
+  const toggleableWebExtensions = toolbox.listWebExtensions().toArray();
 
   function toggleWebExtension(node) {
     node.scrollIntoView();
@@ -300,6 +300,7 @@ async function testToggleWebExtensions() {
   function assertAllExtensionsEnabled() {
     const disabledUUIDs = toolbox
       .listWebExtensions()
+      .toArray()
       .filter(ext => !toolbox.isWebExtensionEnabled(ext.uuid))
       .map(ext => ext.uuid);
 
@@ -377,12 +378,15 @@ async function testToggleWebExtensions() {
   // ones have been unregistered, and the remaining onea are still listed.
   for (const ext of toggleableWebExtensions) {
     ok(
-      !!toolbox.listWebExtensions().length,
+      !!toolbox.listWebExtensions().toArray().length,
       "There should still be extensions registered"
     );
     toolbox.unregisterWebExtension(ext.uuid);
 
-    const registeredUUIDs = toolbox.listWebExtensions().map(item => item.uuid);
+    const registeredUUIDs = toolbox
+      .listWebExtensions()
+      .toArray()
+      .map(item => item.uuid);
     ok(
       !registeredUUIDs.includes(ext.uuid),
       `the WebExtension "${ext.name}" should have been unregistered`
@@ -407,7 +411,7 @@ async function testToggleWebExtensions() {
   }
 
   is(
-    toolbox.listWebExtensions().length,
+    toolbox.listWebExtensions().toArray().length,
     0,
     "All WebExtensions have been unregistered"
   );

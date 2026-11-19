@@ -43,9 +43,13 @@ add_task(async function () {
     observerNotified = true;
   }, "browser-set-toolbar-visibility");
 
-  await promiseMigration(migrator, MigrationUtils.resourceTypes.BOOKMARKS, {
-    id: "Default",
-  });
+  let availableQuantity = await promiseMigration(
+    migrator,
+    MigrationUtils.resourceTypes.BOOKMARKS,
+    {
+      id: "Default",
+    }
+  );
   PlacesUtils.observers.removeListener(["bookmark-added"], listener);
 
   // Check the bookmarks have been imported to all the expected parents.
@@ -57,6 +61,11 @@ add_task(async function () {
     MigrationUtils._importQuantities.bookmarks,
     itemsSeen.bookmarks + itemsSeen.folders,
     "Telemetry reporting correct."
+  );
+  Assert.equal(
+    availableQuantity,
+    itemsSeen.bookmarks + itemsSeen.folders,
+    "Available bookmarks and folders reported correctly."
   );
   Assert.ok(observerNotified, "The observer should be notified upon migration");
 });

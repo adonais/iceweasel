@@ -314,7 +314,7 @@ static bool LaunchPowershell(const wchar_t* command,
 }
 
 static bool FindPowershell(mozilla::UniquePtr<wchar_t[]>& powershellPath) {
-  auto exePath = mozilla::MakeUnique<wchar_t[]>(MAX_PATH + 1);
+  auto exePath = std::make_unique<wchar_t[]>(MAX_PATH + 1);
   if (!ConstructSystem32Path(L"WindowsPowershell\\v1.0\\powershell.exe",
                              exePath.get(), MAX_PATH + 1)) {
     LOG_ERROR_MESSAGE(L"Failed to construct path to powershell.exe");

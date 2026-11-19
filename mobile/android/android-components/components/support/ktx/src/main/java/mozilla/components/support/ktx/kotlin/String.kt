@@ -504,3 +504,16 @@ fun String.truncateMiddle(maxLength: Int, ellipsis: String = "…"): String {
     val end = takeLast(maxLength - ellipsis.length - half)
     return "$start$ellipsis$end"
 }
+
+/**
+ * Returns this camelCase or PascalCase string in snake_case: every uppercase character after the first is preceded by
+ * an underscore, and every character is lowercased.
+ */
+fun String.toSnakeCase(): String = buildString {
+    this@toSnakeCase.forEachIndexed { index, char ->
+        if (index > 0 && char.isUpperCase()) {
+            append('_')
+        }
+        append(char.lowercaseChar())
+    }
+}

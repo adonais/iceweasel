@@ -260,10 +260,23 @@ interface nsIAlertCallbacks : nsISupports
   // Called when the alert is shown.
   void onAlertShow();
 
+  cenum ApplicationState : 8 {
+    // The application state could not be determined
+    UNKNOWN,
+    // Application was in the foreground
+    FOREGROUND,
+    // Application was in the background with browser windows open
+    BACKGROUND_WINDOWS,
+    // Application had no browser windows open
+    BACKGROUND_NO_WINDOWS
+  };
+
   // Called when the alert is clicked.
   //
   // @param aAction The action that was clicked, if any.
-  void onAlertClick([optional] in nsIAlertAction aAction);
+  // @param aState The state of the application before the alert was clicked.
+  void onAlertClick([optional] in nsIAlertAction aAction,
+                    [optional] in nsIAlertCallbacks_ApplicationState aState);
 
   // Called when the alert is dismissed from the foreground and entered the
   // notification center.

@@ -360,7 +360,7 @@ TCPConnection::TCPConnection(const Environment& env,
       outgoing_(socket == nullptr),
       connection_pending_(false),
       pretending_to_be_writable_(false),
-      reconnection_timeout_(kConnectionWriteConnectTimeout.ms()) {
+      reconnection_timeout_(kConnectionWriteConnectTimeout) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK_EQ(port()->GetProtocol(),
                 PROTO_TCP);  // Needs to be TCPPort.
@@ -541,11 +541,11 @@ void TCPConnection::OnClose(AsyncPacketSocket* socket, int error) {
     network_thread()->PostDelayedTask(
         SafeTask(network_safety_.flag(),
                  [this]() {
-                   if (pretending_to_be_writable_) {
+                   if (pretending_to_be_writable_ && port() != nullptr) {
                      Destroy();
                    }
                  }),
-        TimeDelta::Millis(reconnection_timeout()));
+        reconnection_timeout());
   } else if (!pretending_to_be_writable_) {
     // OnClose could be called when the underneath socket times out during the
     // initial connect() (i.e. `pretending_to_be_writable_` is false) . We have

@@ -688,6 +688,8 @@ struct Vec<uint8_t> final {
     return ret;
   }
 
+  void Clear() { inner.length = 0; }
+
   void SetEmpty() {
     // We need to ensure that (data, capacity, length) always remain valid
     // to be passed to Vec::from_raw_parts. In particular, this requires that
@@ -831,6 +833,7 @@ enum class WebRenderError : int8_t {
   VIDEO_SW_OVERLAY,
   DCOMP_TEXTURE_OVERLAY,
   EXCESSIVE_RESETS,
+  SOFTWARE_D3D11,
 
   Sentinel /* this must be last for serialization purposes. */
 };

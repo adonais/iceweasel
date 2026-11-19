@@ -108,7 +108,7 @@ nsresult txStylesheetCompiler::startElement(const char16_t* aName,
 
   UniquePtr<txStylesheetAttr[]> atts;
   if (aAttrCount > 0) {
-    atts = MakeUnique<txStylesheetAttr[]>(aAttrCount);
+    atts = std::make_unique<txStylesheetAttr[]>(aAttrCount);
   }
 
   bool hasOwnNamespaceMap = false;
@@ -291,7 +291,7 @@ nsresult txStylesheetCompiler::endElement() {
   for (i = mInScopeVariables.Length() - 1; i >= 0; --i) {
     txInScopeVariable& var = mInScopeVariables[i];
     if (!--(var.mLevel)) {
-      addInstruction(MakeUnique<txRemoveVariable>(var.mName));
+      addInstruction(std::make_unique<txRemoveVariable>(var.mName));
 
       mInScopeVariables.RemoveElementAt(i);
     }
@@ -408,8 +408,7 @@ nsresult txStylesheetCompiler::ensureNewElementContext() {
     return NS_OK;
   }
 
-  UniquePtr<txElementContext> context =
-      std::make_unique<txElementContext>(*mElementContext);
+  auto context = std::make_unique<txElementContext>(*mElementContext);
   pushObject(mElementContext.release());
   mElementContext = std::move(context);
 
@@ -496,7 +495,7 @@ nsresult txStylesheetCompilerState::init(const nsAString& aStylesheetURI,
     mIsTopCompiler = true;
   }
 
-  mElementContext = MakeUnique<txElementContext>(aStylesheetURI);
+  mElementContext = std::make_unique<txElementContext>(aStylesheetURI);
 
   // Push the "old" txElementContext
   pushObject(nullptr);
@@ -530,7 +529,7 @@ void txStylesheetCompilerState::popSorter() {
 
 void txStylesheetCompilerState::pushChooseGotoList() {
   pushObject(mChooseGotoList.release());
-  mChooseGotoList = MakeUnique<txList>();
+  mChooseGotoList = std::make_unique<txList>();
 }
 
 void txStylesheetCompilerState::popChooseGotoList() {

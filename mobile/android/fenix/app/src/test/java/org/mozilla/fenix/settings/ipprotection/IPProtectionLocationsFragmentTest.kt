@@ -69,7 +69,7 @@ class IPProtectionLocationsFragmentTest {
     fun `GIVEN the tapped location is already selected WHEN it is selected again THEN no location change is dispatched`() {
         fragment.handleSelectedLocation(GERMANY, storeWith(GERMANY), navController)
 
-        captureMiddleWare.assertNotDispatched(IPProtectionAction.LocationChanged::class)
+        captureMiddleWare.assertNotDispatched(IPProtectionAction.LocationAction.LocationChanged::class)
     }
 
     @OptIn(ExperimentalAndroidComponentsApi::class)

@@ -91,6 +91,16 @@ class Settings(private val context: Context) : PreferencesHolder {
             default = FocusNimbus.features.remoteSearchConfiguration.value().enabled,
         )
 
+    /**
+     * Indicates whether to read search configuration from the `search-config-v3` Remote Settings collection instead of
+     * `search-config-v2`.
+     */
+    var useSearchConfigV3 by
+        booleanPreference(
+            key = getPreferenceKey(R.string.pref_key_use_search_config_v3),
+            default = FocusNimbus.features.searchConfigV3.value().enabled,
+        )
+
     /** Checks if remote debugging via USB is enabled. Defaults to false. */
     fun shouldEnableRemoteDebugging(): Boolean =
         preferences.getBoolean(

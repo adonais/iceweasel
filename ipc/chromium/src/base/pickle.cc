@@ -258,7 +258,7 @@ bool Pickle::ReadString(PickleIterator* iter, std::string* result) const {
   int len;
   if (!ReadLength(iter, &len)) return false;
 
-  auto chars = mozilla::MakeUnique<char[]>(len);
+  auto chars = std::make_unique<char[]>(len);
   if (!ReadBytesInto(iter, chars.get(), len)) {
     return false;
   }
@@ -275,7 +275,7 @@ bool Pickle::ReadWString(PickleIterator* iter, std::wstring* result) const {
   // Avoid integer multiplication overflow.
   if (len > INT_MAX / static_cast<int>(sizeof(wchar_t))) return false;
 
-  auto chars = mozilla::MakeUnique<wchar_t[]>(len);
+  auto chars = std::make_unique<wchar_t[]>(len);
   if (!ReadBytesInto(iter, chars.get(), len * sizeof(wchar_t))) {
     return false;
   }

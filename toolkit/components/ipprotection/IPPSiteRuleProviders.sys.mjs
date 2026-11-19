@@ -319,19 +319,35 @@ export class MatchPatternPrefRule extends SiteRuleProvider {
  * This is the only writable provider. Permissions related UI (eg. panels and
  * dialogs) already handles changes to ipp-vpn; this class exists so that
  * non-permissions related UI can update it too.
+ *
+ * While the site inclusions feature is on, every write goes through setRule,
+ * so rules are kept on the https origin without a leading "www." and
+ * "http://www.example.com" and "https://example.com" share one rule. Entries
+ * stored before that are normalized once, the first time the feature is seen
+ * on; turning it off lets exact entries back in, so the pass runs again the
+ * next time it is turned on.
  */
 export class IPPPermissionRuleProvider extends SiteRuleProvider {
   static #PERM_NAME = "ipp-vpn";
+  static #SITE_INCLUSIONS_PREF = "browser.ipProtection.features.siteInclusions";
+  static #NORMALIZED_PREF = "browser.ipProtection.siteRulesNormalized";
 
   #observer = null;
+  #normalizing = false;
 
   init() {
+    this.#maybeNormalizeStore();
+
     // ES6 classes that extend EventTarget cannot be coerced into nsIObserver.
     // Work around this by using a function as the observer.
     this.#observer = (subject, topic, data) => {
       this.observe(subject, topic, data);
     };
     Services.obs.addObserver(this.#observer, "perm-changed");
+    Services.prefs.addObserver(
+      IPPPermissionRuleProvider.#SITE_INCLUSIONS_PREF,
+      this.#observer
+    );
     this.#recordCounts();
   }
 
@@ -340,10 +356,19 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
       return;
     }
     Services.obs.removeObserver(this.#observer, "perm-changed");
+    Services.prefs.removeObserver(
+      IPPPermissionRuleProvider.#SITE_INCLUSIONS_PREF,
+      this.#observer
+    );
     this.#observer = null;
   }
 
   observe(subject, topic, data) {
+    if (topic === "nsPref:changed") {
+      this.#maybeNormalizeStore();
+      return;
+    }
+
     if (topic !== "perm-changed") {
       return;
     }
@@ -388,16 +413,17 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
       return;
     }
 
+    const normalized = this.#normalize(principal);
     if (rule === IPPPrincipalRules.DEFAULT) {
       Services.perms.removeFromPrincipal(
-        principal,
+        normalized,
         IPPPermissionRuleProvider.#PERM_NAME
       );
       return;
     }
 
     Services.perms.addFromPrincipal(
-      principal,
+      normalized,
       IPPPermissionRuleProvider.#PERM_NAME,
       rule === IPPPrincipalRules.INCLUDED
         ? Ci.nsIPermissionManager.ALLOW_ACTION
@@ -426,8 +452,8 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
    * try to remove a subdomain as an exclusion when the site doesn't exist in ipp-vpn
    * (see Bug 2016676).
    *
-   * Eg. if we enter "example.com" in the dialog, "www.example.com" and
-   * "subdomain.example.com" won't be considered exclusions.
+   * Eg. if we enter "example.com" in the dialog, "subdomain.example.com" won't
+   * be considered an exclusion.
    *
    * @param {nsIPrincipal} principal
    *  The principal that we want to check is saved in ipp-vpn.
@@ -436,12 +462,121 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
    *  The permission object for a site exception, or null if unavailable.
    */
   getPermissionObject(principal) {
-    let permissionObject = Services.perms.getPermissionObject(
-      principal,
+    return Services.perms.getPermissionObject(
+      this.#normalize(principal),
       IPPPermissionRuleProvider.#PERM_NAME,
       true /* exactHost */
     );
-    return permissionObject;
+  }
+
+  /**
+   * Follows the site inclusions pref, normalizing the store the first time it
+   * is seen on.
+   */
+  #maybeNormalizeStore() {
+    this.#normalizing = Services.prefs.getBoolPref(
+      IPPPermissionRuleProvider.#SITE_INCLUSIONS_PREF,
+      false
+    );
+    if (!this.#normalizing) {
+      Services.prefs.clearUserPref(IPPPermissionRuleProvider.#NORMALIZED_PREF);
+      return;
+    }
+    if (
+      !Services.prefs.getBoolPref(
+        IPPPermissionRuleProvider.#NORMALIZED_PREF,
+        false
+      )
+    ) {
+      this.#normalizePermissionStore();
+      Services.prefs.setBoolPref(
+        IPPPermissionRuleProvider.#NORMALIZED_PREF,
+        true
+      );
+    }
+  }
+
+  /**
+   * Moves every stored rule onto its normalized principal. When several
+   * collapse onto one, the most recently modified wins.
+   */
+  #normalizePermissionStore() {
+    const winners = new Map();
+    for (const perm of Services.perms.getAllByTypes([
+      IPPPermissionRuleProvider.#PERM_NAME,
+    ])) {
+      const stored = perm.principal;
+      const principal = this.#normalize(stored);
+      if (principal !== stored) {
+        Services.perms.removePermission(perm);
+      }
+      const winner = winners.get(principal.origin);
+      if (!winner || winner.perm.modificationTime < perm.modificationTime) {
+        winners.set(principal.origin, { principal, stored, perm });
+      }
+    }
+
+    for (const { principal, stored, perm } of winners.values()) {
+      if (principal !== stored) {
+        Services.perms.addFromPrincipal(
+          principal,
+          IPPPermissionRuleProvider.#PERM_NAME,
+          perm.capability,
+          perm.expireType,
+          perm.expireTime
+        );
+      }
+    }
+  }
+
+  /**
+   * The principal a rule for this one is stored on: while normalizing, https
+   * with its host passed through #stripWww. Other principals, and every
+   * principal while not normalizing, are returned as they are.
+   *
+   * @param {nsIPrincipal} principal
+   * @returns {nsIPrincipal}
+   */
+  #normalize(principal) {
+    if (
+      !this.#normalizing ||
+      !principal?.isContentPrincipal ||
+      !(principal.schemeIs("http") || principal.schemeIs("https"))
+    ) {
+      return principal;
+    }
+    const host = IPPPermissionRuleProvider.#stripWww(principal.host);
+    if (principal.schemeIs("https") && host === principal.host) {
+      return principal;
+    }
+    const uri = principal.URI.mutate()
+      .setScheme("https")
+      .setHost(host)
+      .finalize();
+    return Services.scriptSecurityManager.createContentPrincipal(
+      uri,
+      principal.originAttributes
+    );
+  }
+
+  /**
+   * The host without a leading "www.", unless nothing or only a public suffix
+   * would remain (e.g. "www.co.uk").
+   *
+   * @param {string} host
+   * @returns {string}
+   */
+  static #stripWww(host) {
+    if (!host.startsWith("www.")) {
+      return host;
+    }
+    const bareHost = host.slice("www.".length);
+    if (!bareHost) {
+      return host;
+    }
+    const isPublicSuffix =
+      Services.eTLD.getPublicSuffixFromHost(bareHost) === bareHost;
+    return isPublicSuffix ? host : bareHost;
   }
 
   #recordCounts() {

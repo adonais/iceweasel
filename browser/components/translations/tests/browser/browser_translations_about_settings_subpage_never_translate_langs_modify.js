@@ -10,10 +10,7 @@
 add_task(async function test_never_translate_languages_add_and_remove() {
   const { cleanup, translationsSettingsTestUtils } =
     await setupAboutPreferences(LANGUAGE_PAIRS, {
-      prefs: [
-        ["browser.settings-redesign.enabled", true],
-        [NEVER_TRANSLATE_LANGS_PREF, ""],
-      ],
+      prefs: [[NEVER_TRANSLATE_LANGS_PREF, ""]],
     });
 
   const document = gBrowser.selectedBrowser.contentDocument;
@@ -207,10 +204,7 @@ add_task(async function test_never_translate_languages_add_and_remove() {
 add_task(async function test_never_translate_languages_invalid_tags() {
   const { cleanup, translationsSettingsTestUtils } =
     await setupAboutPreferences(LANGUAGE_PAIRS, {
-      prefs: [
-        ["browser.settings-redesign.enabled", true],
-        [NEVER_TRANSLATE_LANGS_PREF, "es,fr,uk"],
-      ],
+      prefs: [[NEVER_TRANSLATE_LANGS_PREF, "es,fr,uk"]],
     });
 
   const document = gBrowser.selectedBrowser.contentDocument;
@@ -284,7 +278,6 @@ add_task(async function test_never_translate_languages_stealing() {
   const { cleanup, translationsSettingsTestUtils } =
     await setupAboutPreferences(LANGUAGE_PAIRS, {
       prefs: [
-        ["browser.settings-redesign.enabled", true],
         [ALWAYS_TRANSLATE_LANGS_PREF, "es,fr,uk"],
         [NEVER_TRANSLATE_LANGS_PREF, ""],
       ],

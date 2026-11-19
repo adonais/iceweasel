@@ -231,16 +231,6 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecWin::MakePrintTarget() {
   NS_ASSERTION(mDevMode || mOutputFormat == nsIPrintSettings::kOutputFormatPDF,
                "DevMode can't be NULL here unless we're printing to PDF.");
   if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
-    double width, height;
-    mPrintSettings->GetEffectiveSheetSize(&width, &height);
-    if (width <= 0 || height <= 0) {
-      return nullptr;
-    }
-
-    // convert twips to points
-    width /= TWIPS_PER_POINT_FLOAT;
-    height /= TWIPS_PER_POINT_FLOAT;
-
     auto stream = [&]() -> nsCOMPtr<nsIOutputStream> {
       if (mPrintSettings->GetOutputDestination() ==
           nsIPrintSettings::kOutputDestinationStream) {
@@ -267,7 +257,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecWin::MakePrintTarget() {
       return stream;
     }();
 
-    return PrintTargetSkPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+    return PrintTargetSkPDF::CreateOrNull(stream);
   }
 
   if (mDevMode) {

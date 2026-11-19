@@ -22,12 +22,12 @@ void CoalescedMouseData::Coalesce(const WidgetMouseEvent& aMouseOrPointerEvent,
     mCoalescedInputEvent = [&]() -> UniquePtr<WidgetMouseEvent> {
       if (aMouseOrPointerEvent.mClass == ePointerEventClass) {
         MOZ_DIAGNOSTIC_ASSERT(aMouseOrPointerEvent.AsPointerEvent());
-        return MakeUnique<WidgetPointerEvent>(
+        return std::make_unique<WidgetPointerEvent>(
             static_cast<const WidgetPointerEvent&>(
                 *aMouseOrPointerEvent.AsPointerEvent()));
       }
       MOZ_DIAGNOSTIC_ASSERT(!aMouseOrPointerEvent.AsPointerEvent());
-      return MakeUnique<WidgetMouseEvent>(aMouseOrPointerEvent);
+      return std::make_unique<WidgetMouseEvent>(aMouseOrPointerEvent);
     }();
     mCoalescedInputEvent->mCallbackId = aMouseOrPointerEvent.mCallbackId;
     mGuid = aGuid;

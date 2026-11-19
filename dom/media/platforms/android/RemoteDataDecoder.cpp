@@ -272,7 +272,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__);
     }
     JavaCallbacksSupport::AttachNative(
-        mJavaCallbacks, mozilla::MakeUnique<CallbacksSupport>(this));
+        mJavaCallbacks, std::make_unique<CallbacksSupport>(this));
 
     mJavaDecoder = java::CodecProxy::Create(
         false,  // false indicates to create a decoder and true denotes encoder
@@ -795,7 +795,7 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__);
     }
     JavaCallbacksSupport::AttachNative(
-        mJavaCallbacks, mozilla::MakeUnique<CallbacksSupport>(this));
+        mJavaCallbacks, std::make_unique<CallbacksSupport>(this));
 
     mJavaDecoder = java::CodecProxy::Create(false, mFormat, nullptr,
                                             mJavaCallbacks, mDrmStubId);

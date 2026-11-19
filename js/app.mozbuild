@@ -15,6 +15,7 @@ DIRS += [
     "/config/external/fdlibm",
     "/config/external/nspr",
     "/config/external/zlib",
+    "/js",
     "/memory",
     "/mfbt",
     "/mozglue",

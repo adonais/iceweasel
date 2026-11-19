@@ -35,14 +35,7 @@ async function test_app_update_auto(expectedEnabled, expectedLocked) {
     `Setting auto update ${expectedLocked ? "should" : "should not"} fail`
   );
 
-  let settingsRedesignEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
-  );
-  let prefUrl = settingsRedesignEnabled
-    ? "about:preferences#about"
-    : "about:preferences";
-  await BrowserTestUtils.withNewTab(prefUrl, browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#about", browser => {
     let settingControl = browser.contentDocument.getElementById(
       "setting-control-installationFieldset"
     );

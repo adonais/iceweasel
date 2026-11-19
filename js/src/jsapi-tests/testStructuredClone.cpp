@@ -22,7 +22,7 @@ BEGIN_TEST(testStructuredClone_invalidLength) {
   CHECK(buf->Init(7));
   RootedValue clone(cx);
   JS::CloneDataPolicy policy;
-  CHECK(!JS_ReadStructuredClone(cx, *buf, JS_STRUCTURED_CLONE_VERSION,
+  CHECK(!JS_ReadStructuredClone(cx, *buf,
                                 JS::StructuredCloneScope::DifferentProcess,
                                 &clone, policy, nullptr, nullptr));
   return true;
@@ -202,9 +202,11 @@ bool testStructuredCloneCopy(JS::StructuredCloneScope scope) {
 
 bool clone(JS::StructuredCloneScope scope, JS::HandleValue v1,
            JS::MutableHandleValue v2) {
-  JSAutoStructuredCloneBuffer clonedBuffer(scope, nullptr, nullptr);
-  CHECK(clonedBuffer.write(cx, v1));
-  CHECK(clonedBuffer.read(cx, v2));
+  JSStructuredCloneData data(scope);
+  CHECK(JS_WriteStructuredClone(cx, v1, &data, scope, JS::CloneDataPolicy(),
+                                nullptr, nullptr, JS::UndefinedHandleValue));
+  CHECK(JS_ReadStructuredClone(cx, data, scope, v2, JS::CloneDataPolicy(),
+                               nullptr, nullptr));
   return true;
 }
 END_TEST(testStructuredClone_externalArrayBufferDifferentThreadOrProcess)

@@ -213,7 +213,7 @@
       /** toolbarbutton **/
       --toolbarbutton-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
       --toolbarbutton-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
-      --toolbarbutton-icon-fill: light-dark(var(--color-gray-70), var(--color-gray-0));
+      --toolbarbutton-icon-fill: light-dark(color-mix(in srgb, currentColor 69%, transparent), currentColor);
       --toolbarbutton-icon-fill-attention: light-dark(var(--color-blue-60), var(--color-cyan-30));
       --toolbarbutton-icon-fill-attention-text: light-dark(var(--color-gray-20), var(--color-gray-90));
 
@@ -240,7 +240,7 @@
         --button-background-color-ghost: var(--button-background-color);
         --button-border-color: var(--color-accent-primary);
         --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
-        --button-text-color-menu-selected: light-dark(var(--button-text-color-ghost-selected), var(--button-text-color-selected));
+        --button-text-color-menu-selected: var(--button-text-color-ghost-selected);
         --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-70));
 
         /** color **/

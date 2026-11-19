@@ -395,12 +395,12 @@ nsEventStatus TextEventDispatcher::DispatchEvent(
     switch (aEvent.mClass) {
       case eCompositionEventClass:
         MOZ_ASSERT(aEvent.AsCompositionEvent());
-        mPendingEvents.AppendElement(MakeUnique<WidgetCompositionEvent>(
+        mPendingEvents.AppendElement(std::make_unique<WidgetCompositionEvent>(
             static_cast<WidgetCompositionEvent&>(aEvent)));
         return nsEventStatus_eIgnore;
       case eSelectionEventClass:
         MOZ_ASSERT(aEvent.AsSelectionEvent());
-        mPendingEvents.AppendElement(MakeUnique<WidgetSelectionEvent>(
+        mPendingEvents.AppendElement(std::make_unique<WidgetSelectionEvent>(
             static_cast<WidgetSelectionEvent&>(aEvent)));
         return nsEventStatus_eIgnore;
       case eContentCommandEventClass: {
@@ -419,7 +419,7 @@ nsEventStatus TextEventDispatcher::DispatchEvent(
         }
         // Otherwise, we need to batch the command.
         mPendingEvents.AppendElement(
-            MakeUnique<WidgetContentCommandEvent>(contentCommandEvent));
+            std::make_unique<WidgetContentCommandEvent>(contentCommandEvent));
         // However, the caller may need to want to know whether the command is
         // enabled. Therefore, we need to dispatch the event with making it to
         // check only the enabled state.
@@ -479,8 +479,8 @@ nsEventStatus TextEventDispatcher::DispatchInputEvent(
     WidgetKeyboardEvent* const pendingKeyboardEvent =
         static_cast<WidgetKeyboardEvent*>(
             mPendingEvents
-                .AppendElement(
-                    MakeUnique<WidgetKeyboardEvent>(*aEvent.AsKeyboardEvent()))
+                .AppendElement(std::make_unique<WidgetKeyboardEvent>(
+                    *aEvent.AsKeyboardEvent()))
                 ->get());
     // The native key event may be deleted before the batch ends. E.g., when
     // 2 native key events are nested by a API call or something and the

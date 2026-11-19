@@ -112,7 +112,7 @@ Design
       - 1proc -> !e10s
 
       NOTE: multiple variants are stored in the field test_variant concatenated by '+',
-      for example: "socketprocess_networking+!fission"
+      for example: "swgl+!fission"
 
    b. Variables used in JavaScript are set:
       https://searchfox.org/firefox-main/source/layout/tools/reftest/manifest.sys.mjs

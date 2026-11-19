@@ -80,3 +80,6 @@ random-if(gtkWidget) == font-text-styles-floater.html font-text-styles-floater-r
 == 1404167-2.html 1404167-2-ref.html
 == 1404167-3.html 1404167-3-ref.html
 == 1404167-4.html 1404167-4-ref.html
+
+test-pref(layout.css.floating-first-letter.tight-glyph-bounds,-1) ref-pref(layout.css.floating-first-letter.tight-glyph-bounds,1) == 2084734.html 2084734.html
+test-pref(layout.css.floating-first-letter.tight-glyph-bounds,0) ref-pref(layout.css.floating-first-letter.tight-glyph-bounds,1) != 2084734.html 2084734.html

@@ -12,10 +12,7 @@ add_task(async function test_offer_translations_checkbox_toggle() {
   const PREF_NAME = "browser.translations.automaticallyPopup";
 
   const { cleanup } = await setupAboutPreferences(LANGUAGE_PAIRS, {
-    prefs: [
-      ["browser.settings-redesign.enabled", true],
-      [PREF_NAME, true],
-    ],
+    prefs: [[PREF_NAME, true]],
   });
 
   const document = gBrowser.selectedBrowser.contentDocument;
@@ -96,10 +93,7 @@ add_task(async function test_offer_translations_pref_updates_checkbox() {
   const PREF_NAME = "browser.translations.automaticallyPopup";
 
   const { cleanup } = await setupAboutPreferences(LANGUAGE_PAIRS, {
-    prefs: [
-      ["browser.settings-redesign.enabled", true],
-      [PREF_NAME, true],
-    ],
+    prefs: [[PREF_NAME, true]],
   });
 
   const document = gBrowser.selectedBrowser.contentDocument;

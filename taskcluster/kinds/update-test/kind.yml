@@ -20,7 +20,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     shipping-product: firefox
     run-on-releases: [release, beta, esr153]
     treeherder:

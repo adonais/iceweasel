@@ -29,6 +29,9 @@ import org.mozilla.gecko.util.ThreadUtils;
  */
 @ExperimentalGeckoViewApi
 public class GeckoPreferenceController {
+  /** Public constructor for GeckoPreferenceController. */
+  public GeckoPreferenceController() {}
+
   private static final String LOGTAG = "GeckoPreference";
   private static final boolean DEBUG = false;
 
@@ -284,6 +287,9 @@ public class GeckoPreferenceController {
 
   /** The Observer class contains utilities for monitoring preference changes in Gecko. */
   public static final class Observer {
+    /** Public constructor for Observer. */
+    public Observer() {}
+
     private static final String REGISTER_PREF = "GeckoView:Preferences:RegisterObserver";
     private static final String UNREGISTER_PREF = "GeckoView:Preferences:UnregisterObserver";
 

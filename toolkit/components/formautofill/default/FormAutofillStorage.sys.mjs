@@ -76,6 +76,12 @@ const CREDIT_CARD_RUST_ACTIVE_PREF =
 const CREDIT_CARD_RUST_MIGRATION_TEST_PREF =
   "extensions.formautofill.creditCards.storage.rust.runMigrationTest";
 
+// Sent where a credit card action has finished and left nothing pending: its
+// writes have landed, and nothing still holds a collection to write to later.
+// A copy that waits for the OS key store starts at the first one sent while the
+// key store is unlocked; see #maybeRunMigration.
+export const MIGRATION_SAFE_POINT_TOPIC = "formautofill-migration-safe-point";
+
 // What #maybeRunMigration needs of each collection it moves, by data type. The
 // migrator is looked up rather than held so that its module still loads only
 // once a copy is wanted; its config names the collection's Rust adapter.
@@ -149,9 +155,9 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
   // rather than copying over the same pair of stores at the same time.
   #addressSwitch = null;
   #creditCardSwitch = null;
-  // Whether the OS key store's unlock is observed, which it is while a credit
-  // card copy waits on it; see #maybeRunMigration.
-  #observingUnlock = false;
+  // Whether MIGRATION_SAFE_POINT_TOPIC is observed, which it is while a credit
+  // card copy waits for the OS key store; see #maybeRunMigration.
+  #awaitingSafePoint = false;
 
   /**
    * Settles which store serves addresses at startup, once the JSON store has
@@ -175,10 +181,14 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
   }
 
   observe(subject, topic, data) {
-    if (topic == lazy.OSKeyStore.UNLOCKED_TOPIC) {
-      // Observed only while a copy waits on it, and one unlock is enough.
+    if (topic == MIGRATION_SAFE_POINT_TOPIC) {
+      // Observed only while a copy waits for the key store, and one safe point
+      // with it unlocked is enough.
+      if (!lazy.OSKeyStore.isLoggedIn) {
+        return;
+      }
       Services.obs.removeObserver(this, topic);
-      this.#observingUnlock = false;
+      this.#awaitingSafePoint = false;
       this.#queueCreditCardMigration();
       return;
     }
@@ -197,9 +207,9 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
       Services.prefs.removeObserver(ADDRESS_RUST_ENABLED_PREF, this);
       Services.prefs.removeObserver(CREDIT_CARD_RUST_ENABLED_PREF, this);
     }
-    if (this.#observingUnlock) {
-      this.#observingUnlock = false;
-      Services.obs.removeObserver(this, lazy.OSKeyStore.UNLOCKED_TOPIC);
+    if (this.#awaitingSafePoint) {
+      this.#awaitingSafePoint = false;
+      Services.obs.removeObserver(this, MIGRATION_SAFE_POINT_TOPIC);
     }
     return super._finalize();
   }
@@ -214,7 +224,8 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
    *
    * A write that lands while the copy is running goes to the store that is
    * still serving, so it is in the source after the source has been read and
-   * never reaches the target. The window is the length of one bulk copy.
+   * may not reach the target. A copy into Rust hears it and fails rather than
+   * switching.
    */
   #queueAddressMigration() {
     this.#addressSwitch = (this.#addressSwitch ?? this.initialize())
@@ -241,9 +252,18 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
    *  - Neither, with runMigrationTest set and a dry run pending: copy JSON into
    *    Rust to measure it, then empty Rust again.
    *
+   * A profile whose copy into Rust has spent its attempts stays on JSON:
+   * rust.enabled is read as false while the attempts stay spent, and is never
+   * written here, since Nimbus unenrols a profile whose setPref pref changes
+   * under it. Such a profile is not dry run either.
+   *
    * The serving store is the source, and the target ends up matching it.
-   * rust.active changes only after a complete copy, so a failed one leaves the
-   * profile on the store that still holds everything.
+   * Moving into Rust changes rust.active only after a complete copy, so a
+   * failed one leaves the profile on the store that still holds everything.
+   * Moving back to JSON always changes it once the copy has been tried, even
+   * if the copy failed or the Rust records could not be read: JSON is the
+   * store a profile falls back to, so it must not be kept in Rust. Whatever
+   * did not make it back is served as JSON last held it.
    *
    * A copy into Rust empties Rust first, as a leftover tombstone would block
    * its guid from being inserted again. A copy back keeps what JSON holds and
@@ -262,13 +282,21 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
       lazy.RUST_MIGRATIONS[dataType];
     const { collectionName } = lazy.AutofillDataTypes.get(dataType);
     const Migrator = migrator();
-    const enabled = Services.prefs.getBoolPref(enabledPref, false);
     const active = Services.prefs.getBoolPref(activePref, false);
-    const dryRun =
-      !enabled &&
-      !active &&
-      Services.prefs.getBoolPref(testPref, false) &&
-      Migrator.dryRunPending;
+    const enabledByPref = Services.prefs.getBoolPref(enabledPref, false);
+    const testing =
+      !enabledByPref && !active && Services.prefs.getBoolPref(testPref, false);
+    // Asked only when a copy into Rust is wanted: reading the migrator's config
+    // loads the Rust adapter's module.
+    const gaveUp =
+      !active && (enabledByPref || testing) && Migrator.attemptsExhausted;
+    const enabled = enabledByPref && !gaveUp;
+    const dryRun = testing && !gaveUp && Migrator.dryRunPending;
+    if (gaveUp && enabledByPref) {
+      lazy.logger.log(
+        `Not migrating ${collectionName}: every attempt already failed.`
+      );
+    }
     if (enabled == active && !dryRun) {
       return;
     }
@@ -311,40 +339,46 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
     // Only an encrypted collection needs to know whether there is anything to
     // copy. The Rust store decrypts every record it reads, so for a copy back
     // this read fails when its key cannot decrypt them -- the token was reset,
-    // or key4.db replaced. That leaves the profile where it is rather than
-    // throwing, which at startup would take autofill down with it.
+    // or key4.db replaced. A copy back goes ahead regardless, to fail and
+    // report in the migrator and still hand the profile back to JSON. Nothing
+    // here throws, which at startup would take autofill down with it.
     let anyRecord;
     if (hasEncryption) {
       try {
         [anyRecord] = await source.getAll({ prompt: false });
       } catch (e) {
         lazy.logger.error(
-          `Not migrating ${collectionName}: its records could not be read.`,
+          `Could not read the ${collectionName} to migrate.`,
           e
         );
-        return;
+        if (intoRust) {
+          return;
+        }
       }
     }
     // A profile with no records has nothing to decrypt and goes ahead.
     if (anyRecord) {
       // Wait until something else has unlocked the OS key store, so a copy
-      // into Rust never surfaces a keyring prompt of its own;
-      // OSKeyStore.UNLOCKED_TOPIC retries it. Windows does not wait: its key
-      // store reads the key through CredReadA, which shows no UI. A copy back
-      // does not wait either: while Rust serves, reads use NSS's key and
-      // nothing may unlock the OS key store, so the copy back would never run.
+      // into Rust never surfaces a keyring prompt of its own. It is retried at
+      // the next MIGRATION_SAFE_POINT_TOPIC with the key store unlocked rather
+      // than at the unlock itself, which lands in the middle of a fill or a
+      // save whose writes would then fall inside the copy, or after it into the
+      // store it leaves. Windows does not wait: its key store reads the key
+      // through CredReadA, which shows no UI. A copy back does not wait either:
+      // while Rust serves, reads use NSS's key and nothing may unlock the OS
+      // key store, so the copy back would never run.
       if (
         intoRust &&
         AppConstants.platform != "win" &&
         !lazy.OSKeyStore.isLoggedIn
       ) {
         lazy.logger.log(
-          `Deferring the ${collectionName} migration to an unlock.`
+          `Deferring the ${collectionName} migration to a safe point.`
         );
         this.#reportBlocked(Migrator, "keystore_locked", dryRun);
-        if (!this.#observingUnlock) {
-          Services.obs.addObserver(this, lazy.OSKeyStore.UNLOCKED_TOPIC);
-          this.#observingUnlock = true;
+        if (!this.#awaitingSafePoint) {
+          Services.obs.addObserver(this, MIGRATION_SAFE_POINT_TOPIC);
+          this.#awaitingSafePoint = true;
         }
         return;
       }
@@ -370,9 +404,20 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
       intoRust ? Migrator.config.rustAdapter.getInstance() : json
     );
     // A dry run always reports false, so only a completed real copy hands the
-    // profile over.
-    if (!(await copy.maybeRun({ dryRun, wipe: intoRust }))) {
-      return;
+    // profile over to Rust. A copy back hands it over either way.
+    const ok = await copy.maybeRun({ dryRun, wipe: intoRust });
+    if (!ok) {
+      if (intoRust) {
+        if (!dryRun && Migrator.attemptsExhausted) {
+          lazy.logger.warn(
+            `Giving up on migrating ${collectionName}: every attempt failed.`
+          );
+        }
+        return;
+      }
+      lazy.logger.warn(
+        `Serving ${collectionName} from JSON after an incomplete copy back.`
+      );
     }
     Services.prefs.setBoolPref(activePref, enabled);
 

@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from enum import Enum
@@ -205,6 +206,17 @@ def process_results(
         run_command([copy_artifacts_script, "crash_log"])
 
 
+def publish_mapping(mapping: Path) -> None:
+    """Copy the R8 mapping file next to the test results so stack traces from
+    the run can be retraced.
+
+    Args:
+        mapping: Absolute path to the mapping.txt of the APK under test
+    """
+    os.makedirs(Worker.RESULTS_DIR.value, exist_ok=True)
+    shutil.copy(mapping, os.path.join(Worker.RESULTS_DIR.value, "mapping.txt"))
+
+
 def main():
     """Parse command line arguments and execute the test runner."""
     parser = argparse.ArgumentParser(
@@ -229,6 +241,11 @@ def main():
         default=None,
     )
     parser.add_argument(
+        "--mapping",
+        help="Absolute path to the R8 mapping file of the APK under test",
+        default=None,
+    )
+    parser.add_argument(
         "--baseline-profile-max-iterations",
         help="Maximum iterations for baseline profile generation",
         default=None,
@@ -245,6 +262,9 @@ def main():
         apk_test=apk_test_path,
         baseline_profile_max_iterations=args.baseline_profile_max_iterations,
     )
+
+    if args.mapping:
+        publish_mapping(Path(args.mapping).resolve())
 
     # Determine the instrumentation type to process the results differently
     instrumentation_type = "instrumentation" if args.apk_test else "robo"

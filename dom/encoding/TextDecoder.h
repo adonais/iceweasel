@@ -62,7 +62,7 @@ class TextDecoder final : public NonRefcountedDOMObject,
                                             const nsAString& aEncoding,
                                             const TextDecoderOptions& aOptions,
                                             ErrorResult& aRv) {
-    auto txtDecoder = MakeUnique<TextDecoder>();
+    auto txtDecoder = std::make_unique<TextDecoder>();
     txtDecoder->Init(aEncoding, aOptions, aRv);
     if (aRv.Failed()) {
       return nullptr;

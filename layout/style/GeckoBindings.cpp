@@ -393,6 +393,12 @@ const StyleLockedDeclarationBlock* Gecko_GetViewTransitionDynamicRule(
   return vt->GetDynamicRuleFor(*aElement);
 }
 
+void Gecko_GetSubmitString(const Document* aDocument, nsAString* aResult) {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsContentUtils::GetMaybeLocalizedString(PropertiesFile::FORMS_PROPERTIES,
+                                          "Submit", aDocument, *aResult);
+}
+
 const StyleLockedDeclarationBlock* Gecko_GetExtraContentStyleDeclarations(
     const Element* aElement) {
   if (const auto* cell = HTMLTableCellElement::FromNode(aElement)) {
@@ -540,27 +546,28 @@ void Gecko_UpdateAnimations(const Element* aElement,
   // Handle timeline scopes first, because our own scroll/view-linked animations
   // may be affected.
   if (aTasks & UpdateAnimationsTasks::TimelineScopes) {
-    presContext->TimelineManager()->UpdateTimelineScopes(element,
-                                                         aComputedData);
-    // We could try to limit the impact here, at least for changes involving not
-    // `all`. However, defer any such optimization until after bug 2024012.
-    presContext->AnimationManager()->UpdateAllNamedTimelineAnimations();
+    presContext->TimelineManager()->UpdateTimelineScopes(
+        const_cast<Element*>(element), pseudoRequest, aComputedData);
   }
 
   // Handle scroll/view timelines first because CSS animations may refer to the
-  // timeline defined by itself.
+  // timeline defined by itself. Other animations referring to the affected
+  // names are updated once the traversal is done, see
+  // nsAnimationManager::FlushPendingNamedTimelineUpdates().
   if (aTasks & UpdateAnimationsTasks::ScrollTimelines) {
     const auto affected = presContext->TimelineManager()->UpdateTimelines(
         const_cast<Element*>(element), pseudoRequest, aComputedData,
         TimelineManager::ProgressTimelineType::Scroll);
-    presContext->AnimationManager()->UpdateNamedTimelineAnimations(affected);
+    presContext->AnimationManager()->MarkNamedTimelineAnimationsForUpdate(
+        affected);
   }
 
   if (aTasks & UpdateAnimationsTasks::ViewTimelines) {
     const auto affected = presContext->TimelineManager()->UpdateTimelines(
         const_cast<Element*>(element), pseudoRequest, aComputedData,
         TimelineManager::ProgressTimelineType::View);
-    presContext->AnimationManager()->UpdateNamedTimelineAnimations(affected);
+    presContext->AnimationManager()->MarkNamedTimelineAnimationsForUpdate(
+        affected);
   }
 
   if (aTasks & UpdateAnimationsTasks::CSSAnimations) {
@@ -611,6 +618,14 @@ void Gecko_UpdateAnimations(const Element* aElement,
         const_cast<Element*>(element), pseudoRequest,
         EffectCompositor::RestyleType::Standard,
         EffectCompositor::CascadeLevel::Animations);
+  }
+}
+
+void Gecko_FlushPendingNamedTimelineUpdates(const Element* aRoot) {
+  MOZ_ASSERT(aRoot);
+  if (nsPresContext* presContext =
+          nsContentUtils::GetContextForContent(aRoot)) {
+    presContext->AnimationManager()->FlushPendingNamedTimelineUpdates();
   }
 }
 
@@ -1277,12 +1292,14 @@ void ShutdownServo() {
   URLExtraData::Shutdown();
 }
 
-void AssertIsMainThreadOrServoFontMetricsLocked() {
+#ifdef DEBUG
+void AssertIsMainThreadOrServoFFILocked() {
   if (!NS_IsMainThread()) {
     MOZ_ASSERT(sServoFFILock);
     sServoFFILock->AssertCurrentThreadOwns();
   }
 }
+#endif
 
 }  // namespace mozilla
 
@@ -1756,8 +1773,11 @@ uint64_t Gecko_Element_GetRandomSeed(const Element* aElement) {
   return aElement->GetRandomSeed();
 }
 
-uint64_t Gecko_Document_GetRandomSeed(const Document* aDocument) {
-  return aDocument->GetRandomSeed();
+void Gecko_Document_GetRandomHasherKey(const Document* aDocument, uint64_t* aK0,
+                                       uint64_t* aK1) {
+  const Array<uint64_t, 2>& key = aDocument->GetRandomHasherKey();
+  *aK0 = key[0];
+  *aK1 = key[1];
 }
 
 bool StyleSingleFontFamily::IsNamedFamily(const nsAString& aFamilyName) const {

@@ -123,10 +123,7 @@ function fetchResult(url) {
 add_task(
   {
     skip_if: () =>
-      AppConstants.MOZ_SYSTEM_NSS ||
-      !gServerStarted ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+      AppConstants.MOZ_SYSTEM_NSS || !gServerStarted || mozinfo.os == "android",
   },
   async function test_he_h1_0rtt_early_data_rejected_reuses_connection() {
     const url = `https://${kHost}:${kPort}/`;

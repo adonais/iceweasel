@@ -68,6 +68,7 @@
 #include "mozilla/dom/NodeBinding.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/NodeInfoInlines.h"
+#include "mozilla/dom/NodeOwnedObjectList.h"
 #include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/Range.h"
@@ -301,8 +302,13 @@ nsINode::nsSlots::~nsSlots() {
     mChildNodes->InvalidateCacheIfAvailable();
   }
 
+  ClearWeakReference();
+}
+
+void nsINode::nsSlots::ClearWeakReference() {
   if (mWeakReference) {
     mWeakReference->NoticeNodeDestruction();
+    mWeakReference = nullptr;
   }
 }
 
@@ -330,6 +336,7 @@ void nsINode::nsSlots::Unlink(nsINode& aNode) {
     mChildNodes->InvalidateCacheIfAvailable();
     ImplCycleCollectionUnlink(mChildNodes);
   }
+  ClearWeakReference();
   ClearBoundObjects(*this, aNode);
 }
 
@@ -2052,7 +2059,7 @@ EventListenerManager* nsINode::GetOrCreateListenerManager() {
   }
 
   RefPtr<EventListenerManager> elm = new EventListenerManager(this);
-  nsContentUtils::AddNodeListenerManager(elm);
+  NodeOwnedObjectList<EventListenerManager>::Add(elm);
 
   EventListenerManager* manager = elm;
   MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(manager) & kListenerManagerBit));

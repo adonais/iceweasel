@@ -14,17 +14,17 @@ const { ERRORS } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-message-bar.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-unauthenticated.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-status-card.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-status-box.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-promo.mjs";
 
 const SITE_RULES_SETTINGS_PANE = "privacy-vpnsiterules";
@@ -45,6 +45,8 @@ export default class IPProtectionContentElement extends MozLitElement {
     siteExclusionToggleEl: "#site-exclusion-toggle",
     siteExclusionDescriptionEl: '#site-exclusion-toggle > [slot="description"]',
     siteRulesEl: "#site-rules-control",
+    siteRuleHeadingEl: "#site-rule-heading",
+    siteRuleDescriptionEl: "#site-rule-description",
     siteInclusionPromptEl: "#site-inclusion-prompt",
     settingsButtonEl: "#vpn-settings-button",
   };
@@ -251,6 +253,20 @@ export default class IPProtectionContentElement extends MozLitElement {
       this._messageDismissed = false;
     }
     this.#prevBandwidthWarning = !!this.state.bandwidthWarning;
+
+    this.#updateSiteRulesDescription();
+  }
+
+  async #updateSiteRulesDescription() {
+    let siteRulesEl = this.siteRulesEl;
+    if (!siteRulesEl) {
+      return;
+    }
+    await siteRulesEl.updateComplete;
+    let headingEl = this.siteRuleHeadingEl;
+    let descriptionEl = this.siteRuleDescriptionEl;
+    siteRulesEl.buttonEl.ariaDescribedByElements =
+      headingEl && descriptionEl ? [headingEl, descriptionEl] : null;
   }
 
   messageBarTemplate() {
@@ -434,6 +450,7 @@ export default class IPProtectionContentElement extends MozLitElement {
   siteRulesStatusTemplate() {
     if (
       !this.state.isSiteInclusionsEnabled ||
+      !this.state.isActive ||
       !this.state.siteData ||
       this.#hasErrors ||
       !this.hasSiteRule
@@ -488,6 +505,7 @@ export default class IPProtectionContentElement extends MozLitElement {
       !this.state.showSiteInclusionPrompt ||
       !this.state.siteData ||
       this.hasSiteInclusion ||
+      this.hasSiteExclusion ||
       !this.canEnableConnection
     ) {
       return null;
@@ -518,7 +536,7 @@ export default class IPProtectionContentElement extends MozLitElement {
       id="site-rules-control"
       type="ghost"
       data-l10n-id="site-rules-manage-rules-link-text"
-      iconsrc="chrome://browser/skin/permissions.svg"
+      iconsrc="chrome://browser/content/ipprotection/assets/vpn-website-rules-icon.svg"
       @click=${this.handleClickSiteRulesLink}
     >
     </moz-button>`;

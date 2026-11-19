@@ -23,7 +23,7 @@ static GdkPixbuf* sPixbuf;
 
 constinit StringTable sStrings;
 
-static gboolean UpdateDialog(gpointer data) {
+static gboolean UpdateDialog(gpointer /*data*/) {
   if (sQuit) {
     gtk_widget_hide(sWin);
     gtk_main_quit();
@@ -38,8 +38,8 @@ static gboolean UpdateDialog(gpointer data) {
   return G_SOURCE_CONTINUE;
 }
 
-static gboolean OnDeleteEvent(GtkWidget* widget, GdkEvent* event,
-                              gpointer user_data) {
+static gboolean OnDeleteEvent(GtkWidget* /*widget*/, GdkEvent* /*event*/,
+                              gpointer /*user_data*/) {
   return TRUE;
 }
 

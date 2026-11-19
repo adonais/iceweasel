@@ -347,7 +347,7 @@ struct AnchorPosResolutionCache {
   void UndoTryPositionWithDifferentDefaultAnchor(
       PositionTryFullBackup&& aBackup) {
     *mReferenceData = std::move(aBackup.first);
-    std::exchange(mDefaultAnchorCache, aBackup.second);
+    mDefaultAnchorCache = std::move(aBackup.second);
   }
 };
 

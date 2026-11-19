@@ -1052,6 +1052,41 @@ add_task(async function noTriggeringURL() {
   });
 });
 
+add_task(async function unparsableTriggeringURL() {
+  await BrowserTestUtils.withNewTab("about:home", async browser => {
+    const targetURL = "https://example.com/";
+
+    info("Setup unparsable triggering sponsored URL");
+    browser.setAttribute("triggeringSponsoredURL", "not a valid url");
+    browser.setAttribute("triggeringSponsoredURLVisitTimeMS", Date.now());
+
+    info("Open URL and check the visit is still recorded");
+    let promiseVisited = waitForVisitNotification(targetURL);
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: targetURL,
+      waitForFocus: SimpleTest.waitForFocus,
+    });
+    const onLoad = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      targetURL
+    );
+    EventUtils.synthesizeKey("KEY_Enter");
+    await onLoad;
+    await promiseVisited;
+
+    await assertDatabase({
+      targetURL,
+      expected: {
+        source: VISIT_SOURCE_ORGANIC,
+      },
+    });
+
+    await clearHistoryAndBookmarks();
+  });
+});
+
 add_task(async function basic_frecency_check() {
   const SPONSORED_LINK = {
     label: "test_label",

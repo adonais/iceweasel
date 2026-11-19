@@ -13,8 +13,9 @@ Notes to self:
 
 #include "nsTransferable.h"
 
+#include <memory>
+
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/UniquePtr.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsArray.h"
 #include "nsArrayUtils.h"
@@ -161,10 +162,7 @@ nsresult DataStruct::ReadCache(nsISupports** aData) {
   }
   uint32_t fileSize = fileInfo.size;
 
-  auto data = MakeUnique<char[]>(fileSize);
-  if (!data) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  auto data = std::make_unique<char[]>(fileSize);
 
   uint32_t actual = PR_Read(mCacheFD, data.get(), fileSize);
   if (actual != fileSize) {

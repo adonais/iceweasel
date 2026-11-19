@@ -209,7 +209,7 @@ class nsUrlClassifierDBService::FeatureHolder final {
 
   mozilla::UniquePtr<LookupResultArray> GetTableResults() const {
     mozilla::UniquePtr<LookupResultArray> results =
-        mozilla::MakeUnique<LookupResultArray>();
+        std::make_unique<LookupResultArray>();
     if (NS_WARN_IF(!results)) {
       return nullptr;
     }

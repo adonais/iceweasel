@@ -61,7 +61,7 @@ UniquePtr<MozQueryInterface> ChromeUtils::GenerateQI(
 
   ifaces.Sort(CompareIIDs);
 
-  return MakeUnique<MozQueryInterface>(std::move(ifaces));
+  return std::make_unique<MozQueryInterface>(std::move(ifaces));
 }
 
 bool MozQueryInterface::QueriesTo(const nsIID& aIID) const {

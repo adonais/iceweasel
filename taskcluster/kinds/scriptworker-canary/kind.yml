@@ -10,7 +10,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     treeherder:
         platform: firefox-release/opt
         tier: 1
@@ -22,7 +21,6 @@ task-defaults:
         env:
             MOZBUILD_STATE_PATH: /builds/worker/workspace
     run:
-        clone-with: hg
         sparse-profile: push-to-try
 
 tasks:

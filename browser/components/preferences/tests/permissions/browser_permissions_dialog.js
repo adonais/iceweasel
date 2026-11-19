@@ -529,6 +529,99 @@ add_task(async function checkDefaultPermissionState() {
   );
 });
 
+add_task(async function closedDeliveryCheckbox() {
+  const AVAILABLE_PREF = "app.backgroundNotifications.helper.available";
+  const ENABLED_PREF = "app.backgroundNotifications.helper.enabled";
+  // The checkbox is only shown on Windows, where PushNotificationHelper is
+  // packaged.
+  const isWindows = AppConstants.platform == "win";
+
+  let sinon, setEnabled;
+  if (isWindows) {
+    ({ sinon } = ChromeUtils.importESModule(
+      "resource://testing-common/Sinon.sys.mjs"
+    ));
+    const { PushNotificationHelper } = ChromeUtils.importESModule(
+      "resource://gre/modules/PushNotificationHelper.sys.mjs"
+    );
+    // Keep the real helper process from launching when both prefs are true.
+    sinon.stub(PushNotificationHelper, "start");
+    sinon.stub(PushNotificationHelper, "stop");
+    setEnabled = sinon.spy(PushNotificationHelper, "setEnabled");
+  }
+
+  try {
+    await openPermissionsDialog("desktop-notification");
+    let doc = sitePermissionsDialog.document;
+    ok(
+      doc.getElementById("closedDeliveryBox").hidden,
+      "Hidden where closed-browser delivery is unavailable"
+    );
+    doc.querySelector("dialog").getButton("cancel").click();
+
+    await SpecialPowers.pushPrefEnv({ set: [[AVAILABLE_PREF, true]] });
+
+    await openPermissionsDialog("desktop-notification");
+    doc = sitePermissionsDialog.document;
+    if (!isWindows) {
+      ok(
+        doc.getElementById("closedDeliveryBox").hidden,
+        "Hidden off Windows even when available"
+      );
+      doc.querySelector("dialog").getButton("cancel").click();
+      return;
+    }
+
+    ok(!doc.getElementById("closedDeliveryBox").hidden, "Shown when available");
+    let checkbox = doc.getElementById("closedDeliveryCheckbox");
+    ok(!checkbox.checked, "Unchecked by default");
+
+    Services.prefs.setBoolPref(ENABLED_PREF, true);
+    ok(checkbox.checked, "Follows a write made while the dialog is open");
+    Services.prefs.setBoolPref(ENABLED_PREF, false);
+    ok(!checkbox.checked, "Follows it back off");
+
+    checkbox.checked = true;
+    Services.prefs.setBoolPref(AVAILABLE_PREF, false);
+    ok(
+      doc.getElementById("closedDeliveryBox").hidden,
+      "Hides when availability is withdrawn"
+    );
+    Services.prefs.setBoolPref(AVAILABLE_PREF, true);
+    ok(checkbox.checked, "Availability changes keep the unsaved choice");
+
+    doc.querySelector("dialog").getButton("cancel").click();
+    ok(
+      !Services.prefs.getBoolPref(ENABLED_PREF, false),
+      "Cancel discards the change"
+    );
+    ok(setEnabled.notCalled, "Cancel does not call setEnabled");
+
+    await openPermissionsDialog("desktop-notification");
+    doc = sitePermissionsDialog.document;
+    doc.getElementById("closedDeliveryCheckbox").checked = true;
+    doc.querySelector("dialog").getButton("accept").click();
+    ok(
+      setEnabled.calledOnceWithExactly(true),
+      "Save writes through setEnabled"
+    );
+    ok(Services.prefs.getBoolPref(ENABLED_PREF), "Pref is on after Save");
+
+    await openPermissionsDialog("desktop-notification");
+    doc = sitePermissionsDialog.document;
+    ok(
+      doc.getElementById("closedDeliveryCheckbox").checked,
+      "Reflects the saved state"
+    );
+    doc.querySelector("dialog").getButton("accept").click();
+    ok(setEnabled.calledOnce, "Saving without a change does not write again");
+  } finally {
+    Services.prefs.clearUserPref(ENABLED_PREF);
+    await SpecialPowers.popPrefEnv();
+    sinon?.restore();
+  }
+});
+
 add_task(async function testTabBehaviour() {
   // Test tab behaviour inside the permissions setting dialog when site permissions are selected.
   // Only selected items in the richlistbox should be tabable for accessibility reasons.

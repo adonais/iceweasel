@@ -446,3 +446,32 @@ function readFileBytes(aFile) {
   fis.close();
   return data.toString();
 }
+
+/**
+ * Gets the file a test creates to make app_update.sjs finish a slow update
+ * check or download. The xpcshell tests' http server runs in the test process,
+ * so they use the per-test temp directory instead of the test directory.
+ *
+ * @param  aLeafName
+ *         CONTINUE_CHECK or CONTINUE_DOWNLOAD.
+ * @return The nsIFile for the continue file.
+ */
+function getContinueFile(aLeafName) {
+  let file;
+  // do_get_tempdir() isn't defined in the SJS sandbox, so read the variable it
+  // is based on.
+  let xpcshellTempDir = Services.env.get("XPCSHELL_TEST_TEMP_DIR");
+  if (xpcshellTempDir) {
+    file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    file.initWithPath(xpcshellTempDir);
+  } else {
+    file = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+    for (let part of REL_PATH_DATA.split("/")) {
+      if (part) {
+        file.append(part);
+      }
+    }
+  }
+  file.append(aLeafName);
+  return file;
+}

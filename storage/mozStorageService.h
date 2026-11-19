@@ -93,6 +93,8 @@ class Service : public mozIStorageService,
   void getConnections(nsTArray<RefPtr<Connection> >& aConnections);
 
 #ifdef NIGHTLY_BUILD
+  static constexpr uint32_t kSlowSQLThresholdForMainThread = 50;
+  static constexpr uint32_t kSlowSQLThresholdForHelperThreads = 100;
   /**
    * Report a statement as slow.
    * Assumes the thread it is called on is the thread the statement ran on.

@@ -24,7 +24,7 @@ namespace layers {
 already_AddRefed<TextureClient> SharedSurfaceTextureData::CreateTextureClient(
     const layers::SurfaceDescriptor& aDesc, const gfx::SurfaceFormat aFormat,
     gfx::IntSize aSize, TextureFlags aFlags, LayersIPCChannel* aAllocator) {
-  auto data = MakeUnique<SharedSurfaceTextureData>(aDesc, aFormat, aSize);
+  auto data = std::make_unique<SharedSurfaceTextureData>(aDesc, aFormat, aSize);
   return TextureClient::CreateWithData(data.release(), aFlags, aAllocator);
 }
 

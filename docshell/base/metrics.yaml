@@ -54,6 +54,7 @@ bfcache:
       - SPD_Unload_Req_Peer
       - Remote_Subframes
       - Beforeunload
+      - Page_Loading
       - Other
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1531917

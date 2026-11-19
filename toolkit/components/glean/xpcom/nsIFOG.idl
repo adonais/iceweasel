@@ -150,7 +150,7 @@ interface nsIFOG : nsISupports
   /**
    * ** Test-only Method **
    *
-   * Trigger test metric instrumentation on the GPU, RDD or Socket process.
+   * Trigger test metric instrumentation on the GPU or RDD process.
    *
    * @param aProcessType - A PROCESS_TYPE_* value from the constants defined
    *                       in the nsIXULRuntime interface.

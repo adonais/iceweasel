@@ -227,7 +227,7 @@ bool HttpBackgroundChannelParent::OnTransportAndData(
        aOnDataAvailableStart](const nsDependentCSubstring& aData,
                               uint64_t aOffset, uint32_t aCount) {
         return self->SendOnTransportAndData(aChannelStatus, aTransportStatus,
-                                            aOffset, aData, false,
+                                            aOffset, aData,
                                             aOnDataAvailableStart);
       };
 
@@ -270,33 +270,8 @@ bool HttpBackgroundChannelParent::OnStopRequest(
   TimeStamp lastActTabOpt = nsHttp::GetLastActiveTabLoadOptimizationHit();
 
   return SendOnStopRequest(aChannelStatus, aTiming, lastActTabOpt,
-                           aResponseTrailers, aConsoleReports, false,
+                           aResponseTrailers, aConsoleReports,
                            aOnStopRequestStart);
-}
-
-bool HttpBackgroundChannelParent::OnConsoleReport(
-    const nsTArray<ConsoleReportCollected>& aConsoleReports) {
-  LOG(("HttpBackgroundChannelParent::OnConsoleReport [this=%p]", this));
-  AssertIsInMainProcess();
-
-  if (NS_WARN_IF(!mIPCOpened)) {
-    return false;
-  }
-
-  if (!IsOnBackgroundThread()) {
-    MutexAutoLock lock(mBgThreadMutex);
-    nsresult rv = mBackgroundThread->Dispatch(
-        NewRunnableMethod<const CopyableTArray<ConsoleReportCollected>>(
-            "net::HttpBackgroundChannelParent::OnConsoleReport", this,
-            &HttpBackgroundChannelParent::OnConsoleReport, aConsoleReports),
-        NS_DISPATCH_NORMAL);
-
-    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-
-    return NS_SUCCEEDED(rv);
-  }
-
-  return SendOnConsoleReport(aConsoleReports);
 }
 
 bool HttpBackgroundChannelParent::OnAfterLastPart(const nsresult aStatus) {

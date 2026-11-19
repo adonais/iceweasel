@@ -124,22 +124,13 @@
       if (!super.shadowRoot.firstChild) {
         // We generate shadow DOM lazily on popupshowing event to avoid extra
         // load on the system during browser startup.
-        super.shadowRoot.appendChild(this.fragment);
+        super.shadowRoot.appendChild(this.constructor.fragment);
         this.initShadowDOM();
       }
       return super.shadowRoot;
     }
 
-    get fragment() {
-      if (!this.constructor.hasOwnProperty("_fragment")) {
-        this.constructor._fragment = MozXULElement.parseXULToFragment(
-          this.markup
-        );
-      }
-      return document.importNode(this.constructor._fragment, true);
-    }
-
-    get markup() {
+    static get markup() {
       return `
         <html:link rel="stylesheet" href="chrome://global/skin/global.css"/>
         <html:link rel="stylesheet" href="chrome://global/content/elements/menupopup.css"/>

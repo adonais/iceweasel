@@ -1806,15 +1806,7 @@ bool CacheIRCompiler::emitGuardIsNullOrUndefined(ValOperandId inputId) {
     return false;
   }
 
-  Label success;
-  {
-    ScratchTagScope tag(masm, input);
-    masm.splitTagForTest(input, tag);
-    masm.branchTestNull(Assembler::Equal, tag, &success);
-    masm.branchTestUndefined(Assembler::NotEqual, tag, failure->label());
-  }
-
-  masm.bind(&success);
+  masm.branchTestNullOrUndefined(Assembler::NotEqual, input, failure->label());
   return true;
 }
 
@@ -5498,14 +5490,15 @@ bool CacheIRCompiler::emitGuardXrayNoExpando(ObjOperandId objId) {
 }
 
 bool CacheIRCompiler::emitAssertNoAllocationMetadataBuilder(
-    uint32_t builderAddrOffset) {
+    uint32_t hasBuilderAddrOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoScratchRegister scratch(allocator, masm);
 
   Label ok;
-  StubFieldOffset builderField(builderAddrOffset, StubField::Type::RawPointer);
-  emitLoadStubField(builderField, scratch);
-  masm.branchPtr(Assembler::Equal, Address(scratch, 0), ImmWord(0), &ok);
+  StubFieldOffset hasBuilderField(hasBuilderAddrOffset,
+                                  StubField::Type::RawPointer);
+  emitLoadStubField(hasBuilderField, scratch);
+  masm.branch32(Assembler::Equal, Address(scratch, 0), Imm32(0), &ok);
   masm.assumeUnreachable("Unexpected allocation metadata builder");
   masm.bind(&ok);
 
@@ -8681,8 +8674,7 @@ bool CacheIRCompiler::emitLoadValueTruthyResult(ValOperandId inputId) {
     ScratchTagScope tag(masm, value);
     masm.splitTagForTest(value, tag);
 
-    masm.branchTestUndefined(Assembler::Equal, tag, &ifFalse);
-    masm.branchTestNull(Assembler::Equal, tag, &ifFalse);
+    masm.branchTestNullOrUndefined(Assembler::Equal, tag, &ifFalse);
 
     Label notBoolean;
     masm.branchTestBoolean(Assembler::NotEqual, tag, &notBoolean);
@@ -9113,13 +9105,7 @@ bool CacheIRCompiler::emitCompareNullUndefinedResult(JSOp op, bool isUndefined,
     ScratchTagScope tag(masm, input);
     masm.splitTagForTest(input, tag);
 
-    if (isUndefined) {
-      masm.branchTestUndefined(Assembler::Equal, tag, &nullOrLikeUndefined);
-      masm.branchTestNull(Assembler::Equal, tag, &nullOrLikeUndefined);
-    } else {
-      masm.branchTestNull(Assembler::Equal, tag, &nullOrLikeUndefined);
-      masm.branchTestUndefined(Assembler::Equal, tag, &nullOrLikeUndefined);
-    }
+    masm.branchTestNullOrUndefined(Assembler::Equal, tag, &nullOrLikeUndefined);
     masm.branchTestObject(Assembler::NotEqual, tag, &notNullOrLikeUndefined);
 
     {

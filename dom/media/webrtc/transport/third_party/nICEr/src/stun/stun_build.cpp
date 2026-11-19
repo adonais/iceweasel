@@ -178,7 +178,6 @@ nr_stun_build_keepalive(nr_stun_client_stun_keepalive_params *params, nr_stun_me
    return _status;
 }
 
-#ifdef USE_ICE
 int
 nr_stun_build_use_candidate(nr_stun_client_ice_binding_request_params *params, nr_stun_message **msg)
 {
@@ -250,9 +249,7 @@ nr_stun_build_req_ice(nr_stun_client_ice_binding_request_params *params, nr_stun
    if (_status) nr_stun_message_destroy(&req);
    return _status;
 }
-#endif /* USE_ICE */
 
-#ifdef USE_TURN
 
 #ifndef __isascii
 #define __isascii(c) (((c) & ~0x7F) == 0)
@@ -486,7 +483,6 @@ nr_stun_build_data_indication(nr_stun_client_data_indication_params *params, nr_
    return _status;
 }
 
-#endif /* USE_TURN */
 
 /* draft-ietf-behave-rfc3489bis-10.txt S 7.3.1.1 */
 int
@@ -555,9 +551,7 @@ nr_stun_form_error_response(nr_stun_message *req, nr_stun_message* res, int numb
     case 401:  str = "Unauthorized";        break;
     case 420:  str = "Unknown Attribute";   break;
     case 438:  str = "Stale Nonce";         break;
-#ifdef USE_ICE
     case 487:  str = "Role Conflict";       break;
-#endif
     case 500:  str = "Server Error";        break;
     }
     if (str == 0) {

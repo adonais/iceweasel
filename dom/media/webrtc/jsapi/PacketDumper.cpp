@@ -33,7 +33,7 @@ void PacketDumper::Dump(size_t aLevel, dom::mozPacketDumpType aType,
     return;
   }
 
-  UniquePtr<uint8_t[]> ownedPacket = MakeUnique<uint8_t[]>(aSize);
+  auto ownedPacket = std::make_unique<uint8_t[]>(aSize);
   memcpy(ownedPacket.get(), aData, aSize);
 
   RefPtr<Runnable> dumpRunnable = media::NewRunnableFrom(std::bind(

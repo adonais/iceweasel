@@ -33,7 +33,6 @@ import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.DeviceConstellationObserver
 import mozilla.components.concept.sync.Profile
 import mozilla.components.concept.sync.SyncEngine
-import mozilla.components.feature.automotive.isAndroidAutomotiveAvailable
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.service.fxa.manager.FxaAccountManager
@@ -72,9 +71,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     private val isNewUiEnabled: Boolean
         get() = requireComponents.settings.accountSettingsNewUi
 
-    // Password and credit card syncing is disabled on Android Automotive until we implement the UX Google
-    // requires for handling sensitive information there. See bug 2060936.
-    private val areCredentialsSyncable by lazy { !requireContext().isAndroidAutomotiveAvailable() }
+    private val isAutofillSupported by lazy { requireComponents.settings.isAutofillSupported }
 
     // Navigate away from this fragment when we encounter auth problems or logout events.
     private val accountStateObserver =
@@ -222,7 +219,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         SyncEngineUiData.entries
             .filter { it.needsPinWarning }
             .forEach { engineUiData ->
-                requirePreference<TwoStatePreference>(engineUiData.prefId).isVisible = areCredentialsSyncable
+                requirePreference<TwoStatePreference>(engineUiData.prefId).isVisible = isAutofillSupported
             }
     }
 
@@ -245,6 +242,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         setupSignInOutPreferenceListeners()
         setupDeviceNamePreferenceListeners()
         setupSyncCategoriesPreferenceListeners()
+        setupDeviceSyncPreferenceListener()
 
         // NB: ObserverRegistry will take care of cleaning up internal references to 'observer' and
         // 'owner' when appropriate.
@@ -299,6 +297,30 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         )
     }
 
+    private fun setupDeviceSyncPreferenceListener() {
+        if (isNewUiEnabled) {
+            requirePreference<TwoStatePreference>(R.string.pref_key_sync_enable_sync).apply {
+                setDeviceSyncSummary(isChecked)
+
+                setOnPreferenceChangeListener { _, checked ->
+                    setDeviceSyncSummary(checked as Boolean)
+                    true
+                }
+            }
+        }
+    }
+
+    private fun setDeviceSyncSummary(checked: Boolean) {
+        requirePreference<TwoStatePreference>(R.string.pref_key_sync_enable_sync).apply {
+            summary =
+                if (checked) {
+                    getString(R.string.preferences_enable_sync_summary_sync_enabled)
+                } else {
+                    getString(R.string.preferences_enable_sync_summary_sync_disabled, getString(R.string.firefox))
+                }
+        }
+    }
+
     /**
      * UI configuration for a sync engine preference in account settings.
      *
@@ -324,7 +346,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         setDisabledWhileSyncing(accountManager.isSyncActive())
 
         SyncEngineUiData.entries
-            .filter { !it.needsPinWarning || areCredentialsSyncable }
+            .filter { !it.needsPinWarning || isAutofillSupported }
             .forEach { engineUiData ->
                 requirePreference<TwoStatePreference>(engineUiData.prefId).apply {
                     tintIcon()
@@ -351,7 +373,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         val isAnyEngineEnabled =
             SyncEngineUiData.entries
                 .filterNot { it.engine == SyncEngine.Addresses && !settings.isAddressSyncEnabled }
-                .filterNot { it.needsPinWarning && !areCredentialsSyncable }
+                .filterNot { it.needsPinWarning && !isAutofillSupported }
                 .any {
                     syncEnginesStatus.getOrElse(it.engine) { false }
                 }

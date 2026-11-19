@@ -135,7 +135,7 @@ class ObjectStoreMetadata {
       keyPath: this._keyPath,
       autoIncrement: this._autoIncrement,
       indexes: JSON.stringify(
-        [...this._indexes.values()].map(index => index.toObject())
+        Array.from(this._indexes.values().map(index => index.toObject()))
       ),
     };
   }

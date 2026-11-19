@@ -7,12 +7,13 @@
 @media not (prefers-contrast) {
   :root {
     color-scheme: dark;
-    --background-color-canvas: #a4000f;
-    --button-background-color-hover: #5a0002;
-    --button-background-color-active: #3e0200;
-    --button-background-color-primary: white;
-    --button-background-color-primary-hover: rgba(255, 255, 255, 0.8);
-    --button-background-color-primary-active: rgba(255, 255, 255, 0.7);
+    --background-color-canvas: var(--background-color-critical);
+    --button-border-color: var(--color-white);
+    --button-background-color-hover: var(--color-white-alpha-20);
+    --button-background-color-active: var(--color-white-alpha-30);
+    --button-background-color-primary: var(--color-white);
+    --button-background-color-primary-hover: var(--color-white-alpha-80);
+    --button-background-color-primary-active: var(--color-white-alpha-70);
   }
 }
 
@@ -21,7 +22,6 @@
 }
 
 .button-container button {
-  border: 1px solid white;
   margin-inline-end: 0;
   margin-top: 1.5em;
 }

@@ -96,9 +96,7 @@ internal fun MiddleSearchHomepage(
                                 onMiddleSearchBarVisibilityChanged(false)
                             }
 
-                            Box(modifier = Modifier.padding(horizontal = horizontalMargin)) {
-                                PrivateBrowsingDescription(onLearnMoreClick = interactor::onLearnMoreClicked)
-                            }
+                            PrivateBrowsingDescription(onLearnMoreClick = interactor::onLearnMoreClicked)
                         }
 
                         is HomepageState.Normal -> {
@@ -175,7 +173,7 @@ private fun MiddleSearchHomepagePreview() {
                 longfoxEnabled = true,
                 showLongfoxAnimation = true,
                 trackersBlockedCount = 754,
-                headerState = HeaderState.Normal(showStoriesButton = true),
+                headerState = HeaderState(showStoriesButton = true),
                 middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = true),
                 firstFrameDrawn = true,
                 setupChecklistState = null,

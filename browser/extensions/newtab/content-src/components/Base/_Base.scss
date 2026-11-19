@@ -280,6 +280,12 @@ main.newtab-main {
 
 .asrouter-multistage-message-wrapper {
   margin-block: var(--space-xlarge);
+
+  .nova-enabled & {
+    @media (height >= 800px) {
+      margin-block-start: calc(3 * var(--space-xxlarge));
+    }
+  }
 }
 
 .nova-enabled.container {

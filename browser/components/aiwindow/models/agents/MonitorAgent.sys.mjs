@@ -14,6 +14,7 @@ import {
   MONITOR_EXPIRY_REASONS,
   MONITOR_PROMPT_VERSION,
   MONITOR_AGENTS_CHANGED_TOPIC,
+  MONITOR_BLOCKED_STATE_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
   MONITOR_RUN_FAILED_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
@@ -29,6 +30,7 @@ export {
   MONITOR_PROMPT_VERSION,
   TOTAL_NUM_URLS_IN_MONITOR,
   MONITOR_AGENTS_CHANGED_TOPIC,
+  MONITOR_BLOCKED_STATE_CHANGED_TOPIC,
   MONITOR_CONDITION_MET_TOPIC,
   MONITOR_EXPIRY_REASONS,
   MONITOR_RUN_FAILED_TOPIC,
@@ -44,6 +46,8 @@ const EXPIRY_BODY_IDS = Object.freeze({
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   MonitorStore:
     "moz-src:///browser/components/aiwindow/models/agents/MonitorStore.sys.mjs",
@@ -77,6 +81,7 @@ const TASKS_PAGE_URL = "about:smartwindowtasks";
 let gMonitors = null;
 let gLoadPromise = null;
 let gShuttingDown = false;
+let gSuspended = false;
 const gNotifiedRunIds = new Set();
 const gSnapshotRefreshPromises = new Map();
 
@@ -289,6 +294,17 @@ function recordUpdateTelemetry(
 }
 
 /**
+ * Indicates that a MonitorAgent operation was refused because Smart Window is
+ * blocked by AI Controls.
+ */
+class MonitorAgentBlockedError extends Error {
+  constructor() {
+    super("Smart Window is blocked by AI Controls.");
+    this.name = "MonitorAgentBlockedError";
+  }
+}
+
+/**
  * Monitor Agent state and behavior.
  *
  * Monitor agent is responsible for managing the collection of monitors, including creating,
@@ -296,7 +312,16 @@ function recordUpdateTelemetry(
  * It also handles persisting the monitor state to IndexedDB and notifying observers of changes.
  */
 export const MonitorAgent = {
+  get isBlocked() {
+    return lazy.AIWindow.isBlocked;
+  },
+
   async init() {
+    if (this.isBlocked) {
+      gSuspended = true;
+      return;
+    }
+    gSuspended = false;
     try {
       await this._ensureLoaded();
     } catch (error) {
@@ -310,6 +335,11 @@ export const MonitorAgent = {
     }
 
     for (const monitor of gMonitors.values()) {
+      // Smart Window may have been blocked while loading or expiring monitors
+      if (this.isBlocked) {
+        gSuspended = true;
+        return;
+      }
       monitor.restore();
       // a monitor that outlived its expiry window while the browser was
       // closed is paused right away instead of waiting for its next run
@@ -337,6 +367,36 @@ export const MonitorAgent = {
     }
   },
 
+  /**
+   * Suspends active monitors when Smart Window is blocked by AI Controls,
+   * and resumes monitoring when the block is lifted.
+   */
+  async onBlockedStateChanged() {
+    const unblocked = !this.isBlocked;
+
+    if (unblocked) {
+      if (gSuspended) {
+        Services.obs.notifyObservers(null, MONITOR_BLOCKED_STATE_CHANGED_TOPIC);
+        // Resume monitoring since Smart Window is no longer blocked
+        await this.init();
+      }
+      return;
+    }
+
+    // If already suspended, no need to do anything further
+    if (gSuspended) {
+      return;
+    }
+
+    // State transition: mark as suspended since Smart Window is blocked
+    gSuspended = true;
+
+    for (const monitor of gMonitors?.values() ?? []) {
+      monitor.dispose(MONITOR_ERROR_CODES.CANCELED);
+    }
+    Services.obs.notifyObservers(null, MONITOR_BLOCKED_STATE_CHANGED_TOPIC);
+  },
+
   async listMonitors() {
     await this._ensureLoaded();
     return Array.from(gMonitors.values(), monitor => monitor.toSerializable());
@@ -362,6 +422,9 @@ export const MonitorAgent = {
     messageSeq = null,
     ...args
   }) {
+    if (this.isBlocked) {
+      throw new MonitorAgentBlockedError();
+    }
     const context = buildTelemetryContextExtra({ source, chatId, messageSeq });
     // Load the store first so the submit event counts the stored monitors;
     // a load failure is still reported through create_complete below.
@@ -433,6 +496,9 @@ export const MonitorAgent = {
    * @returns {Promise<void>}
    */
   async updateMonitor(id, updates, telemetryContext = {}) {
+    if (this.isBlocked) {
+      throw new MonitorAgentBlockedError();
+    }
     await this._ensureLoaded();
     const monitor = gMonitors.get(id);
     if (!monitor) {
@@ -617,6 +683,9 @@ export const MonitorAgent = {
   },
 
   async runNow(id) {
+    if (this.isBlocked) {
+      throw new MonitorAgentBlockedError();
+    }
     await this._ensureLoaded();
     const monitor = gMonitors.get(id);
     if (!monitor) {
@@ -1166,6 +1235,7 @@ export const MonitorAgent = {
     gNotifiedRunIds.clear();
     gSnapshotRefreshPromises.clear();
     gShuttingDown = false;
+    gSuspended = false;
   },
 
   /**

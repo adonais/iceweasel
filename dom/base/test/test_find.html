@@ -251,14 +251,18 @@ let runTests = t.step_func_done(function() {
       </details>
     `;
 
+    const detailsElement = iframe.contentDocument.getElementById("details");
+    const togglePromise = new Promise(resolve =>
+      detailsElement.addEventListener("toggle", resolve, { once: true })
+    );
+
     iframe.contentWindow.getSelection().removeAllRanges();
     const found = iframe.contentWindow.find("Details text");
 
     assert_true(found, "Should find text in closed details");
 
-    await new Promise(resolve => iframe.contentWindow.requestAnimationFrame(resolve));
+    await togglePromise;
 
-    const detailsElement = iframe.contentDocument.getElementById("details");
     assert_true(detailsElement.open, "details element should be opened after find");
   }, "details element is opened after find");
 });

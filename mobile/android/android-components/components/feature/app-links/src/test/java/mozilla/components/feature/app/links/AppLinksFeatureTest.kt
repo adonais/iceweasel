@@ -522,6 +522,7 @@ class AppLinksFeatureTest {
 
         assertTrue(
             feature.shouldBypassPrompt(
+                url = "https://example.com",
                 isPrivate = false,
                 isWallet = false,
             )
@@ -541,6 +542,7 @@ class AppLinksFeatureTest {
 
         assertFalse(
             feature.shouldBypassPrompt(
+                url = "https://example.com",
                 isPrivate = true,
                 isWallet = false,
             )
@@ -561,10 +563,32 @@ class AppLinksFeatureTest {
 
         assertFalse(
             feature.shouldBypassPrompt(
+                url = "https://example.com",
                 isPrivate = false,
                 isWallet = true,
             )
         )
+    }
+
+    @Test
+    fun `WHEN evaluating the prompt THEN the url is provided to shouldPrompt`() {
+        var capturedUrl: String? = null
+        feature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                useCases = mockUseCases,
+                mainDispatcher = testDispatcher,
+                shouldPrompt = { url ->
+                    capturedUrl = url
+                    true
+                },
+            )
+
+        feature.shouldBypassPrompt(url = "https://example.com", isPrivate = false, isWallet = false)
+
+        assertEquals("https://example.com", capturedUrl)
     }
 
     @Test

@@ -38,17 +38,7 @@ nsDeviceContextSpecProxy::Init(nsIPrintSettings* aPrintSettings,
 }
 
 already_AddRefed<PrintTarget> nsDeviceContextSpecProxy::MakePrintTarget() {
-  double width, height;
-  mPrintSettings->GetEffectiveSheetSize(&width, &height);
-  if (width <= 0 || height <= 0) {
-    return nullptr;
-  }
-
-  // convert twips to points
-  width /= TWIPS_PER_POINT_FLOAT;
-  height /= TWIPS_PER_POINT_FLOAT;
-
-  return PrintTargetRecording::CreateOrNull(IntSize::Ceil(width, height));
+  return PrintTargetRecording::CreateOrNull();
 }
 
 NS_IMETHODIMP

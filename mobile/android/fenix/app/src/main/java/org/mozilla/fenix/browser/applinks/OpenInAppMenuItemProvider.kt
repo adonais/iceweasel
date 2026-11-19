@@ -5,6 +5,7 @@
 package org.mozilla.fenix.browser.applinks
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -53,19 +54,25 @@ class OpenInAppMenuItemProvider(
     private val settings: Settings,
     scope: CoroutineScope,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        combine(browserStore.currentUrl(target), appStore.isOpenInAppHighlighted()) { url, isHighlighted ->
-                openInAppItem(url = url, isHighlighted = isHighlighted)
-            }
-            .stateIn(
-                scope = scope,
-                started = SharingStarted.Eagerly,
-                initialValue =
-                    openInAppItem(
-                        url = target.browserSessionFrom(browserStore.state)?.content?.url,
-                        isHighlighted = appStore.state.isOpenInAppHighlighted(),
-                    ),
-            )
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            combine(browserStore.currentUrl(target), appStore.isOpenInAppHighlighted()) { url, isHighlighted ->
+                    listOf(openInAppItem(url = url, isHighlighted = isHighlighted))
+                }
+                .stateIn(
+                    scope = scope,
+                    started = SharingStarted.Eagerly,
+                    initialValue =
+                        listOf(
+                            openInAppItem(
+                                url = target.browserSessionFrom(browserStore.state)?.content?.url,
+                                isHighlighted = appStore.state.isOpenInAppHighlighted(),
+                            )
+                        ),
+                )
+        }
 
     /**
      * The item to show, usable only if an external app can open [url].
@@ -78,7 +85,7 @@ class OpenInAppMenuItemProvider(
     ): MenuItem {
         val externalApp = url?.let { appLinksUseCases.appLinkRedirect(it) }?.takeIf { it.hasExternalApp() }
 
-        return StandardMenuItem(
+        return DEFAULT_MENU_ITEM.copy(
             title =
                 MenuItemTitle(
                     when (val appName = externalApp?.appName?.takeIf { it.isNotEmpty() }) {
@@ -114,6 +121,14 @@ class OpenInAppMenuItemProvider(
         settings.openInAppOpened = true
         appLinksUseCases.openAppLink(redirect.appIntent)
         menu.dismiss()
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_open_app_link)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_more_grid_24),
+            )
     }
 }
 

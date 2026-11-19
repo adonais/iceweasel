@@ -139,7 +139,6 @@ namespace mozilla {
 enum class NativeKeyBindingsType : uint8_t;
 
 class TimeStamp;
-class WaylandVsyncSource;
 #ifdef MOZ_X11
 class CurrentX11TimeGetter;
 #endif
@@ -561,6 +560,7 @@ class nsWindow : public nsIWidget {
 
   virtual void EnableVSyncSource() {}
   virtual void DisableVSyncSource() {}
+  virtual void WatchHiddenVSyncSource() {}
 
   // event handling code
   void DispatchActivateEvent(void);

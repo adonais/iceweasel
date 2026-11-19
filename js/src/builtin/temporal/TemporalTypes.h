@@ -7,6 +7,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Maybe.h"
 
 #include <cmath>
 #include <compare>
@@ -16,6 +17,7 @@
 
 #include "jstypes.h"
 
+#include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/TemporalUnit.h"
 #include "vm/Int128.h"
 
@@ -535,6 +537,48 @@ struct PackedTime final {
         int32_t((time.value >> MicrosecondShift) & BitMask(MicrosecondBits)),
         int32_t((time.value >> NanosecondShift) & BitMask(NanosecondBits)),
     };
+  }
+};
+
+// 32-bit packed calendar identifier and optional time zone offset for storage
+// within an Int32Value.
+struct PackedCalendarAndOffset final {
+  static constexpr uint32_t CalendarBits = 12;
+  // Positioned so that a right shift provides free sign-extension.
+  // Provides +/- 6 days of offset at second-precision.
+  static constexpr uint32_t OffsetBits = 20;
+
+  static constexpr uint32_t CalendarShift = 0;
+  static constexpr uint32_t OffsetShift = CalendarShift + CalendarBits;
+
+  static_assert(CalendarBits >= sizeof(CalendarId) * CHAR_BIT);
+  static_assert(OffsetShift + OffsetBits == 32);
+
+  static constexpr int32_t EmptyOffset = INT32_MIN >> OffsetShift;
+
+  int32_t value;
+
+  static constexpr PackedCalendarAndOffset pack(CalendarId calendar,
+                                                int32_t offset = EmptyOffset) {
+    MOZ_ASSERT((offset << OffsetShift) >> OffsetShift == offset);
+    return {
+        int32_t(offset << OffsetShift | uint32_t(calendar) << CalendarShift)};
+  }
+
+  constexpr CalendarId calendar() const {
+    return CalendarId((value >> CalendarShift) & BitMask(CalendarBits));
+  }
+
+  constexpr mozilla::Maybe<int32_t> offsetSeconds() const {
+    int32_t offset = value >> OffsetShift;
+    if (offset == EmptyOffset) {
+      return mozilla::Nothing();
+    }
+    return mozilla::Some(offset);
+  }
+
+  constexpr PackedCalendarAndOffset withOffsetSeconds(int32_t offset) const {
+    return pack(calendar(), offset);
   }
 };
 

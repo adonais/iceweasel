@@ -236,7 +236,10 @@ class WhiteSpaceVisibilityKeeper final {
    * to white-spaces around the insertion point.
    *
    * @param aStringToInsert     The string to insert.
-   * @param aRangeToBeReplaced  The range to be replaced.
+   * @param aPointToInsert      The point where the string should be inserted.
+   * @param aExtantUnnecessaryLineBreak
+   *                            If there is an extant line break this should be
+   *                            set. It won't be deleted by this call.
    * @param aInsertTextTo       Whether forcibly creates a new `Text` node in
    *                            specific condition or use existing `Text` if
    *                            available.
@@ -246,11 +249,13 @@ class WhiteSpaceVisibilityKeeper final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   InsertText(HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
              const EditorDOMPointType& aPointToInsert,
+             const Maybe<EditorLineBreak>& aExtantUnnecessaryLineBreak,
              InsertTextTo aInsertTextTo, const Element& aEditingHost) {
     return WhiteSpaceVisibilityKeeper::
         InsertTextOrInsertOrUpdateCompositionString(
             aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
-            aInsertTextTo, InsertTextFor::NormalText, aEditingHost);
+            aExtantUnnecessaryLineBreak, aInsertTextTo,
+            InsertTextFor::NormalText, aEditingHost);
   }
 
   /**
@@ -265,17 +270,21 @@ class WhiteSpaceVisibilityKeeper final {
    *                            If there is old composition string, this should
    *                            cover all of it.  Otherwise, this should be
    *                            collapsed and indicate the insertion point.
+   * @param aExtantUnnecessaryLineBreak
+   *                            If there is an extant line break this should be
+   *                            set. It won't be deleted by this call.
    * @param aEditingHost        The editing host at aCompositionStringRange.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
-  InsertOrUpdateCompositionString(HTMLEditor& aHTMLEditor,
-                                  const nsAString& aCompositionString,
-                                  const EditorDOMRange& aCompositionStringRange,
-                                  InsertTextFor aPurpose,
-                                  const Element& aEditingHost) {
+  InsertOrUpdateCompositionString(
+      HTMLEditor& aHTMLEditor, const nsAString& aCompositionString,
+      const EditorDOMRange& aCompositionStringRange,
+      const Maybe<EditorLineBreak>& aExtantUnnecessaryLineBreak,
+      InsertTextFor aPurpose, const Element& aEditingHost) {
     MOZ_ASSERT(EditorBase::InsertingTextForComposition(aPurpose));
     return InsertTextOrInsertOrUpdateCompositionString(
         aHTMLEditor, aCompositionString, aCompositionStringRange,
+        aExtantUnnecessaryLineBreak,
         HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable, aPurpose,
         aEditingHost);
   }
@@ -375,6 +384,9 @@ class WhiteSpaceVisibilityKeeper final {
    *                            normalizing the new composition string.
    *                            Therefore, this should match the range of the
    *                            latest composition string.
+   * @param aExtantUnnecessaryLineBreak
+   *                            If there is an extant line break this should be
+   *                            set. It won't be deleted by this call.
    * @param aInsertTextTo       Whether forcibly creates a new `Text` node in
    *                            specific condition or use existing `Text` if
    *                            available.
@@ -385,8 +397,10 @@ class WhiteSpaceVisibilityKeeper final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   InsertTextOrInsertOrUpdateCompositionString(
       HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
-      const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
-      InsertTextFor aPurpose, const Element& aEditingHost);
+      const EditorDOMRange& aRangeToBeReplaced,
+      const Maybe<EditorLineBreak>& aExtantUnnecessaryLineBreak,
+      InsertTextTo aInsertTextTo, InsertTextFor aPurpose,
+      const Element& aEditingHost);
 };
 
 }  // namespace mozilla

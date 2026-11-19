@@ -1,0 +1,8 @@
+[DEFAULT]
+support-files = [
+  "../head_subframes_process_isolation.js",
+  "../data/file_privilegedabout_page.html",
+]
+prefs = ["extensions.webextensions.remote=false"]
+
+["browser_ext_subframes_process_isolation_remote_disabled.js"]

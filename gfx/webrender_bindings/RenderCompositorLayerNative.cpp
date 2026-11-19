@@ -135,6 +135,10 @@ void RenderCompositorLayerNative::GetCompositorCapabilities(
   RenderCompositor::GetCompositorCapabilities(aCaps);
 }
 
+uint32_t RenderCompositorLayerNative::GetMaxPartialPresentRects() {
+  return gfx::gfxVars::WebRenderMaxPartialPresentRects();
+}
+
 void RenderCompositorLayerNative::GetWindowProperties(
     WindowProperties* aProperties) {
   // XXX
@@ -258,8 +262,6 @@ void RenderCompositorLayerNative::CompositorEndFrame() {
   // MacOS fails rendering without the flush here.
   DoFlush();
 #endif
-
-  mAddedLayers.Reverse();
 
   mNativeLayerRoot->SetLayers(mAddedLayers);
   mNativeLayerRoot->CommitToScreen();
@@ -435,7 +437,8 @@ UniquePtr<RenderCompositor> RenderCompositorLayerNativeOGL::Create(
                     << gfx::hexa(gl.get());
     return nullptr;
   }
-  return MakeUnique<RenderCompositorLayerNativeOGL>(aWidget, std::move(gl));
+  return std::make_unique<RenderCompositorLayerNativeOGL>(aWidget,
+                                                          std::move(gl));
 }
 
 RenderCompositorLayerNativeOGL::RenderCompositorLayerNativeOGL(
@@ -495,7 +498,7 @@ void RenderCompositorLayerNativeOGL::InsertFrameDoneSync() {
     mGL->fDeleteSync(mThisFrameDoneFences->mSync);
   }
   mThisFrameDoneFences =
-      MakeUnique<BackPressureFences>(std::move(mPendingGpuFences));
+      std::make_unique<BackPressureFences>(std::move(mPendingGpuFences));
   mThisFrameDoneFences->mSync =
       mGL->fFenceSync(LOCAL_GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 #endif

@@ -96,6 +96,24 @@ def test_cli_run_with_setup(run, capfd):
     assert ret == 1
 
 
+def test_cli_run_with_setup_failed_json(run, tmp_path):
+    out = tmp_path / "out.json"
+    ret = run(["-l", "setupfailed", "-f", f"json:{out}"])
+    assert ret == 1
+    assert out.read_text().strip() == "{}"
+
+
+def test_cli_run_with_edit_setup_failed(run, capfd):
+    os.environ["EDITOR"] = "echo"
+    try:
+        ret = run(["-f", "stylish", "--edit", "-l", "external", "-l", "setupfailed"])
+    finally:
+        del os.environ["EDITOR"]
+    out, err = capfd.readouterr()
+    assert ret == 1
+    assert "1 failure" in out
+
+
 def test_cli_run_with_all_skipped(run, capfd):
     # implicitly call setup
     ret = run(["-l", "setupskipped"])

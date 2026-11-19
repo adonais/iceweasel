@@ -10,6 +10,40 @@ import { JSONFile } from "resource://gre/modules/JSONFile.sys.mjs";
 // otherwise, Fluent would overwrite the customization.
 const ATTRS = ["data-l10n-id", "key", "keycode", "modifiers"];
 
+// On macOS, the user can assign a shortcut to a menu item in System Settings.
+// The widget code then writes that shortcut over the key element's attributes,
+// marks the element with this attribute, and keeps the element's own
+// attributes in data-builtin-* copies. A customization made here goes into
+// those copies, so that it applies again once the system assignment is gone.
+const SYSTEM_SHORTCUT_ATTR = "data-has-system-shortcut";
+
+function isSystemAssigned(keyEl) {
+  return keyEl.hasAttribute(SYSTEM_SHORTCUT_ATTR);
+}
+
+// The name of the attribute to read or write for `attr`, on the layer this
+// module owns.
+function attrName(keyEl, attr) {
+  if (!isSystemAssigned(keyEl)) {
+    return attr;
+  }
+  return attr == "data-l10n-id"
+    ? "data-builtin-l10n-id"
+    : `data-builtin-${attr}`;
+}
+
+function getAttr(keyEl, attr) {
+  return keyEl.getAttribute(attrName(keyEl, attr));
+}
+
+function setAttr(keyEl, attr, val) {
+  keyEl.setAttribute(attrName(keyEl, attr), val);
+}
+
+function removeAttr(keyEl, attr) {
+  keyEl.removeAttribute(attrName(keyEl, attr));
+}
+
 // The original keys for any shortcuts that have been customized. This is used
 // to identify whether a shortcut has been customized, as well as to reset a
 // shortcut.
@@ -31,7 +65,7 @@ const config = new JSONFile({
   path: PathUtils.join(PathUtils.profileDir, "customKeys.json"),
 });
 
-function applyToKeyEl(window, keyId, keysets) {
+function applyToKeyEl(window, keyId) {
   const keyEl = window.document.getElementById(keyId);
   if (!keyEl || keyEl.tagName != "key") {
     return;
@@ -40,71 +74,51 @@ function applyToKeyEl(window, keyId, keysets) {
     // Save the original key in case the user wants to reset.
     const orig = (original[keyId] = {});
     for (const attr of ATTRS) {
-      const val = keyEl.getAttribute(attr);
+      const val = getAttr(keyEl, attr);
       if (val) {
         orig[attr] = val;
       }
     }
   }
   for (const attr of ATTRS) {
-    keyEl.removeAttribute(attr);
+    removeAttr(keyEl, attr);
   }
   const data = config.data[keyId];
   for (const attr of ["modifiers", "key", "keycode"]) {
     const val = data[attr];
     if (val) {
-      keyEl.setAttribute(attr, val);
+      setAttr(keyEl, attr, val);
     }
   }
-  keysets.add(keyEl.parentElement);
 }
 
-function resetKeyEl(window, keyId, keysets) {
+function resetKeyEl(window, keyId) {
   const keyEl = window.document.getElementById(keyId);
   if (!keyEl) {
     return;
   }
   const orig = original[keyId];
   for (const attr of ATTRS) {
-    keyEl.removeAttribute(attr);
+    removeAttr(keyEl, attr);
     const val = orig[attr];
     if (val !== undefined) {
-      keyEl.setAttribute(attr, val);
+      setAttr(keyEl, attr, val);
     }
   }
-  keysets.add(keyEl.parentElement);
 }
 
 async function applyToNewWindow(window) {
   await config.load();
-  const keysets = new Set();
-  for (const keyId in config.data) {
-    applyToKeyEl(window, keyId, keysets);
-  }
-  refreshKeysets(window, keysets);
-  observe(window);
-}
-
-function refreshKeysets(window, keysets) {
-  if (keysets.size == 0) {
+  // The window can close before the configuration has loaded.
+  if (window.closed) {
     return;
   }
-  const observer = windows.get(window);
-  if (observer) {
-    // We don't want our MutationObserver to process this.
-    observer.disconnect();
+  for (const keyId in config.data) {
+    applyToKeyEl(window, keyId);
   }
-  // Gecko doesn't watch for changes to key elements. It only sets up a key
-  // element when its keyset is bound to the tree. See:
-  // https://searchfox.org/mozilla-central/rev/7857ea04d142f2abc0d777085f9e54526c7cedf9/dom/xul/nsXULElement.cpp#587
-  // Therefore, remove and re-add any modified keysets to apply the changes.
-  for (const keyset of keysets) {
-    const parent = keyset.parentElement;
-    keyset.remove();
-    parent.append(keyset);
-  }
-  if (observer) {
-    observe(window);
+  const observer = observe(window);
+  for (const keyset of window.document.getElementsByTagName("keyset")) {
+    observer.observe(keyset, { childList: true });
   }
 }
 
@@ -112,31 +126,35 @@ function observe(window) {
   let observer = windows.get(window);
   if (!observer) {
     // A keyset can be added dynamically. For example, DevTools does this during
-    // delayed startup. Note that key elements cannot be added dynamically. We
-    // know this because Gecko doesn't watch for changes to key elements. It
-    // only sets up a key element when its keyset is bound to the tree. See:
-    // https://searchfox.org/mozilla-central/rev/7857ea04d142f2abc0d777085f9e54526c7cedf9/dom/xul/nsXULElement.cpp#587
+    // delayed startup. A key element can also be added to a keyset, so each
+    // keyset is observed as well.
+    const applyToAddedKey = key => {
+      if (key.tagName == "key" && config.data[key.id]) {
+        applyToKeyEl(window, key.id);
+      }
+    };
     observer = new window.MutationObserver(mutations => {
-      const keysets = new Set();
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
-          if (node.tagName != "keyset") {
-            continue;
-          }
-          for (const key of node.children) {
-            if (key.tagName != "key" || !config.data[key.id]) {
-              continue;
+          if (node.tagName == "keyset") {
+            observer.observe(node, { childList: true });
+            for (const key of node.children) {
+              applyToAddedKey(key);
             }
-            applyToKeyEl(window, key.id, keysets);
+          } else if (mutation.target.tagName == "keyset") {
+            applyToAddedKey(node);
           }
         }
       }
-      refreshKeysets(window, keysets);
     });
     windows.set(window, observer);
   }
+  // XUL documents without an HTML body, such as the macOS hidden window, only
+  // have the document to observe.
   for (const node of [window.document, window.document.body]) {
-    observer.observe(node, { childList: true });
+    if (node) {
+      observer.observe(node, { childList: true });
+    }
   }
   return observer;
 }
@@ -182,9 +200,7 @@ export const CustomKeys = {
       data.keycode = keycode;
     }
     for (const window of windows.keys()) {
-      const keysets = new Set();
-      applyToKeyEl(window, id, keysets);
-      refreshKeysets(window, keysets);
+      applyToKeyEl(window, id);
     }
     config.saveSoon();
   },
@@ -200,9 +216,7 @@ export const CustomKeys = {
     }
     delete config.data[id];
     for (const window of windows.keys()) {
-      const keysets = new Set();
-      resetKeyEl(window, id, keysets);
-      refreshKeysets(window, keysets);
+      resetKeyEl(window, id);
     }
     delete original[id];
     config.saveSoon();
@@ -232,8 +246,8 @@ export const CustomKeys = {
         // incorrectly mark them as customized.
         if (
           config.data[keyEl.id] ||
-          keyEl.hasAttribute("key") ||
-          keyEl.hasAttribute("keycode")
+          getAttr(keyEl, "key") ||
+          getAttr(keyEl, "keycode")
         ) {
           ids.add(keyEl.id);
         }
@@ -250,11 +264,9 @@ export const CustomKeys = {
   resetAll() {
     config.data = {};
     for (const window of windows.keys()) {
-      const keysets = new Set();
       for (const id in original) {
-        resetKeyEl(window, id, keysets);
+        resetKeyEl(window, id);
       }
-      refreshKeysets(window, keysets);
     }
     for (const id of Object.keys(original)) {
       delete original[id];
@@ -266,8 +278,21 @@ export const CustomKeys = {
     applyToNewWindow(window);
   },
 
+  /**
+   * Whether the operating system assigned the shortcut of this key element,
+   * as the user can do for a menu item in System Settings on macOS. Such a
+   * shortcut cannot be changed from here; a customization applies again once
+   * the assignment is removed.
+   *
+   * @param {Element} keyEl The key element.
+   */
+  isSystemAssigned(keyEl) {
+    return isSystemAssigned(keyEl);
+  },
+
   uninitWindow(window) {
-    windows.get(window).disconnect();
+    // Nothing to do if the window closed before initWindow finished.
+    windows.get(window)?.disconnect();
     windows.delete(window);
   },
 

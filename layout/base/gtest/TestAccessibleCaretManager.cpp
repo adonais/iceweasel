@@ -61,9 +61,9 @@ class AccessibleCaretManagerTester : public ::testing::Test {
     using AccessibleCaretManager::UpdateCarets;
 
     MockAccessibleCaretManager()
-        : AccessibleCaretManager(nullptr,
-                                 Carets{MakeUnique<MockAccessibleCaret>(),
-                                        MakeUnique<MockAccessibleCaret>()}) {}
+        : AccessibleCaretManager(
+              nullptr, Carets{std::make_unique<MockAccessibleCaret>(),
+                              std::make_unique<MockAccessibleCaret>()}) {}
 
     MockAccessibleCaret& FirstCaret() {
       return static_cast<MockAccessibleCaret&>(*mCarets.GetFirst());

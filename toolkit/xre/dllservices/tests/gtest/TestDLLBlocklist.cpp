@@ -180,17 +180,6 @@ TEST(TestDllBlocklist, GPUProcessOnly_AllowInMainProcess)
   EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
 }
 
-TEST(TestDllBlocklist, SocketProcessOnly_AllowInMainProcess)
-{
-  constexpr auto kLeafName = u"TestDllBlocklist_SocketProcessOnly.dll"_ns;
-  nsString dllPath = GetFullPath(kLeafName);
-
-  nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
-
-  EXPECT_TRUE(!!hDll);
-  EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
-}
-
 TEST(TestDllBlocklist, UtilityProcessOnly_AllowInMainProcess)
 {
   constexpr auto kLeafName = u"TestDllBlocklist_UtilityProcessOnly.dll"_ns;

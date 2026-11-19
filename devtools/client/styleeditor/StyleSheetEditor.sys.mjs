@@ -492,6 +492,13 @@ export class StyleSheetEditor extends EventEmitter {
           "already been removed from Style Editor."
       );
     }
+    await this.fetchSource();
+    if (this._isDestroyed) {
+      throw new Error(
+        "Won't load source editor as the style sheet has " +
+          "already been removed from Style Editor."
+      );
+    }
 
     this._inputElement = inputElement;
 
@@ -632,6 +639,11 @@ export class StyleSheetEditor extends EventEmitter {
       // TODO: do we want to do this?
       return;
     }
+    // We are only updating backend stylesheet when the editor
+    // is created, opened and actively editing.
+    if (!this.sourceEditor) {
+      return;
+    }
 
     if (this._justSetText) {
       this._justSetText = false;
@@ -644,9 +656,7 @@ export class StyleSheetEditor extends EventEmitter {
     // when it is enabled back. @see enableStylesheet
     this._updateTask = null;
 
-    if (this.sourceEditor) {
-      this._state.text = this.sourceEditor.getText();
-    }
+    this._state.text = this.sourceEditor.getText();
 
     try {
       const styleSheetsFront = await this._getStyleSheetsFront();
@@ -782,7 +792,7 @@ export class StyleSheetEditor extends EventEmitter {
    * @see savedFile
    */
   saveToFile(file, callback) {
-    const onFile = returnFile => {
+    const onFile = async returnFile => {
       if (!returnFile) {
         if (callback) {
           callback(null);
@@ -790,6 +800,11 @@ export class StyleSheetEditor extends EventEmitter {
         return;
       }
 
+      // We may try saving the file without opening it,
+      // for force loading its text content from the backend
+      if (!this._state.text) {
+        await this.fetchSource();
+      }
       if (this.sourceEditor) {
         this._state.text = this.sourceEditor.getText();
       }

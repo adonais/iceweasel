@@ -368,14 +368,6 @@ class SingleTestMixin:
         mozinfo.update({"headless": self.config.get("headless", False)})
         mozinfo.update({"a11y_checks": self.config.get("a11y_checks", False)})
         mozinfo.update({
-            "socketprocess_e10s": "media.peerconnection.mtransport_process=true"
-            in self.config.get("extra_prefs", [])
-        })
-        mozinfo.update({
-            "socketprocess_networking": "network.http.network_access_on_socket_process.enabled=true"
-            in self.config.get("extra_prefs", [])
-        })
-        mozinfo.update({
             "swgl": "gfx.webrender.software=true" in self.config.get("extra_prefs", [])
         })
         mozinfo.update({
@@ -622,5 +614,6 @@ class SingleTestMixin:
         path = os.path.join(dir, TEST_SUMMARY_FILENAME)
         if not self.test_summary_started:
             self.test_summary_started = True
+            os.makedirs(dir, exist_ok=True)
             open(path, "w", encoding="utf-8").close()
         return path

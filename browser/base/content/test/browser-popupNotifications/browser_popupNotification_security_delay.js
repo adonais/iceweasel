@@ -382,6 +382,7 @@ add_task(async function test_notificationDuringFullScreenTransition() {
         ["security.notification_enable_delay", 1],
         // Set a longer full screen exit transition so the test works on slow builds.
         ["full-screen-api.transition-duration.leave", "1000 1000"],
+        ["ui.prefersReducedMotion", 0],
         // Waive the user activation requirement for full screen requests.
         // The PoC this test is based on relies on spam clicking which grants
         // user activation in the popup that requests full screen.

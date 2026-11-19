@@ -105,7 +105,7 @@ void ProfilerChild::ProcessChunkManagerUpdate(
     }
     thread = lockedUpdate->mProfilerChild->mThread;
   }
-  thread->Dispatch(NS_NewRunnableFunction(
+  RefPtr<Runnable> runnable = NS_NewRunnableFunction(
       "ProfilerChild::ProcessPendingUpdate", []() mutable {
         RefPtr<ProfilerChild> profilerChild;
         ProfileBufferControlledChunkManager::Update update;
@@ -120,7 +120,10 @@ void ProfilerChild::ProcessChunkManagerUpdate(
           lockedUpdate->mUpdate.Clear();
         }
         profilerChild->ProcessChunkManagerUpdate(std::move(update));
-      }));
+      });
+  // The ProfilerChild thread may have been shut down since the lock was
+  // released. Dispatch fallibly so the runnable is released instead of leaked.
+  thread->Dispatch(runnable.forget(), NS_DISPATCH_FALLIBLE);
 }
 
 /* static */ bool ProfilerChild::IsLockedOnCurrentThread() {
@@ -346,8 +349,8 @@ void ProfilerChild::GatherProfileThreadFunction(
       parameters->progress, "Gather-profile thread started", "Profile sent");
   using namespace mozilla::literals::ProportionValue_literals;  // For `1_pc`.
 
-  auto writer =
-      MakeUnique<SpliceableChunkedJSONWriter>(parameters->failureLatchSource);
+  auto writer = std::make_unique<SpliceableChunkedJSONWriter>(
+      parameters->failureLatchSource);
   auto rv =
       profiler_get_profile_json(*writer,
                                 /* aSinceTime */ 0,
@@ -512,7 +515,7 @@ void ProfilerChild::JoinGatherProfileThread() {
   mGatherProfileThread = nullptr;
 }
 
-void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
+void ProfilerChild::ActorDestroy(ActorDestroyReason /*aActorDestroyReason*/) {
   mDestroyed = true;
   if (mAwaitNextChunkManagerUpdateResolver) {
     // The reply can't be sent anymore (IPC rejects the parent's request);

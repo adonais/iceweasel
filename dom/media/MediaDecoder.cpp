@@ -733,7 +733,7 @@ void MediaDecoder::OnMetadataLoaded(
 void MediaDecoder::OnMetadataUpdate(TimedMetadata&& aMetadata) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<MediaDecoder> kungFuDeathGrip = this;
-  MetadataLoaded(MakeUnique<MediaInfo>(*aMetadata.mInfo),
+  MetadataLoaded(std::make_unique<MediaInfo>(*aMetadata.mInfo),
                  UniquePtr<MetadataTags>(std::move(aMetadata.mTags)),
                  MediaDecoderEventVisibility::Observable);
   if (IsShutdown()) {
@@ -859,7 +859,7 @@ void MediaDecoder::FirstFrameLoaded(
 
   // We only care about video first frame.
   if (mInfo->HasVideo() && mMDSMCreationTime) {
-    auto info = MakeUnique<dom::MediaDecoderDebugInfo>();
+    auto info = std::make_unique<dom::MediaDecoderDebugInfo>();
     RequestDebugInfo(*info)->Then(
         GetMainThreadSerialEventTarget(), __func__,
         [self = RefPtr<MediaDecoder>{this}, this, now = TimeStamp::Now(),

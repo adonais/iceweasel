@@ -36,7 +36,7 @@ using mozilla::dom::Optional;
 // static
 UniquePtr<FileReaderSync> FileReaderSync::Constructor(
     const GlobalObject& aGlobal) {
-  return MakeUnique<FileReaderSync>();
+  return std::make_unique<FileReaderSync>();
 }
 
 bool FileReaderSync::WrapObject(JSContext* aCx,

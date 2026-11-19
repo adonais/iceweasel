@@ -82,7 +82,7 @@ class HelperMixin:
         symbolstore.vcsFileInfoCache = {}
 
         # Remove environment variables that can influence tests.
-        for e in ("MOZ_SOURCE_CHANGESET", "MOZ_SOURCE_REPO"):
+        for e in ("MOZ_SOURCE_CHANGESET", "MOZ_SOURCE_REPO", "GECKO_HEAD_REV"):
             try:
                 del os.environ[e]
             except KeyError:
@@ -275,6 +275,49 @@ class TestGetVCSFilename(HelperMixin, unittest.TestCase):
         filename = os.path.join(self.test_dir, "foo.c")
         self.assertEqual(
             "hg:somewhere.com/repo:foo.c:abcdef0123456",
+            symbolstore.GetVCSFilename(filename, [self.test_dir])[0],
+        )
+
+    @patch("subprocess.Popen")
+    def testVCSFilenameGit(self, mock_Popen):
+        mock_Popen.return_value.communicate.return_value = ("abcd1234\n", "")
+        os.mkdir(os.path.join(self.test_dir, ".git"))
+        filename = os.path.join(self.test_dir, "foo.c")
+        self.assertEqual(
+            "git:github.com/mozilla-firefox/firefox:foo.c:abcd1234",
+            symbolstore.GetVCSFilename(filename, [self.test_dir])[0],
+        )
+        self.assertEqual(
+            ["git", "-C", self.test_dir, "rev-parse", "HEAD"],
+            list(mock_Popen.call_args.kwargs["args"]),
+        )
+
+    @patch("subprocess.Popen")
+    def testVCSFilenameGitWorktree(self, mock_Popen):
+        mock_Popen.return_value.communicate.return_value = ("abcd1234\n", "")
+        with open(os.path.join(self.test_dir, ".git"), "w") as fh:
+            fh.write("gitdir: /path/to/main/.git/worktrees/foo\n")
+        filename = os.path.join(self.test_dir, "foo.c")
+        self.assertEqual(
+            "git:github.com/mozilla-firefox/firefox:foo.c:abcd1234",
+            symbolstore.GetVCSFilename(filename, [self.test_dir])[0],
+        )
+
+    @patch("subprocess.Popen")
+    def testVCSFilenameGitEnv(self, mock_Popen):
+        os.environ["GECKO_HEAD_REV"] = "abcdef0123456"
+        os.mkdir(os.path.join(self.test_dir, ".git"))
+        filename = os.path.join(self.test_dir, "foo.c")
+        self.assertEqual(
+            "git:github.com/mozilla-firefox/firefox:foo.c:abcdef0123456",
+            symbolstore.GetVCSFilename(filename, [self.test_dir])[0],
+        )
+        mock_Popen.assert_not_called()
+
+    def testVCSFilenameUnknown(self):
+        filename = os.path.join(self.test_dir, "foo.c")
+        self.assertEqual(
+            filename,
             symbolstore.GetVCSFilename(filename, [self.test_dir])[0],
         )
 

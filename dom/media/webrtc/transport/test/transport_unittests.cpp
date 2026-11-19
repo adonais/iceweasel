@@ -231,7 +231,7 @@ class DtlsRecordParser {
     consume(2);
 
     CHECK_LENGTH(length);
-    auto db = MakeUnique<MediaPacket>();
+    auto db = std::make_unique<MediaPacket>();
     db->Copy(ptr(), length);
     consume(length);
 
@@ -1071,7 +1071,7 @@ TEST_F(TransportTest, TestConnectTwoDigestsBothBad) {
 
 TEST_F(TransportTest, TestConnectInjectCCS) {
   SetDtlsPeer();
-  p2_->SetInspector(MakeUnique<DtlsInspectorInjector>(
+  p2_->SetInspector(std::make_unique<DtlsInspectorInjector>(
       kTlsHandshakeType, kTlsHandshakeCertificate, kTlsFakeChangeCipherSpec,
       sizeof(kTlsFakeChangeCipherSpec)));
 

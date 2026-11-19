@@ -5,38 +5,22 @@ const { LoginTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/LoginTestUtils.sys.mjs"
 );
 
-// Different strings used for Nova UI.
-let isNovaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
-const OFFLINE_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-network-offline-header-2"
-  : "firefoxview-tabpickup-network-offline-header";
-const SYNC_ERROR_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-sync-error-header-2"
-  : "firefoxview-tabpickup-sync-error-header";
-const DISABLED_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-fxa-admin-disabled-header-2"
-  : "firefoxview-tabpickup-fxa-admin-disabled-header";
-const SIGN_IN_DESCRIPTION_L10N_ID = isNovaEnabled
-  ? "firefoxview-syncedtabs-signin-description-3"
-  : "firefoxview-syncedtabs-signin-description-2";
-const SIGN_IN_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-syncedtabs-signin-header-3"
-  : "firefoxview-syncedtabs-signin-header-2";
-const DISCONNECTED_DESCRIPTION_L10N_ID = isNovaEnabled
-  ? "firefoxview-syncedtabs-synctabs-description-2"
-  : "firefoxview-tabpickup-sync-disconnected-description";
-const DISCONNECTED_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-syncedtabs-synctabs-header-2"
-  : "firefoxview-tabpickup-sync-disconnected-header";
-const DISCONNECTED_BUTTON_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-synctabs-primarybutton-2"
-  : "firefoxview-tabpickup-sync-disconnected-primarybutton";
-const PASSWORD_LOCKED_DESCRIPTION_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-password-locked-description-2"
-  : "firefoxview-tabpickup-password-locked-description";
-const PASSWORD_LOCKED_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-password-locked-header-2"
-  : "firefoxview-tabpickup-password-locked-header";
+const OFFLINE_HEADER_L10N_ID = "firefoxview-tabpickup-network-offline-header-2";
+const SYNC_ERROR_HEADER_L10N_ID = "firefoxview-tabpickup-sync-error-header-2";
+const DISABLED_HEADER_L10N_ID =
+  "firefoxview-tabpickup-fxa-admin-disabled-header-2";
+const SIGN_IN_DESCRIPTION_L10N_ID =
+  "firefoxview-syncedtabs-signin-description-3";
+const SIGN_IN_HEADER_L10N_ID = "firefoxview-syncedtabs-signin-header-3";
+const DISCONNECTED_DESCRIPTION_L10N_ID =
+  "firefoxview-syncedtabs-synctabs-description-2";
+const DISCONNECTED_HEADER_L10N_ID = "firefoxview-syncedtabs-synctabs-header-2";
+const DISCONNECTED_BUTTON_L10N_ID =
+  "firefoxview-tabpickup-synctabs-primarybutton-2";
+const PASSWORD_LOCKED_DESCRIPTION_L10N_ID =
+  "firefoxview-tabpickup-password-locked-description-2";
+const PASSWORD_LOCKED_HEADER_L10N_ID =
+  "firefoxview-tabpickup-password-locked-header-2";
 
 async function setupWithDesktopDevices(state = UIState.STATUS_SIGNED_IN) {
   const sandbox = setupSyncFxAMocks({

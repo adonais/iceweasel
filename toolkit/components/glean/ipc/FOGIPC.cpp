@@ -23,8 +23,6 @@
 #include "mozilla/Hal.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcInfo.h"
 #include "mozilla/RDDChild.h"
@@ -344,9 +342,7 @@ void RecordPowerMetrics() {
   }
 
   uint64_t gpuTime, newGpuTime = 0;
-  // Avoid loading gdi32.dll for the Socket process where the GPU is never used.
-  if (!XRE_IsSocketProcess() &&
-      NS_SUCCEEDED(GetGpuTimeSinceProcessStartInMs(&gpuTime)) &&
+  if (NS_SUCCEEDED(GetGpuTimeSinceProcessStartInMs(&gpuTime)) &&
       gpuTime > previousGpuTime) {
     newGpuTime = gpuTime - previousGpuTime;
   }
@@ -526,11 +522,6 @@ void FlushAllChildData(
     }
   }
 
-  if (RefPtr<net::SocketProcessParent> socketParent =
-          net::SocketProcessParent::GetSingleton()) {
-    promises.EmplaceBack(socketParent->SendFlushFOGData());
-  }
-
   if (RefPtr<mozilla::gmp::GeckoMediaPluginServiceParent> gmps =
           mozilla::gmp::GeckoMediaPluginServiceParent::GetSingleton()) {
     // There can be multiple Gecko Media Plugin processes, but iterating
@@ -640,10 +631,6 @@ void SendFOGData(ipc::ByteBuf&& buf) {
     case GeckoProcessType_RDD:
       (void)mozilla::RDDParent::GetSingleton()->SendFOGData(std::move(buf));
       break;
-    case GeckoProcessType_Socket:
-      (void)net::SocketProcessChild::GetSingleton()->SendFOGData(
-          std::move(buf));
-      break;
     case GeckoProcessType_Utility:
       (void)ipc::UtilityProcessChild::GetSingleton()->SendFOGData(
           std::move(buf));
@@ -700,14 +687,6 @@ void TestTriggerMetrics(uint32_t aProcessType,
           [promise]() { promise->MaybeResolveWithUndefined(); },
           [promise]() { promise->MaybeRejectWithUndefined(); });
       break;
-    case nsIXULRuntime::PROCESS_TYPE_SOCKET: {
-      RefPtr<net::SocketProcessParent> socketParent(
-          net::SocketProcessParent::GetSingleton());
-      (void)socketParent->SendTestTriggerMetrics()->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [promise]() { promise->MaybeResolveWithUndefined(); },
-          [promise]() { promise->MaybeRejectWithUndefined(); });
-    } break;
     case nsIXULRuntime::PROCESS_TYPE_UTILITY:
       (void)ipc::UtilityProcessManager::GetSingleton()
           ->GetSharedKeepAlive(ipc::SandboxingKind::GENERIC_UTILITY)

@@ -232,7 +232,7 @@ NativeMessagingProxy::CloseSession(const nsACString& aHandle, JSContext* aCx,
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [s = RefPtr{this}, sessionHandle,
-           retPromise](RefPtr<GVariant>&& aResult) {
+           retPromise](RefPtr<GVariant>&& /*aResult*/) {
             LOG_NMPROXY("session %s closed", sessionHandle.get());
             retPromise->MaybeResolveWithUndefined();
           },

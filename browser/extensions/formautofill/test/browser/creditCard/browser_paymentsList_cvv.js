@@ -4,10 +4,9 @@
 
 "use strict";
 
-// Covers the read-only payment methods list on the redesigned settings pane
-// (browser.settings-redesign.enabled), which builds its rows from
-// FormAutofillPreferences.makePaymentsListItems() rather than from the
-// manageCreditCards.xhtml dialog.
+// Covers the read-only payment methods list on the redesigned settings pane,
+// which builds its rows from FormAutofillPreferences.makePaymentsListItems()
+// rather than from the manageCreditCards.xhtml dialog.
 
 const { FormAutofillPreferences } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofillPreferences.sys.mjs"
@@ -40,7 +39,7 @@ add_task(async function test_indicationShownForSavedSecurityCode() {
   const row = await getPaymentRow();
   is(
     row.l10nId,
-    "payment-moz-box-item-with-security-code",
+    "payment-moz-box-item-with-security-code-2",
     "The row uses the string that notes a saved security code"
   );
   ok(
@@ -106,7 +105,7 @@ add_task(async function test_indicationWithoutExpiryDate() {
   const row = await getPaymentRow();
   is(
     row.l10nId,
-    "payment-moz-box-item-security-code-only",
+    "payment-moz-box-item-security-code-only-2",
     "A card with no expiry uses the indicator-only string"
   );
   is(row.l10nArgs.expDate, "", "There is no expiry date to show");

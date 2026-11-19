@@ -867,12 +867,12 @@ class CorePS {
   }
 
  public:
-  static void Create(PSLockRef aLock) {
+  static void Create(PSLockRef /*aLock*/) {
     MOZ_ASSERT(!sInstance);
     sInstance = new CorePS();
   }
 
-  static void Destroy(PSLockRef aLock) {
+  static void Destroy(PSLockRef /*aLock*/) {
     MOZ_ASSERT(sInstance);
     delete sInstance;
     sInstance = nullptr;
@@ -1184,7 +1184,8 @@ class ActivePS {
                              size_t(scMaximumChunkSize)));
   }
 
-  static uint32_t AdjustFeatures(uint32_t aFeatures, uint32_t aFilterCount) {
+  static uint32_t AdjustFeatures(uint32_t aFeatures,
+                                 uint32_t /*aFilterCount*/) {
     // Filter out any features unavailable in this platform/configuration.
     aFeatures &= AvailableFeatures();
 
@@ -1226,7 +1227,7 @@ class ActivePS {
         mProfileBufferChunkManager(
             aChunkManagerOrNull
                 ? std::move(aChunkManagerOrNull)
-                : MakeUnique<ProfileBufferChunkManagerWithLocalLimit>(
+                : std::make_unique<ProfileBufferChunkManagerWithLocalLimit>(
                       size_t(ClampToAllowedEntries(aCapacity.Value())) *
                           scBytesPerEntry,
                       ChunkSizeForEntries(aCapacity.Value()))),
@@ -1506,7 +1507,7 @@ class ActivePS {
 
   // Writes out the current active configuration of the profile.
   static void WriteActiveConfiguration(
-      PSLockRef aLock, JSONWriter& aWriter,
+      PSLockRef /*aLock*/, JSONWriter& aWriter,
       const Span<const char>& aPropertyName = MakeStringSpan("")) {
     if (!sInstance) {
       if (!aPropertyName.empty()) {
@@ -1888,7 +1889,7 @@ class ActivePS {
         });
   }
 
-  static void AddBaseProfileThreads(PSLockRef aLock,
+  static void AddBaseProfileThreads(PSLockRef /*aLock*/,
                                     UniquePtr<char[]> aBaseProfileThreads) {
     MOZ_ASSERT(sInstance);
     DEBUG_LOG("AddBaseProfileThreads(%p)", aBaseProfileThreads.get());
@@ -1939,14 +1940,14 @@ class ActivePS {
 
 #if defined(MOZ_MEMORY) && defined(MOZ_PROFILER_MEMORY)
   static void SetMemoryCounter(UniquePtr<BaseProfilerCount> aMemoryCounter,
-                               PSLockRef aLock) {
+                               [[maybe_unused]] PSLockRef aLock) {
     MOZ_ASSERT(sInstance);
 
     sInstance->mMemoryCounter = std::move(aMemoryCounter);
   }
 
   static bool IsMemoryCounter(const BaseProfilerCount* aMemoryCounter,
-                              PSLockRef aLock) {
+                              [[maybe_unused]] PSLockRef aLock) {
     MOZ_ASSERT(sInstance);
 
     return sInstance->mMemoryCounter.get() == aMemoryCounter;
@@ -2126,7 +2127,7 @@ void profiler_add_state_change_callback(
   }
 
   (void)mIdentifiedProfilingStateChangeCallbacks.append(
-      MakeUnique<IdentifiedProfilingStateChangeCallback>(
+      std::make_unique<IdentifiedProfilingStateChangeCallback>(
           aProfilingStateSet, std::move(aCallback), aUniqueIdentifier));
 }
 
@@ -2640,8 +2641,8 @@ static void MergeStacks(
 }
 
 #if defined(USE_FRAME_POINTER_STACK_WALK) || defined(USE_MOZ_STACK_WALK)
-static void StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP,
-                              void* aClosure) {
+static void StackWalkCallback([[maybe_unused]] uint32_t aFrameNumber, void* aPC,
+                              void* aSP, void* aClosure) {
   NativeStack* nativeStack = static_cast<NativeStack*>(aClosure);
   MOZ_ASSERT(nativeStack->mCount < MAX_NATIVE_FRAMES);
   nativeStack->mSPs[nativeStack->mCount] = aSP;
@@ -3836,7 +3837,8 @@ profiler_code_address_service_for_presymbolication() {
     const char* symbolicate = getenv("MOZ_PROFILER_SYMBOLICATE");
     return symbolicate && symbolicate[0] != '\0';
   }();
-  return preSymbolicate ? MakeUnique<ProfilerCodeAddressService>() : nullptr;
+  return preSymbolicate ? std::make_unique<ProfilerCodeAddressService>()
+                        : nullptr;
 }
 
 static ProfilerResult<ProfileGenerationAdditionalInformation>
@@ -4519,7 +4521,7 @@ class SamplerThread {
     // Also this means the sampler has not started its run yet, so any callback
     // added now will be invoked at the end of the next loop; this guarantees
     // that the callback will be invoked after at least one full sampling loop.
-    mPostSamplingCallbackList = MakeUnique<PostSamplingCallbackListItem>(
+    mPostSamplingCallbackList = std::make_unique<PostSamplingCallbackListItem>(
         std::move(mPostSamplingCallbackList), std::move(aCallback));
   }
 
@@ -4621,6 +4623,7 @@ class SamplerThread {
 
 #if defined(GP_OS_windows)
   bool mNoTimerResolutionChange = true;
+  HANDLE mHiResTimer = nullptr;
 #endif
 
   struct SpiedThread {
@@ -5746,7 +5749,7 @@ MOZ_DEFINE_MALLOC_SIZE_OF(GeckoProfilerMallocSizeOf)
 
 NS_IMETHODIMP GeckoProfilerReporter::CollectReports(
     nsIHandleReportCallback* aHandleReport, nsISupports* aData,
-    bool aAnonymize) {
+    bool /*aAnonymize*/) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   size_t profSize = 0;
@@ -5827,7 +5830,7 @@ static ProfilingStack* locked_register_thread(
           lockedRWFromAnyThread = aOffThreadRef.GetLockedRWFromAnyThread();
 
       ProfiledThreadData* profiledThreadData = ActivePS::AddLiveProfiledThread(
-          aLock, MakeUnique<ProfiledThreadData>(
+          aLock, std::make_unique<ProfiledThreadData>(
                      aOffThreadRef.UnlockedConstReaderCRef().Info()));
       lockedRWFromAnyThread->SetProfilingFeaturesAndData(
           threadProfilingFeatures, profiledThreadData, aLock);
@@ -5911,7 +5914,7 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 static Vector<const char*> SplitAtCommas(const char* aString,
                                          UniquePtr<char[]>& aStorage) {
   size_t len = strlen(aString);
-  aStorage = MakeUnique<char[]>(len + 1);
+  aStorage = std::make_unique<char[]>(len + 1);
   PodCopy(aStorage.get(), aString, len + 1);
 
   // Iterate over all characters in aStorage and split at commas, by
@@ -5959,8 +5962,8 @@ static const char* get_size_suffix(const char* str) {
 }
 
 #if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
-static void profiler_start_signal_handler(int signal, siginfo_t* info,
-                                          void* context) {
+static void profiler_start_signal_handler(int /*signal*/, siginfo_t* /*info*/,
+                                          void* /*context*/) {
   // Starting the profiler from a signal handler is a risky business: Both of
   // the main tasks that we would like to accomplish (allocating memory, and
   // starting a thread) are illegal within a UNIX signal handler. Conversely,
@@ -5980,8 +5983,8 @@ static void profiler_start_signal_handler(int signal, siginfo_t* info,
   }
 }
 
-static void profiler_stop_signal_handler(int signal, siginfo_t* info,
-                                         void* context) {
+static void profiler_stop_signal_handler(int /*signal*/, siginfo_t* /*info*/,
+                                         void* /*context*/) {
   // Signal handlers are limited in what functions they can call, for more
   // details see: https://man7.org/linux/man-pages/man7/signal-safety.7.html
   // As we have a background thread already running for checking whether or
@@ -6125,7 +6128,7 @@ void profiler_dump_and_stop() {
     nsProfiler->DumpProfileToFileAsyncNoJs(path.value(), 0)
         ->Then(
             GetMainThreadSerialEventTarget(), __func__,
-            [](void_t ok) {
+            [](void_t /*ok*/) {
               LOG("Stopping profiler after dumping profile to disk");
               profiler_stop();
             },
@@ -6147,7 +6150,7 @@ void profiler_dump_and_stop() {
           nsProfiler->DumpProfileToFileAsyncNoJs(path.value(), 0)
               ->Then(
                   GetMainThreadSerialEventTarget(), __func__,
-                  [](void_t ok) {
+                  [](void_t /*ok*/) {
                     LOG("Stopping profiler after dumping profile to disk");
                     profiler_stop();
                   },
@@ -7038,7 +7041,7 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
       ThreadRegistry::OffThreadRef::RWFromAnyThreadWithLock lockedThreadData =
           offThreadRef.GetLockedRWFromAnyThread();
       ProfiledThreadData* profiledThreadData = ActivePS::AddLiveProfiledThread(
-          aLock, MakeUnique<ProfiledThreadData>(info));
+          aLock, std::make_unique<ProfiledThreadData>(info));
       lockedThreadData->SetProfilingFeaturesAndData(threadProfilingFeatures,
                                                     profiledThreadData, aLock);
       lockedThreadData->GetNewCpuTimeInNs();
@@ -8278,7 +8281,7 @@ UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
 
   ProfileChunkedBuffer captureBuffer(
       ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
-      MakeUnique<ProfileBufferChunkManagerSingle>(
+      std::make_unique<ProfileBufferChunkManagerSingle>(
           ProfileBufferChunkManager::scExpectedMaximumStackSize));
 
   if (!profiler_capture_backtrace_into(captureBuffer,
@@ -8421,8 +8424,8 @@ void profiler_clear_js_context() {
 static void profiler_suspend_and_sample_thread(
     const PSAutoLock* aLockIfAsynchronousSampling,
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
-    JsFrame* aJsFrames, uint32_t aFeatures, ProfilerStackCollector& aCollector,
-    bool aSampleNative) {
+    JsFrame* aJsFrames, [[maybe_unused]] uint32_t aFeatures,
+    ProfilerStackCollector& aCollector, bool aSampleNative) {
   const ThreadRegistrationInfo& info = aThreadData.Info();
 
   if (info.IsMainThread()) {
@@ -8432,7 +8435,8 @@ static void profiler_suspend_and_sample_thread(
   // Allocate the space for the native stack
   NativeStack nativeStack{.mCount = 0};
 
-  auto collectStack = [&](const Registers& aRegs, const TimeStamp& aNow) {
+  auto collectStack = [&](const Registers& aRegs,
+                          [[maybe_unused]] const TimeStamp& aNow) {
     // The target thread is now suspended. Collect a native backtrace,
     // and call the callback.
     StackWalkControl* stackWalkControlIfSupported = nullptr;

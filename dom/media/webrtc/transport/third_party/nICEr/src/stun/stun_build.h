@@ -62,7 +62,6 @@ typedef struct nr_stun_client_stun_keepalive_params_ {
 int nr_stun_build_keepalive(nr_stun_client_stun_keepalive_params *params, nr_stun_message **msg);
 
 
-#ifdef USE_ICE
 typedef struct nr_stun_client_ice_binding_request_params_ {
     char *username;
     Data password;
@@ -76,7 +75,6 @@ typedef struct nr_stun_client_ice_binding_request_params_ {
 int nr_stun_build_use_candidate(nr_stun_client_ice_binding_request_params *params, nr_stun_message **msg);
 
 int nr_stun_build_req_ice(nr_stun_client_ice_binding_request_params *params, nr_stun_message **msg);
-#endif /* USE_ICE */
 
 
 typedef struct nr_stun_client_auth_params_ {
@@ -87,7 +85,6 @@ typedef struct nr_stun_client_auth_params_ {
     Data password;
 } nr_stun_client_auth_params;
 
-#ifdef USE_TURN
 typedef struct nr_stun_client_allocate_request_params_ {
     UINT4 lifetime_secs;
 } nr_stun_client_allocate_request_params;
@@ -123,7 +120,6 @@ typedef struct nr_stun_client_data_indication_params_ {
 } nr_stun_client_data_indication_params;
 
 int nr_stun_build_data_indication(nr_stun_client_data_indication_params *params, nr_stun_message **msg);
-#endif /* USE_TURN */
 
 int nr_stun_form_success_response(nr_stun_message *req, nr_transport_addr *from, Data *password, nr_stun_message *res);
 void nr_stun_form_error_response(nr_stun_message *request, nr_stun_message* response, int number, const char* msg);

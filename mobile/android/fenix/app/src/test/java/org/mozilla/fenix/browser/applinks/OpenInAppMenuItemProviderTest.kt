@@ -47,7 +47,7 @@ class OpenInAppMenuItemProviderTest {
 
             assertEquals(
                 expectedItem(title = Text.Resource(R.string.browser_menu_open_in_fenix, listOf(APP_NAME))),
-                provider.itemFlow.value,
+                provider.itemsFlow.value.single(),
             )
         }
 
@@ -58,7 +58,7 @@ class OpenInAppMenuItemProviderTest {
 
             assertEquals(
                 expectedItem(title = Text.Resource(R.string.browser_menu_open_app_link)),
-                provider.itemFlow.value,
+                provider.itemsFlow.value.single(),
             )
         }
 
@@ -71,7 +71,7 @@ class OpenInAppMenuItemProviderTest {
                 title = Text.Resource(R.string.browser_menu_open_app_link),
                 state = MenuItemState.DISABLED,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -84,7 +84,7 @@ class OpenInAppMenuItemProviderTest {
                 title = Text.Resource(R.string.browser_menu_open_app_link),
                 state = MenuItemState.DISABLED,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -98,7 +98,7 @@ class OpenInAppMenuItemProviderTest {
                     title = Text.Resource(R.string.browser_menu_open_in_fenix, listOf(APP_NAME)),
                     isHighlighted = true,
                 ),
-                provider.itemFlow.value,
+                provider.itemsFlow.value.single(),
             )
         }
 
@@ -115,7 +115,7 @@ class OpenInAppMenuItemProviderTest {
                 title = Text.Resource(R.string.browser_menu_open_app_link),
                 state = MenuItemState.DISABLED,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -161,7 +161,7 @@ class OpenInAppMenuItemProviderTest {
         listOf(true, false).forEach { hasExternalApp ->
             val provider = provider(appLinksUseCases = appLinksUseCases(hasExternalApp = hasExternalApp))
 
-            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+            val events = provider.itemsFlow.value.single().reachableEvents()
 
             assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
             assertFalse(provider.handles(MenuAction.Navigate.Settings))

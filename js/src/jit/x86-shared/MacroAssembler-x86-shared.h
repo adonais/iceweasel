@@ -282,8 +282,11 @@ class MacroAssemblerX86Shared : public Assembler {
     return FaultingCodeRange(before, after);
   }
   template <typename T>
-  void store8(Imm32 src, const T& dest) {
+  FaultingCodeRange store8(Imm32 src, const T& dest) {
+    auto before = currentOffset();
     movb(src, Operand(dest));
+    auto after = currentOffset();
+    return FaultingCodeRange(before, after);
   }
   template <typename T>
   FaultingCodeRange store8(Register src, const T& dest) {

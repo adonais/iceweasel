@@ -107,6 +107,7 @@ option(
     target,
     target_sysroot.path,
     android_version,
+    msvc_sysroot_flags,
 )
 @checking("for clang for bindgen", lambda x: x.path if x else "not found")
 def bindgen_clang_compiler(
@@ -118,6 +119,7 @@ def bindgen_clang_compiler(
     target,
     sysroot_path,
     android_version,
+    msvc_sysroot_flags,
 ):
     # When the target compiler is clang, use that, including flags.
     if cxx_compiler.type == "clang":
@@ -157,6 +159,8 @@ def bindgen_clang_compiler(
     flags = []
     if sysroot_path:
         flags.extend(("--sysroot", sysroot_path))
+    if cxx_compiler.type == "clang-cl" and msvc_sysroot_flags:
+        flags.extend(msvc_sysroot_flags.clang)
     info = check_compiler(
         configure_cache, [clang_path] + flags, "C++", target, android_version
     )

@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.components.lens
 
-import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
@@ -76,18 +75,8 @@ class LensImageSearch(
     private var searchJob: Job? = null
 
     /**
-     * Uploads a camera capture and opens the Lens result.
-     *
-     * @param imageUri Location of the image to upload.
-     * @param source Upload method the image came from, recorded as telemetry.
-     */
-    fun searchWithImage(imageUri: Uri, source: String) {
-        search(source, isObserved = true) { isPrivate -> uploader().upload(imageUri, isPrivate) }
-    }
-
-    /**
-     * Opens a Lens result that [LensCameraActivity] already uploaded, which it does for photo picker selections so it
-     * can show the image while the upload runs.
+     * Opens a Lens result that [LensCameraActivity] already uploaded, which it does for camera captures and photo
+     * picker selections so it can show the image while the upload runs.
      *
      * @param resultUrl The Lens results URL.
      * @param isPrivate The browsing mode the image was uploaded in, which the tab has to match for the Lens session to
@@ -101,20 +90,17 @@ class LensImageSearch(
 
     /** Fetches the image at [imageUrl], uploads it, and opens the Lens result. */
     fun searchWithImageUrl(imageUrl: String) {
-        search(SOURCE_CONTEXT_MENU, isObserved = false) { isPrivate -> uploader().uploadFromUrl(imageUrl, isPrivate) }
+        search(SOURCE_CONTEXT_MENU) { isPrivate -> uploader().uploadFromUrl(imageUrl, isPrivate) }
     }
 
     /**
      * Uploads an image and opens the Lens result in a new tab.
      *
      * @param source Upload method the image came from, recorded as telemetry.
-     * @param isObserved Whether BrowserToolbarSearchMiddleware is observing the result of this search, which is only
-     *   the case for searches it started from the toolbar's Lens button.
      * @param upload Performs the upload for the given browsing mode.
      */
     private fun search(
         source: String,
-        isObserved: Boolean,
         upload: suspend (isPrivate: Boolean) -> LensImageUploader.UploadResult,
     ) {
         // The newest request wins. Two in-flight uploads would open two tabs and race to write the result.
@@ -128,7 +114,7 @@ class LensImageSearch(
                 return@launch
             }
 
-            openResultTab(resultUrl, isPrivate, isObserved)
+            openResultTab(resultUrl, isPrivate, isObserved = false)
         }
     }
 
@@ -150,7 +136,5 @@ class LensImageSearch(
 
     companion object {
         @VisibleForTesting internal const val SOURCE_CONTEXT_MENU = "context_menu"
-
-        internal const val SOURCE_UNKNOWN = "unknown"
     }
 }

@@ -97,7 +97,7 @@ add_task(async function test_autocomplete_https_downgrade() {
   info("got results: " + autocompleteItems.join(", "));
   popupState = await getPopupState();
   is(popupState.selectedIndex, -1, "Check no entries are selected");
-  checkAutoCompleteResults(autocompleteItems, ["This connection is not secure. Logins entered here could be compromised. Learn More", "name1", "name2"], hostname, "initial");
+  checkAutoCompleteResults(autocompleteItems, ["This connection is not secure. Logins entered here could be compromised.", "name1", "name2"], hostname, "initial");
 });
 </script>
 </pre>

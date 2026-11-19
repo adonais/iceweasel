@@ -79,7 +79,7 @@ nsresult WebTransportSessionProxy::AsyncConnect(
   return AsyncConnectWithClient(aURI, aDedicated, std::move(aServerCertHashes),
                                 aPrincipal, 0, aSecurityFlags, aListener,
                                 Maybe<dom::ClientInfo>(), emptyProtocols,
-                                emptyHeaders, emptyHeaders, aVersion);
+                                emptyHeaders, emptyHeaders, aVersion, 0, 0);
 }
 
 nsresult WebTransportSessionProxy::AsyncConnectWithClient(
@@ -91,7 +91,9 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
     const nsTArray<nsString>& aProtocols,
     const nsTArray<nsCString>& aHeaderNames,
     const nsTArray<nsCString>& aHeaderValues,
-    nsIWebTransport::HTTPVersion aVersion) {
+    nsIWebTransport::HTTPVersion aVersion,
+    uint16_t aAnticipatedConcurrentIncomingUnidirectionalStreams,
+    uint16_t aAnticipatedConcurrentIncomingBidirectionalStreams) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aHeaderNames.Length() == aHeaderValues.Length());
 
@@ -102,6 +104,10 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
   {
     MutexAutoLock lock(mMutex);
     mListener = aListener;
+    mAnticipatedConcurrentIncomingUnidirectionalStreams =
+        aAnticipatedConcurrentIncomingUnidirectionalStreams;
+    mAnticipatedConcurrentIncomingBidirectionalStreams =
+        aAnticipatedConcurrentIncomingBidirectionalStreams;
   }
   auto cleanup = MakeScopeExit([self = RefPtr<WebTransportSessionProxy>(this)] {
     MutexAutoLock lock(self->mMutex);
@@ -449,6 +455,85 @@ WebTransportSessionProxy::RegisterSendGroup(uint64_t aGroupId) {
 
   LOG(("RegisterSendGroup with ID: %" PRIu64, aGroupId));
   return session->RegisterSendGroup(aGroupId);
+}
+
+void WebTransportSessionProxy::
+    SetAnticipatedConcurrentIncomingUnidirectionalStreamsInternal(
+        const RefPtr<WebTransportSessionBase>& aSession, uint16_t aValue) {
+  MOZ_ASSERT(OnSocketThread());
+
+  aSession->SetAnticipatedConcurrentIncomingUnidirectionalStreams(aValue);
+}
+
+NS_IMETHODIMP
+WebTransportSessionProxy::SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+    uint16_t aValue) {
+  LOG(("SetAnticipatedConcurrentIncomingUnidirectionalStreams: %u", aValue));
+  RefPtr<WebTransportSessionBase> session;
+  {
+    MutexAutoLock lock(mMutex);
+    // Record it even with no session yet: content can set the attribute
+    // before ready resolves, and OnSessionReadyInternal() applies whatever
+    // is stored here once the session comes up.
+    mAnticipatedConcurrentIncomingUnidirectionalStreams = aValue;
+    if (mState != WebTransportSessionProxyState::ACTIVE ||
+        !mWebTransportSession) {
+      return NS_OK;
+    }
+    session = mWebTransportSession;
+  }
+
+  if (!OnSocketThread()) {
+    return gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+        "WebTransportSessionProxy::"
+        "SetAnticipatedConcurrentIncomingUnidirectionalStreamsInternal",
+        [self = RefPtr{this}, session{std::move(session)}, value(aValue)]() {
+          self->SetAnticipatedConcurrentIncomingUnidirectionalStreamsInternal(
+              session, value);
+        }));
+  }
+
+  SetAnticipatedConcurrentIncomingUnidirectionalStreamsInternal(session,
+                                                                aValue);
+  return NS_OK;
+}
+
+void WebTransportSessionProxy::
+    SetAnticipatedConcurrentIncomingBidirectionalStreamsInternal(
+        const RefPtr<WebTransportSessionBase>& aSession, uint16_t aValue) {
+  MOZ_ASSERT(OnSocketThread());
+
+  aSession->SetAnticipatedConcurrentIncomingBidirectionalStreams(aValue);
+}
+
+NS_IMETHODIMP
+WebTransportSessionProxy::SetAnticipatedConcurrentIncomingBidirectionalStreams(
+    uint16_t aValue) {
+  LOG(("SetAnticipatedConcurrentIncomingBidirectionalStreams: %u", aValue));
+  RefPtr<WebTransportSessionBase> session;
+  {
+    MutexAutoLock lock(mMutex);
+    // See the unidirectional setter above.
+    mAnticipatedConcurrentIncomingBidirectionalStreams = aValue;
+    if (mState != WebTransportSessionProxyState::ACTIVE ||
+        !mWebTransportSession) {
+      return NS_OK;
+    }
+    session = mWebTransportSession;
+  }
+
+  if (!OnSocketThread()) {
+    return gSocketTransportService->Dispatch(NS_NewRunnableFunction(
+        "WebTransportSessionProxy::"
+        "SetAnticipatedConcurrentIncomingBidirectionalStreamsInternal",
+        [self = RefPtr{this}, session{std::move(session)}, value(aValue)]() {
+          self->SetAnticipatedConcurrentIncomingBidirectionalStreamsInternal(
+              session, value);
+        }));
+  }
+
+  SetAnticipatedConcurrentIncomingBidirectionalStreamsInternal(session, aValue);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1226,6 +1311,16 @@ WebTransportSessionProxy::OnSessionReadyInternal(
           mProtocol.Truncate();
         }
       }
+      if (mAnticipatedConcurrentIncomingUnidirectionalStreams > 0) {
+        mWebTransportSession
+            ->SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+                mAnticipatedConcurrentIncomingUnidirectionalStreams);
+      }
+      if (mAnticipatedConcurrentIncomingBidirectionalStreams > 0) {
+        mWebTransportSession
+            ->SetAnticipatedConcurrentIncomingBidirectionalStreams(
+                mAnticipatedConcurrentIncomingBidirectionalStreams);
+      }
       ChangeState(WebTransportSessionProxyState::NEGOTIATING_SUCCEEDED);
       mWebTransportSession->StartReading();
       break;
@@ -1493,11 +1588,11 @@ WebTransportSessionProxy::OnStatsAvailable(
       mCachedStats = *rawStats;
     }
     if (!mTarget->IsOnCurrentThread()) {
-      return mTarget->Dispatch(
-          NS_NewRunnableFunction("WebTransportSessionProxy::OnStatsAvailable",
-                                 [self = RefPtr{this}, stats]() {
-                                   self->OnStatsAvailableInternal(stats);
-                                 }));
+      return mTarget->Dispatch(NS_NewRunnableFunction(
+          "WebTransportSessionProxy::OnStatsAvailable",
+          [self = RefPtr{this}, stats = std::move(stats)]() {
+            self->OnStatsAvailableInternal(stats);
+          }));
     }
   }
 
@@ -1712,6 +1807,15 @@ void WebTransportSessionProxy::OnMaxDatagramSizeInternal(uint64_t aSize) {
   }
 
   listener->OnMaxDatagramSize(aSize);
+}
+
+NS_IMETHODIMP
+WebTransportSessionProxy::GetAnticipatedConcurrentIncomingStreams(
+    uint16_t* aUni, uint16_t* aBidi) {
+  MutexAutoLock lock(mMutex);
+  *aUni = mAnticipatedConcurrentIncomingUnidirectionalStreams;
+  *aBidi = mAnticipatedConcurrentIncomingBidirectionalStreams;
+  return NS_OK;
 }
 
 NS_IMETHODIMP WebTransportSessionProxy::OnMaxDatagramSize(uint64_t aSize) {

@@ -1049,8 +1049,8 @@ nsresult ServiceWorkerPrivate::SendCookieChangeEvent(
 
   if (mInfo->State() == ServiceWorkerState::Activating) {
     UniquePtr<PendingFunctionalEvent> pendingEvent =
-        MakeUnique<PendingCookieChangeEvent>(this, std::move(aRegistration),
-                                             std::move(args));
+        std::make_unique<PendingCookieChangeEvent>(
+            this, std::move(aRegistration), std::move(args));
 
     mPendingFunctionalEvents.AppendElement(std::move(pendingEvent));
 
@@ -1109,7 +1109,7 @@ RefPtr<PushHandledPromise> ServiceWorkerPrivate::SendPushEvent(
   }
 
   if (mInfo->State() == ServiceWorkerState::Activating) {
-    UniquePtr<PendingPushEvent> pendingEvent = MakeUnique<PendingPushEvent>(
+    auto pendingEvent = std::make_unique<PendingPushEvent>(
         this, std::move(aRegistration), std::move(args));
     RefPtr<PushHandledPromise> promise = pendingEvent->Promise();
 
@@ -1305,9 +1305,9 @@ nsresult ServiceWorkerPrivate::SendFetchEvent(
 
   if (mInfo->State() == ServiceWorkerState::Activating) {
     UniquePtr<PendingFunctionalEvent> pendingEvent =
-        MakeUnique<PendingFetchEvent>(this, std::move(registration),
-                                      std::move(args), std::move(aChannel),
-                                      std::move(preloadResponsePromises));
+        std::make_unique<PendingFetchEvent>(
+            this, std::move(registration), std::move(args), std::move(aChannel),
+            std::move(preloadResponsePromises));
 
     mPendingFunctionalEvents.AppendElement(std::move(pendingEvent));
 

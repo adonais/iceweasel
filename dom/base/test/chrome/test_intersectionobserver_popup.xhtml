@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>IntersectionObserver for a popup outside a subdocument</title>
+<script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
+</head>
+<body>
+<iframe id="embedding" src="file_intersectionobserver_popup_container.xhtml"
+        width="200" height="100"></iframe>
+<script><![CDATA[
+add_task(async function test_popup_outside_subdocument() {
+  await SimpleTest.promiseFocus();
+  const embedding = document.getElementById("embedding").contentWindow;
+  const child = embedding.document.getElementById("frame").contentWindow;
+  const popup = child.document.getElementById("popup");
+  const target = child.document.getElementById("target");
+  SimpleTest.registerCleanupFunction(() => {
+    popup.hidePopup();
+  });
+
+  const shown = new Promise(resolve => {
+    popup.addEventListener("popupshown", resolve, { once: true });
+  });
+  popup.openPopupAtScreen(
+    embedding.mozInnerScreenX + embedding.innerWidth + 20,
+    child.mozInnerScreenY + 20
+  );
+  await shown;
+  ok(
+    child.mozInnerScreenX + target.getBoundingClientRect().left >
+      embedding.mozInnerScreenX + embedding.innerWidth,
+    "The popup content should be outside the embedding document viewport"
+  );
+
+  const entry = await new Promise(resolve => {
+    const observer = new child.IntersectionObserver(([observation]) => {
+      observer.disconnect();
+      resolve(observation);
+    });
+    observer.observe(target);
+  });
+  ok(
+    entry.isIntersecting,
+    "The popup content should intersect outside the embedding document viewport"
+  );
+  is(entry.intersectionRatio, 1, "The popup content should be fully visible");
+
+  const hidden = new Promise(resolve => {
+    popup.addEventListener("popuphidden", resolve, { once: true });
+  });
+  popup.hidePopup();
+  await hidden;
+});
+]]></script>
+</body>
+</html>

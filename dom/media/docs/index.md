@@ -8,4 +8,6 @@ review/index
 AudioStream
 AudioSinkWrapper
 SpeechRecognition
+Diagnostics
+Specs
 ```

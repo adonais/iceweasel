@@ -5,6 +5,8 @@ subsuite = "marionette-harness"
 
 ["test_marionette_arguments.py"]
 
+["test_marionette_check_for_crash.py"]
+
 ["test_marionette_harness.py"]
 
 ["test_marionette_runner.py"]

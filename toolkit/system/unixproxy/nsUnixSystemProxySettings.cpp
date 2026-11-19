@@ -82,7 +82,7 @@ static void SetProxyResultDirect(nsACString& aResult) {
 nsresult nsUnixSystemProxySettings::SetProxyResultFromGSettings(
     const nsCString& aSchema, const char* aType, nsACString& aResult) {
   auto& settings = mSchemeProxySettings.LookupOrInsertWith(aSchema, [&] {
-    return MakeUnique<widget::GSettings::Collection>(aSchema);
+    return std::make_unique<widget::GSettings::Collection>(aSchema);
   });
 
   nsAutoCString host;
@@ -203,7 +203,7 @@ static bool HostIgnoredByProxy(const nsACString& aIgnore,
 }
 
 nsresult nsUnixSystemProxySettings::GetProxyFromGSettings(
-    const nsACString& aScheme, const nsACString& aHost, int32_t aPort,
+    const nsACString& aScheme, const nsACString& aHost, int32_t /*aPort*/,
     nsACString& aResult) {
   nsCString proxyMode;
   mProxySettings.GetString("mode"_ns, proxyMode);
@@ -250,13 +250,14 @@ nsresult nsUnixSystemProxySettings::GetProxyFromGSettings(
 }
 
 NS_IMETHODIMP nsUnixSystemProxySettings::SetSystemProxyInfo(
-    const nsACString& aHost, int32_t aPort, const nsACString& aPacFileUrl,
-    const nsTArray<nsCString>& aExclusionList) {
+    const nsACString& /*aHost*/, int32_t /*aPort*/,
+    const nsACString& /*aPacFileUrl*/,
+    const nsTArray<nsCString>& /*aExclusionList*/) {
   MOZ_ASSERT(false, "Did not expect to be called on this platform");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult nsUnixSystemProxySettings::GetProxyForURI(const nsACString& aSpec,
+nsresult nsUnixSystemProxySettings::GetProxyForURI(const nsACString& /*aSpec*/,
                                                    const nsACString& aScheme,
                                                    const nsACString& aHost,
                                                    const int32_t aPort,

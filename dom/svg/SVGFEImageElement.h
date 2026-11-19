@@ -102,6 +102,12 @@ class SVGFEImageElement final : public SVGFEImageElementBase,
   void SetFetchPriority(const nsAString& aFetchPriority) {
     SetAttr(nsGkAtoms::fetchpriority, aFetchPriority, IgnoreErrors());
   }
+  void SetReferrerPolicy(const nsAString& aPolicy, mozilla::ErrorResult& rv) {
+    SetAttr(nsGkAtoms::referrerpolicy, aPolicy, rv);
+  }
+  void GetReferrerPolicy(nsAString& aPolicy) {
+    GetEnumAttr(nsGkAtoms::referrerpolicy, "", aPolicy);
+  }
 
   void NotifyImageContentChanged();
 

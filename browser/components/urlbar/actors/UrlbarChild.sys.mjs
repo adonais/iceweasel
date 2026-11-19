@@ -213,6 +213,7 @@ export class UrlbarChild extends JSWindowActorChild {
         lazy.UrlbarPrefs.toggleResultMenuKeyboardAccessible.bind(
           lazy.UrlbarPrefs
         ),
+      hasPrefUserValue: lazy.UrlbarPrefs.hasUserValue.bind(lazy.UrlbarPrefs),
     };
   }
 

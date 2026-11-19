@@ -679,23 +679,6 @@ JS::AutoCTypesActivityCallback::AutoCTypesActivityCallback(
   }
 }
 
-JS_PUBLIC_API void js::SetAllocationMetadataBuilder(
-    JSContext* cx, const AllocationMetadataBuilder* callback) {
-  cx->realm()->setAllocationMetadataBuilder(callback);
-}
-
-JS_PUBLIC_API JSObject* js::GetAllocationMetadata(JSObject* obj) {
-  ObjectRealm::ObjectMetadataTable* map =
-      ObjectRealm::get(obj).objectMetadataTable.get();
-  if (map) {
-    auto ptr = map->lookup(obj);
-    if (ptr) {
-      return ptr->value();
-    }
-  }
-  return nullptr;
-}
-
 JS_PUBLIC_API bool js::ReportIsNotFunction(JSContext* cx, HandleValue v) {
   cx->check(v);
   return ReportIsNotFunction(cx, v, -1);

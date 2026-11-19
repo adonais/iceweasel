@@ -132,6 +132,16 @@ async protocol PWebTransport
   async SetSendGroup(uint64_t streamId, uint64_t groupId);
 
   /**
+  * Set anticipated concurrent incoming unidirectional streams
+  */
+  async SetAnticipatedConcurrentIncomingUnidirectionalStreams(uint16_t? value);
+
+  /**
+  * Set anticipated concurrent incoming bidirectional streams
+  */
+  async SetAnticipatedConcurrentIncomingBidirectionalStreams(uint16_t? value);
+
+  /**
   * Export keying material for the WebTransport session
   */
   async ExportKeyingMaterial(uint8_t[] label, uint8_t[] context,

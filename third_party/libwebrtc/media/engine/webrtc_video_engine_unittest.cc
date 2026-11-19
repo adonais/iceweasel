@@ -43,6 +43,7 @@
 #include "api/rtp_packet_infos.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
+#include "api/sframe/sframe_types.h"
 #include "api/test/mock_encoder_selector.h"
 #include "api/test/mock_video_bitrate_allocator.h"
 #include "api/test/mock_video_bitrate_allocator_factory.h"
@@ -86,6 +87,7 @@
 #include "call/call.h"
 #include "call/call_config.h"
 #include "call/flexfec_receive_stream.h"
+#include "call/sframe_options.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "common_video/include/quality_limitation_reason.h"
@@ -110,6 +112,8 @@
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/source_tracker.h"
+#include "modules/sframe/sframe_encryption_config.h"
+#include "modules/sframe/sframe_encryptor.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/checks.h"
@@ -2808,6 +2812,42 @@ TEST_F(WebRtcVideoChannelBaseTest, SendCodecIsMovedToFrontInRtpParameters) {
   EXPECT_THAT("VP8", send_codecs[0].name);
 }
 
+TEST_F(WebRtcVideoChannelBaseTest,
+       SetRtpSendParametersAfterRequestEncoderSwitch) {
+  VideoSenderParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP9"));
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+
+  std::optional<Codec> codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP9", codec->name);
+
+  // Switch from VP9 to VP8.
+  SendImpl()->RequestEncoderSwitch(std::nullopt, true);
+  time_controller_.AdvanceTime(kFrameDuration);
+  codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP8", codec->name);
+
+  // SetRtpSendParameters() can still select VP9 because it was negotiated,
+  // even though we previously switched from it.
+  RtpParameters rtp_parameters = send_channel_->GetRtpSendParameters(kSsrc);
+  ASSERT_EQ(rtp_parameters.encodings.size(), 1u);
+  rtp_parameters.encodings[0].codec = GetEngineCodec("VP9").ToCodecParameters();
+  EXPECT_TRUE(send_channel_->SetRtpSendParameters(kSsrc, rtp_parameters).ok());
+  codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP9", codec->name);
+
+  // A subsequent encoder switch can fall back to VP8 again.
+  SendImpl()->RequestEncoderSwitch(std::nullopt, true);
+  time_controller_.AdvanceTime(kFrameDuration);
+  codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP8", codec->name);
+}
+
 #endif  // defined(RTC_ENABLE_VP9)
 
 class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
@@ -3192,6 +3232,87 @@ TEST_F(WebRtcVideoChannelTest, SetsSyncGroupFromSyncLabel) {
   EXPECT_EQ(kSyncLabel,
             fake_call_->GetVideoReceiveStreams()[0]->GetConfig().sync_group)
       << "SyncGroup should be set based on sync_label";
+}
+
+// By default Sframe is not enabled on created streams.
+TEST_F(WebRtcVideoChannelTest, SframeDisabledByDefault) {
+  FakeVideoSendStream* send_stream = AddSendStream();
+  EXPECT_FALSE(send_stream->GetConfig().rtp.sframe_options.required);
+  EXPECT_FALSE(send_stream->GetConfig()
+                   .rtp.sframe_options.encryption_config.has_value());
+}
+
+// Enabling Sframe before a send stream is added is propagated to the stream
+// config at construction.
+TEST_F(WebRtcVideoChannelTest, EnableSframePropagatesToSendStreamConfig) {
+  send_channel_->EnableSframe();
+  FakeVideoSendStream* stream = AddSendStream();
+  EXPECT_TRUE(stream->GetConfig().rtp.sframe_options.required);
+  EXPECT_FALSE(
+      stream->GetConfig().rtp.sframe_options.encryption_config.has_value());
+}
+
+// Enabling Sframe on an existing send stream reconfigures it, but repeated
+// calls (one per negotiation) must not recreate the stream again.
+TEST_F(WebRtcVideoChannelTest, EnableSframeOnExistingSendStreamIsIdempotent) {
+  AddSendStream();
+  ASSERT_EQ(fake_call_->GetNumCreatedSendStreams(), 1);
+
+  send_channel_->EnableSframe();
+  ASSERT_EQ(fake_call_->GetNumCreatedSendStreams(), 2);
+  EXPECT_TRUE(fake_call_->GetVideoSendStreams()[0]
+                  ->GetConfig()
+                  .rtp.sframe_options.required);
+  EXPECT_FALSE(fake_call_->GetVideoSendStreams()[0]
+                   ->GetConfig()
+                   .rtp.sframe_options.encryption_config.has_value());
+
+  send_channel_->EnableSframe();
+  send_channel_->EnableSframe();
+  EXPECT_EQ(fake_call_->GetNumCreatedSendStreams(), 2);
+}
+
+TEST_F(WebRtcVideoChannelTest, SframeEncryptorModePropagatesToNewSendStream) {
+  scoped_refptr<SframeEncryptor> encryptor =
+      SframeEncryptor::Create(SframeCipherSuite::kAes128GcmSha256_128);
+  send_channel_->SetSframeEncryptionConfig(SframeEncryptionConfig{
+      .mode = SframeMode::kPerPacket, .encryptor = encryptor});
+  FakeVideoSendStream* stream = AddSendStream();
+  ASSERT_TRUE(
+      stream->GetConfig().rtp.sframe_options.encryption_config.has_value());
+  EXPECT_EQ(stream->GetConfig().rtp.sframe_options.encryption_config->encryptor,
+            encryptor);
+  EXPECT_EQ(stream->GetConfig().rtp.sframe_options.encryption_config->mode,
+            SframeMode::kPerPacket);
+  EXPECT_FALSE(stream->GetConfig().rtp.sframe_options.required);
+
+  send_channel_->EnableSframe();
+  stream = fake_call_->GetVideoSendStreams()[0];
+  ASSERT_TRUE(
+      stream->GetConfig().rtp.sframe_options.encryption_config.has_value());
+  EXPECT_EQ(stream->GetConfig().rtp.sframe_options.encryption_config->encryptor,
+            encryptor);
+  EXPECT_EQ(stream->GetConfig().rtp.sframe_options.encryption_config->mode,
+            SframeMode::kPerPacket);
+  EXPECT_TRUE(stream->GetConfig().rtp.sframe_options.required);
+}
+
+TEST_F(WebRtcVideoChannelTest, SframeEncryptorModeUpdatesExistingSendStream) {
+  send_channel_->EnableSframe();
+  AddSendStream();
+  for (SframeMode mode : {SframeMode::kPerPacket, SframeMode::kPerFrame}) {
+    scoped_refptr<SframeEncryptor> encryptor =
+        SframeEncryptor::Create(SframeCipherSuite::kAes128GcmSha256_128);
+    send_channel_->SetSframeEncryptionConfig(
+        SframeEncryptionConfig{.mode = mode, .encryptor = encryptor});
+    send_channel_->EnableSframe();
+    const SframeSendOptions& options =
+        fake_call_->GetVideoSendStreams()[0]->GetConfig().rtp.sframe_options;
+    ASSERT_TRUE(options.encryption_config.has_value());
+    EXPECT_EQ(options.encryption_config->encryptor, encryptor);
+    EXPECT_EQ(options.encryption_config->mode, mode);
+    EXPECT_TRUE(options.required);
+  }
 }
 
 TEST_F(WebRtcVideoChannelTest, RecvStreamWithSimAndRtx) {
@@ -5791,6 +5912,27 @@ TEST_F(WebRtcVideoChannelTest,
                      [webrtc::QualityLimitationReason::kCpu]);
 }
 
+TEST_F(WebRtcVideoChannelTest, RecreatedSendStreamIsCreatedWithCsrcs) {
+  AddSendStream();
+  RtpParameters rtp_parameters =
+      send_channel_->GetRtpSendParameters(last_ssrc_);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  rtp_parameters.encodings[0].csrcs = std::vector<uint32_t>{0x1111, 0x2222};
+  EXPECT_TRUE(
+      send_channel_->SetRtpSendParameters(last_ssrc_, rtp_parameters).ok());
+
+  // Trigger stream recreation by changing construction-time parameters.
+  VideoSenderParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  parameters.extmap_allow_mixed = true;  // This forces recreation.
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+  EXPECT_EQ(2, fake_call_->GetNumCreatedSendStreams());
+
+  ASSERT_EQ(1U, fake_call_->GetVideoSendStreams().size());
+  EXPECT_THAT(fake_call_->GetVideoSendStreams()[0]->GetConfig().rtp.csrcs,
+              ElementsAre(0x1111, 0x2222));
+}
+
 TEST_F(WebRtcVideoChannelTest, SetSend) {
   FakeVideoSendStream* stream = AddSendStream();
   EXPECT_FALSE(stream->IsSending());
@@ -6114,10 +6256,6 @@ TEST_F(WebRtcVideoChannelTest, GetAggregatedStatsReportWithoutSubStreams) {
   // Comes from substream only.
   EXPECT_EQ(sender.key_frames_encoded, 0u);
   EXPECT_EQ(sender.total_encode_time_ms, 0u);
-
-  EXPECT_EQ(sender.total_encoded_bytes_target,
-            stats.total_encoded_bytes_target);
-  // Comes from substream only.
   EXPECT_EQ(sender.total_packet_send_delay, TimeDelta::Zero());
   EXPECT_EQ(sender.qp_sum, std::nullopt);
   EXPECT_EQ(sender.frames_sent, 0u);
@@ -6165,7 +6303,6 @@ TEST_F(WebRtcVideoChannelTest, GetAggregatedStatsReportForSubStreams) {
   substream.frames_encoded = 21;
   substream.qp_sum = 22;
   substream.total_encode_time_ms = 23;
-  substream.total_encoded_bytes_target = 24;
   substream.huge_frames_sent = 25;
 
   stats.substreams[ssrc_2] = substream;
@@ -6242,8 +6379,6 @@ TEST_F(WebRtcVideoChannelTest, GetAggregatedStatsReportForSubStreams) {
   EXPECT_EQ(sender.frames_encoded, 2u * substream.frames_encoded);
   EXPECT_EQ(sender.key_frames_encoded, 2u * substream.frame_counts.key_frames);
   EXPECT_EQ(sender.total_encode_time_ms, 2u * substream.total_encode_time_ms);
-  EXPECT_EQ(sender.total_encoded_bytes_target,
-            2u * substream.total_encoded_bytes_target);
   EXPECT_EQ(sender.has_entered_low_resolution,
             stats.has_entered_low_resolution);
   EXPECT_EQ(sender.qp_sum, 2u * *substream.qp_sum);
@@ -6289,7 +6424,6 @@ TEST_F(WebRtcVideoChannelTest, GetPerLayerStatsReportForSubStreams) {
   substream.frames_encoded = 21;
   substream.qp_sum = 22;
   substream.total_encode_time_ms = 23;
-  substream.total_encoded_bytes_target = 24;
   substream.huge_frames_sent = 25;
 
   stats.substreams[ssrc_2] = substream;
@@ -6366,8 +6500,6 @@ TEST_F(WebRtcVideoChannelTest, GetPerLayerStatsReportForSubStreams) {
   EXPECT_EQ(sender.key_frames_encoded,
             static_cast<uint32_t>(substream.frame_counts.key_frames));
   EXPECT_EQ(sender.total_encode_time_ms, substream.total_encode_time_ms);
-  EXPECT_EQ(sender.total_encoded_bytes_target,
-            substream.total_encoded_bytes_target);
   EXPECT_EQ(sender.has_entered_low_resolution,
             stats.has_entered_low_resolution);
   EXPECT_EQ(sender.qp_sum, *substream.qp_sum);

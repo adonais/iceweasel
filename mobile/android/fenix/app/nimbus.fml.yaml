@@ -19,8 +19,13 @@ import:
       pdfjs:
         - channel: developer
           value: {
-          download-button: true,
-          open-in-app-button: true
+          download-button: false,
+          open-in-app-button: false
+        }
+        - channel: nightly
+          value: {
+          download-button: false,
+          open-in-app-button: false
         }
   - path: ../../android-components/components/feature/fxsuggest/fxsuggest.fml.yaml
     channel: release
@@ -203,10 +208,10 @@ features:
     defaults:
       - channel: developer
         value:
-          enabled: false
+          enabled: true
       - channel: nightly
         value:
-          enabled: false
+          enabled: true
       - channel: beta
         value:
           enabled: false
@@ -254,6 +259,14 @@ features:
       - channel: beta
         value:
           enabled: true
+
+  installation:
+    description: A feature that checks for reinstalls.
+    variables:
+      enabled:
+        type: Boolean
+        description: If true, the install data will be stored in Block Store and reported to Glean.
+        default: true
 
   setup-checklist:
     description: A feature on the home page that allows the user to track onboarding setup progress.
@@ -410,16 +423,6 @@ features:
       - channel: developer
         value:
           enabled: true
-
-  homescreen-edge-to-edge-background:
-    description: >
-      Feature that sets an edge to edge background on the Home Screen if the user hasn't selected
-      a custom wallpaper
-    variables:
-      enabled:
-        description: Enables the feature
-        type: Boolean
-        default: true
 
   remote-tab-management:
     description: >
@@ -684,17 +687,6 @@ features:
         value:
           enabled: true
 
-  universal-edge-to-edge-wallpapers:
-    description: >
-      Extends non-default homepage wallpapers edge-to-edge and adapts the toolbar, navigation bar
-      and system bars to them.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable the universal edge-to-edge wallpaper treatment.
-        type: Boolean
-        default: true
-
   homepage-hide-frecent-top-sites:
     description: Hides frecent top sites on the homepage.
     variables:
@@ -875,6 +867,18 @@ features:
         type: Boolean
         default: true
 
+  automotive-sensitive-data:
+    description: >
+      Enables or disables autofill, password management, and password and credit card sync on Android Automotive OS.
+    variables:
+      enabled:
+        description: >
+          Whether password and credit card autofill, password management, and password and credit card sync are
+          enabled on Android Automotive OS. Address autofill is also controlled by this flag. Has no effect on other
+          devices.
+        type: Boolean
+        default: false
+
   app-links:
     description: Control behavior of app links handling in the browser.
     variables:
@@ -882,6 +886,27 @@ features:
         description: Whether to show the new AppLinksPromptFragment dialog when an app link is detected. If false, the old dialog is used.
         type: Boolean
         default: true
+
+  browser-first:
+    description: Feature to enable browser-first handling for YouTube.
+    variables:
+      enabled:
+        description: If true, the feature is enabled.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: release
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
+      - channel: developer
+        value:
+          enabled: true
 
   tab-management-enhancements:
     description: Control the visibility of the tab management enhancements.
@@ -1119,19 +1144,19 @@ features:
         type: Boolean
         default: true
 
+  regional-default-shortcuts:
+    description: Feature to enable the regional default shortcuts on the homepage for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, the regional default shortcuts are shown in their regions.
+        type: Boolean
+        default: true
+
   ads-client-for-stories:
     description: Feature to enable the Mozilla Ads Client support for Sponsored Stories for users on Firefox on Android.
     variables:
       enabled:
         description: If true, Mozilla Ads Client support for Sponsored Stories is enabled.
-        type: Boolean
-        default: false
-
-  private-mode-and-stories-entry-point:
-    description: Feature to enable the Private Mode and Stories Entry Point Experiment.
-    variables:
-      enabled:
-        description: If true, Private Mode and Stories Entry Point Experiment is enabled.
         type: Boolean
         default: false
 
@@ -1206,6 +1231,14 @@ features:
     variables:
       enabled:
         description: If true, Homepage Weather Widget is enabled.
+        type: Boolean
+        default: false
+
+  homepage-wrexham-widget:
+    description: Feature to enable Homepage Wrexham Widget for users on Firefox for Android.
+    variables:
+      enabled:
+        description: If true, Homepage Wrexham Widget is enabled.
         type: Boolean
         default: false
 
@@ -1308,6 +1341,13 @@ features:
         description: If true, the Android PDF UI tools are shown.
         type: Boolean
         default: false
+    defaults:
+      - channel: developer
+        value:
+          android-ui-tools: true
+      - channel: nightly
+        value:
+          android-ui-tools: true
 
   tab-reload-cover:
     description: >

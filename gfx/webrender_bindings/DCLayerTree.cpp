@@ -238,8 +238,8 @@ UniquePtr<DCLayerTree> DCLayerTree::Create(gl::GLContext* aGL,
     return nullptr;
   }
 
-  auto layerTree = MakeUnique<DCLayerTree>(aGL, aEGLConfig, aDevice, aCtx,
-                                           aHwnd, dCompDevice);
+  auto layerTree = std::make_unique<DCLayerTree>(aGL, aEGLConfig, aDevice, aCtx,
+                                                 aHwnd, dCompDevice);
   if (!layerTree->Initialize(aHwnd, aError)) {
     return nullptr;
   }
@@ -327,7 +327,7 @@ bool DCLayerTree::Initialize(HWND aHwnd, nsACString& aError) {
   if (gfx::gfxVars::UseWebRenderDCompVideoHwOverlayWin() ||
       gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin()) {
     if (!InitializeVideoOverlaySupport()) {
-      RenderThread::Get()->HandleWebRenderError(WebRenderError::VIDEO_OVERLAY);
+      RenderThread::Get()->NotifyWebRenderError(WebRenderError::VIDEO_OVERLAY);
     }
   }
   if (!sGpuOverlayInfo) {
@@ -399,7 +399,7 @@ bool DCLayerTree::InitializeVideoOverlaySupport() {
     return true;
   }
 
-  UniquePtr<GpuOverlayInfo> info = MakeUnique<GpuOverlayInfo>();
+  auto info = std::make_unique<GpuOverlayInfo>();
 
   RefPtr<IDXGIDevice> dxgiDevice;
   RefPtr<IDXGIAdapter> adapter;
@@ -667,8 +667,8 @@ void DCLayerTree::CompositorEndFrame() {
     MOZ_RELEASE_ASSERT(surface_it != mDCSurfaces.end());
     const auto surface = surface_it->second.get();
     if (!same) {
-      // Layer compositor expects front to back.
-      mRootVisual->AddVisual(surface->GetRootVisual(), true, nullptr);
+      // WebRender adds surfaces back to front.
+      mRootVisual->AddVisual(surface->GetRootVisual(), false, nullptr);
     }
   }
 
@@ -758,7 +758,8 @@ void DCLayerTree::CreateSwapChainSurface(wr::NativeSurfaceId aId,
 
   UniquePtr<DCSurface> surface;
   if (UseDCLayerDCompositionTexture()) {
-    surface = MakeUnique<DCLayerDCompositionTexture>(aSize, aIsOpaque, this);
+    surface =
+        std::make_unique<DCLayerDCompositionTexture>(aSize, aIsOpaque, this);
     if (!surface->Initialize()) {
       gfxCriticalNote << "Failed to initialize DCLayerDCompositionTexture: "
                       << wr::AsUint64(aId);
@@ -769,14 +770,15 @@ void DCLayerTree::CreateSwapChainSurface(wr::NativeSurfaceId aId,
       (aNeedsSyncDcompCommit ||
        StaticPrefs::
            gfx_webrender_layer_compositor_force_composition_surface_AtStartup())) {
-    surface = MakeUnique<DCLayerCompositionSurface>(aSize, aIsOpaque, this);
+    surface =
+        std::make_unique<DCLayerCompositionSurface>(aSize, aIsOpaque, this);
     if (!surface->Initialize()) {
       gfxCriticalNote << "Failed to initialize DCLayerSurface: "
                       << wr::AsUint64(aId);
       RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
     }
   } else {
-    surface = MakeUnique<DCSwapChain>(aSize, aIsOpaque, this);
+    surface = std::make_unique<DCSwapChain>(aSize, aIsOpaque, this);
     if (!surface->Initialize()) {
       gfxCriticalNote << "Failed to initialize DCSwapChain: "
                       << wr::AsUint64(aId);
@@ -807,7 +809,7 @@ void DCLayerTree::CreateExternalSurface(wr::NativeSurfaceId aId,
   auto it = mDCSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(it == mDCSurfaces.end());
 
-  auto surface = MakeUnique<DCExternalSurfaceWrapper>(aIsOpaque, this);
+  auto surface = std::make_unique<DCExternalSurfaceWrapper>(aIsOpaque, this);
   if (!surface->Initialize()) {
     gfxCriticalNote << "Failed to initialize DCExternalSurfaceWrapper: "
                     << wr::AsUint64(aId);
@@ -1586,7 +1588,7 @@ DCLayerDCompositionTexture::AllocateTexture() {
     return nullptr;
   }
 
-  return MakeUnique<TextureHolder>(texture, dcompTexture, surface);
+  return std::make_unique<TextureHolder>(texture, dcompTexture, surface);
 }
 
 void DCLayerDCompositionTexture::DestroyTexture(
@@ -2390,9 +2392,10 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
   if (profiler_thread_is_being_profiled_for_markers()) {
     nsPrintfCString str(
         "useVpAutoHDR %d gfxVars %d contentIsHDR %d monitor %d driver %d "
-        "charging %d failed %d",
+        "charging %d failed %d isDRM %d",
         useVpAutoHDR, gfx::gfxVars::WebRenderOverlayVpAutoHDR(), contentIsHDR,
-        monitorIsHDR, driverSupportsAutoHDR, powerIsCharging, mVpAutoHDRFailed);
+        monitorIsHDR, driverSupportsAutoHDR, powerIsCharging, mVpAutoHDRFailed,
+        isDRM);
     PROFILER_MARKER_TEXT("DCSurfaceVideo", GRAPHICS, {}, str);
   }
 

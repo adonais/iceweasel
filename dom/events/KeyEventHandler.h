@@ -13,6 +13,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIController.h"
+#include "nsISupportsImpl.h"
 #include "nsIWeakReference.h"
 #include "nsString.h"
 
@@ -43,6 +44,8 @@ enum ReservedKey : uint8_t {
 
 class KeyEventHandler final {
  public:
+  NS_INLINE_DECL_REFCOUNTING(KeyEventHandler)
+
   // This constructor is used only by XUL key handlers (e.g., <key>)
   explicit KeyEventHandler(dom::Element* aHandlerElement,
                            ReservedKey aReserved);
@@ -50,8 +53,6 @@ class KeyEventHandler final {
   // This constructor is used for keyboard handlers for browser, editor, input
   // and textarea elements.
   explicit KeyEventHandler(ShortcutKeyData* aKeyData);
-
-  ~KeyEventHandler();
 
   /**
    * Try and convert this XBL handler into an APZ KeyboardShortcut for handling
@@ -102,6 +103,8 @@ class KeyEventHandler final {
   static uint32_t gRefCnt;
 
  protected:
+  ~KeyEventHandler();
+
   void Init() { ++gRefCnt; }
 
   already_AddRefed<nsIController> GetController(dom::EventTarget* aTarget);
@@ -167,7 +170,7 @@ class KeyEventHandler final {
                     // mouse events, stores the button info.
 
   // Prototype handlers are chained. We own the next handler in the chain.
-  KeyEventHandler* mNextHandler;
+  RefPtr<KeyEventHandler> mNextHandler;
   RefPtr<nsAtom> mEventName;  // The type of the event, e.g., "keypress"
 };
 

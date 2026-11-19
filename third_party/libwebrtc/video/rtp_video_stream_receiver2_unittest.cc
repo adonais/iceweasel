@@ -919,6 +919,45 @@ TEST_F(RtpVideoStreamReceiver2Test,
   EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
 }
 
+// The packet with the newest sequence number does not necessarily have the
+// newest RTP timestamp. A keyframe with an already received RTP timestamp and a
+// sequence number far behind the newest one must not end the receive epoch,
+// since it would then be delivered again with a new frame id.
+TEST_F(RtpVideoStreamReceiver2Test,
+       DoesNotResetForKeyframeWithAlreadyReceivedTimestamp) {
+  const CopyOnWriteBuffer data("1234");
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data);
+
+  auto inject = [&](uint16_t seq, uint32_t rtp_timestamp, bool keyframe) {
+    RtpPacketReceived rtp_packet;
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(seq);
+    rtp_packet.SetTimestamp(rtp_timestamp);
+    rtp_packet.SetSsrc(kSsrc);
+    rtp_video_stream_receiver_->OnReceivedPayloadDataForTesting(
+        data, rtp_packet,
+        GetGenericVideoHeader(keyframe ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta));
+  };
+
+  std::vector<uint32_t> complete_frame_timestamps;
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillRepeatedly([&](EncodedFrame* frame) {
+        complete_frame_timestamps.push_back(frame->RtpTimestamp());
+        rtp_video_stream_receiver_->FrameDecoded(frame->Id());
+      });
+
+  inject(60'000, 90'000, /*keyframe=*/true);
+  // The newest sequence number arrives with an older RTP timestamp.
+  inject(60'001, 87'000, /*keyframe=*/false);
+  // A copy of the first keyframe, far behind the newest sequence number.
+  inject(57'000, 90'000, /*keyframe=*/true);
+  inject(60'002, 93'000, /*keyframe=*/false);
+
+  EXPECT_THAT(complete_frame_timestamps, ElementsAre(90'000, 87'000, 93'000));
+  EXPECT_THAT(rtcp_packet_parser_.pli()->num_packets(), Eq(0));
+}
+
 TEST_F(RtpVideoStreamReceiver2Test,
        PaddingDoesNotMoveUnwrapperAcrossLargeDiscontinuity) {
   const CopyOnWriteBuffer data("1234");

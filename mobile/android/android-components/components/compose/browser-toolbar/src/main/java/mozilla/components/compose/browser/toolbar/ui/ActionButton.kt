@@ -263,7 +263,7 @@ private fun HighlightedActionButtonPreview() {
                 icon =
                     AppCompatResources.getDrawable(
                         LocalContext.current,
-                        iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                        iconsR.drawable.mozac_ic_more_vertical_round_24,
                     )!!,
                 contentDescription = "Test",
                 onClick = object : BrowserToolbarEvent {},

@@ -487,6 +487,11 @@ void Decoder::PostFrameCount(uint32_t aFrameCount) {
   mImageMetadata.SetFrameCount(aFrameCount);
 }
 
+void Decoder::PostEmbeddableJPEGColorSpace(
+    EmbeddableJPEGColorSpace aColorSpace) {
+  mImageMetadata.SetEmbeddableJPEGColorSpace(aColorSpace);
+}
+
 void Decoder::PostFrameStop(Opacity aFrameOpacity) {
   // We should be mid-frame
   MOZ_ASSERT(!IsMetadataDecode(), "Stopping frame during metadata decode");

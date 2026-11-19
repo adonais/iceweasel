@@ -1161,13 +1161,10 @@ class ResponsiveUI extends EventEmitter {
     this.browserStackEl.style.setProperty("--rdm-height", `${height}px`);
     this.browserStackEl.style.setProperty("--rdm-zoom", zoom);
 
-    // This is a bit premature, but we emit a content-resize event here. It
-    // would be preferrable to wait until the viewport is actually resized,
-    // but the "resize" event is not triggered by this style change. The
-    // content-resize message is only used by tests, and if needed those tests
-    // can use the testing function setViewportSizeAndAwaitReflow to ensure
-    // the viewport has had time to reach this size.
-    this.emit("content-resize", {
+    // This is a bit premature, but we emit a content-resize event here, before
+    // the content has been resized. The testing function setViewportSize waits
+    // for the content to reach this size.
+    this.emitForTests("content-resize", {
       width,
       height,
     });

@@ -4,5 +4,9 @@
 
 JAR_MANIFESTS += ["jar.mn"]
 
+MOZ_SRC_FILES += [
+    "TrustPanelTrackerLogs.sys.mjs",
+]
+
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "Firefox Monitor")

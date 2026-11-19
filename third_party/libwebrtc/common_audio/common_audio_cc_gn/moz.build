@@ -36,6 +36,7 @@ LOCAL_INCLUDES += [
 ]
 
 UNIFIED_SOURCES += [
+    "/third_party/libwebrtc/common_audio/signal_processing/auto_correlation.cc",
     "/third_party/libwebrtc/common_audio/signal_processing/dot_product_with_scale.cc"
 ]
 

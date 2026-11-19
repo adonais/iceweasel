@@ -9,8 +9,7 @@ use super::feature::{Evaluator, QueryFeatureDescription};
 use super::feature::{FeatureFlags, KeywordDiscriminant};
 use crate::context::QuirksMode;
 use crate::custom_properties::{
-    self, ComputedSubstitutionFunctions, SubstitutionFunctionKind,
-    VariableValue as CustomVariableValue,
+    ComputedSubstitutionFunctions, VariableValue as CustomVariableValue,
 };
 use crate::derives::*;
 use crate::dom::AttributeTracker;
@@ -21,6 +20,7 @@ use crate::selector_map::PrecomputedHashSet;
 use crate::str::{starts_with_ignore_ascii_case, string_as_ascii_lowercase};
 use crate::stylesheets::container_rule::AttrReferenceSet;
 use crate::stylesheets::{CssRuleType, Origin, UrlExtraData};
+use crate::substitution::{self, SubstitutionFunctionKind};
 use crate::values::DashedIdent;
 use crate::values::computed::{self, CSSPixelLength, ToComputedValue};
 use crate::values::specified::{
@@ -805,11 +805,7 @@ impl QueryExpressionValue {
             // name and parenthesized argument) into a CustomVariableValue.
             let parse_func = |input: &mut Parser| -> Result<CustomVariableValue, ParseError> {
                 input.parse_nested_block(|i| i.expect_no_error_token().map_err(Into::into))?;
-                CustomVariableValue::parse(
-                    &mut Parser::new(input.slice_from(start)),
-                    Some(&context.namespaces.prefixes),
-                    context.url_data,
-                )
+                CustomVariableValue::parse(context, &mut Parser::new(input.slice_from(start)))
             };
 
             if SubstitutionFunctionKind::from_ident(name).is_ok() {
@@ -1043,7 +1039,7 @@ impl QueryStyleRange {
                     .builder
                     .stylist
                     .expect("container queries should have a stylist around");
-                let substituted = custom_properties::substitute(
+                let substituted = substitution::substitute(
                     value,
                     /* property_id */ None,
                     &sub_funcs,

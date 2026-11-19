@@ -14,6 +14,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const PREF_SECURITY_DELAY = "security.notification_enable_delay";
 
+// How long a removal waits for the provider to reopen the dropdown.
+const REMOVAL_REOPEN_TIMEOUT_MS = 5000;
+
 // Stores the actor that has the active popup, used by formfill
 let currentActor = null;
 
@@ -228,6 +231,24 @@ export class AutoCompleteParent extends JSWindowActorParent {
   #dropdownCloseReason = null;
 
   /**
+   * The input the current dropdown is shown for, as "browsingContextId|id".
+   *
+   * @type {?string}
+   */
+  #dropdownInputKey = null;
+
+  /**
+   * A record removal in progress, so the dropdown it reopens keeps its flow.
+   *
+   * @type {?{ flowId: string, inputKey: ?string }}
+   */
+  #pendingRemoval = null;
+
+  #pendingRemovalTimer = null;
+
+  #closingForEmptyResults = false;
+
+  /**
    * The entry whose provider was last asked for a preview, so that the
    * provider can be told to drop it once the preview moves elsewhere.
    *
@@ -250,6 +271,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
       this.#dropdownCloseReason = "left_page";
       this.openedPopup.closePopup();
     }
+    this.#clearPendingRemoval();
   }
 
   static getCurrentActor() {
@@ -305,13 +327,17 @@ export class AutoCompleteParent extends JSWindowActorParent {
         if (this.#dropdownRecordType) {
           Glean.autocomplete.dropdownClosed.record({
             record_type: this.#dropdownRecordType,
-            close_reason: this.#dropdownCloseReason ?? "dismissed",
+            close_reason:
+              this.#pendingRemoval && !this.#closingForEmptyResults
+                ? "removal_prompt"
+                : (this.#dropdownCloseReason ?? "dismissed"),
             flow_id: this.#dropdownFlowId ?? "",
           });
         }
         this.#dropdownRecordType = null;
         this.#dropdownCloseReason = null;
         this.#dropdownFlowId = null;
+        this.#dropdownInputKey = null;
 
         this.openedPopup = null;
         currentActor = null;
@@ -390,7 +416,12 @@ export class AutoCompleteParent extends JSWindowActorParent {
     this.openedPopup.invalidate();
     this.openedPopup.selectedIndex = selectedIndex;
     this._maybeRecordTelemetryEvents(results, inputElementIdentifier);
-    this.#recordDropdownShown(results);
+    this.#recordDropdownShown(
+      results,
+      inputElementIdentifier
+        ? `${inputElementIdentifier.browsingContextId}|${inputElementIdentifier.id}`
+        : null
+    );
 
     // This is a temporary solution. We should replace it with
     // proper meta information about the popup once such field
@@ -406,10 +437,17 @@ export class AutoCompleteParent extends JSWindowActorParent {
 
   /**
    * @param {object[]} results - Non-empty array of autocomplete results.
+   * @param {?string} inputKey - The input the dropdown is shown for.
    */
-  #recordDropdownShown(results) {
+  #recordDropdownShown(results, inputKey) {
+    const reopenedAfterRemoval =
+      Boolean(inputKey) && this.#pendingRemoval?.inputKey === inputKey;
     this.#dropdownCloseReason = null;
-    this.#dropdownFlowId = Services.uuid.generateUUID().toString();
+    this.#dropdownInputKey = inputKey;
+    this.#dropdownFlowId = reopenedAfterRemoval
+      ? this.#pendingRemoval.flowId
+      : Services.uuid.generateUUID().toString();
+    this.#clearPendingRemoval();
 
     let recordType = null;
     for (const result of results) {
@@ -432,8 +470,30 @@ export class AutoCompleteParent extends JSWindowActorParent {
       Glean.autocomplete.dropdownShown.record({
         record_type: recordType,
         flow_id: this.#dropdownFlowId,
+        reopened_after_removal: reopenedAfterRemoval,
       });
     }
+  }
+
+  #clearPendingRemoval() {
+    lazy.clearTimeout(this.#pendingRemovalTimer);
+    this.#pendingRemovalTimer = null;
+    this.#pendingRemoval = null;
+  }
+
+  #onRemovalSettled(pending) {
+    if (this.#pendingRemoval != pending) {
+      return;
+    }
+    if (this.openedPopup) {
+      this.#clearPendingRemoval();
+      return;
+    }
+    this.#pendingRemovalTimer = lazy.setTimeout(() => {
+      if (this.#pendingRemoval == pending) {
+        this.#clearPendingRemoval();
+      }
+    }, REMOVAL_REOPEN_TIMEOUT_MS);
   }
 
   /**
@@ -524,7 +584,12 @@ export class AutoCompleteParent extends JSWindowActorParent {
       if (!this.#dropdownCloseReason) {
         this.#dropdownCloseReason = "typed_through";
       }
-      this.closePopup();
+      this.#closingForEmptyResults = true;
+      try {
+        this.closePopup();
+      } finally {
+        this.#closingForEmptyResults = false;
+      }
     } else {
       AutoCompleteResultView.setResults(this, results);
       this.openedPopup.invalidate();
@@ -877,7 +942,9 @@ export class AutoCompleteParent extends JSWindowActorParent {
    * `fillMessageName` dispatches nothing.
    *
    * A secondary action on a saved record is recorded in telemetry, with the
-   * record type inferred from the result and the action's `type`.
+   * record type inferred from the result and the action's `type`. The
+   * provider also receives the dropdown's flow id as `{ flowId }`, and a
+   * "delete" action keeps that flow id for the dropdown it reopens.
    *
    * @param {boolean} secondary Whether to dispatch the entry's secondary action.
    * @param {number} [actionIndex] Which secondary menu action to dispatch;
@@ -916,6 +983,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
         Glean.autocomplete.recordInteraction.record({
           record_type: recordType,
           interaction_type: entry.type,
+          flow_id: this.#dropdownFlowId ?? "",
         });
       }
     }
@@ -925,8 +993,23 @@ export class AutoCompleteParent extends JSWindowActorParent {
       return;
     }
 
+    const flowId = this.#dropdownFlowId ?? "";
+    let pending = null;
+    if (secondary && entry.type == "delete" && this.#dropdownFlowId) {
+      this.#clearPendingRemoval();
+      pending = { flowId, inputKey: this.#dropdownInputKey };
+      this.#pendingRemoval = pending;
+    }
+
     const actor = this.#getActorByMessagePrefix(fillMessageName);
-    actor?.onAutoCompleteEntrySelected?.(fillMessageName, fillMessageData);
+    const selected = actor?.onAutoCompleteEntrySelected?.(
+      fillMessageName,
+      fillMessageData,
+      { flowId }
+    );
+    if (pending) {
+      Promise.resolve(selected).finally(() => this.#onRemovalSettled(pending));
+    }
   }
 
   /**

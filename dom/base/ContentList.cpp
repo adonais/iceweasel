@@ -351,9 +351,14 @@ uint32_t ContentList::Length() {
 }
 
 Element* ContentList::Item(uint32_t aIndex) {
-  if (mState != State::UpToDate) {
-    PopulateSelf(std::min(aIndex, UINT32_MAX - 1) + 1);
+  uint32_t count = mElements.Length();
+  if (aIndex >= count && mState != State::UpToDate) {
+    // Prefetch progressively more elements if access is sequential
+    uint32_t prefetch = aIndex == count ? std::min(count, 64u) : 0;
+    PopulateSelf(std::min(aIndex, UINT32_MAX - 1 - prefetch) + prefetch + 1);
   }
+  MOZ_ASSERT(mState != State::Dirty,
+             "mElements should've been cleared if dirty");
 
   ASSERT_IN_SYNC;
   NS_ASSERTION(!mRootNode || mState != State::Dirty,
@@ -384,7 +389,7 @@ inline void ContentList::InsertElementInNamedItemsCache(nsIContent& aContent) {
     }
 
     if (!mNamedItemsCache) {
-      mNamedItemsCache = MakeUnique<NamedItemsCache>();
+      mNamedItemsCache = std::make_unique<NamedItemsCache>();
     }
 
     nsAtom* name = info.mValue->GetAtomValue();

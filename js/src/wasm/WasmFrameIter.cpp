@@ -151,17 +151,20 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     currentFrameStackSwitched_ = dynamicSwitchToMainStack;
 #endif
 
-    // The debugEnabled() relies on valid value of resumePCinCurrentFrame_
-    // to identify DebugFrame. Normally this field is updated at popFrame().
-    // The only case when this can happend is during IndirectCallBadSig
-    // trapping and stack unwinding. The top frame will never be at ReturnStub
-    // callsite, except during IndirectCallBadSig unwinding.
-    CallSite site;
-    if (code_->lookupCallSite(unwoundPC, &site) &&
-        site.kind() == CallSiteKind::ReturnStub) {
+    // If wasm::StartUnwinding unwound the trapping frame (which only happens
+    // for IndirectCallBadSig), the current frame is the caller's, so its
+    // resume PC is the call site in the caller, not the trap's resume PC in
+    // the callee.  Stackmap lookup and debugEnabled() rely on this.  The top
+    // frame will never be at a ReturnStub callsite, except in this case.
+    if (trapData.unwoundFrame) {
       MOZ_ASSERT(trapData.trap == Trap::IndirectCallBadSig);
       resumePCinCurrentFrame_ = (uint8_t*)unwoundPC;
     } else {
+#ifdef DEBUG
+      CallSite site;
+      MOZ_ASSERT(!(code_->lookupCallSite(unwoundPC, &site) &&
+                   site.kind() == CallSiteKind::ReturnStub));
+#endif
       resumePCinCurrentFrame_ = (uint8_t*)trapData.resumePC;
     }
 
@@ -280,6 +283,13 @@ static inline void AssertDirectJitCall(const void* fp) {
 
 #ifdef ENABLE_WASM_JSPI
 void WasmFrameIter::popContBaseFrame() {
+  // Recover the initial function's instance from the base frame's callee slot
+  // so GC traces it while crossing this frame. When a return_call collapsed the
+  // initial function's frame (e.g. a return_call_indirect that trapped on a
+  // signature mismatch) this is the only remaining reference to it.
+  contBaseInstance_ =
+      const_cast<Instance*>(ExtractCalleeInstanceFromFrameWithInstances(fp_));
+
   ContStack* stack = ContStack::fromBaseFrameFP(fp_);
   MOZ_ASSERT(cx()->wasm().findStackForAddress(
                  cx(), reinterpret_cast<uintptr_t>(fp_)) == stack);
@@ -312,8 +322,9 @@ void WasmFrameIter::popContBaseFrame() {
 
 void WasmFrameIter::popFrame(bool isLeavingFrame) {
 #ifdef ENABLE_WASM_JSPI
-  // Clearing unwound continuation stack here.
+  // Clearing unwound continuation stack and base frame instance here.
   unwoundContStack_ = nullptr;
+  contBaseInstance_ = nullptr;
 #endif
 
   // If we're visiting inlined frames, see if this frame was inlined.
@@ -959,7 +970,8 @@ void wasm::GenerateMinimalEpilogue(MacroAssembler& masm, uint32_t* ret) {
 void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
                                     const CallIndirectId& callIndirectId,
                                     const Maybe<uint32_t>& tier1FuncIndex,
-                                    FuncOffsets* offsets) {
+                                    FuncOffsets* offsets,
+                                    FaultingCodeRange* badSigTrap) {
   AutoCreatedBy acb(masm, "wasm::GenerateFunctionPrologue");
 
   // We are going to generate this code layout:
@@ -1067,7 +1079,11 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
         // up wasm::StartUnwinding, which uses the PC to determine if the frame
         // has been constructed or not.
         masm.bind(&fail);
-        masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        FaultingCodeRange fcr =
+            masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        if (badSigTrap) {
+          *badSigTrap = fcr;
+        }
         break;
       }
       case CallIndirectIdKind::Immediate: {
@@ -1081,7 +1097,11 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
         // up wasm::StartUnwinding, which uses the PC to determine if the frame
         // has been constructed or not.
         masm.bind(&fail);
-        masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        FaultingCodeRange fcr =
+            masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        if (badSigTrap) {
+          *badSigTrap = fcr;
+        }
         break;
       }
       case CallIndirectIdKind::None:

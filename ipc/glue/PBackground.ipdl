@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-include protocol PBackgroundDataBridge;
 include protocol PBackgroundIDBFactory;
 include protocol PBackgroundIndexedDBUtils;
 include protocol PBackgroundSDBConnection;
@@ -185,6 +184,8 @@ parent:
       nsString[] aProtocols,
       WebTransportHeader[] aHeaders,
       WebTransportHash[] aServerCertHashes,
+      uint16_t? aAnticipatedConcurrentIncomingUnidirectionalStreams,
+      uint16_t? aAnticipatedConcurrentIncomingBidirectionalStreams,
       Endpoint<PWebTransportParent> aParentEndpoint)
       returns(nsresult rv, uint8_t aReliability, uint64_t aMaxDatagramSize); // WebTransportReliabityMode enum
 

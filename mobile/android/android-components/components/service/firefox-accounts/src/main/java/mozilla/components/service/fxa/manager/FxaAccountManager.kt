@@ -98,7 +98,7 @@ const val MAX_NETWORK_RETRIES = 3
 @Suppress("TooManyFunctions", "LargeClass")
 open class FxaAccountManager(
     private val context: Context,
-    @get:VisibleForTesting val serverConfig: ServerConfig,
+    val serverConfig: ServerConfig,
     private val deviceConfig: DeviceConfig,
     private val syncConfig: SyncConfig?,
     private val applicationScopes: Set<String> = emptySet(),

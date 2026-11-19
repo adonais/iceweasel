@@ -9,6 +9,7 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
@@ -336,6 +337,12 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/414316
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.TextSelectionTest#urlBarQuickActionsTest"],
+        bug = 2087040,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun urlBarQuickActionsTest() {
         val firstWebsite = mockWebServer.getGenericAsset(1)

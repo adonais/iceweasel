@@ -51,9 +51,14 @@ skip-if = [
 
 ["browser_InlineSpellChecker.js"]
 
-["browser_toTopLevelWidgetRect.js"]
+["browser_ShortcutUtils_modifierOrder.js"]
+run-if = [
+  "os == 'mac'",
+]
 
 ["browser_Troubleshoot.js"]
+
+["browser_toTopLevelWidgetRect.js"]
 
 ["browser_web_channel.js"]
 https_first_disabled = true

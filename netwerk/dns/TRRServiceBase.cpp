@@ -9,6 +9,7 @@
 #include "TRRService.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsHostResolver.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpHandler.h"
@@ -232,14 +233,16 @@ already_AddRefed<nsHttpConnectionInfo> TRRServiceBase::CreateConnInfoHelper(
                                OriginAttributes());
   }
 
-  return connInfo.forget();
+  return connInfo->Mutate()
+      .SetAnonymous(true)
+      .SetIsTrrServiceChannel(true)
+      .SetTRRMode(nsIRequest::TRR_DISABLED_MODE)
+      .SetHappyEyeballsEnabled(
+          StaticPrefs::network_http_happy_eyeballs_enabled() && !proxyInfo)
+      .Finalize();
 }
 
 void TRRServiceBase::InitTRRConnectionInfo(bool aForceReinit) {
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
   if (mTRRConnectionInfoInited && !aForceReinit) {
     return;
   }
@@ -271,10 +274,6 @@ void TRRServiceBase::AsyncCreateTRRConnectionInfo(const nsACString& aURI) {
 
 void TRRServiceBase::AsyncCreateTRRConnectionInfoInternal(
     const nsACString& aURI) {
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
   SetDefaultTRRConnectionInfo(nullptr);
 
   MOZ_ASSERT(NS_IsMainThread());
@@ -341,10 +340,6 @@ void TRRServiceBase::SetDefaultTRRConnectionInfo(
 }
 
 void TRRServiceBase::RegisterProxyChangeListener() {
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
   nsCOMPtr<nsIProtocolProxyService> pps =
       do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID);
   if (!pps) {
@@ -355,10 +350,6 @@ void TRRServiceBase::RegisterProxyChangeListener() {
 }
 
 void TRRServiceBase::UnregisterProxyChangeListener() {
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
   nsCOMPtr<nsIProtocolProxyService> pps =
       do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID);
   if (!pps) {

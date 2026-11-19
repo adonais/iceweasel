@@ -250,8 +250,7 @@ nsresult txPatternParser::createStepPattern(txExprLexer& aLexer,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  UniquePtr<txStepPattern> step =
-      std::make_unique<txStepPattern>(nodeTest, isAttr);
+  auto step = std::make_unique<txStepPattern>(nodeTest, isAttr);
   rv = parsePredicates(step.get(), aLexer, aContext);
   NS_ENSURE_SUCCESS(rv, rv);
 

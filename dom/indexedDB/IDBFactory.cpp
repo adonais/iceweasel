@@ -119,7 +119,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForWindow(
 
   MOZ_ASSERT(principal);
 
-  auto principalInfo = MakeUnique<PrincipalInfo>();
+  auto principalInfo = std::make_unique<PrincipalInfo>();
   rv = PrincipalToPrincipalInfo(principal, principalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     IDB_REPORT_INTERNAL_ERR();
@@ -163,7 +163,7 @@ Result<RefPtr<IDBFactory>, nsresult> IDBFactory::CreateForMainThreadJS(
     return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
 
-  auto principalInfo = MakeUnique<PrincipalInfo>();
+  auto principalInfo = std::make_unique<PrincipalInfo>();
   nsIPrincipal* principal = sop->GetEffectiveStoragePrincipal();
   MOZ_ASSERT(principal);
   bool isSystem;

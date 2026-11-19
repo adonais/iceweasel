@@ -24,11 +24,10 @@ DEFAULT_TIMEOUT = 125
 
 
 class TestBrowserThread(threading.Thread):
-    def __init__(self, raptor_instance, tests, names):
+    def __init__(self, raptor_instance, tests):
         super().__init__()
         self.raptor_instance = raptor_instance
         self.tests = tests
-        self.names = names
         self.exc = None
 
     def print_error(self):
@@ -39,7 +38,7 @@ class TestBrowserThread(threading.Thread):
 
     def run(self):
         try:
-            self.raptor_instance.run_tests(self.tests, self.names)
+            self.raptor_instance.run_tests(self.tests)
         except BaseException:
             self.exc = sys.exc_info()
 
@@ -58,6 +57,7 @@ def test_direct_playback_sets_firefox_origin_overrides():
     Perftest.run_test_setup(perftest, {"name": "nav-bench", "preferences": {}})
 
     perftest.set_browser_test_prefs.assert_called_with({
+        "network.proxy.type": 0,
         "network.dns.forceResolve": "127.0.0.1",
         "network.socket.forcePort": "80=18080;443=18443",
     })
@@ -472,6 +472,39 @@ def test_compute_process_timeout(
     )
     bt_timeout = browsertime._compute_process_timeout(mock_test, timeout, [])
     assert bt_timeout == expected_timeout
+
+
+SAFARI_AUTOMATION_LINE = (
+    "[2026-10-16 13:45:26] INFO: safari failed to start, trying 2 more time(s): "
+    "Could not create a session: You must enable 'Allow remote automation' in "
+    "the Developer section of Safari Settings to control Safari via WebDriver."
+)
+
+
+@pytest.mark.parametrize("app", ["safari", "safari-tp"])
+def test_safari_remote_automation_error_is_fatal_setup_error(app):
+    perftest = object.__new__(BrowsertimeDesktop)
+    perftest.config = {"app": app}
+
+    help_text = perftest._fatal_setup_error(SAFARI_AUTOMATION_LINE)
+
+    assert "sudo safaridriver --enable" in help_text
+    assert "Allow remote automation" in help_text
+    assert "Show features for web developers" in help_text
+
+
+@pytest.mark.parametrize(
+    "app, line",
+    [
+        ("firefox", SAFARI_AUTOMATION_LINE),
+        ("safari", "[2026-10-16 13:45:26] INFO: Starting Speedometer 3 test"),
+    ],
+)
+def test_other_errors_are_not_fatal_setup_errors(app, line):
+    perftest = object.__new__(BrowsertimeDesktop)
+    perftest.config = {"app": app}
+
+    assert perftest._fatal_setup_error(line) is None
 
 
 if __name__ == "__main__":

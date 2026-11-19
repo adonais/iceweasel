@@ -329,9 +329,6 @@ void nsHttpConnectionInfo::SetOriginServer(const nsACString& host,
   BuildHashKey();
 }
 
-// Note that this function needs to be synced with
-// nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs to make sure
-// nsHttpConnectionInfo can be serialized/deserialized.
 already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   RefPtr<nsHttpConnectionInfo> clone;
   if (mRoutedHost.IsEmpty()) {
@@ -481,94 +478,6 @@ nsHttpConnectionInfo::CloneAndAdoptPortAndAlpn(
   return clone.forget();
 }
 
-/* static */
-void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
-    nsHttpConnectionInfo* aInfo, HttpConnectionInfoCloneArgs& aArgs) {
-  aArgs.host() = aInfo->GetOrigin();
-  aArgs.port() = aInfo->OriginPort();
-  aArgs.npnToken() = aInfo->GetNPNToken();
-  aArgs.username() = aInfo->GetUsername();
-  aArgs.originAttributes() = aInfo->GetOriginAttributes();
-  aArgs.endToEndSSL() = aInfo->EndToEndSSL();
-  aArgs.routedHost() = aInfo->GetRoutedHost();
-  aArgs.routedPort() = aInfo->RoutedPort();
-  aArgs.anonymous() = aInfo->GetAnonymous();
-  aArgs.aPrivate() = aInfo->GetPrivate();
-  aArgs.insecureScheme() = aInfo->GetInsecureScheme();
-  aArgs.noSpdy() = aInfo->GetNoSpdy();
-  aArgs.beConservative() = aInfo->GetBeConservative();
-  aArgs.anonymousAllowClientCert() = aInfo->GetAnonymousAllowClientCert();
-  aArgs.tlsFlags() = aInfo->GetTlsFlags();
-  aArgs.isTrrServiceChannel() = aInfo->GetTRRMode();
-  aArgs.trrMode() = aInfo->GetTRRMode();
-  aArgs.isIPv4Disabled() = aInfo->GetIPv4Disabled();
-  aArgs.isIPv6Disabled() = aInfo->GetIPv6Disabled();
-  aArgs.http3Policy() = static_cast<uint8_t>(aInfo->GetHttp3Policy());
-  aArgs.isHttp3() = aInfo->IsHttp3();
-  aArgs.hasIPHintAddress() = aInfo->HasIPHintAddress();
-  aArgs.echConfig() = aInfo->GetEchConfig();
-  aArgs.webTransport() = aInfo->GetWebTransport();
-  aArgs.webTransportId() = aInfo->GetWebTransportId();
-  aArgs.happyEyeballsEnabled() = aInfo->GetHappyEyeballsEnabled();
-
-  if (!aInfo->ProxyInfo()) {
-    return;
-  }
-
-  nsTArray<ProxyInfoCloneArgs> proxyInfoArray;
-  nsProxyInfo::SerializeProxyInfo(aInfo->ProxyInfo(), proxyInfoArray);
-  aArgs.proxyInfo() = std::move(proxyInfoArray);
-}
-
-// This function needs to be synced with nsHttpConnectionInfo::Clone.
-/* static */
-already_AddRefed<nsHttpConnectionInfo>
-nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
-    const HttpConnectionInfoCloneArgs& aInfoArgs) {
-  RefPtr<nsProxyInfo> pi =
-      nsProxyInfo::DeserializeProxyInfo(aInfoArgs.proxyInfo());
-  RefPtr<nsHttpConnectionInfo> cinfo;
-  if (aInfoArgs.routedHost().IsEmpty()) {
-    cinfo = new nsHttpConnectionInfo(
-        aInfoArgs.host(), aInfoArgs.port(), aInfoArgs.npnToken(),
-        aInfoArgs.username(), pi, aInfoArgs.originAttributes(),
-        aInfoArgs.endToEndSSL(), aInfoArgs.isHttp3(), aInfoArgs.webTransport());
-  } else {
-    MOZ_ASSERT(aInfoArgs.endToEndSSL());
-    cinfo = new nsHttpConnectionInfo(
-        aInfoArgs.host(), aInfoArgs.port(), aInfoArgs.npnToken(),
-        aInfoArgs.username(), pi, aInfoArgs.originAttributes(),
-        aInfoArgs.routedHost(), aInfoArgs.routedPort(), aInfoArgs.isHttp3(),
-        aInfoArgs.webTransport());
-  }
-  // Transfer Webtransport ids
-  cinfo->SetWebTransportId(aInfoArgs.webTransportId());
-
-  // Make sure the anonymous, insecure-scheme, and private flags are transferred
-  cinfo->SetAnonymous(aInfoArgs.anonymous());
-  cinfo->SetPrivate(aInfoArgs.aPrivate());
-  cinfo->SetInsecureScheme(aInfoArgs.insecureScheme());
-  cinfo->SetNoSpdy(aInfoArgs.noSpdy());
-  cinfo->SetBeConservative(aInfoArgs.beConservative());
-  cinfo->SetAnonymousAllowClientCert(aInfoArgs.anonymousAllowClientCert());
-  cinfo->SetFallbackConnection(aInfoArgs.fallbackConnection());
-  cinfo->SetTlsFlags(aInfoArgs.tlsFlags());
-  cinfo->SetIsTrrServiceChannel(aInfoArgs.isTrrServiceChannel());
-  cinfo->SetTRRMode(static_cast<nsIRequest::TRRMode>(aInfoArgs.trrMode()));
-  cinfo->SetIPv4Disabled(aInfoArgs.isIPv4Disabled());
-  cinfo->SetIPv6Disabled(aInfoArgs.isIPv6Disabled());
-  uint8_t http3Policy = aInfoArgs.http3Policy();
-  if (http3Policy > static_cast<uint8_t>(Http3Policy::Only)) {
-    http3Policy = static_cast<uint8_t>(Http3Policy::Allowed);
-  }
-  cinfo->SetHttp3Policy(static_cast<Http3Policy>(http3Policy));
-  cinfo->SetHasIPHintAddress(aInfoArgs.hasIPHintAddress());
-  cinfo->SetEchConfig(aInfoArgs.echConfig());
-  cinfo->SetHappyEyeballsEnabled(aInfoArgs.happyEyeballsEnabled());
-
-  return cinfo.forget();
-}
-
 void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI,
                                               nsProxyInfo* aProxyInfo) {
   // Explicitly use an empty npnToken when |mIsHttp3| is true, since we want to
@@ -633,6 +542,10 @@ nsresult nsHttpConnectionInfo::CreateWildCard(nsHttpConnectionInfo** outParam) {
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
   clone->SetFallbackConnection(GetFallbackConnection());
+  // Preserve the Happy Eyeballs flag so the wildcard conn info hashes
+  // consistently with the outer conn info (BuildHashKey encodes the NPN token
+  // otherwise), else the outer connection can't reconcile as the wildcard.
+  clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
   clone.forget(outParam);
   return NS_OK;
 }

@@ -12,13 +12,6 @@
 
 class nsIHttpHeaderVisitor;
 
-// This needs to be forward declared here so we can include only this header
-// without also including PHttpChannelParams.h
-namespace IPC {
-template <typename>
-struct ParamTraits;
-}  // namespace IPC
-
 namespace mozilla {
 namespace net {
 
@@ -155,8 +148,6 @@ class nsHttpRequestHead {
   // During VisitHeader we sould not allow call to SetHeader.
   // Depth counter so nested visits cannot disarm the outer guard.
   uint32_t mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){0};
-
-  friend struct IPC::ParamTraits<nsHttpRequestHead>;
 };
 
 }  // namespace net

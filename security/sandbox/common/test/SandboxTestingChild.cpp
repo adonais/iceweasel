@@ -76,10 +76,6 @@ void SandboxTestingChild::Bind(Endpoint<PSandboxTestingChild>&& aEndpoint) {
     RunTestsGMPlugin(this);
   }
 
-  if (XRE_IsSocketProcess()) {
-    RunTestsSocket(this);
-  }
-
   if (XRE_IsGPUProcess()) {
     RunTestsGPU(this);
   }

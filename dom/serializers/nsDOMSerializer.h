@@ -22,7 +22,7 @@ class nsDOMSerializer final : public mozilla::dom::NonRefcountedDOMObject {
   // WebIDL API
   static mozilla::UniquePtr<nsDOMSerializer> Constructor(
       const mozilla::dom::GlobalObject& aOwner) {
-    return mozilla::MakeUnique<nsDOMSerializer>();
+    return std::make_unique<nsDOMSerializer>();
   }
 
   void SerializeToString(nsINode& aRoot, nsAString& aStr,

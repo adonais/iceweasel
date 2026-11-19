@@ -77,8 +77,8 @@ UniquePtr<SharedTextureReadBackPresent> SharedTextureReadBackPresent::Create(
     const uint32_t aWidth, const uint32_t aHeight,
     const struct ffi::WGPUTextureFormat aFormat,
     const ffi::WGPUTextureUsages aUsage) {
-  return MakeUnique<SharedTextureReadBackPresent>(aWidth, aHeight, aFormat,
-                                                  aUsage);
+  return std::make_unique<SharedTextureReadBackPresent>(aWidth, aHeight,
+                                                        aFormat, aUsage);
 }
 
 SharedTextureReadBackPresent::SharedTextureReadBackPresent(

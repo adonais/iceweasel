@@ -127,7 +127,9 @@ class APZUpdater {
    * then tasks for the other layer trees can still be processed.
    *
    * In the case of where |aDuringShutdown| is `Yes` this function doesn't
-   * invoke `WebRenderAPI::WakeSceneBuilder` explicitly.
+   * invoke `WebRenderAPI::WakeSceneBuilder` explicitly, and the task doesn't
+   * wait for its layers id to be unblocked, since the scene that would unblock
+   * it may never get built once WebRender is shutting down.
    */
   void RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aTask,
                           DuringShutdown aDuringShutdown = DuringShutdown::No);
@@ -236,6 +238,7 @@ class APZUpdater {
   struct QueuedTask {
     LayersId mLayersId;
     RefPtr<Runnable> mRunnable;
+    DuringShutdown mDuringShutdown = DuringShutdown::No;
   };
 
   // Lock used to protect mUpdaterQueue

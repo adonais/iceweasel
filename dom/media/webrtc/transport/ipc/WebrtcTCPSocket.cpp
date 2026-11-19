@@ -21,6 +21,7 @@
 #include "nsISocketTransport.h"
 #include "nsISocketTransportService.h"
 #include "nsIURIMutator.h"
+#include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsSocketTransportService2.h"
 #include "nsString.h"
@@ -176,10 +177,11 @@ nsresult WebrtcTCPSocket::Open(
     spec += aHost;
   }
 
-  nsresult rv = NS_MutateURI(NS_STANDARDURLMUTATOR_CONTRACTID)
-                    .SetSpec(spec)
-                    .SetPort(aPort)
-                    .Finalize(mURI);
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), spec);
+  if (NS_SUCCEEDED(rv)) {
+    rv = NS_MutateURI(uri).SetPort(aPort).Finalize(mURI);
+  }
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     CloseWithReason(NS_ERROR_FAILURE);
@@ -296,19 +298,13 @@ void WebrtcTCPSocket::OpenWithoutHttpProxy(nsIProxyInfo* aSocksProxyInfo) {
   }
 
   nsCString host;
-  int32_t port;
-
   nsresult rv = mURI->GetHost(host);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     CloseWithReason(rv);
     return;
   }
 
-  rv = mURI->GetPort(&port);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    CloseWithReason(rv);
-    return;
-  }
+  int32_t port = NS_GetRealPort(mURI);
 
   AutoTArray<nsCString, 1> socketTypes;
   if (mTls) {
@@ -637,12 +633,6 @@ WebrtcTCPSocket::OnUpgradeFailed(nsresult aErrorCode) {
   CloseWithReason(aErrorCode);
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-WebrtcTCPSocket::OnWebSocketConnectionAvailable(
-    WebSocketConnectionBase* aConnection) {
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 // nsIRequestObserver (from nsIStreamListener)

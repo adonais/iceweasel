@@ -1905,10 +1905,11 @@ FaultingCodeRange MacroAssemblerARMCompat::loadFloat16(const BaseIndex& src,
   return fcr;
 }
 
-void MacroAssemblerARMCompat::store8(Imm32 imm, const Address& address) {
+FaultingCodeRange MacroAssemblerARMCompat::store8(Imm32 imm,
+                                                  const Address& address) {
   SecondScratchRegisterScope scratch2(asMasm());
   ma_mov(imm, scratch2);
-  store8(scratch2, address);
+  return store8(scratch2, address);
 }
 
 FaultingCodeRange MacroAssemblerARMCompat::store8(Register src,
@@ -1955,10 +1956,11 @@ FaultingCodeRange MacroAssemblerARMCompat::store8(Register src,
   return fcr;
 }
 
-void MacroAssemblerARMCompat::store16(Imm32 imm, const Address& address) {
+FaultingCodeRange MacroAssemblerARMCompat::store16(Imm32 imm,
+                                                   const Address& address) {
   SecondScratchRegisterScope scratch2(asMasm());
   ma_mov(imm, scratch2);
-  store16(scratch2, address);
+  return store16(scratch2, address);
 }
 
 FaultingCodeRange MacroAssemblerARMCompat::store16(Register src,

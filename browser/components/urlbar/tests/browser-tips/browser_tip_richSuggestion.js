@@ -61,10 +61,7 @@ add_task(async function ui() {
 
   info("Check the container");
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
-  Assert.equal(
-    row.hasAttribute("rich-suggestion"),
-    !Services.prefs.getBoolPref("browser.nova.enabled")
-  );
+  Assert.ok(!row.hasAttribute("rich-suggestion"));
 
   info("Check the icon");
   let icon = row.querySelector(".urlbarView-favicon");

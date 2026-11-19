@@ -19,6 +19,7 @@
 #include <initializer_list>
 #include <memory>
 #include <tuple>
+#include <vector>
 
 #include "gtest/gtest.h"
 
@@ -27,13 +28,16 @@
 #include "aom/aomcx.h"
 #include "aom/aom_encoder.h"
 #include "aom/aom_image.h"
+#if CONFIG_AV1_DECODER
+#include "aom/aom_decoder.h"
+#include "aom/aomdx.h"
+#endif
 #include "aom_mem/aom_mem.h"
 
-#include "av1/common/blockd.h"
-#include "av1/common/reconintra.h"
-#include "av1/encoder/allintra_vis.h"
+#include "test/acm_random.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
+#include "test/md5_helper.h"
 #include "test/util.h"
 #include "test/video_source.h"
 
@@ -1537,8 +1541,14 @@ void IntraBCFrameSizeIncreaseTest(unsigned int usage, int speed) {
 
   EncodeOne(&enc, img_small, 0);
 
-  // Only the height grows, so the reconstructed frame keeps its stride while
-  // the source buffer gets a new one.
+  // Only the height grows, so the reconstructed frame keeps its stride
+  // (SS_CFG_SRC) while the current lookahead source buffer is reallocated in
+  // av1_lookahead_push() with AOM_BORDER_IN_PIXELS (160) instead of
+  // oxcf->border_in_pixels (96), changing its stride (SS_CFG_LOOKAHEAD).
+  // Furthermore, for GOOD_QUALITY and REALTIME modes (even with
+  // lag_in_frames = 0), the lookahead ring buffer has 2 slots (max_pre_frames =
+  // 1): frame 0 was placed in buf[0], so frame 1 is placed in buf[1] while
+  // buf[0] retains the old stride.
   cfg.g_h = 64;
   ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
   ASSERT_EQ(aom_codec_encode(&enc, img_large, 1, 1, AOM_EFLAG_FORCE_KF),
@@ -1617,7 +1627,247 @@ TEST(EncodeAPI, IntraBCFrameSizeDecreaseRealtime) {
   ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
 }
 
+#if CONFIG_AV1_DECODER
+// Draws a text like screen texture moved left by offset_x pixels.
+void FillPannedScreen(aom_image_t *img, int offset_x) {
+  for (int plane = 0; plane < 3; ++plane) {
+    const int ss = plane ? 1 : 0;
+    const int w = static_cast<int>(img->d_w + ss) >> ss;
+    const int h = static_cast<int>(img->d_h + ss) >> ss;
+    for (int y = 0; y < h; ++y) {
+      uint8_t *row = img->planes[plane] + y * img->stride[plane];
+      for (int x = 0; x < w; ++x) {
+        const int px = (x << ss) + offset_x;
+        const int py = y << ss;
+        const uint32_t cell = static_cast<uint32_t>(px >> 4) * 73856093u ^
+                              static_cast<uint32_t>(py >> 4) * 19349663u;
+        const int bg = 40 + static_cast<int>(cell % 160);
+        const bool glyph = (px * 7 + py * 3) % 11 < 3 && ((px ^ py) & 4);
+        const int v = glyph ? 255 - bg : bg;
+        row[x] = plane ? static_cast<uint8_t>(128 + ((v - 128) >> 2))
+                       : static_cast<uint8_t>(v);
+      }
+    }
+  }
+}
+
+// Encodes an IntraBC key frame with 2 threads, then pans the content so the
+// inter frames predict from past the frame edge. The loop filters are off on
+// IntraBC frames, so the encoder must still extend the key frame borders for
+// its reconstruction to match the decoder.
+TEST(EncodeAPI, IntraBCMultiThreadBorderExtension) {
+  constexpr int kWidth = 320;
+  constexpr int kHeight = 192;
+  constexpr int kFrames = 5;
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = kWidth;
+  cfg.g_h = kHeight;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_threads = 2;
+  cfg.rc_min_quantizer = 8;
+  cfg.rc_max_quantizer = 40;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 11), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TUNE_CONTENT, AOM_CONTENT_SCREEN),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_ENABLE_INTRABC, 1), AOM_CODEC_OK);
+
+  // Decode to 8-bit buffers like the encoder reconstruction, even when
+  // FORCE_HIGHBITDEPTH_DECODING is on.
+  aom_codec_dec_cfg_t dec_cfg = {};
+  dec_cfg.allow_lowbitdepth = 1;
+  aom_codec_ctx_t dec;
+  ASSERT_EQ(aom_codec_dec_init(&dec, aom_codec_av1_dx(), &dec_cfg, 0),
+            AOM_CODEC_OK);
+
+  aom_image_t *img =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, kWidth, kHeight, 1);
+  ASSERT_NE(img, nullptr);
+  for (int i = 0; i < kFrames; ++i) {
+    FillPannedScreen(img, i * 3);
+    ASSERT_EQ(aom_codec_encode(&enc, img, i, 1, 0), AOM_CODEC_OK);
+    aom_codec_iter_t iter = nullptr;
+    while (const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(&enc, &iter)) {
+      if (pkt->kind != AOM_CODEC_CX_FRAME_PKT) continue;
+      ASSERT_EQ(aom_codec_decode(
+                    &dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                    pkt->data.frame.sz, nullptr),
+                AOM_CODEC_OK);
+      aom_codec_iter_t dec_iter = nullptr;
+      const aom_image_t *decoded = aom_codec_get_frame(&dec, &dec_iter);
+      ASSERT_NE(decoded, nullptr);
+      aom_image_t recon;
+      ASSERT_EQ(aom_codec_control(&enc, AV1_GET_NEW_FRAME_IMAGE, &recon),
+                AOM_CODEC_OK);
+      ::libaom_test::MD5 recon_md5;
+      recon_md5.Add(&recon);
+      ::libaom_test::MD5 decoded_md5;
+      decoded_md5.Add(decoded);
+      EXPECT_STREQ(recon_md5.Get(), decoded_md5.Get()) << "frame " << i;
+    }
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&dec), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// Encodes a key frame with screen content tools in realtime mode. A 64x64 patch
+// of two color noise at (src_x, src_y) is copied to (dst_x, dst_y), so the
+// IntraBC hash search finds a match that far away. A DV of 2048 pixels or more
+// can't be coded, so the decoder must still accept the frame.
+void IntraBCFarCopyTest(int width, int height, int src_x, int src_y, int dst_x,
+                        int dst_y) {
+  constexpr int kPatchSize = 64;
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = width;
+  cfg.g_h = height;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_threads = 1;
+  cfg.rc_min_quantizer = 10;
+  cfg.rc_max_quantizer = 10;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 11), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TUNE_CONTENT, AOM_CONTENT_SCREEN),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_ENABLE_INTRABC, 1), AOM_CODEC_OK);
+
+  aom_image_t *img = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, width, height, 1);
+  ASSERT_NE(img, nullptr);
+  memset(img->planes[0], 128, img->stride[0] * height);
+  memset(img->planes[1], 128, img->stride[1] * ((height + 1) / 2));
+  memset(img->planes[2], 128, img->stride[2] * ((height + 1) / 2));
+  ::libaom_test::ACMRandom rnd;
+  rnd.Reset(::libaom_test::ACMRandom::DeterministicSeed());
+  for (int r = 0; r < kPatchSize; ++r) {
+    uint8_t *src = img->planes[0] + (src_y + r) * img->stride[0] + src_x;
+    uint8_t *dst = img->planes[0] + (dst_y + r) * img->stride[0] + dst_x;
+    for (int c = 0; c < kPatchSize; ++c) {
+      src[c] = (rnd.Rand8() & 1) ? 16 : 235;
+    }
+    memcpy(dst, src, kPatchSize);
+  }
+
+  aom_codec_ctx_t dec;
+  ASSERT_EQ(aom_codec_dec_init(&dec, aom_codec_av1_dx(), nullptr, 0),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, img, 0, 1, 0), AOM_CODEC_OK);
+  aom_codec_iter_t iter = nullptr;
+  while (const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(&enc, &iter)) {
+    if (pkt->kind != AOM_CODEC_CX_FRAME_PKT) continue;
+    EXPECT_EQ(aom_codec_decode(
+                  &dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                  pkt->data.frame.sz, nullptr),
+              AOM_CODEC_OK)
+        << aom_codec_error_detail(&dec);
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&dec), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// The match is 2048 pixels to the left.
+TEST(EncodeAPI, IntraBCFarCopyLeftRealtime) {
+  IntraBCFarCopyTest(2112, 64, 0, 0, 2048, 0);
+}
+
+// The match is 2048 pixels above.
+TEST(EncodeAPI, IntraBCFarCopyAboveRealtime) {
+  IntraBCFarCopyTest(64, 2112, 0, 0, 0, 2048);
+}
+
+// The match is 2056 pixels to the right and 512 pixels above. The difference
+// from the reference DV is past the end of the DV cost table, which ASan
+// reports as a heap buffer overflow.
+TEST(EncodeAPI, IntraBCFarCopyAboveRightRealtime) {
+  IntraBCFarCopyTest(2120, 576, 2056, 0, 0, 512);
+}
+#endif  // CONFIG_AV1_DECODER
+
 #if !CONFIG_REALTIME_ONLY
+// Tests that search_site_cfg[SS_CFG_LOOKAHEAD] in init_motion_estimation() is
+// updated using the current frame's unscaled_source->y_stride rather than
+// lookahead->buf[0].img.y_stride. In TPL's motion_estimation() (tpl_model.c),
+// when the reference buffer is an unscaled lookahead source buffer whose stride
+// differs from the reconstructed frame stride (SS_CFG_SRC), it directly selects
+// search_site_cfg[SS_CFG_LOOKAHEAD] and asserts that search_site_cfg->stride ==
+// ref_stride (without calling av1_get_search_site_config()).
+TEST(EncodeAPI, TplSubsamplingChangeGoodQuality) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_GOOD_QUALITY),
+            AOM_CODEC_OK);
+  cfg.g_w = 64;
+  cfg.g_h = 64;
+  cfg.g_lag_in_frames = 4;
+  cfg.g_threads = 1;
+  cfg.monochrome = 1;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 5), AOM_CODEC_OK);
+  // Disable temporal filtering so init_gop_frames_for_tpl() uses the lookahead
+  // buffers (&buf->img, y_stride = 384) directly as tpl_frame->gf_picture
+  // rather than replacing them with tf_buf (y_stride = 256 == SS_CFG_SRC).
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_ARNR_MAXFRAMES, 0), AOM_CODEC_OK);
+
+  aom_image_t *img_420 = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 64, 64, 1);
+  ASSERT_NE(img_420, nullptr);
+  FillImageRandom(img_420);
+  aom_image_t *img_444 = aom_img_alloc(nullptr, AOM_IMG_FMT_I444, 64, 64, 1);
+  ASSERT_NE(img_444, nullptr);
+  FillImageRandom(img_444);
+
+  // Frame 0 (I420) goes into lookahead->buf[0] with border_in_pixels = 96
+  // (y_stride = 256), and is then flushed.
+  ASSERT_EQ(aom_codec_encode(&enc, img_420, 0, 1, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, nullptr, 0, 0, 0), AOM_CODEC_OK);
+  {
+    aom_codec_iter_t iter = nullptr;
+    while (aom_codec_get_cx_data(&enc, &iter) != nullptr) {
+    }
+  }
+
+  // Frames 1..4 (I444) go into lookahead->buf[1..4]. Because monochrome = 1,
+  // changing subsampling from I420 to I444 is valid across frames and triggers
+  // new_dimensions in av1_lookahead_push(), reallocating buf[1..4] with
+  // AOM_BORDER_IN_PIXELS = 160 (y_stride = 384) while buf[0] keeps
+  // y_stride = 256.
+  // Because av1_tpl_setup_stats() runs before av1_encode() updates
+  // cpi->unscaled_source, frame 1 is encoded first (as a 1-frame GOP) to update
+  // cpi->unscaled_source to buf[1] (y_stride = 384). Forcing a key frame on
+  // frame 2 starts a new GOP at frame 2 so init_motion_estimation() and TPL run
+  // on frames 2..4 (in slots buf[2..4]).
+  ASSERT_EQ(aom_codec_encode(&enc, img_444, 1, 1, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, img_444, 2, 1, AOM_EFLAG_FORCE_KF),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, img_444, 3, 1, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, img_444, 4, 1, 0), AOM_CODEC_OK);
+  // Each flush (nullptr) call drains 1 frame from the lookahead buffer, so 4
+  // calls are needed for frames 1..4.
+  for (int i = 0; i < 4; ++i) {
+    ASSERT_EQ(aom_codec_encode(&enc, nullptr, 0, 0, 0), AOM_CODEC_OK);
+    aom_codec_iter_t iter = nullptr;
+    while (aom_codec_get_cx_data(&enc, &iter) != nullptr) {
+    }
+  }
+
+  aom_img_free(img_420);
+  aom_img_free(img_444);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
 TEST(EncodeAPI, AllIntraMode) {
   aom_codec_iface_t *iface = aom_codec_av1_cx();
   aom_codec_ctx_t enc;
@@ -1720,6 +1970,153 @@ TEST(EncodeAPI, AllIntraAndNoRefLast) {
 
   aom_img_free(image);
   ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// Fills |img| (8-bit 4:2:0) with frame |frame_index| of a video that zooms in
+// on a fixed picture of random 3x3 blocks: frame i shows the picture magnified
+// by a factor of (32 + i) / 32, with the top-left corner fixed. Global motion
+// can model the zoom between frames.
+void FillZoomingFrame(aom_image_t *img, int frame_index) {
+  // Small blocks give global motion estimation plenty of corners to track.
+  constexpr int kBlockSize = 3;
+  const int w = static_cast<int>(img->d_w);
+  const int h = static_cast<int>(img->d_h);
+  const int blocks_w = (w + kBlockSize - 1) / kBlockSize;
+  const int blocks_h = (h + kBlockSize - 1) / kBlockSize;
+  // One random value per block. ACMRandom uses a fixed seed, so every frame
+  // gets the same picture.
+  ::libaom_test::ACMRandom rnd;
+  std::vector<uint8_t> blocks(blocks_w * blocks_h);
+  for (uint8_t &block : blocks) block = rnd.Rand8();
+
+  const int magnification = 32 + frame_index;  // In units of 1/32.
+  for (int r = 0; r < h; ++r) {
+    uint8_t *const row =
+        img->planes[AOM_PLANE_Y] + r * img->stride[AOM_PLANE_Y];
+    for (int c = 0; c < w; ++c) {
+      // Pixel (c, r) of the frame shows pixel (x, y) of the picture.
+      const int x = c * 32 / magnification;
+      const int y = r * 32 / magnification;
+      row[c] = blocks[(y / kBlockSize) * blocks_w + x / kBlockSize];
+    }
+  }
+  const int uv_w = (w + 1) / 2;
+  const int uv_h = (h + 1) / 2;
+  for (int r = 0; r < uv_h; ++r) {
+    memset(img->planes[AOM_PLANE_U] + r * img->stride[AOM_PLANE_U], 128, uv_w);
+    memset(img->planes[AOM_PLANE_V] + r * img->stride[AOM_PLANE_V], 128, uv_w);
+  }
+}
+
+// Encodes 5 frames of zooming content in good-quality mode with no lag and
+// stores the compressed data in |data|. Before frame i is encoded,
+// AV1E_SET_ENABLE_GLOBAL_MOTION is set to each value in
+// enable_global_motion[i], in order. If |large_scale_tile_on_first_frame| is
+// true, large_scale_tile is set to 1 for the first frame and to 0 after it.
+void EncodeZoomingFrames(
+    const std::vector<std::vector<int>> &enable_global_motion,
+    std::vector<uint8_t> *data, bool large_scale_tile_on_first_frame = false) {
+  constexpr int kNumFrames = 5;
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_GOOD_QUALITY),
+            AOM_CODEC_OK);
+  cfg.g_w = 128;
+  cfg.g_h = 128;
+  cfg.g_lag_in_frames = 0;
+  cfg.large_scale_tile = large_scale_tile_on_first_frame;
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 5), AOM_CODEC_OK);
+
+  aom_image_t *const image =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1);
+  ASSERT_NE(image, nullptr);
+  data->clear();
+  for (int i = 0; i < kNumFrames; ++i) {
+    if (i == 1 && large_scale_tile_on_first_frame) {
+      cfg.large_scale_tile = 0;
+      ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+    }
+    if (i < static_cast<int>(enable_global_motion.size())) {
+      for (const int enable : enable_global_motion[i]) {
+        ASSERT_EQ(
+            aom_codec_control(&enc, AV1E_SET_ENABLE_GLOBAL_MOTION, enable),
+            AOM_CODEC_OK);
+      }
+    }
+    FillZoomingFrame(image, i);
+    ASSERT_EQ(aom_codec_encode(&enc, image, i, 1, 0), AOM_CODEC_OK);
+    aom_codec_iter_t iter = nullptr;
+    const aom_codec_cx_pkt_t *pkt;
+    while ((pkt = aom_codec_get_cx_data(&enc, &iter)) != nullptr) {
+      ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+      const uint8_t *const buf =
+          static_cast<const uint8_t *>(pkt->data.frame.buf);
+      data->insert(data->end(), buf, buf + pkt->data.frame.sz);
+    }
+  }
+  aom_img_free(image);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// Global motion needs an image pyramid in every source and reference frame
+// buffer, but pyramids are only allocated while global motion is enabled. So
+// global motion can only be enabled before the first frame is passed to
+// aom_codec_encode(); later requests to enable it are ignored. Such requests
+// used to cause an assertion failure in av1_encode_frame() in debug builds and
+// a crash in global motion search in release builds.
+//
+// The tests below compare the output of encoders that make the same sequence
+// of control calls, so that the only difference is the global motion setting.
+
+TEST(EncodeAPI, EnableGlobalMotionBeforeFirstFrame) {
+  std::vector<uint8_t> on, off_on, off;
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames({ { 1, 1 } }, &on));
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames({ { 0, 1 } }, &off_on));
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames({ { 0, 0 } }, &off));
+  // Global motion makes a difference for this content.
+  EXPECT_NE(on, off);
+  // Global motion can be enabled (again) before the first frame.
+  EXPECT_EQ(off_on, on);
+}
+
+TEST(EncodeAPI, EnableGlobalMotionAfterFirstFrame) {
+  std::vector<uint8_t> off, off_on;
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames({ { 0 }, { 0 } }, &off));
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames({ { 0 }, { 1 } }, &off_on));
+  // The request to enable global motion after the first frame is ignored.
+  EXPECT_EQ(off_on, off);
+}
+
+TEST(EncodeAPI, DisableGlobalMotionAfterFirstFrame) {
+  std::vector<uint8_t> off, on_off;
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames({ { 0 }, { 0 } }, &off));
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames({ { 1 }, { 0 } }, &on_off));
+  // Global motion can be disabled after the first frame. The first frame is a
+  // key frame, which does not use global motion, so this is equivalent to
+  // disabling global motion before the first frame.
+  EXPECT_EQ(on_off, off);
+
+  std::vector<uint8_t> on_off_off, on_off_on;
+  ASSERT_NO_FATAL_FAILURE(
+      EncodeZoomingFrames({ { 1 }, { 0 }, { 0 } }, &on_off_off));
+  ASSERT_NO_FATAL_FAILURE(
+      EncodeZoomingFrames({ { 1 }, { 0 }, { 1 } }, &on_off_on));
+  // Once disabled, global motion cannot be enabled again.
+  EXPECT_EQ(on_off_on, on_off_off);
+}
+
+// large_scale_tile = 1 forces global motion off, so setting large_scale_tile to
+// 0 after the first frame implicitly requests global motion to be enabled. That
+// request is ignored, too.
+TEST(EncodeAPI, DisableLargeScaleTileAfterFirstFrame) {
+  std::vector<uint8_t> on, off;
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames(
+      { { 1 } }, &on, /*large_scale_tile_on_first_frame=*/true));
+  ASSERT_NO_FATAL_FAILURE(EncodeZoomingFrames(
+      { { 0 } }, &off, /*large_scale_tile_on_first_frame=*/true));
+  EXPECT_EQ(on, off);
 }
 #endif  // !CONFIG_REALTIME_ONLY
 
@@ -3123,47 +3520,6 @@ TEST(EncodeAPI, Issue559225640) {
 
 #if !CONFIG_REALTIME_ONLY
 TEST(EncodeAPI, Buganizer558446054) {
-#if !CONFIG_SHARED
-  av1_init_intra_predictors();
-
-  MACROBLOCKD xd = {};
-  YV12_BUFFER_CONFIG cur_buf = {};
-  xd.cur_buf = &cur_buf;
-  MB_MODE_INFO mbmi = {};
-  mbmi.bsize = BLOCK_8X8;
-  mbmi.partition = PARTITION_NONE;
-  mbmi.mode = D45_PRED;
-  MB_MODE_INFO *mbmi_ptr = &mbmi;
-  xd.mi = &mbmi_ptr;
-  xd.bd = 8;
-  xd.left_available = 1;
-  xd.up_available = 1;
-  xd.tile.mi_row_end = 100;
-  xd.tile.mi_col_end = 100;
-  // Set mb_to_bottom_edge and mb_to_right_edge such that
-  // yd + txhpx < 0 and xr < 0:
-  // yd + txhpx = (mb_to_bottom_edge >> 3) + hpx - y = -16 + 8 - 0 = -8 < 0
-  // xr = (mb_to_right_edge >> 3) + wpx - x - txwpx = -5 + 8 - 0 - 4 = -1 < 0
-  // xr + txwpx = 3 > 0 (so n_top_px = 3).
-  xd.mb_to_bottom_edge = -16 * 8;
-  xd.mb_to_right_edge = -5 * 8;
-
-  uint8_t ref_buf[64 * 64];
-  memset(ref_buf, 200, sizeof(ref_buf));
-  uint8_t dst_buf[64 * 64] = { 0 };
-  av1_predict_intra_block(&xd, BLOCK_64X64, /*enable_intra_edge_filter=*/0,
-                          /*wpx=*/8, /*hpx=*/8, TX_4X4, D45_PRED,
-                          /*angle_delta=*/0, /*use_palette=*/0,
-                          FILTER_INTRA_MODES, ref_buf + 64 * 8 + 8, 64, dst_buf,
-                          64, /*col_off=*/0, /*row_off=*/0, /*plane=*/0);
-  // In Debug builds (-UNDEBUG), reverting clamp() triggers:
-  //   Assertion `n_left_px >= 0' failed.
-  // In Release builds (-DNDEBUG), reverting clamp() causes n_topright_px < 0
-  // (-4 < 0), skipping top-right extension of above_row[3]=200 into
-  // above_row[4..7] and leaving dst_buf[3] == 127 instead of 200.
-  ASSERT_EQ(dst_buf[3], 200);
-#endif  // !CONFIG_SHARED
-
   aom_codec_iface_t *iface = aom_codec_av1_cx();
   aom_codec_enc_cfg_t cfg;
   ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_ALL_INTRA),
@@ -3189,30 +3545,8 @@ TEST(EncodeAPI, Buganizer558446054) {
   aom_img_free(&raw);
   ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
 }
-#endif  // !CONFIG_REALTIME_ONLY
 
-#if !CONFIG_REALTIME_ONLY
 TEST(EncodeAPI, Buganizer558463892_558589747) {
-#if !CONFIG_SHARED
-  std::unique_ptr<AV1_COMP> cpi_test(new AV1_COMP());
-  struct aom_internal_error_info error = {};
-  if (setjmp(error.jmp)) FAIL();
-  error.setjmp = 1;
-  cpi_test->common.error = &error;
-  cpi_test->frame_info.mi_rows = 16;
-  cpi_test->frame_info.mi_cols = 16;
-  av1_init_mb_wiener_var_buffer(cpi_test.get());
-  ASSERT_NE(cpi_test->mb_weber_stats, nullptr);
-  cpi_test->mb_weber_stats[0].satd = 12345;
-
-  // Increase dimensions to 64x64 MI units: mb_weber_stats must be reallocated.
-  cpi_test->frame_info.mi_rows = 64;
-  cpi_test->frame_info.mi_cols = 64;
-  av1_init_mb_wiener_var_buffer(cpi_test.get());
-  EXPECT_EQ(cpi_test->mb_weber_stats[0].satd, 0);
-  aom_free(cpi_test->mb_weber_stats);
-#endif  // !CONFIG_SHARED
-
   aom_codec_iface_t *iface = aom_codec_av1_cx();
   aom_codec_enc_cfg_t cfg;
   ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_ALL_INTRA),
@@ -3251,46 +3585,6 @@ TEST(EncodeAPI, Buganizer558463892_558589747) {
   aom_img_free(&raw);
 
   ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
-}
-#endif  // !CONFIG_REALTIME_ONLY
-
-#if !CONFIG_REALTIME_ONLY
-TEST(EncodeAPI, Buganizer558417547) {
-#if !CONFIG_SHARED
-  std::unique_ptr<AV1_COMP> cpi_test(new AV1_COMP());
-  SequenceHeader seq_params = {};
-  seq_params.bit_depth = AOM_BITS_8;
-  seq_params.sb_size = BLOCK_64X64;
-  cpi_test->common.seq_params = &seq_params;
-  cpi_test->common.mi_params.mi_rows = 16;
-  cpi_test->common.mi_params.mi_cols = 16;
-  cpi_test->common.quant_params.base_qindex = 128;
-  cpi_test->common.delta_q_info.delta_q_res = 4;
-  cpi_test->frame_info.mi_rows = 16;
-  cpi_test->frame_info.mi_cols = 16;
-  cpi_test->norm_wiener_variance = 100;
-  struct aom_internal_error_info error = {};
-  if (setjmp(error.jmp)) FAIL();
-  error.setjmp = 1;
-  cpi_test->common.error = &error;
-  av1_init_mb_wiener_var_buffer(cpi_test.get());
-  ASSERT_NE(cpi_test->mb_weber_stats, nullptr);
-
-  // Set large SATD and distortion values exceeding INT32_MAX.
-  for (int i = 0; i < 16 * 16; ++i) {
-    cpi_test->mb_weber_stats[i].satd = 3000000000LL;
-    cpi_test->mb_weber_stats[i].distortion = 3000000000LL;
-    cpi_test->mb_weber_stats[i].rec_pix_max = 255;
-  }
-
-  // Test out-of-bounds / negative mi_row and mi_col without crashing or SIGFPE.
-  int q_neg = av1_get_sbq_perceptual_ai(cpi_test.get(), BLOCK_64X64, -16, -16);
-  EXPECT_GE(q_neg, 0);
-  int q_oob = av1_get_sbq_perceptual_ai(cpi_test.get(), BLOCK_64X64, 100, 100);
-  EXPECT_GE(q_oob, 0);
-
-  aom_free(cpi_test->mb_weber_stats);
-#endif  // !CONFIG_SHARED
 }
 
 // Regression test for b/565488030: Heap-buffer-overflow in
@@ -3366,5 +3660,815 @@ TEST(EncodeAPI, Buganizer565488030) {
   }
 }
 #endif  // !CONFIG_REALTIME_ONLY
+
+// Regression test for b/568565869: Undefined left-shift overflow of
+// this_rdc->rate in av1_block_yrd() when encoding a large partition in
+// realtime lossless mode.
+TEST(EncodeAPI, NonrdBlockYrdRateOverflow) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 128;
+  cfg.g_h = 128;
+  cfg.g_lag_in_frames = 0;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 10), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_AQ_MODE, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_LOSSLESS, 1), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SUPERBLOCK_SIZE,
+                              AOM_SUPERBLOCK_SIZE_128X128),
+            AOM_CODEC_OK);
+
+  aom_image_t *img = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 128, 128, 16);
+  ASSERT_NE(img, nullptr);
+  FillImage(img, 0);
+  EncodeOne(&enc, img, 0);
+
+  // Use a 253/255 checkerboard in Frame 1 against all-zero Frame 0:
+  // - The residual variance around the mean (254) is tiny (1), so
+  //   variance-based partitioning does not split and evaluates a large
+  //   partition.
+  // - The large DC residual (~254) combined with non-zero AC (ncoeffs > 1)
+  //   causes aom_satd_lp(low_qcoeff) in av1_block_yrd() to accumulate a rate
+  //   above INT_MAX >> 11, which would overflow 32-bit int when shifted left
+  //   by 2 + AV1_PROB_COST_SHIFT (11).
+  for (int r = 0; r < 128; ++r) {
+    for (int c = 0; c < 128; ++c) {
+      img->planes[AOM_PLANE_Y][r * img->stride[AOM_PLANE_Y] + c] =
+          ((r ^ c) & 1) ? 255 : 253;
+    }
+  }
+  EncodeOne(&enc, img, 1);
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// Regression test for webrtc:496266459: Enabling compound prediction via
+// AV1E_SET_SVC_REF_FRAME_COMP_PRED must not affect encoding of frames that do
+// not have any active compound reference pair (e.g., single-reference delta
+// frames referencing only LAST_FRAME).
+TEST(EncodeAPI, SvcCompPredDoesNotAffectSingleRefFrames) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  cfg.g_lag_in_frames = 0;
+  cfg.rc_end_usage = AOM_Q;
+
+  aom_codec_ctx_t enc_no_comp;
+  aom_codec_ctx_t enc_with_comp;
+  ASSERT_EQ(aom_codec_enc_init(&enc_no_comp, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_enc_init(&enc_with_comp, iface, &cfg, 0), AOM_CODEC_OK);
+
+  for (aom_codec_ctx_t *enc : { &enc_no_comp, &enc_with_comp }) {
+    ASSERT_EQ(aom_codec_control(enc, AOME_SET_CPUUSED, 9), AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_control(enc, AOME_SET_CQ_LEVEL, 40), AOM_CODEC_OK);
+  }
+
+  // Enable compound prediction for all three compound reference pairs
+  // (GOLDEN_LAST, LAST2_LAST, ALTREF_LAST) on the second encoder.
+  aom_svc_ref_frame_comp_pred_t comp_pred = {};
+  comp_pred.use_comp_pred[0] = 1;
+  comp_pred.use_comp_pred[1] = 1;
+  comp_pred.use_comp_pred[2] = 1;
+  ASSERT_EQ(aom_codec_control(&enc_with_comp, AV1E_SET_SVC_REF_FRAME_COMP_PRED,
+                              &comp_pred),
+            AOM_CODEC_OK);
+
+  aom_image_t *img =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1);
+  ASSERT_NE(img, nullptr);
+
+  constexpr int kNumFrames = 10;
+  for (int frame = 0; frame < kNumFrames; ++frame) {
+    SCOPED_TRACE(frame);
+    // Fill moving textured pattern.
+    for (unsigned int r = 0; r < img->d_h; ++r) {
+      for (unsigned int c = 0; c < img->d_w; ++c) {
+        const int texture = (((r + frame) / 8 + (c + 2 * frame) / 8) & 1) * 32;
+        img->planes[AOM_PLANE_Y][r * img->stride[AOM_PLANE_Y] + c] =
+            static_cast<uint8_t>((r + 2 * c + 3 * frame + texture) & 0xff);
+      }
+    }
+    for (int plane = AOM_PLANE_U; plane <= AOM_PLANE_V; ++plane) {
+      const unsigned int h =
+          (img->d_h + img->y_chroma_shift) >> img->y_chroma_shift;
+      for (unsigned int r = 0; r < h; ++r) {
+        memset(img->planes[plane] + r * img->stride[plane], 128,
+               (img->d_w + img->x_chroma_shift) >> img->x_chroma_shift);
+      }
+    }
+
+    // Frame 0 refreshes slot 0; delta frames reference only LAST_FRAME (slot 0)
+    // with all other reference[i] = 0, and refresh slot 0.
+    aom_svc_ref_frame_config_t ref_cfg = {};
+    ref_cfg.ref_idx[0] = 0;  // LAST_FRAME -> slot 0.
+    ref_cfg.reference[0] = frame > 0;
+    ref_cfg.refresh[0] = 1;
+
+    for (aom_codec_ctx_t *enc : { &enc_no_comp, &enc_with_comp }) {
+      ASSERT_EQ(aom_codec_control(enc, AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_cfg),
+                AOM_CODEC_OK);
+      ASSERT_EQ(aom_codec_encode(enc, img, frame, 1, 0), AOM_CODEC_OK);
+    }
+
+    aom_codec_iter_t iter_no_comp = nullptr;
+    aom_codec_iter_t iter_with_comp = nullptr;
+    const aom_codec_cx_pkt_t *pkt_no_comp =
+        aom_codec_get_cx_data(&enc_no_comp, &iter_no_comp);
+    const aom_codec_cx_pkt_t *pkt_with_comp =
+        aom_codec_get_cx_data(&enc_with_comp, &iter_with_comp);
+    ASSERT_NE(pkt_no_comp, nullptr);
+    ASSERT_NE(pkt_with_comp, nullptr);
+    ASSERT_EQ(pkt_no_comp->kind, AOM_CODEC_CX_FRAME_PKT);
+    ASSERT_EQ(pkt_with_comp->kind, AOM_CODEC_CX_FRAME_PKT);
+    // If use_comp_ref_nonrd is left enabled when no compound reference pair is
+    // active, single-reference frames switch reference mode
+    // (REFERENCE_MODE_SELECT) and interpolation filter (SWITCHABLE) signaling
+    // and mode search, altering both packet sizes and bitstream bytes. Verify
+    // that the output frames remain bit-exact (same size and identical bytes)
+    // as when compound prediction is disabled.
+    EXPECT_EQ(pkt_with_comp->data.frame.sz, pkt_no_comp->data.frame.sz);
+    if (pkt_with_comp->data.frame.sz == pkt_no_comp->data.frame.sz) {
+      EXPECT_EQ(memcmp(pkt_with_comp->data.frame.buf,
+                       pkt_no_comp->data.frame.buf, pkt_no_comp->data.frame.sz),
+                0);
+    }
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&enc_with_comp), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc_no_comp), AOM_CODEC_OK);
+}
+
+// Regression test for b/567944558: Out-of-bounds read in setup_planes when
+// encoding with manual reference buffer control (AV1E_SET_SVC_REF_FRAME_CONFIG)
+// after a resolution change, when LAST_FRAME is not referenced and GOLDEN_FRAME
+// and ALTREF_FRAME have equal SADs.
+TEST(EncodeAPI, Buganizer567944558) {
+  for (int cpu_used : { 7, 9 }) {
+    aom_codec_iface_t *const iface = aom_codec_av1_cx();
+    aom_codec_enc_cfg_t cfg;
+    ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+              AOM_CODEC_OK);
+
+    cfg.g_w = 320;
+    cfg.g_h = 240;
+    cfg.g_lag_in_frames = 0;
+    cfg.rc_end_usage = AOM_VBR;
+    cfg.rc_target_bitrate = 500;
+
+    aom_codec_ctx_t enc;
+    ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, cpu_used),
+              AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_ROW_MT, 1), AOM_CODEC_OK);
+
+    aom_svc_params_t svc_params = {};
+    svc_params.number_spatial_layers = 1;
+    svc_params.number_temporal_layers = 1;
+    svc_params.scaling_factor_num[0] = 1;
+    svc_params.scaling_factor_den[0] = 1;
+    svc_params.layer_target_bitrate[0] = cfg.rc_target_bitrate;
+    svc_params.max_quantizers[0] = 56;
+    svc_params.min_quantizers[0] = 10;
+    svc_params.framerate_factor[0] = 1;
+    ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_PARAMS, &svc_params),
+              AOM_CODEC_OK);
+
+    auto set_ref_config = [&](bool ref_last, bool ref_golden, bool ref_altref,
+                              int update_slot) {
+      aom_svc_ref_frame_config_t ref_frame_config = {};
+      ref_frame_config.ref_idx[0] = 0;  // LAST_FRAME -> slot 0
+      ref_frame_config.ref_idx[3] = 1;  // GOLDEN_FRAME -> slot 1
+      ref_frame_config.ref_idx[6] = 2;  // ALTREF_FRAME -> slot 2
+      if (update_slot >= 0) {
+        ref_frame_config.refresh[update_slot] = 1;
+      }
+      ref_frame_config.reference[0] = ref_last ? 1 : 0;
+      ref_frame_config.reference[3] = ref_golden ? 1 : 0;
+      ref_frame_config.reference[6] = ref_altref ? 1 : 0;
+      ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_REF_FRAME_CONFIG,
+                                  &ref_frame_config),
+                AOM_CODEC_OK);
+    };
+
+    aom_image_t *img_large =
+        aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 320, 240, 1);
+    ASSERT_NE(img_large, nullptr);
+    FillImageRandom(img_large);
+
+    // Frame 0: Keyframe at 320x240.
+    set_ref_config(/*ref_last=*/false, /*ref_golden=*/false,
+                   /*ref_altref=*/false, /*update_slot=*/0);
+    ASSERT_EQ(aom_codec_encode(&enc, img_large, 0, 1, AOM_EFLAG_FORCE_KF),
+              AOM_CODEC_OK);
+
+    // Frame 1: Delta frame at 320x240 referencing LAST and updating slot 0.
+    FillImageRandom(img_large);
+    set_ref_config(/*ref_last=*/true, /*ref_golden=*/false,
+                   /*ref_altref=*/false, /*update_slot=*/0);
+    ASSERT_EQ(aom_codec_encode(&enc, img_large, 1, 1, 0), AOM_CODEC_OK);
+
+    // Reconfigure down to 42x19.
+    cfg.g_w = 42;
+    cfg.g_h = 19;
+    ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_PARAMS, &svc_params),
+              AOM_CODEC_OK);
+
+    aom_image_t *img_small =
+        aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 42, 19, 1);
+    ASSERT_NE(img_small, nullptr);
+    FillImageRandom(img_small);
+
+    // Frame 2: Keyframe at 42x19 (refreshes all slots with the same frame,
+    // leaving INVALID_MV in mi_alloc).
+    set_ref_config(/*ref_last=*/false, /*ref_golden=*/false,
+                   /*ref_altref=*/false, /*update_slot=*/0);
+    ASSERT_EQ(aom_codec_encode(&enc, img_small, 2, 1, AOM_EFLAG_FORCE_KF),
+              AOM_CODEC_OK);
+
+    // Frame 3: Delta frame at 42x19 referencing GOLDEN and ALTREF (without
+    // LAST). GOLDEN and ALTREF hold the same frame so their SADs tie.
+    FillImageRandom(img_small);
+    set_ref_config(/*ref_last=*/false, /*ref_golden=*/true, /*ref_altref=*/true,
+                   /*update_slot=*/0);
+    ASSERT_EQ(aom_codec_encode(&enc, img_small, 3, 1, 0), AOM_CODEC_OK);
+
+    aom_img_free(img_small);
+    aom_img_free(img_large);
+    ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+  }
+}
+
+// Fills `img` with deterministic content that changes from frame to frame, so
+// that inter prediction and rate control have something to work with.
+static void FillMovingPattern(aom_image_t *img, int frame) {
+  for (unsigned int r = 0; r < img->d_h; ++r) {
+    for (unsigned int c = 0; c < img->d_w; ++c) {
+      const int texture = (((r + frame) / 8 + (c + 2 * frame) / 8) & 1) * 32;
+      img->planes[AOM_PLANE_Y][r * img->stride[AOM_PLANE_Y] + c] =
+          static_cast<uint8_t>((r + 2 * c + 3 * frame + texture) & 0xff);
+    }
+  }
+  for (int plane = AOM_PLANE_U; plane <= AOM_PLANE_V; ++plane) {
+    const unsigned int h =
+        (img->d_h + img->y_chroma_shift) >> img->y_chroma_shift;
+    for (unsigned int r = 0; r < h; ++r) {
+      memset(img->planes[plane] + r * img->stride[plane], 128,
+             (img->d_w + img->x_chroma_shift) >> img->x_chroma_shift);
+    }
+  }
+}
+
+#if CONFIG_AV1_DECODER
+// AV1E_SET_SVC_REF_FRAME_CONFIG: the refresh[] flags are indexed by buffer
+// slot, and a frame may refresh a slot that none of the seven ref_idx[] entries
+// point to. A typical example is a "ping-pong" buffer structure, where each
+// frame predicts from one slot (the only reference in use) and stores its
+// reconstruction in another slot, which it does not reference.
+//
+// Such refreshes used to be dropped: the slot was left out of
+// refresh_frame_flags, so it silently kept its old content. This test checks,
+// on the decoder side, which slots each frame refreshes.
+TEST(EncodeAPI, SvcRefFrameConfigRefreshesSlotNotInRefIdx) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = 64;
+  cfg.g_h = 64;
+  cfg.g_lag_in_frames = 0;
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 9), AOM_CODEC_OK);
+  aom_codec_ctx_t dec;
+  ASSERT_EQ(aom_codec_dec_init(&dec, aom_codec_av1_dx(), nullptr, 0),
+            AOM_CODEC_OK);
+  aom_image_t *img =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1);
+  ASSERT_NE(img, nullptr);
+
+  // Frame 0 is a key frame, which refreshes all slots. Frame n > 0 predicts
+  // from slot n - 1 and refreshes slot n. All seven ref_idx[] entries point
+  // to the predicted slot, so the refreshed slot is not among them.
+  for (int frame = 0; frame < 4; ++frame) {
+    SCOPED_TRACE(frame);
+    aom_svc_ref_frame_config_t ref_cfg = {};
+    if (frame > 0) {
+      for (int i = 0; i < 7; ++i) ref_cfg.ref_idx[i] = frame - 1;
+      ref_cfg.reference[0] = 1;  // LAST.
+    }
+    ref_cfg.refresh[frame] = 1;
+    ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_cfg),
+              AOM_CODEC_OK);
+    FillMovingPattern(img, frame);
+    ASSERT_EQ(aom_codec_encode(&enc, img, frame, 1, 0), AOM_CODEC_OK);
+    aom_codec_iter_t iter = nullptr;
+    const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(&enc, &iter);
+    ASSERT_NE(pkt, nullptr);
+    ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+    ASSERT_EQ(aom_codec_decode(
+                  &dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                  pkt->data.frame.sz, nullptr),
+              AOM_CODEC_OK);
+    int ref_updates = 0;
+    ASSERT_EQ(aom_codec_control(&dec, AOMD_GET_LAST_REF_UPDATES, &ref_updates),
+              AOM_CODEC_OK);
+    EXPECT_EQ(ref_updates, frame == 0 ? 0xff : 1 << frame);
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&dec), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+#endif  // CONFIG_AV1_DECODER
+
+// AV1E_SET_SVC_REF_FRAME_CONFIG: the encoder keeps track of when each buffer
+// slot was last refreshed. Among other things, this is used to detect recovery
+// frames with RPS (reference picture selection): if a frame's closest
+// reference is several frames old, but the previous frame did predict from its
+// predecessor, the frame is encoded at a lower QP (see
+// set_flag_rps_bias_recovery_frame()).
+//
+// This bookkeeping used to only be done for refreshed slots that one of the
+// ref_idx[] entries points to. This test runs two encoders with the same RPS
+// structure: frame n is stored in slot n % 6 and predicts from frame n - 1,
+// except for every 8th frame, which predicts from frame n - 5. LAST is the
+// only reference in use. The encoders only differ in where the unused
+// references point:
+//  - "Aliased": the refreshed slot is aliased as LAST2, and the other unused
+//    references point to the predicted slot.
+//  - "Not aliased": all seven ref_idx[] entries point to the predicted slot,
+//    so the refreshed slot is not among them.
+// Both encoders must produce frames with identical QPs and sizes.
+TEST(EncodeAPI, SvcRefFrameConfigTracksRefreshOfSlotNotInRefIdx) {
+  constexpr int kNumFrames = 20;
+  constexpr int kNumSlots = 6;
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  cfg.g_lag_in_frames = 0;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.rc_target_bitrate = 300;
+
+  aom_codec_ctx_t enc_aliased;
+  aom_codec_ctx_t enc_not_aliased;
+  ASSERT_EQ(aom_codec_enc_init(&enc_aliased, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_enc_init(&enc_not_aliased, iface, &cfg, 0), AOM_CODEC_OK);
+  for (aom_codec_ctx_t *enc : { &enc_aliased, &enc_not_aliased }) {
+    ASSERT_EQ(aom_codec_control(enc, AOME_SET_CPUUSED, 9), AOM_CODEC_OK);
+    // Order hints are off, as is common for RTC. This also ensures that the
+    // two encoders' frame headers have the same size.
+    ASSERT_EQ(aom_codec_control(enc, AV1E_SET_ENABLE_ORDER_HINT, 0),
+              AOM_CODEC_OK);
+  }
+  aom_image_t *img =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1);
+  ASSERT_NE(img, nullptr);
+
+  for (int frame = 0; frame < kNumFrames; ++frame) {
+    SCOPED_TRACE(frame);
+    const int refreshed_slot = frame % kNumSlots;
+    int predicted_slot = 0;
+    if (frame > 0) {
+      const int predicted_frame = frame % 8 == 0 ? frame - 5 : frame - 1;
+      predicted_slot = predicted_frame % kNumSlots;
+    }
+    aom_svc_ref_frame_config_t not_aliased_cfg = {};
+    for (int i = 0; i < 7; ++i) not_aliased_cfg.ref_idx[i] = predicted_slot;
+    not_aliased_cfg.reference[0] = frame > 0;  // LAST.
+    not_aliased_cfg.refresh[refreshed_slot] = 1;
+    aom_svc_ref_frame_config_t aliased_cfg = not_aliased_cfg;
+    aliased_cfg.ref_idx[1] = refreshed_slot;  // LAST2.
+
+    FillMovingPattern(img, frame);
+    int qp[2];
+    size_t size[2];
+    for (int i = 0; i < 2; ++i) {
+      aom_codec_ctx_t *enc = i == 0 ? &enc_aliased : &enc_not_aliased;
+      ASSERT_EQ(aom_codec_control(enc, AV1E_SET_SVC_REF_FRAME_CONFIG,
+                                  i == 0 ? &aliased_cfg : &not_aliased_cfg),
+                AOM_CODEC_OK);
+      ASSERT_EQ(aom_codec_encode(enc, img, frame, 1, 0), AOM_CODEC_OK);
+      aom_codec_iter_t iter = nullptr;
+      const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(enc, &iter);
+      ASSERT_NE(pkt, nullptr);
+      ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+      size[i] = pkt->data.frame.sz;
+      ASSERT_EQ(aom_codec_control(enc, AOME_GET_LAST_QUANTIZER, &qp[i]),
+                AOM_CODEC_OK);
+    }
+    EXPECT_EQ(qp[0], qp[1]);
+    EXPECT_EQ(size[0], size[1]);
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&enc_aliased), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc_not_aliased), AOM_CODEC_OK);
+}
+
+// AV1E_SET_SVC_REF_FRAME_CONFIG: the ref_idx[] entries of references whose
+// reference[] flag is 0 are don't-cares, and must not affect the encoding.
+//
+// This test runs two encoders with the same prediction structure (every frame
+// predicts from the previous frame's reconstruction, using LAST only) that
+// only differ in which buffer slots they use:
+//  - "In place": every frame predicts from slot 0 and refreshes slot 0. The six
+//    unused references also point to slot 0, which is what a zero-initialized
+//    config gives (libaom's fixed SVC mode does the same for base layer frames
+//    on the lowest spatial layer).
+//  - "Ping-pong": frames alternate between predicting from slot 0 and
+//    refreshing slot 1, and vice versa. The refreshed slot is aliased as LAST2
+//    (like libaom's internal single layer RTC structure does) and the other
+//    unused references point to the predicted slot.
+// Both encoders must produce frames with identical QPs and sizes.
+//
+// Previously, the in-place encoder treated every frame as a golden and altref
+// update, because the unused GOLDEN/BWDREF/ALTREF aliases pointed to the
+// refreshed slot. How that affected the encoding depends on the rate control
+// mode, see the tests below.
+static void SvcRefFrameConfigUnusedAliasesTest(aom_rc_mode rc_mode) {
+  constexpr int kNumFrames = 20;
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  cfg.g_lag_in_frames = 0;
+  cfg.rc_end_usage = rc_mode;
+  cfg.rc_target_bitrate = 300;
+
+  aom_codec_ctx_t enc_in_place;
+  aom_codec_ctx_t enc_ping_pong;
+  ASSERT_EQ(aom_codec_enc_init(&enc_in_place, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_enc_init(&enc_ping_pong, iface, &cfg, 0), AOM_CODEC_OK);
+  for (aom_codec_ctx_t *enc : { &enc_in_place, &enc_ping_pong }) {
+    ASSERT_EQ(aom_codec_control(enc, AOME_SET_CPUUSED, 9), AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_control(enc, AOME_SET_CQ_LEVEL, 40), AOM_CODEC_OK);
+    // Order hints are off, as is common for RTC. This also ensures that the
+    // two encoders' frame headers have the same size.
+    ASSERT_EQ(aom_codec_control(enc, AV1E_SET_ENABLE_ORDER_HINT, 0),
+              AOM_CODEC_OK);
+  }
+  aom_image_t *img =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1);
+  ASSERT_NE(img, nullptr);
+
+  for (int frame = 0; frame < kNumFrames; ++frame) {
+    SCOPED_TRACE(frame);
+    aom_svc_ref_frame_config_t in_place_cfg = {};
+    in_place_cfg.reference[0] = frame > 0;  // LAST.
+    in_place_cfg.refresh[0] = 1;
+
+    aom_svc_ref_frame_config_t ping_pong_cfg = {};
+    const int predicted_slot = (frame + 1) % 2;
+    const int refreshed_slot = frame % 2;
+    for (int i = 0; i < 7; ++i) ping_pong_cfg.ref_idx[i] = predicted_slot;
+    ping_pong_cfg.ref_idx[1] = refreshed_slot;  // LAST2.
+    ping_pong_cfg.reference[0] = frame > 0;     // LAST.
+    ping_pong_cfg.refresh[refreshed_slot] = 1;
+
+    FillMovingPattern(img, frame);
+    int qp[2];
+    size_t size[2];
+    for (int i = 0; i < 2; ++i) {
+      aom_codec_ctx_t *enc = i == 0 ? &enc_in_place : &enc_ping_pong;
+      ASSERT_EQ(aom_codec_control(enc, AV1E_SET_SVC_REF_FRAME_CONFIG,
+                                  i == 0 ? &in_place_cfg : &ping_pong_cfg),
+                AOM_CODEC_OK);
+      ASSERT_EQ(aom_codec_encode(enc, img, frame, 1, 0), AOM_CODEC_OK);
+      aom_codec_iter_t iter = nullptr;
+      const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(enc, &iter);
+      ASSERT_NE(pkt, nullptr);
+      ASSERT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+      size[i] = pkt->data.frame.sz;
+      ASSERT_EQ(aom_codec_control(enc, AOME_GET_LAST_QUANTIZER, &qp[i]),
+                AOM_CODEC_OK);
+    }
+    EXPECT_EQ(qp[0], qp[1]);
+    EXPECT_EQ(size[0], size[1]);
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&enc_in_place), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc_ping_pong), AOM_CODEC_OK);
+}
+
+// In single layer CBR mode, among other things, the average inter frame QP is
+// not updated on golden and altref updates.
+TEST(EncodeAPI, SvcRefFrameConfigUnusedAliasesDoNotAffectEncodingInCbrMode) {
+  SvcRefFrameConfigUnusedAliasesTest(AOM_CBR);
+}
+
+// In AOM_Q mode, golden and altref updates are encoded at a lower QP than the
+// configured cq-level.
+TEST(EncodeAPI, SvcRefFrameConfigUnusedAliasesDoNotAffectEncodingInQMode) {
+  SvcRefFrameConfigUnusedAliasesTest(AOM_Q);
+}
+
+#if CONFIG_AV1_DECODER
+// Encodes the next frame from `enc`, and decodes it with `dec`. Returns the
+// decoder's status, and the size of the decoded frame in `decoded_w` and
+// `decoded_h`.
+static aom_codec_err_t EncodeAndDecodeFrame(
+    aom_codec_ctx_t *enc, aom_codec_ctx_t *dec, const aom_image_t *img,
+    aom_codec_pts_t pts, unsigned int *decoded_w, unsigned int *decoded_h) {
+  *decoded_w = 0;
+  *decoded_h = 0;
+  EXPECT_EQ(aom_codec_encode(enc, img, pts, 1, 0), AOM_CODEC_OK);
+  aom_codec_iter_t iter = nullptr;
+  const aom_codec_cx_pkt_t *pkt = aom_codec_get_cx_data(enc, &iter);
+  EXPECT_NE(pkt, nullptr);
+  if (pkt == nullptr) return AOM_CODEC_ERROR;
+  EXPECT_EQ(pkt->kind, AOM_CODEC_CX_FRAME_PKT);
+  const aom_codec_err_t status =
+      aom_codec_decode(dec, static_cast<const uint8_t *>(pkt->data.frame.buf),
+                       pkt->data.frame.sz, nullptr);
+  if (status != AOM_CODEC_OK) return status;
+  aom_codec_iter_t dec_iter = nullptr;
+  const aom_image_t *decoded = aom_codec_get_frame(dec, &dec_iter);
+  if (decoded != nullptr) {
+    *decoded_w = decoded->d_w;
+    *decoded_h = decoded->d_h;
+  }
+  return status;
+}
+
+// AV1E_SET_SVC_REF_FRAME_CONFIG: the ref_idx[] entries of references whose
+// reference[] flag is 0 are don't-cares, even if they point to a slot that is
+// not a valid reference for the current frame. The frame header signals all
+// seven references though, and decoders (libaom, dav1d) reject a frame if any
+// of them is more than 2x larger, or more than 16x smaller, than the frame.
+//
+// This test encodes two spatial layers, with the lower layer at 1/4 of the
+// resolution of the upper layer. Each layer predicts from its own previous
+// frame (LAST): slot 0 for the lower layer and slot 1 for the upper layer. The
+// upper layer also predicts from the lower layer's frame (GOLDEN, slot 0). All
+// unused references point to slot 1, which for the lower layer is a 4x larger
+// frame from the upper layer, and so an invalid reference.
+//
+// Order hints are off, as is common for RTC. With order hints, unused
+// references also affect the decoding process, so the encoder leaves them as
+// configured, and the application must make sure that they are valid.
+TEST(EncodeAPI, SvcRefFrameConfigUnusedRefIdxMayPointToInvalidReference) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  cfg.g_lag_in_frames = 0;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.rc_target_bitrate = 400;
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 9), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_ENABLE_ORDER_HINT, 0),
+            AOM_CODEC_OK);
+  aom_svc_params_t svc_params = {};
+  svc_params.number_spatial_layers = 2;
+  svc_params.number_temporal_layers = 1;
+  svc_params.scaling_factor_num[0] = 1;
+  svc_params.scaling_factor_den[0] = 4;
+  svc_params.scaling_factor_num[1] = 1;
+  svc_params.scaling_factor_den[1] = 1;
+  svc_params.layer_target_bitrate[0] = 100;
+  svc_params.layer_target_bitrate[1] = 300;
+  svc_params.framerate_factor[0] = 1;
+  for (int sl = 0; sl < 2; ++sl) {
+    svc_params.min_quantizers[sl] = 0;
+    svc_params.max_quantizers[sl] = 56;
+  }
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_PARAMS, &svc_params),
+            AOM_CODEC_OK);
+  aom_codec_ctx_t dec;
+  ASSERT_EQ(aom_codec_dec_init(&dec, aom_codec_av1_dx(), nullptr, 0),
+            AOM_CODEC_OK);
+  aom_image_t *img =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1);
+  ASSERT_NE(img, nullptr);
+
+  for (int frame = 0; frame < 3; ++frame) {
+    FillMovingPattern(img, frame);
+    for (int sl = 0; sl < 2; ++sl) {
+      SCOPED_TRACE(testing::Message() << "frame " << frame << ", layer " << sl);
+      aom_svc_layer_id_t layer_id = {};
+      layer_id.spatial_layer_id = sl;
+      ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_LAYER_ID, &layer_id),
+                AOM_CODEC_OK);
+      aom_svc_ref_frame_config_t ref_cfg = {};
+      for (int i = 0; i < 7; ++i) ref_cfg.ref_idx[i] = 1;
+      ref_cfg.ref_idx[0] = sl;  // LAST.
+      ref_cfg.reference[0] = 1;
+      if (sl == 1) {
+        ref_cfg.ref_idx[3] = 0;  // GOLDEN.
+        ref_cfg.reference[3] = 1;
+      }
+      ref_cfg.refresh[sl] = 1;
+      ASSERT_EQ(
+          aom_codec_control(&enc, AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_cfg),
+          AOM_CODEC_OK);
+      unsigned int decoded_w;
+      unsigned int decoded_h;
+      EXPECT_EQ(
+          EncodeAndDecodeFrame(&enc, &dec, img, frame, &decoded_w, &decoded_h),
+          AOM_CODEC_OK)
+          << aom_codec_error_detail(&dec);
+    }
+  }
+
+  aom_img_free(img);
+  ASSERT_EQ(aom_codec_destroy(&dec), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+// Like the test above, but with a single layer that changes resolution. When
+// a frame's size differs from the maximum size, the frame header may signal
+// that it has the same size as one of its seven references. This must take
+// the references that are actually signaled into account.
+//
+// The frames are 320x240, 160x120, 320x240 and 160x120. The last frame
+// predicts from the 320x240 frame (LAST), and its unused references point to
+// the slot holding the first 160x120 frame.
+TEST(EncodeAPI, SvcRefFrameConfigUnusedRefIdxWithResolutionChange) {
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  cfg.g_lag_in_frames = 0;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.rc_target_bitrate = 300;
+  // Allows changing the resolution without key frames.
+  cfg.g_forced_max_frame_width = 320;
+  cfg.g_forced_max_frame_height = 240;
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 9), AOM_CODEC_OK);
+  // Order hints are off, as is common for RTC.
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_ENABLE_ORDER_HINT, 0),
+            AOM_CODEC_OK);
+  aom_codec_ctx_t dec;
+  ASSERT_EQ(aom_codec_dec_init(&dec, aom_codec_av1_dx(), nullptr, 0),
+            AOM_CODEC_OK);
+
+  struct FrameConfig {
+    unsigned int width;
+    unsigned int height;
+    int predicted_slot;
+    int refreshed_slot;
+    int unused_slot;
+  };
+  // Frame 0 is a key frame, which refreshes all slots.
+  constexpr FrameConfig kFrames[] = { { 320, 240, 0, 0, 0 },
+                                      { 160, 120, 0, 1, 0 },
+                                      { 320, 240, 1, 0, 1 },
+                                      { 160, 120, 0, 2, 1 } };
+  for (int frame = 0; frame < 4; ++frame) {
+    SCOPED_TRACE(frame);
+    const FrameConfig &config = kFrames[frame];
+    cfg.g_w = config.width;
+    cfg.g_h = config.height;
+    ASSERT_EQ(aom_codec_enc_config_set(&enc, &cfg), AOM_CODEC_OK);
+    aom_svc_ref_frame_config_t ref_cfg = {};
+    for (int i = 0; i < 7; ++i) ref_cfg.ref_idx[i] = config.unused_slot;
+    ref_cfg.ref_idx[0] = config.predicted_slot;  // LAST.
+    ref_cfg.reference[0] = frame > 0;
+    ref_cfg.refresh[config.refreshed_slot] = 1;
+    ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_cfg),
+              AOM_CODEC_OK);
+    aom_image_t *img =
+        aom_img_alloc(nullptr, AOM_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1);
+    ASSERT_NE(img, nullptr);
+    FillMovingPattern(img, frame);
+    unsigned int decoded_w;
+    unsigned int decoded_h;
+    EXPECT_EQ(
+        EncodeAndDecodeFrame(&enc, &dec, img, frame, &decoded_w, &decoded_h),
+        AOM_CODEC_OK)
+        << aom_codec_error_detail(&dec);
+    EXPECT_EQ(decoded_w, config.width);
+    EXPECT_EQ(decoded_h, config.height);
+    // Only frame 0 is a key frame.
+    int ref_updates = 0;
+    ASSERT_EQ(aom_codec_control(&dec, AOMD_GET_LAST_REF_UPDATES, &ref_updates),
+              AOM_CODEC_OK);
+    EXPECT_EQ(ref_updates, frame == 0 ? 0xff : 1 << config.refreshed_slot);
+    aom_img_free(img);
+  }
+
+  ASSERT_EQ(aom_codec_destroy(&dec), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+#endif  // CONFIG_AV1_DECODER
+
+// Verify that when handle_inter_mode_nonrd() reuses the superblock motion
+// vector (x->sb_me_mv, searched relative to zero) for NEWMV on screen content,
+// the vector is clamped to the valid subpel range relative to the block's
+// reference MV predictor (ref_mv) so that |mv - ref_mv| does not exceed MV_MAX.
+TEST(EncodeAPI, NonrdSbMeForcedNewmvRange) {
+  // At >= 4K resolution (width * height >= 3840 * 2160),
+  // do_int_pro_motion_estimation() doubles the screen-content search window
+  // from 512 to 1024 full-pel pixels ([-1024, +1023] relative to (0, 0)).
+  // Use a portrait 2160x3840 frame so +/-1023 pixel vertical displacements
+  // stay well within the frame height.
+  constexpr int kWidth = 2160;
+  constexpr int kHeight = 3840;
+  constexpr int kActiveW = 128;
+  constexpr int kActiveH = 2312;
+
+  aom_codec_iface_t *const iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = kWidth;
+  cfg.g_h = kHeight;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_threads = 1;
+  cfg.rc_min_quantizer = 1;
+  cfg.rc_max_quantizer = 1;
+
+  aom_codec_ctx_t enc;
+  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_CPUUSED, 7), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_TUNE_CONTENT, AOM_CONTENT_SCREEN),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&enc, AV1E_SET_QUANTIZER_ONE_PASS, 1),
+            AOM_CODEC_OK);
+
+  aom_image_t *img0 =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, kWidth, kHeight, 1);
+  aom_image_t *img1 =
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I420, kWidth, kHeight, 1);
+  ASSERT_NE(img0, nullptr);
+  ASSERT_NE(img1, nullptr);
+  FillImage(img0, 128);
+  FillImage(img1, 128);
+
+  // Fill a 128-px wide strip (one superblock column) of the keyframe (img0)
+  // with random luma values so that displaced copies in img1 have a unique
+  // zero-SAD match and a large zero-MV SAD.
+  ::libaom_test::ACMRandom rnd(::libaom_test::ACMRandom::DeterministicSeed());
+  for (int y = 0; y < kActiveH; ++y) {
+    uint8_t *const row0 = img0->planes[AOM_PLANE_Y] + y * img0->stride[0];
+    for (int x = 0; x < kActiveW; ++x) {
+      row0[x] = rnd.Rand8();
+    }
+  }
+
+  // Construct three vertically adjacent superblock regions in img1 (delta
+  // frame) to produce an unrepresentable MV difference if x->sb_me_mv is not
+  // clamped relative to ref_mv:
+  //
+  // 1. y in [0, 1152): copied from img0 at y + 1023 (dy = +1023 px).
+  //    do_int_pro_motion_estimation() searches [-1024, +1023] relative to
+  //    (0, 0), finds the exact match, and sets x->sb_me_mv = (+8184, 0)
+  //    (+1023 px in 1/8-pel units).
+  //
+  // 2. y in [1152, 1280): copied from img0 at y + 1031 (dy = +1031 px).
+  //    Because +1031 px is outside int_pro's [-1024, +1023] window around
+  //    (0, 0), x->sb_me_block is not set. Instead, normal NEWMV motion search
+  //    (search_new_mv()) starts from the top neighbor's predictor
+  //    ref_mv = (+8184, 0) (+1023 px) and steps +8 px to find the exact match
+  //    at mv = (+8248, 0) (+1031 px).
+  //
+  // 3. y in [1280, 1408): copied from img0 at y - 1023 (dy = -1023 px).
+  //    At y >= 1280, -1023 px upward is inside img0, so int_pro ME finds the
+  //    exact match relative to (0, 0) and sets x->sb_me_block = 1 with
+  //    x->sb_me_mv = (-8184, 0) (-1023 px). However, this superblock's coding
+  //    predictor from its top neighbor (region 2) is ref_mv = (+8248, 0)
+  //    (+1031 px). Without clamping x->sb_me_mv relative to ref_mv in
+  //    handle_inter_mode_nonrd(), NEWMV encodes the difference:
+  //      mv_diff.row = -8184 - 8248 = -16432 (-2054 px)
+  //    which exceeds MV_MAX (16383, +/-2047.875 px) and triggers
+  //    Assertion `c <= MV_CLASS_10' failed in av1_get_mv_class().
+  for (int y = 0; y < 1408; ++y) {
+    const int dy = (y < 1152) ? 1023 : (y < 1280) ? 1031 : -1023;
+    memcpy(img1->planes[AOM_PLANE_Y] + y * img1->stride[0],
+           img0->planes[AOM_PLANE_Y] + (y + dy) * img0->stride[0], kActiveW);
+  }
+
+  ASSERT_EQ(aom_codec_encode(&enc, img0, 0, 1, AOM_EFLAG_FORCE_KF),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&enc, img1, 1, 1, 0), AOM_CODEC_OK);
+
+  aom_img_free(img1);
+  aom_img_free(img0);
+  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
 
 }  // namespace

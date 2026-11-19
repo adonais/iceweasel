@@ -14,9 +14,15 @@
 //! Until a callback is installed, and after it is uninstalled, recording is a
 //! no-op.
 
+#[cfg(test)]
+use std::collections::HashMap;
 use std::sync::Arc;
 
+#[cfg(test)]
+use parking_lot::Mutex;
 use parking_lot::RwLock;
+
+use crate::bytesize::ByteSize;
 
 /// Receives the ads client's metrics.
 pub trait Telemetry: Send + Sync {
@@ -31,7 +37,7 @@ pub trait Telemetry: Send + Sync {
 static CALLBACK: RwLock<Option<Arc<dyn Telemetry>>> = RwLock::new(None);
 
 /// Makes `callback` the destination of every metric recorded from now on.
-pub fn install(callback: impl Telemetry + 'static) {
+pub(crate) fn install(callback: impl Telemetry + 'static) {
     // Dropping a UniFFI callback calls into foreign code, so let the replaced
     // one drop after the lock is released.
     let _replaced = CALLBACK.write().replace(Arc::new(callback));
@@ -41,7 +47,7 @@ pub fn install(callback: impl Telemetry + 'static) {
 ///
 /// UniFFI callbacks left hanging at shutdown crash Firefox Desktop on quit, so
 /// the client uninstalls the callback when it shuts down.
-pub fn uninstall() {
+pub(crate) fn uninstall() {
     // As in `install`, the removed callback drops after the lock is released.
     let _removed = CALLBACK.write().take();
 }
@@ -55,12 +61,31 @@ fn with_callback(f: impl FnOnce(&dyn Telemetry)) {
     f(callback.as_ref());
 }
 
+/// Glean drops the end of longer string values and records an
+/// `invalid_overflow` error (bug 2047640).
+const MAX_STRING_SIZE: ByteSize = ByteSize::b(255);
+
+/// Cuts `value` to fit in a Glean string, on a char boundary.
+fn fit(mut value: String) -> String {
+    let max = usize::try_from(MAX_STRING_SIZE.as_u64()).unwrap_or(usize::MAX);
+    if value.len() > max {
+        // `str::floor_char_boundary` does this, but needs Rust 1.91 and
+        // mozilla-central still builds with 1.90.
+        let mut end = max;
+        while !value.is_char_boundary(end) {
+            end -= 1;
+        }
+        value.truncate(end);
+    }
+    value
+}
+
 pub(super) fn build_cache_error(label: &str, value: String) {
-    with_callback(|cb| cb.record_build_cache_error(label, value));
+    with_callback(|cb| cb.record_build_cache_error(label, fit(value)));
 }
 
 pub(super) fn client_error(label: &str, value: String) {
-    with_callback(|cb| cb.record_client_error(label, value));
+    with_callback(|cb| cb.record_client_error(label, fit(value)));
 }
 
 pub(super) fn client_operation_total(label: &str) {
@@ -68,11 +93,11 @@ pub(super) fn client_operation_total(label: &str) {
 }
 
 pub(super) fn deserialization_error(label: &str, value: String) {
-    with_callback(|cb| cb.record_deserialization_error(label, value));
+    with_callback(|cb| cb.record_deserialization_error(label, fit(value)));
 }
 
 pub(super) fn http_cache_outcome(label: &str, value: String) {
-    with_callback(|cb| cb.record_http_cache_outcome(label, value));
+    with_callback(|cb| cb.record_http_cache_outcome(label, fit(value)));
 }
 
 /// Serializes tests that install a callback, since they all share the one
@@ -84,22 +109,66 @@ pub fn test_lock() -> parking_lot::MutexGuard<'static, ()> {
 }
 
 #[cfg(test)]
+#[derive(Clone, Default)]
+pub struct RecordingTelemetry {
+    pub build_cache_errors: Arc<Mutex<HashMap<String, Vec<String>>>>,
+    pub client_errors: Arc<Mutex<HashMap<String, Vec<String>>>>,
+    pub client_operation_totals: Arc<Mutex<HashMap<String, u32>>>,
+    pub deserialization_errors: Arc<Mutex<HashMap<String, Vec<String>>>>,
+    pub http_cache_outcomes: Arc<Mutex<HashMap<String, Vec<String>>>>,
+}
+
+#[cfg(test)]
+impl Telemetry for RecordingTelemetry {
+    fn record_build_cache_error(&self, label: &str, value: String) {
+        self.build_cache_errors
+            .lock()
+            .entry(label.to_string())
+            .or_default()
+            .push(value);
+    }
+    fn record_client_error(&self, label: &str, value: String) {
+        self.client_errors
+            .lock()
+            .entry(label.to_string())
+            .or_default()
+            .push(value);
+    }
+    fn record_client_operation_total(&self, label: &str) {
+        *self
+            .client_operation_totals
+            .lock()
+            .entry(label.to_string())
+            .or_default() += 1;
+    }
+    fn record_deserialization_error(&self, label: &str, value: String) {
+        self.deserialization_errors
+            .lock()
+            .entry(label.to_string())
+            .or_default()
+            .push(value);
+    }
+    fn record_http_cache_outcome(&self, label: &str, value: String) {
+        self.http_cache_outcomes
+            .lock()
+            .entry(label.to_string())
+            .or_default()
+            .push(value);
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::telemetry::{record_client_operation, ClientOperation};
-    use parking_lot::Mutex;
 
-    #[derive(Clone, Default)]
-    struct RecordingTelemetry(Arc<Mutex<Vec<String>>>);
-
-    impl Telemetry for RecordingTelemetry {
-        fn record_build_cache_error(&self, _label: &str, _value: String) {}
-        fn record_client_error(&self, _label: &str, _value: String) {}
-        fn record_client_operation_total(&self, label: &str) {
-            self.0.lock().push(label.to_string());
-        }
-        fn record_deserialization_error(&self, _label: &str, _value: String) {}
-        fn record_http_cache_outcome(&self, _label: &str, _value: String) {}
+    #[test]
+    fn test_fit_cuts_on_a_char_boundary() {
+        assert_eq!(fit("short".into()), "short");
+        assert_eq!(fit("a".repeat(300)).len() as u64, MAX_STRING_SIZE.as_u64());
+        let cut = fit("é".repeat(200));
+        assert_eq!(cut.len(), 254);
+        assert!(cut.chars().all(|c| c == 'é'));
     }
 
     #[test]
@@ -110,11 +179,15 @@ mod tests {
 
         record_client_operation(ClientOperation::ReportAd);
         // Other tests may record concurrently, so only look for ours.
-        assert!(recording.0.lock().iter().any(|label| label == "report_ad"));
+        assert!(recording
+            .client_operation_totals
+            .lock()
+            .keys()
+            .any(|label| label == "report_ad"));
 
         uninstall();
-        recording.0.lock().clear();
+        recording.client_operation_totals.lock().clear();
         record_client_operation(ClientOperation::ReportAd);
-        assert!(recording.0.lock().is_empty());
+        assert!(recording.client_operation_totals.lock().is_empty());
     }
 }

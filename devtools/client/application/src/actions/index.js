@@ -9,5 +9,14 @@ const page = require("resource://devtools/client/application/src/actions/page.js
 const ui = require("resource://devtools/client/application/src/actions/ui.js");
 const manifest = require("resource://devtools/client/application/src/actions/manifest.js");
 const sessionHistory = require("resource://devtools/client/application/src/actions/session-history.js");
+const speculativeLoads = require("resource://devtools/client/application/src/actions/speculative-loads.js");
 
-Object.assign(exports, workers, page, ui, manifest, sessionHistory);
+Object.assign(
+  exports,
+  workers,
+  page,
+  ui,
+  manifest,
+  sessionHistory,
+  speculativeLoads
+);

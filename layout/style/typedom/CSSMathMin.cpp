@@ -15,6 +15,7 @@
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla::dom {
 
@@ -26,6 +27,17 @@ CSSMathMin::CSSMathMin(nsCOMPtr<nsISupports> aParent,
       mValues(std::move(aValues)) {}
 
 // static
+RefPtr<CSSMathMin> CSSMathMin::Create(
+    nsCOMPtr<nsISupports> aParent, UniquePtr<StyleNumericType> aNumericType,
+    nsTArray<RefPtr<CSSNumericValue>> aValues) {
+  auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(aValues));
+
+  return MakeRefPtr<CSSMathMin>(std::move(aParent),
+                                WrapMovingNotNull(std::move(aNumericType)),
+                                std::move(array));
+}
+
+// static
 RefPtr<CSSMathMin> CSSMathMin::Create(nsCOMPtr<nsISupports> aParent,
                                       const StyleMathMin& aMathMin) {
   nsTArray<RefPtr<CSSNumericValue>> values;
@@ -34,12 +46,9 @@ RefPtr<CSSMathMin> CSSMathMin::Create(nsCOMPtr<nsISupports> aParent,
     values.AppendElement(CSSNumericValue::Create(aParent, value));
   }
 
-  auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
-
-  return MakeRefPtr<CSSMathMin>(
-      std::move(aParent),
-      WrapMovingNotNull(MakeUnique<StyleNumericType>(aMathMin.numeric_type)),
-      std::move(array));
+  return Create(std::move(aParent),
+                std::make_unique<StyleNumericType>(aMathMin.numeric_type),
+                std::move(values));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathMin, CSSMathValue)

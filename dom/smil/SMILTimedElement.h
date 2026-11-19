@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/SMILInstanceTime.h"
 #include "mozilla/SMILInterval.h"
 #include "mozilla/SMILMilestone.h"
@@ -60,6 +61,15 @@ class SMILTimedElement {
    * registering event listeners against the appropriate element.
    */
   Element* GetTargetElement();
+
+  /*
+   * Returns true if the element is disabled, or if a regular (non-milestone)
+   * sample can't advance its timing model: it has no pending milestone and no
+   * seek to finish.
+   * Between milestones such a sample only updates the time client, which has
+   * no observable effect if the animation has nothing to animate.
+   */
+  bool IsTimingSettled() const;
 
   /**
    * Methods for supporting the ElementTimeControl interface.
@@ -518,7 +528,7 @@ class SMILTimedElement {
   // aContainer, if given, must be this element's time container; it lets
   // callers that have already resolved it avoid walking the tree again.
   void RegisterMilestone(SMILTimeContainer* aContainer = nullptr);
-  bool GetNextMilestone(SMILMilestone& aNextMilestone) const;
+  Maybe<SMILMilestone> GetNextMilestone() const;
 
   // Notification methods. Note that these notifications can result in nested
   // calls to this same object. Therefore,

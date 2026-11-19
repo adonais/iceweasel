@@ -16,6 +16,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/net/Dictionary.h"
+#include "mozilla/net/HttpActivityArgs.h"
 #include "mozilla/net/HttpConnectionMgrShell.h"
 #include "nsCOMPtr.h"
 #include "nsHttp.h"
@@ -54,17 +55,14 @@ namespace mozilla::net {
 
 class ATokenBucketEvent;
 class EventTokenBucket;
-class HttpActivityArgs;
 class Tickler;
 class nsHttpConnection;
 class nsHttpConnectionInfo;
 class HttpBaseChannel;
-class HttpHandlerInitArgs;
 class HttpTransactionShell;
 class AltSvcMapping;
 class DNSUtils;
 class TRRServiceChannel;
-class SocketProcessChild;
 
 /*
  * FRAMECHECK_LAX - no check
@@ -121,7 +119,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   [[nodiscard]] nsresult AddAcceptAndDictionaryHeaders(
       nsIURI* aURI, ExtContentPolicyType aType, nsHttpRequestHead* aRequest,
-      bool aSecure, nsHttpChannel* aChan, void (*aSuspend)(nsHttpChannel*),
+      bool aAllowDictionaries, nsHttpChannel* aChan,
+      void (*aSuspend)(nsHttpChannel*),
       const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback);
   [[nodiscard]] nsresult AddStandardRequestHeaders(
       nsHttpRequestHead*, nsIURI* aURI, bool aIsHTTPS,
@@ -229,10 +228,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsHttpAuthCache* AuthCache(bool aPrivate) {
     return aPrivate ? mPrivateAuthCache : mAuthCache;
   }
-  nsHttpConnectionMgr* ConnMgr() {
-    MOZ_ASSERT_IF(nsIOService::UseSocketProcess(), XRE_IsSocketProcess());
-    return mConnMgr->AsHttpConnectionMgr();
-  }
+  nsHttpConnectionMgr* ConnMgr() { return mConnMgr->AsHttpConnectionMgr(); }
 
   AltSvcCache* AltServiceCache() const {
     MOZ_ASSERT(XRE_IsParentProcess());
@@ -543,10 +539,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   [[nodiscard]] nsresult InitConnectionMgr();
 
   void NotifyObservers(nsIChannel* chan, const char* event);
-
-  friend class SocketProcessChild;
-  void SetHttpHandlerInitArgs(const HttpHandlerInitArgs& aArgs);
-  void SetDeviceModelId(const nsACString& aModelId);
 
   // We only allow DNSUtils and TRRServiceChannel itself to create
   // TRRServiceChannel.

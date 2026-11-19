@@ -954,7 +954,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
     // bug 744888
     if (WorkAroundDriverBugs() && !data && Vendor() == GLVendor::NVIDIA) {
-      UniquePtr<char[]> buf = MakeUnique<char[]>(1);
+      auto buf = std::make_unique<char[]>(1);
       buf[0] = 0;
       fBufferSubData(target, size - 1, 1, buf.get());
     }

@@ -617,8 +617,7 @@ set_config(
 )
 
 
-# Automation uses this to change log levels, not use the daemon, and use
-# offline mode.
+# Automation uses this to pass the daemon and offline mode flags.
 option(env="GRADLE_FLAGS", default="", help="Flags to pass to Gradle")
 
 

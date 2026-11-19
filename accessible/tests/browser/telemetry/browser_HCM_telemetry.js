@@ -15,12 +15,7 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
 
 registerCleanupFunction(reset);
 
-const PREFS_PANE = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-)
-  ? "accessibility"
-  : "general";
+const PREFS_PANE = "accessibility";
 
 function pushPref(name, val) {
   return SpecialPowers.pushPrefEnv({ set: [[name, val]] });

@@ -19,6 +19,9 @@ user_pref("browser.sessionstore.resume_from_crash", false);
 // Don't show the Bookmarks Toolbar on any tab (the above pref that
 // disables the New Tab Page ends up showing the toolbar on about:blank).
 user_pref("browser.toolbars.bookmarks.visibility", "never");
+// Accept the form resubmission confirmation instead of prompting, so tests can
+// reload the result of a POST navigation.
+user_pref("dom.confirm_repost.testing.always_accept", true);
 // Expose TestUtils interface
 user_pref("dom.testing.testutils.enabled", true);
 // Only install add-ons from the profile and the application scope

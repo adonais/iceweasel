@@ -282,7 +282,7 @@ void LCPHelpers::FinalizeLCPEntryForImage(
     return;
   }
 
-  entry->QueueEntry();
+  performance->SetPendingLCPCandidate(entry);
 }
 
 DOMHighResTimeStamp LargestContentfulPaint::RenderTime() const {
@@ -486,7 +486,7 @@ void LCPHelpers::FinalizeLCPEntryForText(
         entry->Size(), aPerformance->GetLargestContentfulPaintSize());
     return;
   }
-  entry->QueueEntry();
+  aPerformance->SetPendingLCPCandidate(entry);
 }
 
 void LargestContentfulPaint::ReportLCPToNavigationTimings() {

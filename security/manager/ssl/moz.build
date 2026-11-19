@@ -46,7 +46,7 @@ XPCOM_MANIFESTS += [
     "components.conf",
 ]
 
-EXTRA_JS_MODULES.psm += [
+MOZ_SRC_FILES += [
     "ClientAuthDialogService.sys.mjs",
     "DER.sys.mjs",
     "QWACs.sys.mjs",
@@ -82,14 +82,8 @@ EXPORTS.mozilla += [
 
 EXPORTS.mozilla.psm += [
     "EnabledSignatureSchemes.h",
-    "IPCClientCertsChild.h",
-    "IPCClientCertsParent.h",
     "PSMIPCUtils.h",
-    "SelectTLSClientAuthCertChild.h",
-    "SelectTLSClientAuthCertParent.h",
     "TransportSecurityInfo.h",
-    "VerifySSLServerCertChild.h",
-    "VerifySSLServerCertParent.h",
 ]
 
 UNIFIED_SOURCES += [
@@ -102,8 +96,6 @@ UNIFIED_SOURCES += [
     "DataStorageManager.cpp",
     "EnterpriseRoots.cpp",
     "FIPSUtils.cpp",
-    "IPCClientCertsChild.cpp",
-    "IPCClientCertsParent.cpp",
     "md4.c",
     "nsCertOverrideService.cpp",
     "nsCertTree.cpp",
@@ -143,8 +135,6 @@ UNIFIED_SOURCES += [
     "SSLServerCertVerification.cpp",
     "TLSClientAuthCertSelection.cpp",
     "TransportSecurityInfo.cpp",
-    "VerifySSLServerCertChild.cpp",
-    "VerifySSLServerCertParent.cpp",
     "X509CertValidity.cpp",
 ]
 
@@ -235,13 +225,10 @@ if CONFIG["TARGET_KERNEL"] == "Darwin":
     ]
 
 IPDL_SOURCES += [
-    "PIPCClientCerts.ipdl",
-    "PSelectTLSClientAuthCert.ipdl",
     "PSMIPCTypes.ipdlh",
-    "PVerifySSLServerCert.ipdl",
 ]
 
-# Required by OSClientCerts, IPCClientCerts and CredentialManagerSecret.
+# Required by OSClientCerts and CredentialManagerSecret.
 if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
         "advapi32",

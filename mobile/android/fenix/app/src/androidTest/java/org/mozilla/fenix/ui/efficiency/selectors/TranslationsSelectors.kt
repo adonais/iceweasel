@@ -76,6 +76,13 @@ object TranslationsSelectors : SelectorContainer {
             description = "the Always translate $language row",
         )
 
+    val ALWAYS_OFFER_TO_TRANSLATE =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT_MERGED,
+            value = getStringResource(R.string.translation_option_bottom_sheet_always_translate),
+            description = "the Always translate row",
+        )
+
     val NEVER_TRANSLATE_DESCRIPTION =
         Selector(
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,

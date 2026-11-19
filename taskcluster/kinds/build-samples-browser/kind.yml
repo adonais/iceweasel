@@ -12,17 +12,18 @@ transforms:
 
 kind-dependencies:
     - toolchain
-    - build-fat-aar
+    - build
 
 
 task-defaults:
     run-on-repo-type: [hg]
+    use-gradle-cache: true
     attributes:
         build_platform: android
         build-type: regular
         component: samples-browser
     dependencies:
-        build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
+        geckoview: build-android-x86_64/opt
     description: Execute Gradle tasks for component "{component}"
     fetches:
         toolchain:
@@ -31,7 +32,7 @@ task-defaults:
             - linux64-nimbus-fml
             - android-gradle-dependencies
             - linux64-jdk
-        build-fat-aar:
+        geckoview:
             - target.maven.zip
     include-coverage: true
     run:

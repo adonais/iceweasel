@@ -75,8 +75,9 @@ enum class LaunchStatus {
 };
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
+static bool sHasFinishedLaunching = false;
 
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
 static mozilla::TimeStamp sStartupRunLoopStart;
 static uint32_t sStartupRunLoopWakes = 0;
 static double sStartupRunLoopLastWakeMs = 0;
@@ -215,14 +216,19 @@ void InitializeMacApp() {
     // Spin the event loop so that any URLs the app was launched to open are
     // buffered into StartupURLs(). Observer is released inside the callback.
     CFRunLoopObserverRef observer = CFRunLoopObserverCreate(
-        kCFAllocatorDefault, kCFRunLoopBeforeWaiting, /* repeats = */ false,
+        kCFAllocatorDefault, kCFRunLoopBeforeWaiting, /* repeats = */ true,
         /* order = */ 0,
         [](CFRunLoopObserverRef aObserver, CFRunLoopActivity, void*) {
-          CFRunLoopObserverInvalidate(aObserver);
-          CFRelease(aObserver);
-
           LOG_STARTUP_RUN_LOOP_EVENT("obs:n%u,r%d", EventloopNestingLevel(),
                                      [NSApp isRunning] ? 1 : 0);
+
+          // A native run loop can reach idle before launch finishes.
+          if (!sHasFinishedLaunching) {
+            return;
+          }
+
+          CFRunLoopObserverInvalidate(aObserver);
+          CFRelease(aObserver);
 
           // Stop the inner run loop. We'll call `run` again when the main event
           // loop should start.
@@ -248,7 +254,7 @@ void InitializeMacApp() {
         nullptr);
     CFRunLoopAddObserver(CFRunLoopGetCurrent(), observer,
                          kCFRunLoopCommonModes);
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
     sStartupRunLoopStart = mozilla::TimeStamp::Now();
     CFRunLoopObserverRef wakeObserver = CFRunLoopObserverCreate(
         kCFAllocatorDefault, kCFRunLoopAfterWaiting, /* repeats = */ true,
@@ -264,7 +270,7 @@ void InitializeMacApp() {
 #endif
     LOG_STARTUP_RUN_LOOP_EVENT("run");
     [NSApp run];
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
     CFRunLoopObserverInvalidate(wakeObserver);
     CFRelease(wakeObserver);
     CrashReporter::UnrecordAnnotation(
@@ -404,11 +410,10 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
-#ifdef EARLY_BETA_OR_EARLIER
 - (void)applicationDidFinishLaunching:(NSNotification*)notification {
+  sHasFinishedLaunching = true;
   LOG_STARTUP_RUN_LOOP_EVENT("didfinish");
 }
-#endif
 
 - (void)applicationWillFinishLaunching:(NSNotification*)notification {
   LOG_STARTUP_RUN_LOOP_EVENT("willfinish");

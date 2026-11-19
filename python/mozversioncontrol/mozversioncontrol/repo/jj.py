@@ -4,11 +4,13 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import re
 import string
 import subprocess
 import sys
+import threading
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +32,19 @@ from mozversioncontrol.errors import (
 from mozversioncontrol.repo.base import Repository
 from mozversioncontrol.repo.git import GitRepository
 
+_git_root_lock = threading.Lock()
+
+
+@functools.cache
+def _git_root(jj: str, path: str) -> str:
+    return subprocess.run(
+        (jj, "--quiet", "git", "root"),
+        cwd=path,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    ).stdout
+
 
 class JjVersionError(Exception):
     """Raised when the installed jj version is too old."""
@@ -50,7 +65,8 @@ class JujutsuRepository(Repository):
         self._git = GitRepository(path, git=git)
 
         try:
-            git_dir = self._run("git", "root", stderr=subprocess.PIPE)
+            with _git_root_lock:
+                git_dir = _git_root(str(self._tool), self.path)
         except subprocess.CalledProcessError as e:
             stderr = e.stderr or ""
             if "working copy is stale" in stderr.lower():
@@ -336,6 +352,11 @@ class JujutsuRepository(Repository):
     def get_tracked_files_finder(self, path=None):
         files = [mozpath.normsep(p) for p in self._run("file", "list").splitlines()]
         return FileListFinder(files)
+
+    def _get_tracked_files(self, patterns):
+        fileset = " | ".join(f'root-glob:"{pattern}"' for pattern in patterns)
+        files = self._run("file", "list", fileset).splitlines()
+        return sorted(mozpath.normsep(p) for p in files)
 
     def get_ignored_files_finder(self):
         raise Exception("unimplemented")

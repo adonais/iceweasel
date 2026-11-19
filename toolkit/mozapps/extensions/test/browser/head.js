@@ -1486,7 +1486,7 @@ async function loadInitialView(type, opts) {
 }
 
 function getSection(doc, className) {
-  return doc.querySelector(`section.${className}`);
+  return doc.querySelector(`section.${className}, moz-card.${className}`);
 }
 
 function waitForViewLoad(win) {

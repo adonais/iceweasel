@@ -95,61 +95,6 @@ add_task(async function test_hidden_without_pref() {
   await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function test_hidden_without_parent() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.settings-redesign.enabled", false],
-      ["browser.settings-redesign.permissionsData.enabled", false],
-      [SECTION_PREF, true],
-    ],
-  });
-
-  let tab = await openPrefsTab("notifications");
-  let win = tab.linkedBrowser.contentWindow;
-  ok(
-    !win.document.querySelector('[data-category="paneNotifications"]'),
-    "No orphan Notifications pane is registered while its parent is disabled"
-  );
-  ok(
-    !win.document.getElementById("notification-sites-list"),
-    "No orphan notification list is rendered while its parent is disabled"
-  );
-  isnot(
-    win.history.state?.category,
-    "notifications",
-    "Deep linking falls back when the Permissions and data parent is disabled"
-  );
-
-  BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
-});
-
-add_task(async function test_reachable_with_parent_only() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.settings-redesign.enabled", false],
-      ["browser.settings-redesign.permissionsData.enabled", true],
-      [SECTION_PREF, true],
-    ],
-  });
-
-  let tab = await openPrefsTab("notifications");
-  let win = tab.linkedBrowser.contentWindow;
-  let pane = win.document.querySelector('[data-category="paneNotifications"]');
-  ok(
-    pane && BrowserTestUtils.isVisible(pane),
-    "Notifications is visible when only its parent section is enabled"
-  );
-  is(
-    win.history.state?.category,
-    "notifications",
-    "The Notifications deep link works whenever its Permissions and data parent is enabled"
-  );
-
-  BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
-});
-
 add_task(async function test_entry_card_and_deep_link() {
   addPermission("https://prompt.example.com", Services.perms.PROMPT_ACTION);
   let tab = await openPrefsTab("permissionsData");

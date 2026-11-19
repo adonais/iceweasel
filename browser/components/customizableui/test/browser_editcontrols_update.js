@@ -185,11 +185,15 @@ add_task(async function test_panelui_customize_to_toolbar() {
     CustomizableUI.reset();
   });
 
+  // The nav-bar is within a few pixels of overflowing at kForceOverflowWidthPx,
+  // so widen edit-controls to make sure it overflows.
+  let editControls = document.getElementById("edit-controls");
+  editControls.style.minWidth = "150px";
   window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
   await TestUtils.waitForCondition(
     () =>
       navbar.hasAttribute("overflowing") &&
-      !navbar.querySelector("edit-controls")
+      !navbar.querySelector("#edit-controls")
   );
 
   // Mac will update the enabled state even when the buttons are overflowing,
@@ -217,6 +221,7 @@ add_task(async function test_panelui_customize_to_toolbar() {
   gURLBar.select();
   await overridePromise;
 
+  editControls.style.removeProperty("min-width");
   window.resizeTo(originalWidth, window.outerHeight);
   await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
 

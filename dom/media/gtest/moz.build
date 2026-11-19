@@ -152,6 +152,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
     # StrCat macro that conflicts with absl::StrCat in WebRTC unified units.
     SOURCES += [
         "TestWMFDeadlock.cpp",
+        "TestWMFEncoderModule.cpp",
     ]
 
 if CONFIG["MOZ_WEBRTC"] and CONFIG["OS_TARGET"] != "Android":

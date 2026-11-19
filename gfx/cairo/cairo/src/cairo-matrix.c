@@ -728,6 +728,11 @@ _cairo_matrix_is_integer_translation (const cairo_matrix_t *matrix,
 
 #define SCALING_EPSILON _cairo_fixed_to_double(1)
 
+static cairo_bool_t
+within_scaling_epsilon(double a, double b) {
+    return fabs(a - b) < SCALING_EPSILON;
+}
+
 /* This only returns true if the matrix is 90 degree rotations or
  * flips. It appears calling code is relying on this. It will return
  * false for other rotations even if the scale is one. Approximations
@@ -737,21 +742,15 @@ _cairo_matrix_is_integer_translation (const cairo_matrix_t *matrix,
 cairo_bool_t
 _cairo_matrix_has_unity_scale (const cairo_matrix_t *matrix)
 {
-    /* check that the determinant is near +/-1 */
-    double det = _cairo_matrix_compute_determinant (matrix);
-    if (fabs (det * det - 1.0) < SCALING_EPSILON) {
-	/* check that one axis is close to zero */
-	if (fabs (matrix->xy) < SCALING_EPSILON  &&
-	    fabs (matrix->yx) < SCALING_EPSILON)
-	    return TRUE;
-	if (fabs (matrix->xx) < SCALING_EPSILON  &&
-	    fabs (matrix->yy) < SCALING_EPSILON)
-	    return TRUE;
-	/* If rotations are allowed then it must instead test for
-	 * orthogonality. This is xx*xy+yx*yy ~= 0.
-	 */
+    if (within_scaling_epsilon(matrix->xy, 0.0) && within_scaling_epsilon(matrix->yx, 0.0)) {
+	return within_scaling_epsilon(fabs(matrix->xx), 1.0) &&
+	       within_scaling_epsilon(fabs(matrix->yy), 1.0);
+    } else if (within_scaling_epsilon(matrix->xx, 0.0) && within_scaling_epsilon(matrix->yy, 0.0)) {
+	return within_scaling_epsilon(fabs(matrix->xy), 1.0) &&
+	       within_scaling_epsilon(fabs(matrix->yx), 1.0);
+    } else {
+	return FALSE;
     }
-    return FALSE;
 }
 
 /* By pixel exact here, we mean a matrix that is composed only of

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/panel-list.mjs";
 import "chrome://browser/content/aiwindow/components/input-cta.mjs";
 

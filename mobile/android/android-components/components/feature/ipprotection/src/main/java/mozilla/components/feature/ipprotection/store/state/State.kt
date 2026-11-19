@@ -13,17 +13,13 @@ import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.lib.state.State
 
-const val BYTES_PER_GB = 1024 * 1024 * 1024f
-
 /**
  * State stored by the feature to drive UI and decisions.
  *
  * @property eligibilityStatus Whether the device is eligible of using the service.
  * @property proxyStatus The proxy state.
  * @property serviceStatus The state of the IPProtection service.
- * @property remainingDataBytes Remaining monthly data allowance in bytes, or -1 if unavailable.
- * @property maxDataBytes Maximum monthly data allowance in bytes, -1 if unavailable, or otherwise 0 if unlimited.
- * @property resetDate ISO 8601 string for when the monthly allowance resets, or null if unavailable.
+ * @property usageQuota The usage quota in the current cycle, or null if unavailable.
  * @property accountState The state of the authenticator being used.
  * @property lastError The last error received from the IPProtection service.
  * @property proxyActivation Tracks recent activation or deactivation state changes. See [ProxyActivation].
@@ -34,9 +30,7 @@ data class IPProtectionState(
     val eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
     val proxyStatus: ProxyStatus = Uninitialized,
     val serviceStatus: ServiceState = ServiceState.Uninitialized,
-    val remainingDataBytes: Long = -1L,
-    val maxDataBytes: Long = -1L,
-    val resetDate: String? = null,
+    val usageQuota: UsageQuota? = null,
     val accountState: AccountState = AccountState(),
     val lastError: String? = null,
     val proxyActivation: ProxyActivation = ProxyActivation.Idle,
@@ -58,28 +52,6 @@ val IPProtectionState.isEligible
  */
 val IPProtectionState.isActivationInFlight
     get() = proxyStatus == Authorized.Activating || pendingActivationRequest is PendingActivationRequest.Activate
-
-/**
- * If we have negative values, then we haven't received new usage data yet.
- *
- * N.B: If we get -1, and we try to render that then the values are obviously incorrect, but we let the consumer handle
- * this for now.
- */
-val IPProtectionState.remainingDataGb: Float
-    get() = remainingDataBytes / BYTES_PER_GB
-
-/**
- * If we have negative values, then we haven't received new usage data yet. A value of zero means that we have unlimited
- * data.
- *
- * N.B: If we get -1, and we try to render that then the values are obviously incorrect, but we let the consumer handle
- * this for now.
- */
-val IPProtectionState.maxDataGb: Float
-    get() = maxDataBytes / BYTES_PER_GB
-
-val IPProtectionState.usedDataGb: Float
-    get() = maxDataGb - remainingDataGb
 
 /**
  * The combined state of an FxA account pertinent to IP Protection.

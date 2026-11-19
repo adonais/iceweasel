@@ -292,6 +292,10 @@ can_run_script_includes = """
 #include "js/GCAnnotations.h"
 """
 
+function_includes = """
+#include "nsFunctionInterfaceUtils.h"
+"""
+
 header_end = """/* For IDL files that don't want to include root IDL files. */
 #ifndef NS_NO_VTABLE
 #define NS_NO_VTABLE
@@ -324,6 +328,9 @@ def print_header(idl, fd, filename, relpath):
 
     if idl.needsJSTypes():
         fd.write(jsvalue_include)
+
+    if idl.needsFunctionTypes():
+        fd.write(function_includes)
 
     # Include some extra files if any attributes are infallible.
     interfaces = [p for p in idl.productions if p.kind == "interface"]
@@ -465,6 +472,17 @@ namespace mozilla::detail {{
 template <>
 class InterfaceNeedsThreadSafeRefCnt<{name}> : public std::true_type {{}};
 }}
+"""
+
+iface_function = """\
+  template <class F>
+  static already_AddRefed<{name}> FromFunction(const nsLiteralCString& aName, F&& aInvocable) {{
+    using Base = nsFunctionInterface<{name}, F>;
+    struct FromFunctionImpl final : public Base {{
+      {method} final {{ return Base::Invoke({paramList}); }}
+    }};
+    return mozilla::MakeAndAddRef<FromFunctionImpl>(aName, std::forward<F>(aInvocable));
+  }}
 """
 
 
@@ -628,6 +646,18 @@ def write_interface(iface, fd):
                     write_cenum_decl(member)
                 else:
                     raise Exception(f"Unexpected interface member: {member}")
+
+    if iface.attributes.function:
+        for m in iface.members:
+            if not isinstance(m, xpidl.Method):
+                continue
+            fd.write(
+                iface_function.format(
+                    name=iface.name,
+                    method=methodAsNative(m),
+                    paramList=paramlistNames(m),
+                )
+            )
 
     fd.write(iface_epilog.format(**names))
 

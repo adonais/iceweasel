@@ -79,7 +79,7 @@ class SimpleAutoString {
    * Allocates enough space to store a string of the specified length.
    */
   bool AllocLen(size_t len) {
-    mString = mozilla::MakeUnique<wchar_t[]>(len + 1);
+    mString = std::make_unique<wchar_t[]>(len + 1);
     return mString.get() != nullptr;
   }
 
@@ -87,7 +87,7 @@ class SimpleAutoString {
    * Allocates a buffer of the size given.
    */
   bool AllocSize(size_t size) {
-    mString = mozilla::MakeUnique<wchar_t[]>(size);
+    mString = std::make_unique<wchar_t[]>(size);
     return mString.get() != nullptr;
   }
 
@@ -412,7 +412,7 @@ bool GetInstallHash(const char16_t* installPath,
       CityHash64(reinterpret_cast<const char*>(installPath), pathSize);
 
   size_t hashStrSize = sizeof(hash) * 2 + 1;  // 2 hex digits per byte + null
-  result = mozilla::MakeUnique<NS_tchar[]>(hashStrSize);
+  result = std::make_unique<NS_tchar[]>(hashStrSize);
   int charsWritten =
       NS_tsnprintf(result.get(), hashStrSize, NS_T("%") NS_T(PRIX64), hash);
   return !(charsWritten < 1 ||
@@ -435,7 +435,7 @@ static bool GetCachedHash(const char16_t* installPath, HKEY rootKey,
   if (lrv != ERROR_SUCCESS) {
     return false;
   }
-  result = mozilla::MakeUnique<NS_tchar[]>(bufferSize);
+  result = std::make_unique<NS_tchar[]>(bufferSize);
   // Now read the actual value from the registry.
   lrv = RegGetValueW(rootKey, regPath.String(),
                      reinterpret_cast<const wchar_t*>(installPath),
@@ -679,7 +679,7 @@ static HRESULT GeneratePermissions(AutoPerms& result) {
   }
 
   result.securityDescriptorBuffer =
-      mozilla::MakeUnique<uint8_t[]>(SECURITY_DESCRIPTOR_MIN_LENGTH);
+      std::make_unique<uint8_t[]>(SECURITY_DESCRIPTOR_MIN_LENGTH);
   if (!result.securityDescriptorBuffer) {
     return E_OUTOFMEMORY;
   }

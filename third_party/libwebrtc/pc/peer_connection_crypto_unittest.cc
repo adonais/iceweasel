@@ -87,9 +87,8 @@ class PeerConnectionCryptoBaseTest : public ::testing::Test {
     InitializeAndroidObjects();
 #endif
     pc_factory_ = CreatePeerConnectionFactory(
-        Thread::Current(), Thread::Current(), Thread::Current(),
-        FakeAudioCaptureModule::Create(), CreateBuiltinAudioEncoderFactory(),
-        CreateBuiltinAudioDecoderFactory(),
+        Thread::Current(), Thread::Current(), FakeAudioCaptureModule::Create(),
+        CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory(),
         std::make_unique<VideoEncoderFactoryTemplate<
             LibvpxVp8EncoderTemplateAdapter, LibvpxVp9EncoderTemplateAdapter,
             OpenH264EncoderTemplateAdapter, LibaomAv1EncoderTemplateAdapter>>(),

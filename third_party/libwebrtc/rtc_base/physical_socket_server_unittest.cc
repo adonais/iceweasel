@@ -532,4 +532,9 @@ TEST_F(PhysicalSocketTest, UdpSocketRecvTimestampUseRtcEpochIPv6) {
   SocketTest::TestUdpSocketRecvTimestampUseRtcEpochIPv6();
 }
 
+TEST(PhysicalSocketServerTest, CanCreateSockets) {
+  PhysicalSocketServer ss;
+  EXPECT_TRUE(ss.CanCreateSockets());
+}
+
 }  // namespace webrtc

@@ -306,7 +306,6 @@ export var TelemetrySession = Object.freeze({
 var Impl = {
   _initialized: false,
   _logger: null,
-  _slowSQLStartup: {},
   // The activity state for the user. If false, don't count the next
   // active tick. Otherwise, increment the active ticks as usual.
   _isUserActive: true,
@@ -685,18 +684,11 @@ var Impl = {
       key => "gpu" in measurements[key]
     );
 
-    let measurementsContainSocket = Object.keys(measurements).some(
-      key => "socket" in measurements[key]
-    );
-
     payloadObj.processes = {};
     let processTypes = ["parent", "content", "dynamic"];
     // Only include the GPU process if we've accumulated data for it.
     if (measurementsContainGPU) {
       processTypes.push("gpu");
-    }
-    if (measurementsContainSocket) {
-      processTypes.push("socket");
     }
 
     // Collect per-process measurements.
@@ -733,7 +725,6 @@ var Impl = {
 
     // Add extended set measurements for chrome process.
     if (Services.telemetry.canRecordExtended) {
-      payloadObj.slowSQL = protect(() => Services.telemetry.slowSQL);
       payloadObj.fileIOReports = protect(
         () => Services.telemetry.fileIOReports
       );
@@ -741,15 +732,6 @@ var Impl = {
       payloadObj.addonDetails = protect(() =>
         lazy.AddonManagerPrivate.getTelemetryDetails()
       );
-
-      if (
-        this._slowSQLStartup &&
-        !!Object.keys(this._slowSQLStartup).length &&
-        (Object.keys(this._slowSQLStartup.mainThread).length ||
-          Object.keys(this._slowSQLStartup.otherThreads).length)
-      ) {
-        payloadObj.slowSQLStartup = this._slowSQLStartup;
-      }
     }
 
     return payloadObj;
@@ -1130,11 +1112,6 @@ var Impl = {
   getPayload: function getPayload(reason, clearSubsession) {
     this._log.trace("getPayload - clearSubsession: " + clearSubsession);
     reason = reason || REASON_GATHER_PAYLOAD;
-    // This function returns the current Telemetry payload to the caller.
-    // We only gather startup info once.
-    if (!Object.keys(this._slowSQLStartup).length) {
-      this._slowSQLStartup = Services.telemetry.slowSQL;
-    }
     Services.telemetry.gatherMemory();
     return this.getSessionPayload(reason, clearSubsession);
   },
@@ -1150,7 +1127,6 @@ var Impl = {
       Glean.startupIo.read.sessionRestore.set(counters[0]);
       Glean.startupIo.write.sessionRestore.set(counters[1]);
     }
-    this._slowSQLStartup = Services.telemetry.slowSQL;
   },
 
   setAddOns: function setAddOns(aAddOns) {

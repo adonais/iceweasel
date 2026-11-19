@@ -74,7 +74,6 @@ nr_is_stun_message(UCHAR *buf, size_t len)
    case NR_STUN_MSG_BINDING_RESPONSE:
    case NR_STUN_MSG_BINDING_ERROR_RESPONSE:
 
-#ifdef USE_TURN
     case NR_STUN_MSG_ALLOCATE_REQUEST:
     case NR_STUN_MSG_ALLOCATE_RESPONSE:
     case NR_STUN_MSG_ALLOCATE_ERROR_RESPONSE:
@@ -101,7 +100,6 @@ nr_is_stun_message(UCHAR *buf, size_t len)
 #ifdef NR_STUN_MSG_CONNECT_STATUS_INDICATION
     case NR_STUN_MSG_CONNECT_STATUS_INDICATION:
 #endif
-#endif /* USE_TURN */
 
         /* ok so far, continue */
         break;

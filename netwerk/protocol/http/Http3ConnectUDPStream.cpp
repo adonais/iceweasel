@@ -66,7 +66,7 @@ void Http3ConnectUDPStream::OnDatagramReceived(nsTArray<uint8_t>&& aData) {
   LOG(("Http3ConnectUDPStream::OnDatagramReceived %p", this));
 
   mByteReadCount += aData.Length();
-  mReceivedData.Push(MakeUnique<UDPPayload>(std::move(aData)));
+  mReceivedData.Push(std::make_unique<UDPPayload>(std::move(aData)));
   if (mSyncListener) {
     mSyncListener->OnPacketReceived(this);
   }
@@ -224,7 +224,7 @@ NS_IMETHODIMP Http3ConnectUDPStream::SendWithAddress(
 
   nsTArray<uint8_t> datagram;
   datagram.AppendElements(data, length);
-  mOutputData.Push(MakeUnique<UDPPayload>(std::move(datagram)));
+  mOutputData.Push(std::make_unique<UDPPayload>(std::move(datagram)));
   mByteWriteCount += length;
   mSession->StreamHasDataToWrite(this);
   return NS_OK;

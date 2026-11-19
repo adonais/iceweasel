@@ -487,6 +487,19 @@ add_task(function test_ChatConversation_getMostRecentPageVisited() {
   Assert.equal(mostRecentPageVisited, "https://www.espn.com/");
 });
 
+add_task(function test_revisited_ChatConversation_getMostRecentPageVisited() {
+  const conversation = new ChatConversation({});
+
+  const content = "user to assistant msg";
+  conversation.addUserMessage(content, new URL("https://www.mozilla.com"));
+  conversation.addUserMessage(content, new URL("https://www.firefox.com"));
+  conversation.addUserMessage(content, new URL("https://www.mozilla.com"));
+  conversation.addUserMessage(content, new URL("about:aiwindow"));
+
+  const mostRecentPageVisited = conversation.getMostRecentPageVisited();
+  Assert.equal(mostRecentPageVisited, "https://www.mozilla.com/");
+});
+
 add_task(function test_noBrowsing_ChatConversation_getMostRecentPageVisited() {
   const conversation = new ChatConversation({});
 

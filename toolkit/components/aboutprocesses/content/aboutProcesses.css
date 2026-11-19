@@ -41,9 +41,38 @@ body {
 #process-tfoot {
   display: none;
 }
+#tab-search-bar {
+  display: none;
+}
+/* Matches the sidebar panels. */
+body.tab-view {
+  --tab-search-bar-height: calc(2.5rem + 8px);
+  font: menu;
+}
+body.tab-view #tab-search-bar {
+  display: flex;
+  align-items: center;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  height: var(--tab-search-bar-height);
+  width: 100%;
+  padding: 4px 10px;
+  box-sizing: border-box;
+  background-color: var(--background-color-box);
+  border-bottom: 1px solid var(--border-color);
+}
+#tab-search-input {
+  width: 100%;
+}
+/* Offset below the tab-view search bar. */
+body.tab-view #process-thead {
+  top: var(--tab-search-bar-height);
+}
+
 /* Fixed totals footer for tab view. */
 body.tab-view #process-tbody {
-  margin-bottom: 2em;
+  margin-top: calc(var(--tab-search-bar-height) + 2em);
 }
 body.tab-view #process-tfoot {
   display: table-footer-group;
@@ -57,9 +86,9 @@ body.tab-view #process-tfoot {
 }
 /* The memory cell sizes to its content, taking slack from the name column
    instead of compressing. The CPU cell spans the shared grid's CPU and
-   action columns (15% + 36px), so multi-digit percentages fit. */
-.totals-row {
-  grid-template-columns: 1fr max-content calc(15% + 36px);
+   action columns (15% + 28px), so multi-digit percentages fit. */
+body.tab-view :is(.totals-row, .bulk-summary-row) {
+  grid-template-columns: 32px 1fr max-content calc(15% + 28px);
 }
 tr {
   display: grid;
@@ -68,6 +97,78 @@ tr {
   grid-template-columns: 1fr 15% 15% 36px;
   grid-auto-rows: 2em;
   width: 100%;
+}
+
+body.tab-view tr {
+  grid-template-columns: 32px 1fr 15% 15% 28px;
+}
+/* The action column is 28px (16px icon + 2*6px padding) in the sidebar. */
+body.tab-view #process-tbody > tr > td:last-child {
+  padding-inline: 6px;
+}
+body:not(.tab-view) #process-thead > tr > .select-cell {
+  display: none;
+}
+.select-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 8px;
+}
+.totals-count {
+  grid-column: span 2;
+}
+
+/* Stack the bulk-action summary row and buttons row above tab-view totals. */
+body.tab-view.bulk-action-visible #tab-search-status {
+  margin-bottom: 6em;
+}
+body.tab-view.bulk-action-visible #process-tfoot {
+  height: 6em;
+}
+/* Hidden outright when empty, not just emptied, to avoid overlapping the totals row. */
+body:not(.bulk-action-visible) tr.bulk-summary-row,
+body:not(.bulk-action-visible) tr.bulk-buttons-row {
+  display: none;
+}
+tr.bulk-summary-row {
+  border-top: 1px solid var(--border-color);
+}
+#bulk-cancel-button {
+  background-image: url("chrome://global/skin/icons/close.svg");
+}
+tr.bulk-buttons-row {
+  /* Own line, not the summary row's grid, so neither risks wrapping. */
+  display: block;
+  height: 2em;
+
+  > td {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
+moz-button-group {
+  justify-content: flex-start;
+}
+
+#tab-search-status {
+  display: none;
+}
+body.tab-view #tab-search-status {
+  display: block;
+  margin-bottom: 2em;
+}
+/* Free-text message, not the shared grid. */
+#tab-search-status > tr {
+  display: block;
+}
+#tab-search-no-results {
+  display: block;
+  color: var(--text-color-deemphasized);
+}
+#tab-search-no-results:empty {
+  padding: 0;
 }
 
 .cpu,
@@ -85,9 +186,14 @@ th {
   background-color: var(--button-background-color);
   color: var(--button-text-color);
 }
-th:not(:first-child) {
+/* .select-cell is hidden in the default view; its next th is the first visible one. */
+th:not(:first-child, .select-cell + th) {
   border-inline-start: 1px solid;
   border-image: linear-gradient(transparent 0%, transparent 20%, var(--border-color) 20%, var(--border-color) 80%, transparent 80%, transparent 100%) 1 1;
+}
+body.tab-view th:not(:first-child) {
+  border-inline-start: 0;
+  border-image: none;
 }
 th,
 td {
@@ -96,6 +202,11 @@ td {
   max-height: 2em;
   overflow: hidden;
   white-space: nowrap;
+}
+body.tab-view td.memory,
+body.tab-view td.cpu {
+  padding-inline-end: 4px;
+  font-variant-numeric: tabular-nums;
 }
 td.type,
 td.favicon {
@@ -111,8 +222,88 @@ td.type:dir(rtl),
 td.favicon:dir(rtl) {
   background-position-x: right 11px;
 }
-td:first-child {
+td:first-child,
+td.name {
   text-overflow: ellipsis;
+}
+
+/* Child and solo rows share one favicon column, aligned with the site-header caret. */
+tr.tab-row > td.favicon {
+  background-position: 2px center;
+  padding-inline-start: 25px;
+}
+tr.tab-row > td.favicon:dir(rtl) {
+  background-position-x: right 2px;
+}
+/* Indented under the header's favicon. */
+tr.child-row > td.favicon {
+  background-position-x: 20px;
+  padding-inline-start: 43px;
+}
+tr.child-row > td.favicon:dir(rtl) {
+  background-position-x: right 20px;
+}
+
+/* Collapsed child rows stay in the DOM (RowSet still tracks them) but hidden. */
+tr.child-row.collapsed {
+  display: none;
+}
+
+/* Label only: bold figures would misalign with the rows below. */
+tr.site-header-row .site-label {
+  font-weight: var(--font-weight-bold);
+}
+/* No room for a caret in td.favicon's fixed reserve, so caret/favicon/label
+   flow as ordinary inline content instead (see _createHeaderRow). */
+tr.site-header-row td.name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* Matches th.clickable-header's own padding: 0, so the caret lines up with the expand-all icon above it. */
+  padding-inline-start: 0;
+}
+.site-favicon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+}
+.site-tab-count {
+  color: var(--text-color-deemphasized);
+  margin-inline-start: 4px;
+}
+.site-label,
+.site-tab-count {
+  cursor: pointer;
+}
+
+/* Inline buttons size to their content, not to common.css's form buttons. */
+button:where(.caret-icon, #expand-all-button, .unload-icon, .reload-icon) {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+  color: inherit;
+}
+.name-link {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0;
+  max-width: 100%;
+  text-align: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: inherit;
+  --link-color: currentColor;
+  --link-color-hover: currentColor;
+  --link-color-active: currentColor;
+}
+.name-link:hover {
+  text-decoration: underline;
 }
 
 .profiler-icon {
@@ -194,6 +385,13 @@ tr[selected] > td {
   background-color: var(--color-accent-primary-selected);
   color: var(--text-color-accent-primary-selected);
 }
+/* On the row, so an unloaded row's dimmed cells don't dim the highlight. */
+body.tab-view #process-tbody > tr[selected] {
+  background-color: var(--color-accent-primary-selected);
+}
+body.tab-view tr[selected] > td {
+  background-color: transparent;
+}
 #process-tbody > tr:hover {
   background-color: var(--background-color-list-item-hover);
   color: var(--text-color-list-item-hover);
@@ -235,6 +433,33 @@ th > button.clickable {
     }
   }
 }
+body.tab-view {
+  th > button.clickable {
+    flex: 1;
+    min-width: 0;
+    font-weight: var(--font-weight-bold);
+    padding-inline: 4px;
+    /* The default 32px min-height exceeds the 2em header row. */
+    min-height: 0;
+  }
+  /* Added to the 16px expand-all button, this lines "Name" up with
+     tr.tab-row's own 25px favicon-to-text offset. */
+  #column-name {
+    padding-inline-start: 9px;
+  }
+  #column-memory-resident,
+  #column-cpu-total {
+    text-align: end;
+    padding-inline-start: 20px;
+  }
+  #column-kill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0;
+    font-size: 1.25em;
+  }
+}
 .clickable {
   background-repeat: no-repeat;
   background-position: right 4px center;
@@ -256,6 +481,64 @@ th > button.clickable {
   background-image: url("chrome://global/skin/icons/arrow-down-12.svg");
 }
 
+/* An ::after on the column button, so rotating the ascending state doesn't
+   also flip its label. The glyph is distinct from the row caret. */
+body.tab-view .arrow-up,
+body.tab-view .arrow-down {
+  background-image: none;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 4px;
+    width: 12px;
+    background: url("chrome://global/skin/icons/sort-arrow.svg") no-repeat center;
+    background-size: 12px;
+    -moz-context-properties: fill;
+    fill: currentColor;
+  }
+}
+body.tab-view .arrow-up::after {
+  transform: rotate(180deg);
+}
+/* End-aligned columns carry the arrow on the start side. */
+body.tab-view :is(#column-memory-resident, #column-cpu-total) {
+  &.arrow-up::after,
+  &.arrow-down::after {
+    inset-inline-end: auto;
+    inset-inline-start: 4px;
+  }
+}
+
+/* One glyph, rotated between states. :is() takes the id's specificity, to
+   beat the shared button and .icon-button rules. */
+:is(.caret-icon, #expand-all-button) {
+  background-image: url("chrome://global/skin/icons/arrow-down-12.svg");
+  background-size: 12px;
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+  transition: transform 0.1s;
+}
+:is(.caret-icon, #expand-all-button):dir(rtl) {
+  transform: rotate(90deg);
+}
+:is(.caret-icon[aria-expanded="true"], #expand-all-button.expanded) {
+  transform: none;
+}
+body:not(.tab-view) #expand-all-button {
+  display: none;
+}
+/* Nothing to toggle: keep the box so the Name header doesn't shift. */
+#expand-all-button:disabled {
+  visibility: hidden;
+}
+body.tab-view th.clickable-header {
+  display: flex;
+  align-items: center;
+}
+
 tr.process > td.type {
   font-weight: var(--font-weight-bold);
   user-select: text;
@@ -274,14 +557,17 @@ tr.thread {
   opacity: 0.3;
 }
 
-/* Row-level opacity composites onto descendants, capping the go-to-tab
+/* Row-level opacity composites onto descendants, capping the reload
    icon's own focus-visible opacity below 1 -- undo the row dim for tab rows
    and apply it to the non-action cells instead so the button isn't capped. */
-tr.tab-row.killed {
+tr:is(.tab-row, .site-header-row).killed {
   opacity: 1;
 }
 
-tr.tab-row.killed > td:not(:last-child) {
+/* Departed rows are gone from the list during the mouse freeze; removed on
+   the next reorder. */
+tr:is(.tab-row, .site-header-row).killed > td:not(:last-child),
+tr.departed > td {
   opacity: 0.3;
 }
 
@@ -317,14 +603,15 @@ tr:is([selected], :hover, :focus-visible):not(.killing) > td > .close-icon,
 }
 
 .unload-icon,
-.go-to-tab-icon {
-  /* Sized to moon.svg/arrow-right.svg's shared native 16px (clips oddly at
+.reload-icon {
+  /* Sized to moon.svg/reload.svg's shared native 16px (clips oddly at
      close-icon's 10px); padding trimmed to keep the same 24px footprint. */
   display: inline-block;
   height: 100%;
   width: 16px;
   padding: 2px 4px;
   margin: -2px -5px;
+  box-sizing: content-box;
   opacity: 0;
   -moz-context-properties: fill;
   fill: currentColor;
@@ -335,34 +622,29 @@ tr:is([selected], :hover, :focus-visible):not(.killing) > td > .close-icon,
   background: url("chrome://global/skin/icons/moon.svg") no-repeat center;
 }
 
-.go-to-tab-icon {
-  background: url("chrome://global/skin/icons/arrow-right.svg") no-repeat center;
+.reload-icon {
+  background: url("chrome://global/skin/icons/reload.svg") no-repeat center;
 }
 
-.go-to-tab-icon:dir(rtl) {
-  transform: scaleX(-1);
-}
-
-/* Unlike .close-icon, no [selected]/:focus-visible here -- this view's rows aren't focusable or selectable. */
-tr:hover:not(.killing) > td > .unload-icon,
-tr:hover:not(.killing) > td > .go-to-tab-icon,
+tr:is([selected], :hover, :focus-visible):not(.killing) > td > .unload-icon,
+tr:is([selected], :hover, :focus-visible):not(.killing) > td > .reload-icon,
 .unload-icon:focus-visible,
-.go-to-tab-icon:focus-visible {
+.reload-icon:focus-visible {
   opacity: 1;
 }
 
 .unload-icon:hover,
-.go-to-tab-icon:hover,
+.reload-icon:hover,
 .unload-icon:focus-visible,
-.go-to-tab-icon:focus-visible {
+.reload-icon:focus-visible {
   background-color: var(--button-background-color-hover);
   color: var(--button-text-color-hover);
 }
 
 .unload-icon:hover:active,
-.go-to-tab-icon:hover:active,
+.reload-icon:hover:active,
 .unload-icon:focus-visible:active,
-.go-to-tab-icon:focus-visible:active {
+.reload-icon:focus-visible:active {
   background-color: var(--button-background-color-active);
   color: var(--button-text-color-active);
 }
@@ -393,9 +675,11 @@ tr.separate-from-previous-process-group {
   background: linear-gradient(to right, var(--bar-color) calc(var(--bar-width) * 1%), transparent calc(var(--bar-width) * 1%));
 }
 
-/* No CPU bar in the tab view -- --bar-width's default of 0 still leaves a
-   rounding sliver of the gradient visible. */
+/* No CPU bar in the tab view. The shared --bar-width: 0 default would
+   otherwise rasterize as a hairline sliver. */
 .tab-row > .cpu,
-.totals-row > .cpu {
-  background: none;
+.totals-row > .cpu,
+.bulk-summary-row > .cpu,
+.site-header-row > .cpu {
+  background-image: none;
 }

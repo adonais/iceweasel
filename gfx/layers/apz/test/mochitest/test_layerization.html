@@ -69,17 +69,35 @@ let heightMultiplier = SpecialPowers.getCharPref("apz.y_stationary_size_multipli
 heightMultiplier /= 2;
 info("effective displayport height multipler is " + heightMultiplier);
 
+// The displayport base of a subframe is its visible rect, so measure the part
+// of |elt| that isn't clipped by its scrollable ancestors or its window.
+function visibleHeight(elt, win) {
+  let top = elt.getBoundingClientRect().top + elt.clientTop;
+  let bottom = top + elt.clientHeight;
+  for (let a = elt.parentElement; a; a = a.parentElement) {
+    if (a.scrollHeight > a.clientHeight) {
+      let ancestorTop = a.getBoundingClientRect().top + a.clientTop;
+      top = Math.max(top, ancestorTop);
+      bottom = Math.min(bottom, ancestorTop + a.clientHeight);
+    }
+  }
+  return Math.min(bottom, win.innerHeight) - Math.max(top, 0);
+}
+
 function hasNonZeroMarginDisplayPort(elementId, containingDoc = null) {
   let dp = getLastContentDisplayportFor(elementId);
   if (dp == null) {
     return false;
   }
-  let elt = (containingDoc != null ? containingDoc : document).getElementById(elementId);
+  let doc = containingDoc ? containingDoc : document;
+  let elt = doc.getElementById(elementId);
   info(elementId);
   info("window size " + window.innerWidth + " " + window.innerHeight);
   info("dp " + dp.x + " " + dp.y + " " + dp.width + " " + dp.height);
   info("eltsize " + elt.clientWidth + " " + elt.clientHeight);
-  return dp.height >= heightMultiplier * Math.min(elt.clientHeight, window.innerHeight);
+  let height = visibleHeight(elt, doc.defaultView);
+  info("visible height " + height);
+  return dp.height >= heightMultiplier * height;
 }
 
 function hasMinimalDisplayPort(elementId, containingDoc = null) {

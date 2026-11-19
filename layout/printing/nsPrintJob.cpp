@@ -207,7 +207,8 @@ void nsPrintJob::BuildNestedPrintObjects(
 
     // Note: docShell and doc are known-non-null at this point; they've been
     // null-checked above (with null leading to 'continue' statements).
-    auto childPO = MakeUnique<nsPrintObject>(*docShell, *doc, aParentPO.get());
+    auto childPO =
+        std::make_unique<nsPrintObject>(*docShell, *doc, aParentPO.get());
 
     mPrintDocList.AppendElement(childPO.get());
     BuildNestedPrintObjects(childPO);
@@ -392,7 +393,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     nsAutoScriptBlocker scriptBlocker;
     // Note: docShell is implicitly non-null via do_QueryReferent necessarily
     // having succeeded (if we got here).
-    mPrintObject = MakeUnique<nsPrintObject>(*docShell, aDoc);
+    mPrintObject = std::make_unique<nsPrintObject>(*docShell, aDoc);
     mPrintDocList.AppendElement(mPrintObject.get());
 
     BuildNestedPrintObjects(mPrintObject);

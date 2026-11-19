@@ -195,12 +195,6 @@ impl PushConnection {
         return self.send(hello_msg.as_str());
     }
 
-    /*
-    pub fn send_keep_alive(&self) -> Result<bool, Error> {
-        return self.send("{}");
-    }
-    */
-
     fn parse_message(message: &str) -> Event {
         let parsed_message = serde_json::from_str(message).unwrap_or_else(|_| Value::Null);
 

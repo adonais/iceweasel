@@ -10,9 +10,6 @@ let trrServer;
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
 ].getService(Ci.nsICertOverrideService);
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
 
 add_setup(async function setup() {
   trrServer = new TRRServer();
@@ -37,11 +34,6 @@ add_setup(async function setup() {
     );
     await trrServer.stop();
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 });
 
 // Test if IP hint addresses can be accessed as regular A/AAAA records.

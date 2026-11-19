@@ -1747,6 +1747,17 @@ export class CreditCardsBase extends AutofillRecords {
     lazy.CreditCardRecord.stripSecurityCodeWhenDisabled(creditCard);
   }
 
+  /**
+   * @returns {Promise<{total: number, withSecurityCode: number}>}
+   */
+  async getSavedCounts() {
+    const records = this._data.filter(r => !r.deleted);
+    return {
+      total: records.length,
+      withSecurityCode: records.filter(r => r["cc-csc"]).length,
+    };
+  }
+
   async computeFields(creditCard) {
     // NOTE: Remember to bump the schema version number if any of the existing
     //       computing algorithm changes. (No need to bump when just adding new

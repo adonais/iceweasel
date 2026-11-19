@@ -67,3 +67,12 @@ dictionary RTCRtpSendParameters : RTCRtpParameters {
 
 dictionary RTCRtpReceiveParameters : RTCRtpParameters {
 };
+
+dictionary RTCSetParameterOptions {
+  // https://w3c.github.io/webrtc-extensions/#rtcrtpsender-setparameters-keyframe
+  sequence<RTCEncodingOptions> encodingOptions = [];
+};
+
+dictionary RTCEncodingOptions {
+  boolean keyFrame = false;
+};

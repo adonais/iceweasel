@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.CornerRadius
@@ -55,6 +51,11 @@ internal enum class AudioProgressBarType {
  * @param isEnabled Whether playback is usable. When `false` the bar is dimmed and cannot be scrubbed.
  * @param modifier Optional modifier for further customisation of this bar.
  * @param isSeekable Whether the thumb can be dragged. It cannot while the audio has no length to seek in yet.
+ * @param scrubFraction Where the user is dragging the thumb to, or `null` when they are not. The caller holds it, so
+ *   that the thumb and anything else showing the scrub read the same value. A lambda so that a release straight after a
+ *   change, as a tap makes, reads the change.
+ * @param onSliderDrag Called with the fraction the thumb is at while the user is still scrubbing. The caller is
+ *   expected to store it as [scrubFraction], and to clear that in [onSeek].
  */
 @Composable
 internal fun AudioProgressBar(
@@ -64,6 +65,8 @@ internal fun AudioProgressBar(
     modifier: Modifier = Modifier,
     isSeekable: Boolean = true,
     isEnabled: Boolean = true,
+    scrubFraction: () -> Float? = { null },
+    onSliderDrag: (Float) -> Unit = {},
 ) {
     val playedFraction = { progress().let { if (it.isNaN()) 0f else it.coerceIn(0f, 1f) } }
     when (type) {
@@ -74,6 +77,8 @@ internal fun AudioProgressBar(
             FullBar(
                 playedFraction = playedFraction,
                 onSeek = onSeek,
+                scrubFraction = scrubFraction,
+                onSliderDrag = onSliderDrag,
                 isSeekable = isSeekable,
                 isEnabled = isEnabled,
                 modifier = modifier,
@@ -86,22 +91,17 @@ internal fun AudioProgressBar(
 private fun FullBar(
     playedFraction: () -> Float,
     onSeek: (Float) -> Unit,
+    scrubFraction: () -> Float?,
+    onSliderDrag: (Float) -> Unit,
     isSeekable: Boolean,
     isEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    // Temporary local state so the thumb follows the user's input while scrubbing
-    var scrubFraction by remember { mutableStateOf<Float?>(null) }
     Slider(
-        value = scrubFraction ?: playedFraction(),
-        onValueChange = {
-            scrubFraction = it
-        },
+        value = scrubFraction() ?: playedFraction(),
+        onValueChange = onSliderDrag,
         isEnabled = isEnabled && isSeekable,
-        onValueChangeFinished = {
-            scrubFraction?.let { onSeek(it) }
-            scrubFraction = null
-        },
+        onValueChangeFinished = { scrubFraction()?.let(onSeek) },
         modifier =
             modifier
                 .fillMaxWidth()

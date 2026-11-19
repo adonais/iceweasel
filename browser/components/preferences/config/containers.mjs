@@ -388,6 +388,7 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "containers-list",
+        l10nId: "containers-list",
         control: "moz-box-group",
         controlAttrs: {
           type: "reorderable-list",

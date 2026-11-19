@@ -15,11 +15,11 @@ import {
   isSmartPageURL,
 } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
 import { parseTabGroupMentionId } from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-chat-card.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-chat-grid.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-chat-table.mjs";
 
 // The percent of default favicons allowed to show the
@@ -255,7 +255,7 @@ export class AIChatMessage extends MozLitElement {
 
   /**
    * Replaces "website mention" markdown links rendered as anchors with an
-   * <ai-website-chip> custom element.
+   * <smartwindow-chip> custom element.
    *
    * Example markdown that produces such an anchor:
    *
@@ -269,7 +269,7 @@ export class AIChatMessage extends MozLitElement {
    *
    * into:
    *
-   *   <ai-website-chip type="in-line" ...></ai-website-chip>
+   *   <smartwindow-chip type="in-line" ...></smartwindow-chip>
    *
    *
    * `mention:?` is intentional: the substring after it is a query string.
@@ -305,7 +305,7 @@ export class AIChatMessage extends MozLitElement {
       const label = a.textContent || linkHref;
 
       // Create Website Chip
-      const chip = root.ownerDocument.createElement("ai-website-chip");
+      const chip = root.ownerDocument.createElement("smartwindow-chip");
       chip.type = "in-line";
       chip.label = label;
 
@@ -871,6 +871,22 @@ export class AIChatMessage extends MozLitElement {
           : nothing}
       </span>
     </div>`;
+  }
+
+  /**
+   * The text a localized message shows on screen, or "" when the message
+   * isn't localized or hasn't rendered yet
+   *
+   * @type {string}
+   */
+  get localizedText() {
+    if (!this.messageL10n?.id) {
+      return "";
+    }
+    return (
+      this.shadowRoot?.querySelector(".message-assistant [data-l10n-id]")
+        ?.innerText ?? ""
+    );
   }
 
   render() {

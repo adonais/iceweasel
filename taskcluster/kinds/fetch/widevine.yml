@@ -7,74 +7,74 @@ widevine-mac-arm64:
     artifact-prefix: private/widevine
     fetch:
         type: crx3-url
-        url: https://www.google.com/dl/release2/chrome_component/ad7g6ajom265ggbvq6rrx4nb22ra_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac_arm64_ad6r3hn3iuwofjkdi4widjwuy3na.crx3
-        sha256: 11a2c644f1bafb3ccdb57f84dfb5bd907bd859749428d807a35f55a3f74c6f21
-        size: 20189918
+        url: https://www.google.com/dl/release2/chrome_component/ac7kldzznoqpelvhlm22cvg6iw7q_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_mac_arm64_acwuvzzk4g3lgkvyjjsbyjwqnxoq.crx3
+        sha256: 6bf32d10630d5aebe1ae2aafb510f43801347c30d012932764e63b5513325af4
+        size: 20423379
         artifact-name: widevine-mac-arm64.tar.zst
-        add-prefix: gmp-widevinecdm/4.10.3050.0/
+        add-prefix: gmp-widevinecdm/4.10.3112.0/
 
 widevine-mac:
     description: Widevine plugin for mac
     artifact-prefix: private/widevine
     fetch:
         type: crx3-url
-        url: https://www.google.com/dl/release2/chrome_component/ac46odufbnrvxcdn4wur6s2o4kjq_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac64_acvag6gyzleiuk2y32voj4ebbeja.crx3
-        sha256: 0f06d849c5178ab1ba734cfe2d1f5aa4ceba2ab92a4f028e296e8fad44d44193
-        size: 22572251
+        url: https://www.google.com/dl/release2/chrome_component/acvkbk6uzwaavliybbd7ayuuab5a_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_mac64_adtfufbhdjipnvjmwyq2z6yuhyaa.crx3
+        sha256: 7e55adb674331ba98898498570de195caec5a976ec1d48b192c91b2c6e1abb4d
+        size: 22867646
         artifact-name: widevine-mac.tar.zst
-        add-prefix: gmp-widevinecdm/4.10.3050.0/
+        add-prefix: gmp-widevinecdm/4.10.3112.0/
 
 widevine-linux-arm64:
     description: Widevine plugin for linux-arm64
     artifact-prefix: private/widevine
     fetch:
         type: crx3-url
-        url: https://www.google.com/dl/release2/chrome_component/bar3g6bc54wcbgowdtlox2l3sa_4.10.3057.0/oimompecagnajdejgnnjijobebaeigek_4.10.3057.0_linux_arm64_h5xzghmkhfkkto65d2lfjxatgm.crx3
-        sha256: 260bf3af2c6209d1e319fbfc193d545d79cdadcd4fb9d89d70ebbb3fd76b7da6
-        size: 19826058
+        url: https://www.google.com/dl/release2/chrome_component/acahc54oqallc53nnj2msku6d3da_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_linux_arm64_hb2er34y3mmnehk3ubgy64yql4.crx3
+        sha256: 7d50bcc57848437183ecf0f9f2673d20f918167bf832832af1a8d8d5cb21ed43
+        size: 20046647
         artifact-name: widevine-linux-arm64.tar.zst
-        add-prefix: gmp-widevinecdm/4.10.3057.0/
+        add-prefix: gmp-widevinecdm/4.10.3112.0/
 
 widevine-linux:
     description: Widevine plugin for linux
     artifact-prefix: private/widevine
     fetch:
         type: crx3-url
-        url: https://www.google.com/dl/release2/chrome_component/bywu6vkyg6gmcthxdaetzfkptm_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_linux_aduyhcxcs7a2znuo6ss5tffn5jpa.crx3
-        sha256: b70d887771d663018f46b1072b14320bd8b9a763641ef0317bd979cbad443e88
-        size: 21685984
+        url: https://www.google.com/dl/release2/chrome_component/acqexsh26ysyu3zxeotqtsp63idq_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_linux64_ad7kyx4q7wx7xknykmkbonbbmnwq.crx3
+        sha256: 1bf1f200dcccd461b2d029d000d0fcf800f0571c932db31467b9d5d301e0a98f
+        size: 21970001
         artifact-name: widevine-linux.tar.zst
-        add-prefix: gmp-widevinecdm/4.10.3050.0/
+        add-prefix: gmp-widevinecdm/4.10.3112.0/
 
 widevine-win-arm64:
     description: Widevine plugin for win-arm64
     artifact-prefix: private/widevine
     fetch:
         type: crx3-url
-        url: https://www.google.com/dl/release2/chrome_component/mubkn7mn6cy5fk3644kmxgyueu_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win_arm64_fyramdylknoqrjqvzyqaipdjki.crx3
-        sha256: 80eb3e134db6d0e21f24e96c92ce18ca320a1e737f904f4e34237b8d6049e4e5
-        size: 20015668
+        url: https://www.google.com/dl/release2/chrome_component/dwkibvowtnp3ccsioc42ee5t4a_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win_arm64_adrud4pksl7zkkzbg67adpiiepba.crx3
+        sha256: 1f2e2ef02bf033575bc2c1f252e9b0522c4c47544d3ea24ee792679f7b1c5ae1
+        size: 20270133
         artifact-name: widevine-win-arm64.tar.zst
-        add-prefix: gmp-widevinecdm/4.10.3050.0/
+        add-prefix: gmp-widevinecdm/4.10.3112.0/
 
 widevine-win32:
     description: Widevine plugin for win32
     artifact-prefix: private/widevine
     fetch:
         type: crx3-url
-        url: https://www.google.com/dl/release2/chrome_component/d3hxhzhfhhog7gjt44k3wn7fby_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win32_kledswiwyoquaizrfcfmnaj3oa.crx3
-        sha256: ff89ac6996e3ebf0157a51c88aa4e18224642ff13f0defdbc49e2ee79bfba614
-        size: 21540366
+        url: https://www.google.com/dl/release2/chrome_component/adkwczgybxfk7ozk3sjrnxqmaa6q_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win32_fguc35glkzwtyw6k4zjbwl36zq.crx3
+        sha256: 54bc63da097730b3a75ab5211b6d9ed72a43f0c03126921abf3254b9b1a15e54
+        size: 21861906
         artifact-name: widevine-win32.tar.zst
-        add-prefix: gmp-widevinecdm/4.10.3050.0/
+        add-prefix: gmp-widevinecdm/4.10.3112.0/
 
 widevine-win64:
     description: Widevine plugin for win64
     artifact-prefix: private/widevine
     fetch:
         type: crx3-url
-        url: https://www.google.com/dl/release2/chrome_component/acddvywyhts76ngei465tcu7besa_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win64_adoev3c5ys462nbqhaead57zg2pa.crx3
-        sha256: 7b81444b063f81e77c527c5589e86836cc2f7328deb2772300ccc7dc9e2510c3
-        size: 22692383
+        url: https://www.google.com/dl/release2/chrome_component/acomjnhpjyodpde7g3m33u5nkqoa_4.10.3112.0/oimompecagnajdejgnnjijobebaeigek_4.10.3112.0_win64_a5xadnsxzavp7cn4ay5kc6gq6u.crx3
+        sha256: 1090c5d6881985c042370d506e15f1db1d0a88bfb7e9602a9202fac421098eb3
+        size: 22976546
         artifact-name: widevine-win64.tar.zst
-        add-prefix: gmp-widevinecdm/4.10.3050.0/
+        add-prefix: gmp-widevinecdm/4.10.3112.0/

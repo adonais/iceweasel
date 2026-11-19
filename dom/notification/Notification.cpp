@@ -305,7 +305,7 @@ Result<Ok, nsresult> ValidateBase64Data(const nsAString& aData) {
   // To and from to ensure it is valid base64.
   RefPtr<nsStructuredCloneContainer> container =
       new nsStructuredCloneContainer();
-  MOZ_TRY(container->InitFromBase64(aData, JS_STRUCTURED_CLONE_VERSION));
+  MOZ_TRY(container->InitFromBase64(aData));
 
   nsString result;
   MOZ_TRY(container->GetDataAsBase64(result));
@@ -662,7 +662,7 @@ void Notification::GetData(JSContext* aCx,
     nsresult rv;
     RefPtr<nsStructuredCloneContainer> container =
         new nsStructuredCloneContainer();
-    rv = container->InitFromBase64(dataSerialized, JS_STRUCTURED_CLONE_VERSION);
+    rv = container->InitFromBase64(dataSerialized);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aRetval.setNull();
       return;

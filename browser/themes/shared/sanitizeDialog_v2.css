@@ -97,7 +97,11 @@ dialog:not([inClearOnShutdown]) {
 }
 
 .checkboxWithDescription {
-  padding: 8px 0;
+  padding: var(--space-small) 0;
+}
+
+.checkboxWithDescription .clearingItemCheckbox {
+  margin-block: 0;
 }
 
 .sanitizeCheckboxDescription {
@@ -145,7 +149,7 @@ dialog[inbrowserwindow] #sanitizeDurationSuffixLabel {
 }
 
 dialog[inbrowserwindow] groupbox:last-child {
-  margin-block-end: 16px;
+  margin-block: var(--space-small) var(--space-xsmall);
 }
 
 /* Loading indicator for data size calculation */

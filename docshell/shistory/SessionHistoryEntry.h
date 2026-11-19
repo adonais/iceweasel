@@ -63,7 +63,7 @@ class SessionHistoryInfo {
                      nsIPrincipal* aPartitionedPrincipalToInherit,
                      nsIPolicyContainer* aPolicyContainer);
 
-  bool operator==(const SessionHistoryInfo& aInfo) const {
+  bool operator==(const SessionHistoryInfo& /*aInfo*/) const {
     return false;  // FIXME
   }
 

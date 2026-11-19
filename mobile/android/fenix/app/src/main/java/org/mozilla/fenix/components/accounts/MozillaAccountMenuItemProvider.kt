@@ -45,6 +45,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
 import org.mozilla.fenix.ext.bitmapForUrl
@@ -57,6 +58,7 @@ class MozillaAccountMenuItemProvider(
     private val httpClient: Client,
     context: Context,
     private val accessPoint: MenuAccessPoint,
+    target: MenuTarget,
     scope: CoroutineScope,
 ) : MenuItemProvider {
     private val avatarSize = AVATAR_SIZE_DP.dpToPx(context.resources.displayMetrics)
@@ -67,22 +69,31 @@ class MozillaAccountMenuItemProvider(
             )
             ?.let(::MenuItemIconDrawable)
             ?: MenuItemIconRes(iconsR.drawable.mozac_ic_avatar_warning_circle_fill_multicolor_24)
-    private val mutableItem = MutableStateFlow(syncStore.state.toMenuItem())
+    private val mutableItems: MutableStateFlow<List<MenuItem>>? =
+        if (target == MenuTarget.CustomizeMenu) {
+            null
+        } else {
+            MutableStateFlow(listOf(syncStore.state.toMenuItem()))
+        }
 
-    override val itemFlow: StateFlow<MenuItem?> = mutableItem.asStateFlow()
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        mutableItems?.asStateFlow() ?: MutableStateFlow(listOf(DEFAULT_MENU_ITEM)).asStateFlow()
 
     init {
-        scope.launch {
-            syncStore.stateFlow
-                .distinctUntilChangedBy { it.account to it.accountState }
-                .collectLatest { state ->
-                    updateMenuItem(state)
-                }
+        if (target != MenuTarget.CustomizeMenu) {
+            scope.launch {
+                syncStore.stateFlow
+                    .distinctUntilChangedBy { it.account to it.accountState }
+                    .collectLatest { state ->
+                        updateMenuItem(state)
+                    }
+            }
         }
     }
 
     private suspend fun updateMenuItem(state: SyncState) {
-        mutableItem.value = state.toMenuItem()
+        val items = mutableItems ?: return
+        items.value = listOf(state.toMenuItem())
 
         if (state.accountState == AuthenticationProblem) {
             return
@@ -91,7 +102,7 @@ class MozillaAccountMenuItemProvider(
         val avatarUrl = state.account?.avatar?.url ?: return
         val avatar = httpClient.bitmapForUrl(avatarUrl, avatarSize, avatarSize)?.toCircularBitmap() ?: return
 
-        mutableItem.value = state.toMenuItem(icon = MenuItemIconBitmap(avatar))
+        items.value = listOf(state.toMenuItem(icon = MenuItemIconBitmap(avatar)))
     }
 
     private fun SyncState.toMenuItem(icon: MenuItemIcon = defaultIcon): MenuItem =
@@ -130,6 +141,14 @@ class MozillaAccountMenuItemProvider(
                     NavGraphDirections.actionGlobalTurnOnSync(entrypoint = event.accesspoint.toFenixFxAEntryPoint())
             }
         )
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_sign_in)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_avatar_circle_24),
+            )
     }
 }
 

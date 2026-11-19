@@ -8,6 +8,9 @@ include ProfilerTypes;
 include protocol PGMPContent;
 include protocol PGMPTimer;
 include protocol PGMPStorage;
+#ifdef MOZ_WIDGET_ANDROID
+include protocol PProcInfo;
+#endif
 include protocol PProfiler;
 
 #if defined(XP_WIN)
@@ -54,6 +57,9 @@ child:
   async CloseActive();
   async InitGMPContentChild(Endpoint<PGMPContentChild> endpoint);
   async InitProfiler(Endpoint<PProfilerChild> endpoint);
+#ifdef MOZ_WIDGET_ANDROID
+  async InitProcInfo(Endpoint<PProcInfoChild> endpoint);
+#endif
   async PreferenceUpdate(Pref pref);
 
   // Tells the GMP process to flush any pending telemetry.

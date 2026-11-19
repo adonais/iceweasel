@@ -12,10 +12,13 @@ from mozpack.files import FileFinder
 
 def make_archive(archive_name, base, exclude, include):
     compress = ["**/*.sym"]
+    archive_basename = os.path.basename(archive_name)
+    if not os.path.isdir(base):
+        print(f'Not creating "{archive_basename}" because "{base}" does not exist')
+        return
     finder = FileFinder(base, ignore=exclude)
     if not include:
         include = ["*"]
-    archive_basename = os.path.basename(archive_name)
 
     def fill_archive(add_file):
         for pat in include:
@@ -67,6 +70,11 @@ def main(argv):
     parser.add_argument(
         "--full-archive", action="store_true", help="Generate a full symbol archive"
     )
+    parser.add_argument(
+        "--test-only",
+        action="store_true",
+        help="The base directory only contains symbols for test binaries",
+    )
 
     args = parser.parse_args(argv)
 
@@ -76,6 +84,9 @@ def main(argv):
     if args.full_archive:
         # We allow symbols for tests to be included when building on try
         if os.environ.get("MH_BRANCH", "unknown") != "try":
+            if args.test_only:
+                print(f'Not creating "{os.path.basename(args.archive)}" outside of try')
+                return
             excludes = ["*test*", "*Test*"]
     else:
         includes = ["**/*.sym"]

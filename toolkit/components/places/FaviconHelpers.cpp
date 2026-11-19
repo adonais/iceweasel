@@ -530,8 +530,8 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
     int32_t isSVG = (width == UINT16_MAX);
     if (isSVG && !svgIcon) {
       if ((preferNonRichIcons && !isRich) || !preferNonRichIcons) {
-        svgIcon = MakeUnique<IconInfo>(iconId, data, expiration, isRich,
-                                       rootIcon, width, iconURL);
+        svgIcon = std::make_unique<IconInfo>(iconId, data, expiration, isRich,
+                                             rootIcon, width, iconURL);
       }
     }
 
@@ -548,8 +548,8 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
     // largest below = closest from below).
     if (!isSVG && !rootIcon &&
         (!bestAssociatedIcon || width >= aPreferredWidth)) {
-      bestAssociatedIcon = MakeUnique<IconInfo>(iconId, data, expiration,
-                                                isRich, false, width, iconURL);
+      bestAssociatedIcon = std::make_unique<IconInfo>(
+          iconId, data, expiration, isRich, false, width, iconURL);
     }
 
     if (!_icon.spec.IsEmpty() && width < aPreferredWidth) {
@@ -560,8 +560,8 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
       // larger icon is more than 4 times the difference between the preferred
       // size and the smaller icon, choose the smaller icon.
       if (aPreferredWidth - width < abs(lastIconWidth - aPreferredWidth) / 4) {
-        selectedIcon = MakeUnique<IconInfo>(iconId, data, expiration, isRich,
-                                            rootIcon, width, EmptyCString());
+        selectedIcon = std::make_unique<IconInfo>(
+            iconId, data, expiration, isRich, rootIcon, width, EmptyCString());
         rv = stmt->GetUTF8String(4, _icon.spec);
         NS_ENSURE_SUCCESS(rv, rv);
       }
@@ -569,8 +569,8 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
     }
 
     lastIconWidth = width;
-    selectedIcon = MakeUnique<IconInfo>(iconId, data, expiration, isRich,
-                                        rootIcon, width, EmptyCString());
+    selectedIcon = std::make_unique<IconInfo>(iconId, data, expiration, isRich,
+                                              rootIcon, width, EmptyCString());
     rv = stmt->GetUTF8String(4, _icon.spec);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -947,13 +947,13 @@ AsyncGetFaviconForPageRunnable::Run() {
   if (!mOnConcurrentConn) {
     RefPtr<Database> DB = Database::GetDatabase();
     if (DB) {
-      adapter = MakeUnique<ConnectionAdapter>(DB);
+      adapter = std::make_unique<ConnectionAdapter>(DB);
     }
   } else {
     auto conn = ConcurrentConnection::GetInstance();
     MOZ_ASSERT(conn);
     if (conn.isSome()) {
-      adapter = MakeUnique<ConnectionAdapter>(conn.value());
+      adapter = std::make_unique<ConnectionAdapter>(conn.value());
     }
   }
   // In certain circumstances, like when the database or ConcurrentConnection
@@ -1019,7 +1019,7 @@ NS_IMETHODIMP AsyncTryCopyFaviconsRunnable::Run() {
 
   RefPtr<Database> DB = Database::GetDatabase();
   NS_ENSURE_STATE(DB);
-  UniquePtr<ConnectionAdapter> adapter = MakeUnique<ConnectionAdapter>(DB);
+  auto adapter = std::make_unique<ConnectionAdapter>(DB);
   rv = FetchIconInfo(adapter, mFromPageURI, UINT16_MAX, fromIconData);
   NS_ENSURE_SUCCESS(rv, rv);
   if (fromIconData.payloads.IsEmpty()) {

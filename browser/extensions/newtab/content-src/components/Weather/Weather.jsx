@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { connect, batch } from "react-redux";
+import { connect } from "react-redux";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../lib/utils";
@@ -179,25 +179,23 @@ export class _Weather extends React.PureComponent {
           this.observer.unobserve(this.impressionElement);
         }
 
-        batch(() => {
-          // Old event (keep for backward compatibility)
-          this.props.dispatch(
-            ac.OnlyToMain({
-              type: at.WEATHER_IMPRESSION,
-            })
-          );
+        // Old event (keep for backward compatibility)
+        this.props.dispatch(
+          ac.OnlyToMain({
+            type: at.WEATHER_IMPRESSION,
+          })
+        );
 
-          // New unified event
-          this.props.dispatch(
-            ac.OnlyToMain({
-              type: at.WIDGETS_IMPRESSION,
-              data: {
-                widget_name: "weather",
-                widget_size: "mini",
-              },
-            })
-          );
-        });
+        // New unified event
+        this.props.dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_IMPRESSION,
+            data: {
+              widget_name: "weather",
+              widget_size: "mini",
+            },
+          })
+        );
 
         // Stop observing since element has been seen
         this.setState({
@@ -216,26 +214,24 @@ export class _Weather extends React.PureComponent {
           this.observer.unobserve(this.errorElement);
         }
 
-        batch(() => {
-          // Old event (keep for backward compatibility)
-          this.props.dispatch(
-            ac.OnlyToMain({
-              type: at.WEATHER_LOAD_ERROR,
-            })
-          );
+        // Old event (keep for backward compatibility)
+        this.props.dispatch(
+          ac.OnlyToMain({
+            type: at.WEATHER_LOAD_ERROR,
+          })
+        );
 
-          // New unified event
-          this.props.dispatch(
-            ac.OnlyToMain({
-              type: at.WIDGETS_ERROR,
-              data: {
-                widget_name: "weather",
-                widget_size: "mini",
-                error_type: "load_error",
-              },
-            })
-          );
-        });
+        // New unified event
+        this.props.dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_ERROR,
+            data: {
+              widget_name: "weather",
+              widget_size: "mini",
+              error_type: "load_error",
+            },
+          })
+        );
 
         // Stop observing since element has been seen
         this.setState({
@@ -246,30 +242,28 @@ export class _Weather extends React.PureComponent {
   }
 
   onProviderClick() {
-    batch(() => {
-      // Old event (keep for backward compatibility)
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WEATHER_OPEN_PROVIDER_URL,
-          data: {
-            source: "WEATHER",
-          },
-        })
-      );
+    // Old event (keep for backward compatibility)
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WEATHER_OPEN_PROVIDER_URL,
+        data: {
+          source: "WEATHER",
+        },
+      })
+    );
 
-      // New unified event
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "widget",
-            user_action: USER_ACTION_TYPES.PROVIDER_LINK_CLICK,
-            widget_size: "mini",
-          },
-        })
-      );
-    });
+    // New unified event
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "widget",
+          user_action: USER_ACTION_TYPES.PROVIDER_LINK_CLICK,
+          widget_size: "mini",
+        },
+      })
+    );
   }
 
   handleChangeLocation = () => {
@@ -277,109 +271,101 @@ export class _Weather extends React.PureComponent {
       this.panelElement.hide();
       this.setState({ isMenuEnabled: false });
     }
-    batch(() => {
-      this.props.dispatch(
-        ac.BroadcastToContent({
-          type: at.WEATHER_SEARCH_ACTIVE,
-          data: true,
-        })
-      );
+    this.props.dispatch(
+      ac.BroadcastToContent({
+        type: at.WEATHER_SEARCH_ACTIVE,
+        data: true,
+      })
+    );
 
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "context_menu",
-            user_action: USER_ACTION_TYPES.CHANGE_LOCATION,
-            widget_size: "mini",
-          },
-        })
-      );
-    });
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "context_menu",
+          user_action: USER_ACTION_TYPES.CHANGE_LOCATION,
+          widget_size: "mini",
+        },
+      })
+    );
   };
 
   handleDetectLocation = () => {
     if (this.panelElement) {
       this.panelElement.hide();
     }
-    batch(() => {
-      // Old event (keep for backward compatibility)
-      this.props.dispatch(
-        ac.AlsoToMain({
-          type: at.WEATHER_USER_OPT_IN_LOCATION,
-        })
-      );
+    // Old event (keep for backward compatibility)
+    this.props.dispatch(
+      ac.AlsoToMain({
+        type: at.WEATHER_USER_OPT_IN_LOCATION,
+      })
+    );
 
-      // New unified event
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "context_menu",
-            user_action: USER_ACTION_TYPES.DETECT_LOCATION,
-            widget_size: "mini",
-          },
-        })
-      );
-    });
+    // New unified event
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "context_menu",
+          user_action: USER_ACTION_TYPES.DETECT_LOCATION,
+          widget_size: "mini",
+        },
+      })
+    );
   };
 
   handleChangeTempUnit = value => {
     if (this.panelElement) {
       this.panelElement.hide();
     }
-    batch(() => {
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: {
-            name: "weather.temperatureUnits",
-            value,
-          },
-        })
-      );
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "weather.temperatureUnits",
+          value,
+        },
+      })
+    );
 
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "context_menu",
-            user_action: USER_ACTION_TYPES.CHANGE_TEMP_UNIT,
-            widget_size: "mini",
-            action_value: value,
-          },
-        })
-      );
-    });
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "context_menu",
+          user_action: USER_ACTION_TYPES.CHANGE_TEMP_UNIT,
+          widget_size: "mini",
+          action_value: value,
+        },
+      })
+    );
   };
 
   handleChangeSize = size => {
     if (this.panelElement) {
       this.panelElement.hide();
     }
-    batch(() => {
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: { name: PREF_WEATHER_SIZE, value: size },
-        })
-      );
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "context_menu",
-            user_action: USER_ACTION_TYPES.CHANGE_SIZE,
-            action_value: size,
-            widget_size: "mini",
-          },
-        })
-      );
-    });
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: { name: PREF_WEATHER_SIZE, value: size },
+      })
+    );
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "context_menu",
+          user_action: USER_ACTION_TYPES.CHANGE_SIZE,
+          action_value: size,
+          widget_size: "mini",
+        },
+      })
+    );
   };
 
   handleChangeDisplay = value => {
@@ -389,89 +375,83 @@ export class _Weather extends React.PureComponent {
     if (this.panelElement) {
       this.panelElement.hide();
     }
-    batch(() => {
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: {
-            name: "weather.display",
-            value,
-          },
-        })
-      );
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "weather.display",
+          value,
+        },
+      })
+    );
 
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "context_menu",
-            user_action: USER_ACTION_TYPES.CHANGE_DISPLAY,
-            widget_size: "mini",
-            action_value: weatherForecastEnabled
-              ? "switch_to_forecast_widget"
-              : value,
-          },
-        })
-      );
-    });
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "context_menu",
+          user_action: USER_ACTION_TYPES.CHANGE_DISPLAY,
+          widget_size: "mini",
+          action_value: weatherForecastEnabled
+            ? "switch_to_forecast_widget"
+            : value,
+        },
+      })
+    );
   };
 
   handleHideWeather = () => {
     if (this.panelElement) {
       this.panelElement.hide();
     }
-    batch(() => {
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: {
-            name: "showWeather",
-            value: false,
-          },
-        })
-      );
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "showWeather",
+          value: false,
+        },
+      })
+    );
 
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_ENABLED,
-          data: {
-            widget_name: "weather",
-            widget_source: "context_menu",
-            enabled: false,
-            widget_size: "mini",
-          },
-        })
-      );
-    });
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_ENABLED,
+        data: {
+          widget_name: "weather",
+          widget_source: "context_menu",
+          enabled: false,
+          widget_size: "mini",
+        },
+      })
+    );
   };
 
   handleLearnMore = () => {
     if (this.panelElement) {
       this.panelElement.hide();
     }
-    batch(() => {
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.OPEN_LINK,
-          data: {
-            url: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
-          },
-        })
-      );
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.OPEN_LINK,
+        data: {
+          url: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
+        },
+      })
+    );
 
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "context_menu",
-            user_action: USER_ACTION_TYPES.LEARN_MORE,
-            widget_size: "mini",
-          },
-        })
-      );
-    });
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "context_menu",
+          user_action: USER_ACTION_TYPES.LEARN_MORE,
+          widget_size: "mini",
+        },
+      })
+    );
   };
 
   onMenuButtonClick(e) {
@@ -495,64 +475,60 @@ export class _Weather extends React.PureComponent {
   }
 
   handleRejectOptIn = () => {
-    batch(() => {
-      this.props.dispatch(ac.SetPref("weather.optInAccepted", false));
-      this.props.dispatch(ac.SetPref("weather.optInDisplayed", false));
+    this.props.dispatch(ac.SetPref("weather.optInAccepted", false));
+    this.props.dispatch(ac.SetPref("weather.optInDisplayed", false));
 
-      // Old event (keep for backward compatibility)
-      this.props.dispatch(
-        ac.AlsoToMain({
-          type: at.WEATHER_OPT_IN_PROMPT_SELECTION,
-          data: "rejected opt-in",
-        })
-      );
+    // Old event (keep for backward compatibility)
+    this.props.dispatch(
+      ac.AlsoToMain({
+        type: at.WEATHER_OPT_IN_PROMPT_SELECTION,
+        data: "rejected opt-in",
+      })
+    );
 
-      // New unified event
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "widget",
-            user_action: USER_ACTION_TYPES.OPT_IN_ACCEPTED,
-            widget_size: "mini",
-            action_value: false,
-          },
-        })
-      );
-    });
+    // New unified event
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "widget",
+          user_action: USER_ACTION_TYPES.OPT_IN_ACCEPTED,
+          widget_size: "mini",
+          action_value: false,
+        },
+      })
+    );
   };
 
   handleAcceptOptIn = () => {
-    batch(() => {
-      // Old events (keep for backward compatibility)
-      this.props.dispatch(
-        ac.AlsoToMain({
-          type: at.WEATHER_USER_OPT_IN_LOCATION,
-        })
-      );
+    // Old events (keep for backward compatibility)
+    this.props.dispatch(
+      ac.AlsoToMain({
+        type: at.WEATHER_USER_OPT_IN_LOCATION,
+      })
+    );
 
-      this.props.dispatch(
-        ac.AlsoToMain({
-          type: at.WEATHER_OPT_IN_PROMPT_SELECTION,
-          data: "accepted opt-in",
-        })
-      );
+    this.props.dispatch(
+      ac.AlsoToMain({
+        type: at.WEATHER_OPT_IN_PROMPT_SELECTION,
+        data: "accepted opt-in",
+      })
+    );
 
-      // New unified event
-      this.props.dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "weather",
-            widget_source: "widget",
-            user_action: USER_ACTION_TYPES.OPT_IN_ACCEPTED,
-            widget_size: "mini",
-            action_value: true,
-          },
-        })
-      );
-    });
+    // New unified event
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "weather",
+          widget_source: "widget",
+          user_action: USER_ACTION_TYPES.OPT_IN_ACCEPTED,
+          widget_size: "mini",
+          action_value: true,
+        },
+      })
+    );
   };
 
   isEnabled() {

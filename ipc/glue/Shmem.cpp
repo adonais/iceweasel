@@ -34,7 +34,7 @@ class ShmemCreated : public IPC::Message {
     return IPC::ReadParam(aReader, aIPDLId) && IPC::ReadParam(aReader, aHandle);
   }
 
-  void Log(const std::string& aPrefix, FILE* aOutf) const {
+  void Log(const std::string& /*aPrefix*/, FILE* aOutf) const {
     fputs("(special ShmemCreated msg)", aOutf);
   }
 };
@@ -130,7 +130,8 @@ std::tuple<UniquePtr<IPC::Message>, Shmem> Shmem::Builder::Build(
   shmem.AssertInvariants();
   MOZ_ASSERT(mHandle, "null shmem handle");
 
-  auto msg = MakeUnique<ShmemCreated>(aRoutingId, aId, std::move(mHandle));
+  auto msg =
+      std::make_unique<ShmemCreated>(aRoutingId, aId, std::move(mHandle));
   return std::make_tuple(std::move(msg), std::move(shmem));
 }
 
@@ -161,7 +162,7 @@ already_AddRefed<Shmem::Segment> Shmem::OpenExisting(
 UniquePtr<IPC::Message> Shmem::MkDestroyedMessage(
     IPC::Message::routeid_t routingId) {
   AssertInvariants();
-  return MakeUnique<ShmemDestroyed>(routingId, mId);
+  return std::make_unique<ShmemDestroyed>(routingId, mId);
 }
 
 }  // namespace ipc

@@ -3,9 +3,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React from "react";
-import { batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { MoveSubmenu } from "./MoveSubmenu";
+import { WidgetHideMenuItem } from "./WidgetPlacement";
 
 const LEARN_MORE_URL = "https://support.mozilla.org/kb/firefox-new-tab-widgets";
 
@@ -29,38 +29,34 @@ export const WidgetMenuFooter = ({
   showDivider = true,
 }) => {
   const handleHide = () => {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: { name: enabledPref, value: false },
-        })
-      );
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_ENABLED,
-          data: {
-            widget_name: widgetName,
-            widget_source: "context_menu",
-            enabled: false,
-            widget_size: widgetSize,
-          },
-        })
-      );
-      onAfterHide?.();
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: { name: enabledPref, value: false },
+      })
+    );
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_ENABLED,
+        data: {
+          widget_name: widgetName,
+          widget_source: "context_menu",
+          enabled: false,
+          widget_size: widgetSize,
+        },
+      })
+    );
+    onAfterHide?.();
   };
 
   const handleLearnMore = () => {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.OPEN_LINK,
-          data: { url: LEARN_MORE_URL, where: "tab" },
-        })
-      );
-      onLearnMore?.();
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.OPEN_LINK,
+        data: { url: LEARN_MORE_URL, where: "tab" },
+      })
+    );
+    onLearnMore?.();
   };
 
   return (
@@ -68,7 +64,7 @@ export const WidgetMenuFooter = ({
       {showDivider && <hr />}
       {sizeSubmenu}
       <MoveSubmenu widgetId={widgetId} widgetEnabledMap={widgetEnabledMap} />
-      <panel-item data-l10n-id="newtab-widget-menu-hide" onClick={handleHide} />
+      <WidgetHideMenuItem widgetId={widgetId} onHide={handleHide} />
       <panel-item data-l10n-id={learnMoreL10nId} onClick={handleLearnMore} />
     </>
   );

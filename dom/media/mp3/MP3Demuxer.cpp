@@ -109,7 +109,7 @@ bool MP3TrackDemuxer::Init() {
   FastSeek(TimeUnit());
 
   if (!mInfo) {
-    mInfo = MakeUnique<AudioInfo>();
+    mInfo = std::make_unique<AudioInfo>();
   }
 
   mInfo->mRate = mSamplesPerSecond;

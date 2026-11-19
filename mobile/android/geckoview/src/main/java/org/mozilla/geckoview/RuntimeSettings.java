@@ -27,6 +27,8 @@ public abstract class RuntimeSettings implements Parcelable {
    * Base class for (nested) runtime settings builders.
    *
    * <p>Please extend this class when adding nested settings builders for GeckoRuntimeSettings.
+   *
+   * @param <Settings> The type of settings this builder creates.
    */
   public abstract static class Builder<Settings extends RuntimeSettings> {
     private final Settings mSettings;

@@ -513,7 +513,7 @@ already_AddRefed<CookiePersistentStorage> CookiePersistentStorage::Create() {
 }
 
 CookiePersistentStorage::CookiePersistentStorage()
-    : mWriteQueue(MakeUnique<CookieDBWriteQueue>(this)) {}
+    : mWriteQueue(std::make_unique<CookieDBWriteQueue>(this)) {}
 
 CookiePersistentStorage::~CookiePersistentStorage() = default;
 
@@ -2014,7 +2014,7 @@ UniquePtr<CookieStruct> CookiePersistentStorage::GetCookieFromRow(
       0 != aRow->AsInt32(IDX_PARTITIONED_ATTRIBUTE_SET);
 
   // Create a new constCookie and assign the data.
-  return MakeUnique<CookieStruct>(
+  return std::make_unique<CookieStruct>(
       name, value, host, path, expiryInMSec, lastAccessedInUSec,
       creationTimeInUSec, updateTimeInUSec, isHttpOnly, false, isSecure,
       isPartitionedAttributeSet, sameSite,

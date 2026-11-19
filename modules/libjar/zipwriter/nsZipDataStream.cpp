@@ -60,7 +60,7 @@ NS_IMETHODIMP nsZipDataStream::OnDataAvailable(nsIRequest* aRequest,
                                                uint32_t aCount) {
   if (!mOutput) return NS_ERROR_NOT_INITIALIZED;
 
-  auto buffer = MakeUnique<char[]>(aCount);
+  auto buffer = std::make_unique<char[]>(aCount);
   NS_ENSURE_TRUE(buffer, NS_ERROR_OUT_OF_MEMORY);
 
   nsresult rv = ZW_ReadData(aInputStream, buffer.get(), aCount);
@@ -135,7 +135,7 @@ nsresult nsZipDataStream::ReadStream(nsIInputStream* aStream) {
   nsresult rv = OnStartRequest(nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  auto buffer = MakeUnique<char[]>(4096);
+  auto buffer = std::make_unique<char[]>(4096);
   NS_ENSURE_TRUE(buffer, NS_ERROR_OUT_OF_MEMORY);
 
   uint32_t read = 0;

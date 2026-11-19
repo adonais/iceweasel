@@ -133,8 +133,8 @@ add_task(async function test_keyboard_navigation() {
   await panelClosedPromise;
   await SidebarController.waitUntilStable();
   ok(
-    isActiveElement(gBrowser.selectedBrowser),
-    "The focus moved to the selected browser when the panel closed"
+    isActiveElement(toolButtons[2]),
+    "The focus moved to the launcher button when the panel closed"
   );
 
   ok(!sidebar.open, "Sidebar panel is closed.");
@@ -189,6 +189,95 @@ add_task(async function test_keyboard_navigation() {
   await sidebar.updateComplete;
   await SidebarController.waitUntilStable();
   ok(!sidebar.open, "Sidebar is closed.");
+});
+
+/**
+ * Open a panel, remove the button that was used to open it, then close it with
+ * the 'x' button.
+ *
+ * The launcher should still be focused, even though the exact button isn't
+ * there anymore.
+ */
+add_task(async function test_kb_close_panel_after_launcher_button_removed() {
+  const sidebar = SidebarController.sidebarMain;
+
+  // Open the history panel.
+  const historyButton = [...sidebar.toolButtons].find(
+    button => button.getAttribute("view") === "viewHistorySidebar"
+  );
+  await SidebarController.show("viewHistorySidebar", historyButton);
+
+  // Remove the history button.
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.main.tools", "aichat,syncedtabs,bookmarks"]],
+  });
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebar.buttonGroup,
+    { childList: true, subtree: true },
+    () =>
+      ![...sidebar.toolButtons].find(
+        button => button.getAttribute("view") === "viewHistorySidebar"
+      ),
+    { msg: "History launcher button is removed" }
+  );
+
+  // Close the history panel with keyboard.
+  const fallback = sidebar.buttonGroup.firstElementChild;
+  const closeButton = SidebarController.panelHeader.closeButton;
+  closeButton.focus();
+  EventUtils.synthesizeKey("KEY_Enter", {}, window);
+  await SidebarController.waitUntilStable();
+
+  Assert.ok(!SidebarController.isOpen, "History panel is closed");
+  Assert.ok(
+    isActiveElement(fallback),
+    "Focus returns to the first launcher button when the panel button is removed"
+  );
+  Assert.equal(
+    fallback.tabIndex,
+    0,
+    "The focused button is the group's tab stop"
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Open and close a panel while the launcher is hidden.
+ *
+ * The active tab's `<browser>` should be focused.
+ */
+add_task(async function test_kb_close_panel_with_hidden_launcher() {
+  for (const [verticalTabs, visibility] of [
+    [false, "hide-launcher"],
+    [true, "hide-sidebar"],
+  ]) {
+    // Open a new window, where the sidebar launcher is hidden.
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [VERTICAL_TABS_PREF, verticalTabs],
+        [SIDEBAR_VISIBILITY_PREF, visibility],
+      ],
+    });
+    const win = await BrowserTestUtils.openNewBrowserWindow();
+    await SidebarTestUtils.ensureLauncherHidden(win);
+
+    // Open the history panel, then close it with keyboard.
+    await SidebarTestUtils.showPanel(win, "viewHistorySidebar");
+    const closeButton = win.SidebarController.panelHeader.closeButton;
+    closeButton.focus();
+    EventUtils.synthesizeKey("KEY_Enter", {}, win);
+    await win.SidebarController.waitUntilStable();
+
+    Assert.ok(!win.SidebarController.isOpen, `${visibility}: panel is closed`);
+    Assert.ok(
+      isActiveElement(win.gBrowser.selectedBrowser),
+      `${visibility}: focus returns to the page when the launcher is hidden`
+    );
+
+    await BrowserTestUtils.closeWindow(win);
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 add_task(async function test_menu_items_labeled() {

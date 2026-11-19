@@ -186,11 +186,17 @@ support-files = [
   "slow_loading_page_with_ads.sjs",
 ]
 
+["browser_search_telemetry_keyword_fixup.js"]
+support-files = ["searchTelemetry.html"]
+
 ["browser_search_telemetry_post_engine.js"]
 support-files = ["searchTelemetryAd_post_result.sjs"]
 
 ["browser_search_telemetry_new_window.js"]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
+
+["browser_search_telemetry_newtab_non_handoff.js"]
+support-files = ["searchTelemetry.html"]
 
 ["browser_search_telemetry_private.js"]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html", "serp.css"]
@@ -201,6 +207,7 @@ support-files = ["searchTelemetryAd.html", "serp.css"]
 ["browser_search_telemetry_searchbar.js"]
 https_first_disabled = true
 support-files = [
+  "searchTelemetry.html",
   "telemetrySearchSuggestions.sjs",
   "telemetrySearchSuggestions.xml",
 ]

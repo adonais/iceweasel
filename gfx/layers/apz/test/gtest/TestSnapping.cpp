@@ -44,8 +44,8 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
     aSm.SetSnapInfo(ScrollSnapInfo(snap));
   });
 
-  UniquePtr<ScopedLayerTreeRegistration> registration =
-      MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  auto registration =
+      std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
   UpdateHitTestingTree();
 
   TestAsyncPanZoomController* outer = ApzcOf(layers[0]);
@@ -120,8 +120,8 @@ TEST_F(APZCSnappingTesterMock, Snap_After_Pinch) {
     aMetrics.SetIsRootContent(true);
   });
 
-  UniquePtr<ScopedLayerTreeRegistration> registration =
-      MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  auto registration =
+      std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
@@ -175,8 +175,8 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithZeroVelocity) {
     aSm.SetSnapInfo(ScrollSnapInfo(snap));
   });
 
-  UniquePtr<ScopedLayerTreeRegistration> registration =
-      MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  auto registration =
+      std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
@@ -251,8 +251,8 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithPositiveVelocity) {
     aSm.SetSnapInfo(ScrollSnapInfo(snap));
   });
 
-  UniquePtr<ScopedLayerTreeRegistration> registration =
-      MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  auto registration =
+      std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);

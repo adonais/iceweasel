@@ -27,7 +27,7 @@
 namespace mozilla::ipc {
 
 NS_IMETHODIMP UtilityMediaServiceChildShutdownObserver::Observe(
-    nsISupports* aSubject, const char* aTopic, const char16_t* aData) {
+    nsISupports* /*aSubject*/, const char* aTopic, const char16_t* /*aData*/) {
   MOZ_ASSERT(strcmp(aTopic, "ipc:utility-shutdown") == 0);
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
@@ -83,7 +83,7 @@ nsresult UtilityMediaServiceChild::BindToUtilityProcess(
   return NS_OK;
 }
 
-void UtilityMediaServiceChild::ActorDestroy(ActorDestroyReason aReason) {
+void UtilityMediaServiceChild::ActorDestroy(ActorDestroyReason /*aReason*/) {
   MOZ_ASSERT(NS_IsMainThread());
   gfx::gfxVars::RemoveReceiver(this);
 #ifdef MOZ_WMF_MEDIA_ENGINE

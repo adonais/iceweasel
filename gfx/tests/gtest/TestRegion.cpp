@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <algorithm>
+#include <memory>
 
 #include "RegionBuilder.h"
 #include "gtest/gtest.h"
-#include "mozilla/UniquePtr.h"
 #include "nsRegion.h"
 
 using namespace mozilla::gfx;
@@ -1254,8 +1254,8 @@ static void VisitEdge(void* closure, VisitSide side, int x1, int y1, int x2,
 }
 
 static void TestVisit(nsRegion& r) {
-  auto reference = mozilla::MakeUnique<unsigned char[]>(600 * 600);
-  auto result = mozilla::MakeUnique<unsigned char[]>(600 * 600);
+  auto reference = std::make_unique<unsigned char[]>(600 * 600);
+  auto result = std::make_unique<unsigned char[]>(600 * 600);
   RegionBitmap ref(reference.get(), 600, 600);
   RegionBitmap res(result.get(), 600, 600);
 

@@ -125,7 +125,6 @@ task-defaults:
                 by-test-platform:
                     linux.*64/debug: 1
                     default: 2
-            geckoview-isolated-process: 2
             default: default
     mozharness:
         requires-signed-builds:
@@ -450,6 +449,8 @@ tasks:
                     by-test-platform:
                         android.*: []
                         linux.*: []  # linux runs M-swr(bc), not M(bc)
+                        # Compositor shutdown assertion on macOS VM debug (Bug 2039987 family).
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
         tier:
             by-variant:
@@ -498,6 +499,7 @@ tasks:
                         linux.*/opt: 5400
                         windows.*-ccov.*/.*: 10800
                         windows.*-asan.*/opt: 5400
+                        macosx1500-aarch64-vms.*/opt: 5400
                         .*/debug: 5400
                         default: 3600
         mozharness:
@@ -687,12 +689,14 @@ tasks:
         treeherder-symbol: M(bc-ml)
         schedules-component: mochitest-browser-chrome-ml-models
         loopback-video: true
+        tier: 2
         run-on-projects:
             by-test-platform:
                 # Shippable Linux opt only. The `.*` glob previously also
                 # matched sanitizer variants (asan/tsan), which abort on
                 # upstream ggml UB in the native llama.cpp backend.
                 linux2404-64-shippable/opt: ['mozilla-central']
+                macosx1500-aarch64-shippable/opt: ['mozilla-central']
                 default: []
         max-run-time: 1800
         mozharness:
@@ -919,6 +923,7 @@ tasks:
             - no-fission
             - webrender-sw+no-fission
             - webrender-sw
+            - geckoview-isolated-process
         run-on-projects:
             by-variant:
                 webrender-sw+no-fission:
@@ -940,6 +945,10 @@ tasks:
                         linux.*: ['mozilla-central']  # linux opt/debug/asan
                         android.*: built-projects
                         default: []
+                geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
+                        default: []
                 default: built-projects
         virtualization: virtual-with-gpu
         tier:
@@ -948,7 +957,6 @@ tasks:
                     by-test-platform:
                         linux.*64.*: 2
                         default: default
-                geckoview-isolated-process: 3
                 default: default
         mozharness:
             mochitest-flavor: plain
@@ -1044,43 +1052,21 @@ tasks:
             - media-gpu
             - no-fission
             - no-gpu-process
-            - socketprocess+no-fission
-            - socketprocess
             - webrender-sw+no-fission
             - webrender-sw
             - wmf-media-engine
             - msix
             - geckoview-isolated-process
+            - geckoview-java-media
         run-on-projects:
             by-variant:
                 geckoview-isolated-process:
                     by-test-platform:
                         android-em.*/debug: built-projects
                         default: []
-                socketprocess+no-fission:
+                geckoview-java-media:
                     by-test-platform:
-                        .*hw-ref.*: []
-                        android-em-14.*/debug: []  # Bug 1984064
-                        android-em.*/debug: ['autoland', 'mozilla-central']
-                        android-hw-.*-aarch64(-qr)?/debug: built-projects
-                        linux2404-64/debug: ['mozilla-central']
-                        linux2404-64(-shippable)/opt: ['mozilla-central']
-                        linux2404-64-asan/opt: ['mozilla-central']
-                        default: []
-                socketprocess:
-                    by-test-platform:
-                        android.*: []
-                        windows.*-ccov.*: []
-                        .*hw-ref.*: []
-                        linux.*64-asan/opt: built-projects
-                        linux.*64-devedition/.*: built-projects
-                        linux.*64(-shippable)?/opt: built-projects
-                        linux.*64/debug: built-projects
-                        linux.*64-tsan/opt: ['autoland', 'mozilla-central']
-                        macosx.*-64-devedition(-qr)?/.*: built-projects
-                        macosx.*-64(-shippable)?(-qr)?/.*: built-projects
-                        windows.*-asan.*: ['autoland', 'mozilla-central']
-                        windows1.*: built-projects
+                        android-em.*/debug: built-projects
                         default: []
                 webrender-sw+no-fission:
                     by-test-platform:
@@ -1180,11 +1166,6 @@ tasks:
                     by-test-platform:
                         linux.*64.*: 2
                         default: default
-                socketprocess+no-fission:
-                    by-test-platform:
-                        linux.*64.*: 2
-                        default: default
-                geckoview-isolated-process: 2
                 default:
                     by-test-platform:
                         .*-ccov.*: 2

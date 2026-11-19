@@ -753,21 +753,22 @@ TEST_F(ImageStreamingLexer, TerminateSuccess) {
 
   // Test that Terminate is "sticky".
   SourceBufferIterator iterator = mSourceBuffer->Iterator();
-  LexerResult result =
-      mLexer.Lex(iterator, mExpectNoResume,
-                 [&](TestState aState, const char* aData, size_t aLength) {
-                   EXPECT_TRUE(aState == TestState::ONE);
-                   return Transition::TerminateSuccess();
-                 });
+  LexerResult result = mLexer.Lex(
+      iterator, mExpectNoResume,
+      [&](TestState aState, const char* /*aData*/, size_t /*aLength*/) {
+        EXPECT_TRUE(aState == TestState::ONE);
+        return Transition::TerminateSuccess();
+      });
   EXPECT_TRUE(result.is<TerminalState>());
   EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 
   SourceBufferIterator iterator2 = mSourceBuffer->Iterator();
-  result = mLexer.Lex(iterator2, mExpectNoResume,
-                      [&](TestState aState, const char* aData, size_t aLength) {
-                        EXPECT_TRUE(false);  // Shouldn't get here.
-                        return Transition::TerminateFailure();
-                      });
+  result = mLexer.Lex(
+      iterator2, mExpectNoResume,
+      [&](TestState /*aState*/, const char* /*aData*/, size_t /*aLength*/) {
+        EXPECT_TRUE(false);  // Shouldn't get here.
+        return Transition::TerminateFailure();
+      });
   EXPECT_TRUE(result.is<TerminalState>());
   EXPECT_EQ(TerminalState::SUCCESS, result.as<TerminalState>());
 }
@@ -778,21 +779,22 @@ TEST_F(ImageStreamingLexer, TerminateFailure) {
 
   // Test that Terminate is "sticky".
   SourceBufferIterator iterator = mSourceBuffer->Iterator();
-  LexerResult result =
-      mLexer.Lex(iterator, mExpectNoResume,
-                 [&](TestState aState, const char* aData, size_t aLength) {
-                   EXPECT_TRUE(aState == TestState::ONE);
-                   return Transition::TerminateFailure();
-                 });
+  LexerResult result = mLexer.Lex(
+      iterator, mExpectNoResume,
+      [&](TestState aState, const char* /*aData*/, size_t /*aLength*/) {
+        EXPECT_TRUE(aState == TestState::ONE);
+        return Transition::TerminateFailure();
+      });
   EXPECT_TRUE(result.is<TerminalState>());
   EXPECT_EQ(TerminalState::FAILURE, result.as<TerminalState>());
 
   SourceBufferIterator iterator2 = mSourceBuffer->Iterator();
-  result = mLexer.Lex(iterator2, mExpectNoResume,
-                      [&](TestState aState, const char* aData, size_t aLength) {
-                        EXPECT_TRUE(false);  // Shouldn't get here.
-                        return Transition::TerminateFailure();
-                      });
+  result = mLexer.Lex(
+      iterator2, mExpectNoResume,
+      [&](TestState /*aState*/, const char* /*aData*/, size_t /*aLength*/) {
+        EXPECT_TRUE(false);  // Shouldn't get here.
+        return Transition::TerminateFailure();
+      });
   EXPECT_TRUE(result.is<TerminalState>());
   EXPECT_EQ(TerminalState::FAILURE, result.as<TerminalState>());
 }

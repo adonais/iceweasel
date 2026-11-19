@@ -326,7 +326,7 @@ void DispatchToGeckoPriorityQueue(already_AddRefed<nsIRunnable> aCall) {
     void Run() override { NS_ENSURE_SUCCESS_VOID(mCall->Run()); }
   };
 
-  nsAppShell::PostEvent(MakeUnique<RunnableEvent>(std::move(aCall)));
+  nsAppShell::PostEvent(std::make_unique<RunnableEvent>(std::move(aCall)));
 }
 
 int GetAPIVersion() {

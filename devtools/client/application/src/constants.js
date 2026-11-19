@@ -12,6 +12,7 @@ const actionTypes = {
   RESET_MANIFEST: "RESET_MANIFEST",
   // page substate
   UPDATE_DOMAIN: "UPDATE_DOMAIN",
+  UPDATE_PREFETCH_STATUS: "UPDATE_PREFETCH_STATUS",
   // ui substate
   UPDATE_SELECTED_PAGE: "UPDATE_SELECTED_PAGE",
   // workers substate
@@ -24,6 +25,10 @@ const actionTypes = {
   UPDATE_SESSION_HISTORY: "UPDATE_SESSION_HISTORY",
   UPDATE_SESSION_HISTORY_ENTRY: "UPDATE_SESSION_HISTORY_ENTRY",
   DISABLE_SESSION_HISTORY: "DISABLE_SESSION_HISTORY",
+  // speculative loads substate
+  ADD_SPECULATION: "ADD_SPECULATION",
+  UPDATE_SPECULATION: "UPDATE_SPECULATION",
+  RESET_SPECULATIONS: "RESET_SPECULATIONS",
 };
 
 // NOTE: these const values are used as part of CSS selectors - be mindful of the characters used

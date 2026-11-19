@@ -46,14 +46,14 @@ private const val ANDROID_RESOLVER_PACKAGE_NAME = "android"
  * redirect to an external app.
  *
  * @param context Context the feature is associated with.
- * @param launchInApp If {true} then launch app links in third party app(s). Default to false because of security
- *   concerns.
+ * @param launchInApp Given the request url, returns {true} if the link should be launched in a third party app. Default
+ *   returns false because of security concerns.
  * @param alwaysDeniedSchemes List of schemes that will never be opened in a third-party app.
  * @param installedBrowsers List of all installed browsers on the device.
  */
 class AppLinksUseCases(
     private val context: Context,
-    private var launchInApp: () -> Boolean = { false },
+    private var launchInApp: (String) -> Boolean = { false },
     private val alwaysDeniedSchemes: AlwaysDeniedSchemes = AlwaysDeniedSchemes(ALWAYS_DENY_SCHEMES),
     private val installedBrowsers: () -> Browsers = { BrowsersCache.all(context) },
 ) {
@@ -133,7 +133,7 @@ class AppLinksUseCases(
                     redirectData.resolveInfo == null -> null
                     isBrowserRedirect && isEngineSupportedScheme -> null
                     includeHttpAppLinks && isAppIntentHttpOrHttps -> redirectData.appIntent
-                    !launchInApp() && (isEngineSupportedScheme || redirectData.fallbackUrl != null) -> null
+                    !launchInApp(url) && (isEngineSupportedScheme || redirectData.fallbackUrl != null) -> null
                     else -> redirectData.appIntent
                 }
 

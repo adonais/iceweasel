@@ -15,10 +15,14 @@ UNIFIED_SOURCES = [
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     UNIFIED_SOURCES += [
         "TestCocoaFilePickerQueue.mm",
+        "TestCocoaMenuLabelTruncation.mm",
         "TestCocoaStaleDragSession.mm",
         "TestMOZShareURLPasteboardItem.mm",
         "TestNativeKeyBindings.cpp",
         "TestPiPWindowSpaceBehavior.mm",
+    ]
+    SOURCES += [
+        "TestCocoaKeyCodeNames.mm",
     ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
@@ -37,6 +41,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     UNIFIED_SOURCES += [
         "TestDMABufSurface.cpp",
         "TestGtkDragDrop.cpp",
+        "TestSourceSurfaceToPixbuf.cpp",
     ]
 
 FINAL_LIBRARY = "xul-gtest"
@@ -61,6 +66,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
         "/gfx/layers",
     ]
 
+    CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
     CXXFLAGS += CONFIG["MOZ_GBM_CFLAGS"]
     if not CONFIG["MOZ_SYSTEM_GBM"]:
         LOCAL_INCLUDES += [

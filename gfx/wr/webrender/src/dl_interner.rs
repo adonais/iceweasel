@@ -38,6 +38,17 @@ macro_rules! enumerate_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
             rectangles: api::interned_prims::RectangleKey => crate::prim_store::rectangle::RectangleTemplate, INTERNED_PRIMITIVES, prim,
+            path: api::Path => api::Path, INTERNED_PATHS, path,
+            box_shadows: api::interned_prims::BoxShadowKey => crate::box_shadow::BoxShadowTemplate, INTERNED_BOX_SHADOWS, box_shadow,
+            line_decorations: api::interned_prims::LineDecorationKey => crate::prim_store::line_dec::LineDecorationTemplate, INTERNED_LINE_DECORATIONS, line_decoration,
+            images: api::interned_prims::ImagePrimKey => crate::prim_store::image::ImageTemplate, INTERNED_IMAGES, image,
+            yuv_images: api::interned_prims::YuvImagePrimKey => crate::prim_store::image::YuvImageTemplate, INTERNED_YUV_IMAGES, yuv_image,
+            linear_gradients: api::interned_prims::LinearGradientKey => crate::prim_store::gradient::LinearGradientTemplate, INTERNED_LINEAR_GRADIENTS, linear_grad,
+            radial_gradients: api::interned_prims::RadialGradientKey => crate::prim_store::gradient::RadialGradientTemplate, INTERNED_RADIAL_GRADIENTS, radial_grad,
+            conic_gradients: api::interned_prims::ConicGradientKey => crate::prim_store::gradient::ConicGradientTemplate, INTERNED_CONIC_GRADIENTS, conic_grad,
+            normal_borders: api::interned_prims::NormalBorderKey => crate::prim_store::borders::NormalBorderTemplate, INTERNED_NORMAL_BORDERS, normal_border,
+            image_borders: api::interned_prims::ImageBorderKey => crate::prim_store::borders::ImageBorderTemplate, INTERNED_IMAGE_BORDERS, image_border,
+            text_runs: api::interned_prims::TextRunKey => crate::prim_store::text_run::TextRunTemplate, INTERNED_TEXT_RUNS, text_run,
         }
     }
 }
@@ -52,13 +63,22 @@ macro_rules! enumerate_scene_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
             rectangles: api::interned_prims::RectangleKey => crate::prim_store::PrimPlacement, prim,
+            path: api::Path => api::Path, path,
+            box_shadows: api::interned_prims::BoxShadowKey => crate::prim_store::PrimPlacement, box_shadow,
+            line_decorations: api::interned_prims::LineDecorationKey => crate::prim_store::PrimPlacement, line_decoration,
+            images: api::interned_prims::ImagePrimKey => crate::prim_store::PrimPlacement, image,
+            yuv_images: api::interned_prims::YuvImagePrimKey => crate::prim_store::PrimPlacement, yuv_image,
+            linear_gradients: api::interned_prims::LinearGradientKey => crate::prim_store::PrimPlacement, linear_grad,
+            radial_gradients: api::interned_prims::RadialGradientKey => crate::prim_store::PrimPlacement, radial_grad,
+            conic_gradients: api::interned_prims::ConicGradientKey => crate::prim_store::PrimPlacement, conic_grad,
+            normal_borders: api::interned_prims::NormalBorderKey => crate::prim_store::PrimPlacement, normal_border,
+            image_borders: api::interned_prims::ImageBorderKey => crate::prim_store::PrimPlacement, image_border,
+            text_runs: api::interned_prims::TextRunKey => crate::prim_store::PrimPlacement, text_run,
         }
     }
 }
 
 /// What a store needs to turn a content key into the value it holds.
-// Rectangles resolve from the key alone; the fields are for fonts and images.
-#[allow(dead_code)]
 pub struct DlResolveContext<'a> {
     /// The id namespace the display list carrying the delta was submitted
     /// with, for validating any resource key the interned item names.
@@ -71,6 +91,12 @@ pub struct DlResolveContext<'a> {
 /// is applied, once per interned entry rather than once per scene build.
 pub trait DlResolve<K>: Sized {
     fn resolve(key: &K, ctx: &DlResolveContext) -> Self;
+}
+
+impl DlResolve<api::Path> for api::Path {
+    fn resolve(key: &api::Path, _ctx: &DlResolveContext) -> Self {
+        key.clone()
+    }
 }
 
 /// Dense index identifying one content display list builder's slot space.
@@ -535,6 +561,29 @@ pub fn count_dl_ops<T>(ops: &[DlOp<T>]) -> (usize, usize) {
     (insertions, removals)
 }
 
+/// Mints the `ItemUid`s for one set of follower stores. Shared by every store
+/// in the set rather than kept per store, because the tile cache compares uids
+/// without regard to which store they came from; see `DlStore::uid`.
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone, Default)]
+pub struct DlUids {
+    next: u64,
+}
+
+impl DlUids {
+    /// Set on every minted uid. `intern::Handle::uid` packs a 32-bit index above
+    /// a 32-bit epoch, so it only reaches this bit past 2^31 entries, which
+    /// keeps the two schemes apart where uids from both meet in a tile.
+    const TAG: u64 = 1 << 63;
+
+    fn mint(&mut self) -> ItemUid {
+        let uid = ItemUid::from_counter(Self::TAG | self.next);
+        self.next += 1;
+        uid
+    }
+}
+
 /// Two-level store fed by the content interner's delta: an outer array indexed
 /// by namespace, an inner array indexed by content slot.
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -553,9 +602,6 @@ pub struct DlStore<K, T> {
     /// it; see `DlHandle::generation`. Debug only, like the field it checks.
     #[cfg(debug_assertions)]
     generations: Vec<u32>,
-    /// Next id to stamp on an inserted entry. Advanced once per insert and
-    /// never reused; see `DlStore::uid`.
-    next_uid: u64,
     _marker: PhantomData<K>,
 }
 
@@ -577,7 +623,6 @@ impl<K, T: Clone> Clone for DlStore<K, T> {
             namespaces: self.namespaces.clone(),
             #[cfg(debug_assertions)]
             generations: self.generations.clone(),
-            next_uid: self.next_uid,
             _marker: PhantomData,
         }
     }
@@ -589,7 +634,6 @@ impl<K, T> Default for DlStore<K, T> {
             namespaces: Vec::new(),
             #[cfg(debug_assertions)]
             generations: Vec::new(),
-            next_uid: 0,
             _marker: PhantomData,
         }
     }
@@ -615,12 +659,12 @@ impl<K, T> DlStore<K, T> {
 
     /// Replay a resolved delta. The only way a store changes: it is applied in
     /// the order given and never consulted about what it is asked to do.
-    pub fn apply(&mut self, ops: Vec<DlOp<T>>) {
+    pub fn apply(&mut self, ops: Vec<DlOp<T>>, uids: &mut DlUids) {
         for op in ops {
             match op {
                 DlOp::Open(namespace) => self.open(namespace),
                 DlOp::Insert { namespace, slot, value } => {
-                    self.insert(namespace, slot, value)
+                    self.insert(namespace, slot, value, uids)
                 }
                 DlOp::Remove { namespace, slot } => self.remove(namespace, slot),
                 DlOp::Close(namespace) => self.close(namespace),
@@ -695,9 +739,8 @@ impl<K, T> DlStore<K, T> {
         }
     }
 
-    pub fn insert(&mut self, namespace: DlNamespace, slot: u32, value: T) {
-        let uid = ItemUid::from_counter(self.next_uid);
-        self.next_uid += 1;
+    pub fn insert(&mut self, namespace: DlNamespace, slot: u32, value: T, uids: &mut DlUids) {
+        let uid = uids.mint();
 
         let slots = self.slots_mut(namespace);
         let slot = slot as usize;
@@ -749,6 +792,12 @@ impl<K, T> DlStore<K, T> {
     /// content, and this is not a place to accept that. The cost is that a
     /// takeover re-mints every uid, so its tiles invalidate; that is correct, just
     /// conservative, and a takeover means the content process was replaced.
+    ///
+    /// Distinct has to hold across stores too, not only within one. A tile's
+    /// primitive dependencies carry the uid but not the primitive kind, so a
+    /// rectangle that takes the uid of a gradient last drawn in the same place
+    /// leaves the gradient on screen. The counter is therefore a `DlUids` that
+    /// every store in a set draws from.
     ///
     /// Panics on a handle with no entry, like `Index`: a primitive referencing a
     /// slot no delta has filled is the failure this is meant to surface.
@@ -836,8 +885,9 @@ mod tests {
     #[should_panic(expected = "stale handle")]
     fn a_handle_into_a_recycled_namespace_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         let stale = h(&store, DlNamespace(0), 0);
 
         // The pipeline goes away and the index is handed to another one. A
@@ -845,7 +895,7 @@ mod tests {
         // pipeline's data as if it were its own.
         store.close(DlNamespace(0));
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 200);
+        store.insert(DlNamespace(0), 0, 200, &mut uids);
 
         store.get(stale);
     }
@@ -859,9 +909,10 @@ mod tests {
         let kept = alloc.get_or_alloc(doc(1), pipeline(2)).0;
 
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(stale);
         store.open(kept);
-        store.insert(kept, 0, 100);
+        store.insert(kept, 0, 100, &mut uids);
         let handle = h(&store, kept, 0);
 
         alloc.remove_pipeline(doc(1), pipeline(1));
@@ -874,8 +925,8 @@ mod tests {
 
         assert_eq!(store.get(handle), Some(&100), "a surviving entry was lost");
         assert_eq!(store.len(), 1);
-        store.insert(late, 0, 200);
-        store.insert(fresh, 0, 300);
+        store.insert(late, 0, 200, &mut uids);
+        store.insert(fresh, 0, 300, &mut uids);
         store.close(late);
         store.close(fresh);
         store.close(kept);
@@ -1111,6 +1162,7 @@ mod tests {
     #[test]
     fn applying_a_delta_replays_it_in_order() {
         let mut store = store();
+        let mut uids = DlUids::default();
 
         // One pipeline's whole life: opened on its first display list, filled,
         // a slot recycled by a later build, then closed when it goes away.
@@ -1118,7 +1170,7 @@ mod tests {
             DlOp::Open(DlNamespace(0)),
             DlOp::Insert { namespace: DlNamespace(0), slot: 0, value: 100 },
             DlOp::Insert { namespace: DlNamespace(0), slot: 1, value: 200 },
-        ]);
+        ], &mut uids);
         assert_eq!(store[h(&store, DlNamespace(0), 1)], 200);
 
         store.apply(vec![
@@ -1126,7 +1178,7 @@ mod tests {
             DlOp::Close(DlNamespace(0)),
             DlOp::Open(DlNamespace(0)),
             DlOp::Insert { namespace: DlNamespace(0), slot: 1, value: 300 },
-        ]);
+        ], &mut uids);
         assert_eq!(store.get(h(&store, DlNamespace(0), 0)), None, "close kept a slot");
         assert_eq!(store[h(&store, DlNamespace(0), 1)], 300);
     }
@@ -1134,12 +1186,13 @@ mod tests {
     #[test]
     fn slots_are_addressed_per_namespace() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
         store.open(DlNamespace(1));
 
         // The same slot number in two namespaces is two different items.
-        store.insert(DlNamespace(0), 3, 100);
-        store.insert(DlNamespace(1), 3, 200);
+        store.insert(DlNamespace(0), 3, 100, &mut uids);
+        store.insert(DlNamespace(1), 3, 200, &mut uids);
 
         assert_eq!(store[h(&store, DlNamespace(0), 3)], 100);
         assert_eq!(store[h(&store, DlNamespace(1), 3)], 200);
@@ -1148,9 +1201,10 @@ mod tests {
     #[test]
     fn closing_drops_every_slot_in_the_namespace() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
-        store.insert(DlNamespace(0), 7, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+        store.insert(DlNamespace(0), 7, 100, &mut uids);
 
         store.close(DlNamespace(0));
         assert_eq!(store.get(h(&store, DlNamespace(0), 0)), None);
@@ -1166,11 +1220,12 @@ mod tests {
     fn recycle_across_pipelines() -> (DlBuilderMap, DlStore<Key, u32>, DlNamespace) {
         let mut map = DlBuilderMap::default();
         let mut store = store();
+        let mut uids = DlUids::default();
 
         let (ns_a, allocated) = map.get_or_alloc(doc(1), pipeline(1));
         assert!(allocated);
         store.open(ns_a);
-        store.insert(ns_a, 0, 100);
+        store.insert(ns_a, 0, 100, &mut uids);
 
         // Removed, then released at the next scene build.
         map.remove_pipeline(doc(1), pipeline(1));
@@ -1182,7 +1237,7 @@ mod tests {
         assert_eq!(ns_b, ns_a, "the index was not recycled");
         assert!(allocated, "a recycled namespace must still be opened");
         store.open(ns_b);
-        store.insert(ns_b, 0, 200);
+        store.insert(ns_b, 0, 200, &mut uids);
 
         (map, store, ns_b)
     }
@@ -1202,11 +1257,12 @@ mod tests {
     fn a_handle_from_the_previous_occupant_panics() {
         let mut map = DlBuilderMap::default();
         let mut store = store();
+        let mut uids = DlUids::default();
 
         let (ns_a, _) = map.get_or_alloc(doc(1), pipeline(1));
         let stale = DlHandle::new(ns_a, map.document(doc(1)).expect(pipeline(1)).1, 0);
         store.open(ns_a);
-        store.insert(ns_a, 0, 100);
+        store.insert(ns_a, 0, 100, &mut uids);
 
         map.remove_pipeline(doc(1), pipeline(1));
         for namespace in map.take_removals(doc(1)) {
@@ -1215,7 +1271,7 @@ mod tests {
 
         let (ns_b, _) = map.get_or_alloc(doc(1), pipeline(2));
         store.open(ns_b);
-        store.insert(ns_b, 0, 200);
+        store.insert(ns_b, 0, 200, &mut uids);
 
         // A scene retained from before the swap would read pipeline 2's run as
         // if it were pipeline 1's.
@@ -1225,36 +1281,71 @@ mod tests {
     #[test]
     fn a_uid_is_fixed_for_an_entry_and_never_reused() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
         store.open(DlNamespace(1));
 
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         let first = store.uid(h(&store, DlNamespace(0), 0));
 
         // Fixed while the entry lives: a tile must not invalidate for an entry
         // that has not changed.
-        store.insert(DlNamespace(0), 1, 200);
+        store.insert(DlNamespace(0), 1, 200, &mut uids);
         assert_eq!(store.uid(h(&store, DlNamespace(0), 0)), first);
 
         // Never handed out twice, whether the slot is recycled or the whole
         // namespace is. Either would otherwise leave a tile rendering what used
         // to be there.
         store.remove(DlNamespace(0), 0);
-        store.insert(DlNamespace(0), 0, 300);
+        store.insert(DlNamespace(0), 0, 300, &mut uids);
         assert_ne!(store.uid(h(&store, DlNamespace(0), 0)), first);
 
         store.close(DlNamespace(0));
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         assert_ne!(store.uid(h(&store, DlNamespace(0), 0)), first);
 
         // And not shared across namespaces, which per-builder slot numbering
         // cannot distinguish on its own.
-        store.insert(DlNamespace(1), 0, 100);
+        store.insert(DlNamespace(1), 0, 100, &mut uids);
         assert_ne!(
             store.uid(h(&store, DlNamespace(1), 0)),
             store.uid(h(&store, DlNamespace(0), 0)),
         );
+    }
+
+    #[test]
+    fn a_uid_is_not_shared_across_stores() {
+        struct OtherKey;
+        let mut rects: DlStore<Key, u32> = DlStore::default();
+        let mut gradients: DlStore<OtherKey, u32> = DlStore::default();
+        let mut uids = DlUids::default();
+        rects.open(DlNamespace(0));
+        gradients.open(DlNamespace(0));
+
+        // The same namespace and slot in two stores, as a gradient followed in
+        // the next display list by a rectangle in its place. A shared uid would
+        // let the tile keep the gradient.
+        gradients.insert(DlNamespace(0), 0, 100, &mut uids);
+        rects.insert(DlNamespace(0), 0, 200, &mut uids);
+
+        assert_ne!(
+            gradients.uid(DlHandle::new(DlNamespace(0), gradients.generation(DlNamespace(0)), 0)),
+            rects.uid(h(&rects, DlNamespace(0), 0)),
+        );
+    }
+
+    #[test]
+    fn a_uid_is_apart_from_interner_handle_uids() {
+        let mut store = store();
+        let mut uids = DlUids::default();
+        store.open(DlNamespace(0));
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+
+        // An interner's first handle has a uid equal to the epoch it was
+        // interned in, which is where a bare counter starts too.
+        let uid = store.uid(h(&store, DlNamespace(0), 0)).get_uid();
+        assert_ne!(uid & DlUids::TAG, 0, "{:#x} can collide with an interner uid", uid);
     }
 
     #[test]
@@ -1268,12 +1359,13 @@ mod tests {
         }
 
         let mut store = store();
+        let mut uids = DlUids::default();
         let mut ops = MallocSizeOfOps::new(block_size, None);
         assert_eq!(store.len(), 0);
 
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
-        store.insert(DlNamespace(0), 4, 200);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+        store.insert(DlNamespace(0), 4, 200, &mut uids);
         assert_eq!(store.len(), 2, "gaps between slots are not entries");
 
         // The heap the entries sit in has to show up, or the memory report is a
@@ -1290,12 +1382,13 @@ mod tests {
     #[test]
     fn a_removed_slot_is_reusable_but_not_readable() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 2, 100);
+        store.insert(DlNamespace(0), 2, 100, &mut uids);
         store.remove(DlNamespace(0), 2);
 
         assert_eq!(store.get(h(&store, DlNamespace(0), 2)), None);
-        store.insert(DlNamespace(0), 2, 200);
+        store.insert(DlNamespace(0), 2, 200, &mut uids);
         assert_eq!(store[h(&store, DlNamespace(0), 2)], 200);
     }
 
@@ -1303,17 +1396,19 @@ mod tests {
     #[should_panic(expected = "add for an occupied slot")]
     fn a_duplicate_add_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
-        store.insert(DlNamespace(0), 0, 200);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+        store.insert(DlNamespace(0), 0, 200, &mut uids);
     }
 
     #[test]
     #[should_panic(expected = "remove for an empty slot")]
     fn a_duplicate_remove_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         store.remove(DlNamespace(0), 0);
         store.remove(DlNamespace(0), 0);
     }
@@ -1322,8 +1417,9 @@ mod tests {
     #[should_panic(expected = "is not open")]
     fn adding_to_a_closed_namespace_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
         store.close(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
     }
 }

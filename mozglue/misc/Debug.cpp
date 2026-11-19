@@ -44,7 +44,7 @@ MFBT_API void vprintf_stderr(const char* aFmt, va_list aArgs) {
     int lengthNeeded = _vscprintf(aFmt, aArgs);
     if (lengthNeeded) {
       lengthNeeded++;
-      auto buf = mozilla::MakeUnique<char[]>(lengthNeeded);
+      auto buf = std::make_unique<char[]>(lengthNeeded);
       if (buf) {
         va_list argsCpy;
         va_copy(argsCpy, aArgs);

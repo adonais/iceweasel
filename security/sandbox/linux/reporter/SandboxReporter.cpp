@@ -42,7 +42,7 @@ SandboxReporter::SandboxReporter()
     : mClientFd(-1),
       mServerFd(-1),
       mMutex("SandboxReporter"),
-      mBuffer(MakeUnique<SandboxReport[]>(kSandboxReporterBufferSize)),
+      mBuffer(std::make_unique<SandboxReport[]>(kSandboxReporterBufferSize)),
       mCount(0) {}
 
 bool SandboxReporter::Init() {
@@ -135,9 +135,6 @@ static void SubmitToTelemetry(const SandboxReport& aReport) {
       break;
     case SandboxReport::ProcType::RDD:
       key.AppendLiteral("rdd");
-      break;
-    case SandboxReport::ProcType::SOCKET_PROCESS:
-      key.AppendLiteral("socket");
       break;
     case SandboxReport::ProcType::UTILITY:
       key.AppendLiteral("utility");

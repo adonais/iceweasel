@@ -33,6 +33,7 @@
 #include <limits.h>
 #include <poll.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -42,10 +43,12 @@
 #include <vector>
 
 #include "linux/crash_generation/crash_generation_server.h"
+#include "linux/crash_generation/crash_generation.h"
 #include "linux/crash_generation/client_info.h"
 #include "linux/handler/exception_handler.h"
 #include "linux/handler/guid_generator.h"
 #include "linux/minidump_writer/minidump_writer.h"
+#include "linux/log/log.h"
 #include "common/linux/eintr_wrapper.h"
 #include "common/linux/safe_readlink.h"
 
@@ -56,6 +59,9 @@
 static const char kCommandQuit = 'x';
 
 namespace google_breakpad {
+
+using CrashReporter::UniqueFd;
+using CrashReporter::GenerationClientAction;
 
 CrashGenerationServer::CrashGenerationServer(
   const int listen_fd,
@@ -68,6 +74,7 @@ CrashGenerationServer::CrashGenerationServer(
     server_fd_(listen_fd),
 #if defined(MOZ_OXIDIZED_BREAKPAD)
     get_auxv_info_(std::move(get_auxv_info)),
+    force_remote_executor_(getenv("MOZ_CRASHREPORTER_FORCE_REMOTE_EXECUTOR") != nullptr),
 #endif // defined(MOZ_OXIDIZED_BREAKPAD)
     dump_callback_(std::move(dump_callback)),
     dump_context_(dump_context),
@@ -200,6 +207,12 @@ CrashGenerationServer::Run()
   }
 }
 
+static bool SendActionToClient(
+    int server_endpoint,
+    pid_t crashing_pid,
+    GenerationClientAction action
+);
+
 bool
 CrashGenerationServer::ClientEvent(short revents)
 {
@@ -242,7 +255,8 @@ CrashGenerationServer::ClientEvent(short revents)
 
   // Walk the control payload and extract the file descriptor and validated pid.
   pid_t crashing_pid = -1;
-  int signal_fd = -1;
+  [[maybe_unused]] uid_t crashing_uid = 0;
+  UniqueFd server_endpoint;
   for (struct cmsghdr *hdr = CMSG_FIRSTHDR(&msg); hdr;
        hdr = CMSG_NXTHDR(&msg, hdr)) {
     if (hdr->cmsg_level != SOL_SOCKET)
@@ -259,18 +273,17 @@ CrashGenerationServer::ClientEvent(short revents)
           close(reinterpret_cast<int*>(CMSG_DATA(hdr))[i]);
         return true;
       } else {
-        signal_fd = reinterpret_cast<int*>(CMSG_DATA(hdr))[0];
+        server_endpoint.reset(*reinterpret_cast<int*>(CMSG_DATA(hdr)));
       }
     } else if (hdr->cmsg_type == SCM_CREDENTIALS) {
       const struct ucred *cred =
           reinterpret_cast<struct ucred*>(CMSG_DATA(hdr));
       crashing_pid = cred->pid;
+      crashing_uid = cred->uid;
     }
   }
 
-  if (crashing_pid == -1 || signal_fd == -1) {
-    if (signal_fd != -1)
-      close(signal_fd);
+  if (crashing_pid == -1 || !server_endpoint) {
     return true;
   }
 
@@ -300,6 +313,22 @@ CrashGenerationServer::ClientEvent(short revents)
       break;
   }
 
+  UniqueFd remote_minidump_writer_endpoint;
+
+  // Different UID usually prevents direct ptrace()
+  if (force_remote_executor_ || crashing_uid != getuid()) {
+    if (!SendActionToClient(
+        server_endpoint.get(),
+        crashing_pid,
+        GenerationClientAction::ForkAndLaunchExecutor)) {
+      return true;
+    }
+
+    // From this point forward, the server endpoint is done with its job.
+    // It is now the endpoint for talking to the remote executor.
+    remote_minidump_writer_endpoint = std::move(server_endpoint);
+  }
+
   bool res = false;
 
   MinidumpWriterContext* writer = minidump_writer_create(
@@ -321,13 +350,17 @@ CrashGenerationServer::ClientEvent(short revents)
 
     minidump_writer_set_crash_context(writer, &breakpad_cc->context, float_state, &signalfd_si);
 
+    if (remote_minidump_writer_endpoint) {
+      // Pass ownership of the endpoint to the minidump-writer
+      minidump_writer_set_remote_unix_stream(writer, remote_minidump_writer_endpoint.release());
+    }
+
     res = minidump_writer_dump(writer, extra_data);
   }
 #else
   if (!google_breakpad::WriteMinidump(minidump_filename.c_str(),
                                       crashing_pid, crash_context,
                                       kCrashContextSize)) {
-    close(signal_fd);
     return true;
   }
 #endif
@@ -339,9 +372,9 @@ CrashGenerationServer::ClientEvent(short revents)
     dump_callback_(dump_context_, info, minidump_filename);
   }
 
-  // Send the done signal to the process: it can exit now.
-  // (Closing this will make the child's sys_read unblock and return 0.)
-  close(signal_fd);
+  // Close the endpoint, which will release a direct client and do nothing in the case of
+  // a remote client.
+  server_endpoint.reset();
 
   return true;
 }
@@ -384,6 +417,38 @@ CrashGenerationServer::MakeMinidumpFilename(string& outFilename)
 
   outFilename = path;
   return true;
+}
+
+static bool SendActionToClient(
+    int server_endpoint,
+    pid_t crashing_pid,
+    GenerationClientAction action
+) {
+  const uint8_t action_byte = static_cast<uint8_t>(action);
+
+  // MSG_DONTWAIT in case the client maliciously tries to freeze us by filling their buffer
+  const ssize_t rv = HANDLE_EINTR(send(
+    server_endpoint, &action_byte, sizeof(action_byte), MSG_NOSIGNAL | MSG_DONTWAIT));
+  if (rv == static_cast<ssize_t>(sizeof(action_byte))) {
+    return true;
+  }
+
+  char err_msg[256];
+  if (rv == -1) {
+    const int error_code = errno;
+    snprintf(err_msg, sizeof(err_msg),
+      "CrashGenerationServer failed to send action %hhu to process %d. Errno %d.\n",
+      action_byte,
+      static_cast<int>(crashing_pid), error_code);
+  } else {
+    snprintf(err_msg, sizeof(err_msg),
+      "CrashGenerationServer failed to send action %hhu to process %d with no error.\n",
+      action_byte,
+      static_cast<int>(crashing_pid));
+  }
+
+  logger::write(err_msg, strlen(err_msg));
+  return false;
 }
 
 }  // namespace google_breakpad

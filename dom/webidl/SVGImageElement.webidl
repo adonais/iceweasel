@@ -25,6 +25,9 @@ interface SVGImageElement : SVGGraphicsElement {
   attribute DOMString? crossOrigin;
   [Pref="network.fetchpriority.enabled"]
   attribute DOMString fetchPriority;
+  // See https://github.com/w3c/svgwg/issues/1171
+  [SetterThrows]
+  attribute DOMString referrerPolicy;
   [CEReactions, SetterThrows]
   attribute DOMString decoding;
   [NewObject]

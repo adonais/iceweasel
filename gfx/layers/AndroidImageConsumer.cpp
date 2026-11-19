@@ -42,8 +42,8 @@ AndroidImageConsumer::AndroidImageConsumer(AndroidImageReader* aImageReader,
       mGL(aGL),
       mTextureHandle(aTextureHandle),
       mImageReader(aImageReader) {
-  MOZ_ASSERT(mImageReader);
-  MOZ_ASSERT(mGL);
+  MOZ_RELEASE_ASSERT(mImageReader);
+  MOZ_RELEASE_ASSERT(mGL);
 }
 
 AndroidImageConsumer::~AndroidImageConsumer() {

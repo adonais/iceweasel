@@ -16,6 +16,12 @@ const REAL_SITE = "https://example.com";
 const PDF_VIEWER_ORIGIN = "resource://pdf.js";
 const JSON_VIEWER_ORIGIN = "resource://devtools";
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", false]],
+  });
+});
+
 function makePrincipal(uriSpec) {
   return Services.scriptSecurityManager.createContentPrincipal(
     Services.io.newURI(uriSpec),

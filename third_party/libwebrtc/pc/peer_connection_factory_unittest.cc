@@ -66,6 +66,7 @@
 #include "rtc_base/network.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/socket_server.h"
+#include "rtc_base/system/ignore_warnings.h"
 #include "rtc_base/thread.h"
 #include "test/create_test_environment.h"
 #include "test/create_test_field_trials.h"
@@ -157,7 +158,7 @@ class PeerConnectionFactoryTest : public ::testing::Test {
     // level, and using a real one could make tests flaky e.g. when run in
     // parallel.
     factory_ = CreatePeerConnectionFactory(
-        Thread::Current(), Thread::Current(), Thread::Current(),
+        Thread::Current(), Thread::Current(),
         scoped_refptr<AudioDeviceModule>(FakeAudioCaptureModule::Create()),
         CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory(),
         std::make_unique<VideoEncoderFactoryTemplate<
@@ -289,9 +290,8 @@ TEST(PeerConnectionFactoryTestInternal, DISABLED_CreatePCUsingInternalModules) {
 
   scoped_refptr<PeerConnectionFactoryInterface> factory(
       CreatePeerConnectionFactory(
-          nullptr /* network_thread */, nullptr /* worker_thread */,
-          nullptr /* signaling_thread */, nullptr /* default_adm */,
-          CreateBuiltinAudioEncoderFactory(),
+          nullptr /* network_thread */, nullptr /* signaling_thread */,
+          nullptr /* default_adm */, CreateBuiltinAudioEncoderFactory(),
           CreateBuiltinAudioDecoderFactory(),
           nullptr /* video_encoder_factory */,
           nullptr /* video_decoder_factory */, nullptr /* audio_mixer */,
@@ -734,7 +734,6 @@ TEST(PeerConnectionFactoryDependenciesTest, RepeatMediaEngineInitialization) {
   PeerConnectionFactoryDependencies pcf_dependencies;
   pcf_dependencies.adm = adm;
   pcf_dependencies.signaling_thread = Thread::Current();
-  pcf_dependencies.worker_thread = Thread::Current();
   pcf_dependencies.network_thread = Thread::Current();
   pcf_dependencies.env = CreateTestEnvironment();
   EnableMediaWithDefaults(pcf_dependencies);
@@ -773,7 +772,6 @@ TEST(PeerConnectionFactoryDependenciesTest,
   pcf_dependencies.adm = FakeAudioCaptureModule::Create();
   pcf_dependencies.audio_processing_builder = std::move(ap_factory);
   pcf_dependencies.signaling_thread = Thread::Current();
-  pcf_dependencies.worker_thread = Thread::Current();
   pcf_dependencies.network_thread = Thread::Current();
   pcf_dependencies.env = CreateTestEnvironment();
   EnableMediaWithDefaults(pcf_dependencies);
@@ -817,6 +815,63 @@ TEST(ConnectionContextTest,
   ASSERT_THAT(context, NotNull());
   EXPECT_THAT(context->network_thread(), NotNull());
   EXPECT_EQ(context->worker_thread(), context->network_thread());
+}
+
+TEST(ConnectionContextTest,
+     WorkerThreadThatCanCreateSocketsIsUsedAsNetworkThread) {
+  Environment env = CreateTestEnvironment();
+  std::unique_ptr<Thread> worker_thread = Thread::CreateWithSocketServer();
+  worker_thread->Start();
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.signaling_thread = Thread::Current();
+  // The test intentionally sets the deprecated member without setting
+  // `network_thread`, like some applications still do.
+  RTC_PUSH_IGNORING_WDEPRECATED_DECLARATIONS()
+  dependencies.worker_thread = worker_thread.get();
+  RTC_POP_IGNORING_WDEPRECATED_DECLARATIONS()
+  auto context = ConnectionContext::Create(env, &dependencies);
+  ASSERT_THAT(context, NotNull());
+  EXPECT_EQ(context->network_thread(), worker_thread.get());
+}
+
+TEST(ConnectionContextTest,
+     WorkerThreadThatCannotCreateSocketsIsNotUsedAsNetworkThread) {
+  Environment env = CreateTestEnvironment();
+  // Thread::Create() uses a NullSocketServer, which can't create sockets.
+  std::unique_ptr<Thread> worker_thread = Thread::Create();
+  worker_thread->Start();
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.signaling_thread = Thread::Current();
+  // The test intentionally sets the deprecated member without setting
+  // `network_thread`, like some applications still do.
+  RTC_PUSH_IGNORING_WDEPRECATED_DECLARATIONS()
+  dependencies.worker_thread = worker_thread.get();
+  RTC_POP_IGNORING_WDEPRECATED_DECLARATIONS()
+  auto context = ConnectionContext::Create(env, &dependencies);
+  ASSERT_THAT(context, NotNull());
+  EXPECT_EQ(context->worker_thread(), worker_thread.get());
+  EXPECT_NE(context->network_thread(), worker_thread.get());
+}
+
+TEST(ConnectionContextTest,
+     WorkerThreadThatCanCreateSocketsIsNotUsedWhenNetworkThreadIsSet) {
+  Environment env = CreateTestEnvironment();
+  std::unique_ptr<Thread> network_thread = Thread::CreateWithSocketServer();
+  network_thread->Start();
+  std::unique_ptr<Thread> worker_thread = Thread::CreateWithSocketServer();
+  worker_thread->Start();
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.signaling_thread = Thread::Current();
+  dependencies.network_thread = network_thread.get();
+  // The test intentionally sets the deprecated member in order to verify that
+  // `network_thread` takes precedence over it.
+  RTC_PUSH_IGNORING_WDEPRECATED_DECLARATIONS()
+  dependencies.worker_thread = worker_thread.get();
+  RTC_POP_IGNORING_WDEPRECATED_DECLARATIONS()
+  auto context = ConnectionContext::Create(env, &dependencies);
+  ASSERT_THAT(context, NotNull());
+  EXPECT_EQ(context->network_thread(), network_thread.get());
+  EXPECT_EQ(context->worker_thread(), worker_thread.get());
 }
 
 }  // namespace

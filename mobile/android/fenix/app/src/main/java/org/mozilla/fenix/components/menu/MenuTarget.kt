@@ -28,4 +28,9 @@ sealed interface MenuTarget {
     data class CustomTab(val customTabId: String, val isSandboxed: Boolean = false) : MenuTarget {
         override fun browserSessionFrom(state: BrowserState): SessionState? = state.findCustomTab(customTabId)
     }
+
+    /** The menu will be shown in the menu customization screen. */
+    data object CustomizeMenu : MenuTarget {
+        override fun browserSessionFrom(state: BrowserState): SessionState? = null
+    }
 }

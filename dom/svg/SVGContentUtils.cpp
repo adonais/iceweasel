@@ -402,7 +402,7 @@ float SVGContentUtils::GetFontXHeight(const ComputedStyle* aComputedStyle,
 }
 
 float SVGContentUtils::GetLineHeight(const Element* aElement) {
-  float result = 16.0f * ReflowInput::kNormalLineHeightFactor;
+  float result = 16.0f * nsFontMetrics::kNormalLineHeightFactor;
   if (!aElement) {
     return result;
   }

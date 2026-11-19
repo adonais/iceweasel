@@ -10,6 +10,7 @@
     <string name="pref_key_radio_search_engine_list" translatable="false">pref_radio_search_engine_list</string>
     <string name="pref_key_multiselect_search_engine_list" translatable="false">pref_multiselect_search_engine_list</string>
     <string name="pref_key_use_remote_search_configuration" translatable="false">pref_key_use_remote_search_configuration</string>
+    <string name="pref_key_use_search_config_v3" translatable="false">pref_key_use_search_config_v3</string>
 
     <string name="pref_key_remote_server_prod" translatable="false">pref_key_remote_server_prod</string>
 

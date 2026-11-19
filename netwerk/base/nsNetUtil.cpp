@@ -1846,10 +1846,9 @@ class TlsAutoIncrement {
 nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
                    const char* aCharset /* = nullptr */,
                    nsIURI* aBaseURI /* = nullptr */) {
-  // we don't expect any other processes than: socket, content or parent
+  // we don't expect any other processes than: content or parent
   // to be able to create a URL
-  MOZ_ASSERT(XRE_IsSocketProcess() || XRE_IsContentProcess() ||
-             XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsContentProcess() || XRE_IsParentProcess());
   TlsAutoIncrement<decltype(gTlsURLRecursionCount)> inc(gTlsURLRecursionCount);
   if (inc.value() >= MAX_RECURSION_COUNT) {
     return NS_ERROR_MALFORMED_URI;
@@ -2768,11 +2767,6 @@ nsresult NS_GetFilenameFromDisposition(nsAString& aFilename,
 }
 
 void net_EnsurePSMInit() {
-  if (XRE_IsSocketProcess()) {
-    EnsureNSSInitializedChromeOrContent();
-    return;
-  }
-
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -2991,6 +2985,44 @@ void NS_LogSecureUpgradeToConsole(nsIURI* aURI, nsILoadInfo* aLoadInfo,
        NS_ConvertUTF8toUTF16(scheme)});
 }
 
+// Whether |aURI| can be upgraded to https at all, regardless of the reason.
+static bool MayBeSecureUpgraded(nsIURI* aURI, nsILoadInfo* aLoadInfo,
+                                bool aRecordTelemetry) {
+  if (aURI->SchemeIs("https")) {
+    // If request is https, then there is nothing to do here.
+    if (aRecordTelemetry) {
+      aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::ALREADY_HTTPS);
+    }
+    return false;
+  }
+  // If the target is already considered potentially trustworthy (loopback, a
+  // host on `dom.securecontext.allowlist`, or a .onion address), then it is
+  // not served over https and we shouldn't upgrade it.
+  if (nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aURI)) {
+    return false;
+  }
+  // If no loadInfo exist there is nothing to upgrade here.
+  if (!aLoadInfo) {
+    return false;
+  }
+  // The loadInfo indicates no HTTPS upgrade.
+  if (aLoadInfo->GetSkipHTTPSUpgrade()) {
+    if (aRecordTelemetry) {
+      aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::SKIP_HTTPS_UPGRADE);
+    }
+    return false;
+  }
+  return true;
+}
+
+bool NS_WillUpgradeInsecureRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
+  // These are the reasons checked first by ShouldSecureUpgradeNoHSTS.
+  return aURI->SchemeIs("http") &&
+         MayBeSecureUpgraded(aURI, aLoadInfo, /* aRecordTelemetry */ false) &&
+         (aLoadInfo->GetUpgradeInsecureRequests() ||
+          aLoadInfo->GetBrowserUpgradeInsecureRequests());
+}
+
 // That function is a helper function of NS_ShouldSecureUpgrade to check if
 // CSP upgrade-insecure-requests, Mixed content auto upgrading, HTTPs-Only/-
 // First, or an enterprise HttpsOnly site policy should upgrade the given
@@ -3139,29 +3171,7 @@ nsresult NS_ShouldSecureUpgrade(
   // data (it is read-only).
   // if the connection is not using SSL and either the exact host matches or
   // a superdomain wants to force HTTPS, do it.
-  if (aURI->SchemeIs("https")) {
-    // If request is https, then there is nothing to do here.
-    aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::ALREADY_HTTPS);
-    aShouldUpgrade = false;
-    return NS_OK;
-  }
-  // If the target is already considered potentially trustworthy (loopback, a
-  // host on `dom.securecontext.allowlist`, or a .onion address), then it is
-  // not served over https and we shouldn't upgrade it.
-  if (nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aURI)) {
-    aShouldUpgrade = false;
-    return NS_OK;
-  }
-  // If no loadInfo exist there is nothing to upgrade here.
-  if (!aLoadInfo) {
-    aShouldUpgrade = false;
-    return NS_OK;
-  }
-  // The loadInfo indicates no HTTPS upgrade.
-  bool skipHTTPSUpgrade = false;
-  (void)aLoadInfo->GetSkipHTTPSUpgrade(&skipHTTPSUpgrade);
-  if (skipHTTPSUpgrade) {
-    aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::SKIP_HTTPS_UPGRADE);
+  if (!MayBeSecureUpgraded(aURI, aLoadInfo, /* aRecordTelemetry */ true)) {
     aShouldUpgrade = false;
     return NS_OK;
   }

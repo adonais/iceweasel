@@ -94,3 +94,56 @@ add_task(async function test_discarded() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 });
+
+add_task(async function test_discarded_attributes() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["tabs"],
+    },
+
+    background() {
+      browser.test.onMessage.addListener(async (msg, tabId) => {
+        if (msg === "discard") {
+          await browser.tabs.discard(tabId);
+        } else {
+          browser.test.fail(`Unexpected message received: ${msg}`);
+        }
+        browser.test.sendMessage("done");
+      });
+      browser.test.sendMessage("ready");
+    },
+  });
+
+  let discardedTab = BrowserTestUtils.addTab(gBrowser, "https://example.com");
+  await BrowserTestUtils.browserLoaded(discardedTab.linkedBrowser);
+
+  ok(
+    !discardedTab.hasAttribute("discarded"),
+    "Tab should not have discarded attribute"
+  );
+  ok(
+    !discardedTab.hasAttribute("discarded-skip-on-close"),
+    "Tab should not have discarded-skip-on-close attribute"
+  );
+
+  await extension.startup();
+  await extension.awaitMessage("ready");
+
+  const { tabManager } = WebExtensionPolicy.getByID(extension.id).extension;
+  const tabId = tabManager.getWrapper(discardedTab).id;
+  await extension.sendMessage("discard", tabId);
+  await extension.awaitMessage("done");
+
+  ok(
+    discardedTab.hasAttribute("discarded"),
+    "Tab should have discarded attribute"
+  );
+  ok(
+    !discardedTab.hasAttribute("discarded-skip-on-close"),
+    "Tab should not have discarded-skip-on-close attribute"
+  );
+
+  await extension.unload();
+
+  BrowserTestUtils.removeTab(discardedTab);
+});

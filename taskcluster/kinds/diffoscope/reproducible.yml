@@ -18,3 +18,92 @@ reproducible-linux64-generated-files:
     original: build-linux64-shippable/opt
     extra-args: >-
         --exclude b/*_yamls.cached
+
+reproducible-macosx64:
+    symbol: Macosx64
+    new: build-macosx64-reproduced/opt
+    original: build-macosx64-x64-shippable/opt
+
+reproducible-macosx64-generated-files:
+    symbol: Macosx64g
+    artifact: target.generated-files.tar.gz
+    new: build-macosx64-reproduced/opt
+    original: build-macosx64-x64-shippable/opt
+    extra-args: >-
+        --exclude b/*_yamls.cached
+
+reproducible-macosx64-aarch64:
+    symbol: Macosx64-aarch64
+    new: build-macosx64-aarch64-reproduced/opt
+    original: build-macosx64-aarch64-shippable/opt
+
+reproducible-macosx64-aarch64-generated-files:
+    symbol: Macosx64-aarch64g
+    artifact: target.generated-files.tar.gz
+    new: build-macosx64-aarch64-reproduced/opt
+    original: build-macosx64-aarch64-shippable/opt
+    extra-args: >-
+        --exclude b/*_yamls.cached
+
+reproducible-android-arm:
+    symbol: Android-arm
+    artifact: target.maven.zip
+    new: build-android-arm-reproduced/opt
+    original: build-android-arm-shippable/opt
+    pre-diff-commands:
+        - find a b -type f ! -name '*.aar' -delete
+
+reproducible-android-arm-generated-files:
+    symbol: Android-armg
+    artifact: target.generated-files.tar.gz
+    new: build-android-arm-reproduced/opt
+    original: build-android-arm-shippable/opt
+    pre-diff-commands:
+        # AIDL generated sources contain the command line that generated them,
+        # which contains a random temporary path. We normalize those before
+        # diffing.
+        - >-
+            find a b -type f -path '*/generated/aidl_source_output_dir/*' -name '*.java'
+            -exec sed -i -E '/^ \* Using: /s@-d/tmp/aidl[0-9]+\.d @-d/tmp/aidl.d @g' {} +
+    extra-args: >-
+        --exclude b/*_yamls.cached
+
+reproducible-android-aarch64:
+    symbol: Android-aarch64
+    artifact: target.maven.zip
+    new: build-android-aarch64-reproduced/opt
+    original: build-android-aarch64-shippable/opt
+    pre-diff-commands:
+        - find a b -type f ! -name '*.aar' -delete
+
+reproducible-android-aarch64-generated-files:
+    symbol: Android-aarch64g
+    artifact: target.generated-files.tar.gz
+    new: build-android-aarch64-reproduced/opt
+    original: build-android-aarch64-shippable/opt
+    pre-diff-commands:
+        - >-
+            find a b -type f -path '*/generated/aidl_source_output_dir/*' -name '*.java'
+            -exec sed -i -E '/^ \* Using: /s@-d/tmp/aidl[0-9]+\.d @-d/tmp/aidl.d @g' {} +
+    extra-args: >-
+        --exclude b/*_yamls.cached
+
+reproducible-android-x86_64:
+    symbol: Android-x86_64
+    artifact: target.maven.zip
+    new: build-android-x86_64-reproduced/opt
+    original: build-android-x86_64-shippable/opt
+    pre-diff-commands:
+        - find a b -type f ! -name '*.aar' -delete
+
+reproducible-android-x86_64-generated-files:
+    symbol: Android-x86_64g
+    artifact: target.generated-files.tar.gz
+    new: build-android-x86_64-reproduced/opt
+    original: build-android-x86_64-shippable/opt
+    pre-diff-commands:
+        - >-
+            find a b -type f -path '*/generated/aidl_source_output_dir/*' -name '*.java'
+            -exec sed -i -E '/^ \* Using: /s@-d/tmp/aidl[0-9]+\.d @-d/tmp/aidl.d @g' {} +
+    extra-args: >-
+        --exclude b/*_yamls.cached

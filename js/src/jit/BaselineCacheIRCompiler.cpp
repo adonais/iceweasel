@@ -197,6 +197,7 @@ void BaselineCacheIRCompiler::callVM(MacroAssembler& masm) {
 JitCode* BaselineCacheIRCompiler::compile() {
   AutoCreatedBy acb(masm, "BaselineCacheIRCompiler::compile");
 
+  masm.indirectTarget(TargetKind::Call);
 #ifndef JS_USE_LINK_REGISTER
   masm.adjustFrame(sizeof(intptr_t));
 #endif
@@ -566,7 +567,12 @@ bool BaselineCacheIRCompiler::emitLoadFixedSlotResult(ObjOperandId objId,
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitLoadFixedSlotTypedResult(
+bool BaselineCacheIRCompiler::emitLoadReservedFixedSlotResult(
+    ObjOperandId objId, uint32_t offsetOffset) {
+  return emitLoadFixedSlotResult(objId, offsetOffset);
+}
+
+bool BaselineCacheIRCompiler::emitLoadReservedFixedSlotTypedResult(
     ObjOperandId objId, uint32_t offsetOffset, ValueType) {
   // The type is only used by Warp.
   return emitLoadFixedSlotResult(objId, offsetOffset);
@@ -3988,30 +3994,17 @@ bool BaselineCacheIRCompiler::emitCallRegExpSearcherResult(
 
   masm.reserveStack(RegExpReservedStack);
 
-  Label done, vmCall, vmCallNoMatches;
-  CallRegExpStub(masm, JitZone::offsetOfRegExpSearcherStub(), scratch,
-                 &vmCallNoMatches);
-  masm.branch32(Assembler::Equal, scratch, Imm32(RegExpSearcherResultFailed),
-                &vmCall);
-
-  masm.jump(&done);
+  Label done, vmCall;
+  CallRegExpStub(masm, JitZone::offsetOfRegExpSearcherStub(), scratch, &vmCall);
+  masm.branch32(Assembler::NotEqual, scratch, Imm32(RegExpSearcherResultFailed),
+                &done);
 
   {
-    Label pushedMatches;
-    masm.bind(&vmCallNoMatches);
-    masm.push(ImmWord(0));
-    masm.jump(&pushedMatches);
-
     masm.bind(&vmCall);
-    masm.computeEffectiveAddress(
-        Address(masm.getStackPointer(), InputOutputDataSize), scratch);
-    masm.Push(scratch);
-
-    masm.bind(&pushedMatches);
     masm.PushRegs(lastIndex, input, regexp);
 
     using Fn = bool (*)(JSContext*, HandleObject regexp, HandleString input,
-                        int32_t lastIndex, MatchPairs* pairs, int32_t* result);
+                        int32_t lastIndex, int32_t* result);
     callVM<Fn, RegExpSearcherRaw>(masm);
   }
 

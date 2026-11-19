@@ -95,7 +95,7 @@ JSObject* WrapperFactory::CreateXrayWaiver(JSContext* cx, HandleObject obj,
   // Add the new waiver to the map. It's important that we only ever have
   // one waiver for the lifetime of the target object.
   if (!scope->mWaiverWrapperMap) {
-    scope->mWaiverWrapperMap = mozilla::MakeUnique<JSObject2JSObjectMap>();
+    scope->mWaiverWrapperMap = std::make_unique<JSObject2JSObjectMap>();
   }
   if (!scope->mWaiverWrapperMap->Add(cx, obj, waiver)) {
     return nullptr;

@@ -1060,7 +1060,7 @@ ShaderProgramOGL* ShaderProgramOGLsHolder::GetShaderProgramFor(
   }
 
   ProgramProfileOGL profile = ProgramProfileOGL::GetProfileFor(aConfig);
-  auto shader = MakeUnique<ShaderProgramOGL>(mGL, profile);
+  auto shader = std::make_unique<ShaderProgramOGL>(mGL, profile);
   if (!shader->Initialize()) {
     gfxCriticalError() << "Shader compilation failure, cfg:"
                        << " features: " << gfx::hexa(aConfig.mFeatures)

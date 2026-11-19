@@ -39,9 +39,6 @@ skip-if = [
 fail-if = [
   "true",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
-]
 
 ["browser_fail_add_task_uncaught_rejection.js"]
 fail-if = [
@@ -71,9 +68,6 @@ fail-if = ["true"]
 fail-if = [
   "true",
 ]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt && socketprocess_networking && verify-standalone",
-]
 
 ["browser_fail_timeout.js"]
 disabled = "Disabled beacuse it takes too long (bug 1178959)"
@@ -92,7 +86,6 @@ fail-if = [
 ]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && swgl && verify-standalone",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
 ]
 
 ["browser_fail_uncaught_rejection_expected_multi.js"]

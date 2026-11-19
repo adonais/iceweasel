@@ -5,9 +5,7 @@
 
 add_task(async function test_download_languages_sorting_and_batch_resolution() {
   const { cleanup, remoteClients, translationsSettingsTestUtils } =
-    await setupAboutPreferences(LANGUAGE_PAIRS, {
-      prefs: [["browser.settings-redesign.enabled", true]],
-    });
+    await setupAboutPreferences(LANGUAGE_PAIRS, {});
 
   const document = gBrowser.selectedBrowser.contentDocument;
 

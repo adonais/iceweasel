@@ -19,7 +19,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  10 files changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 11222d536c..8057851d25 100644
+index c80e9e69d9..37a3e594c9 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -463,12 +463,12 @@ config("common_config") {
@@ -47,10 +47,10 @@ index 11222d536c..8057851d25 100644
      if (mips_float_abi == "hard") {
        defines += [ "MIPS_FPU_LE" ]
 diff --git a/common_audio/BUILD.gn b/common_audio/BUILD.gn
-index eb960a5d40..e95cf4bada 100644
+index bb0c878dd2..95e7a33c42 100644
 --- a/common_audio/BUILD.gn
 +++ b/common_audio/BUILD.gn
-@@ -66,7 +66,7 @@ rtc_library("common_audio") {
+@@ -67,7 +67,7 @@ rtc_library("common_audio") {
      deps += [ ":common_audio_neon" ]
    }
  
@@ -59,7 +59,7 @@ index eb960a5d40..e95cf4bada 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -89,7 +89,7 @@ rtc_source_set("mock_common_audio") {
+@@ -90,7 +90,7 @@ rtc_source_set("mock_common_audio") {
  rtc_source_set("common_audio_c_arm_asm") {
    sources = []
    deps = []
@@ -86,7 +86,7 @@ index eb960a5d40..e95cf4bada 100644
      sources += [ "signal_processing/filter_ar_fast_q12.c" ]
    }
  
-@@ -216,7 +216,7 @@ rtc_library("fir_filter_factory") {
+@@ -220,7 +220,7 @@ rtc_library("fir_filter_factory") {
      "../rtc_base:cpu_info",
      "../rtc_base/system:arch",
    ]
@@ -95,7 +95,7 @@ index eb960a5d40..e95cf4bada 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -225,7 +225,7 @@ rtc_library("fir_filter_factory") {
+@@ -229,7 +229,7 @@ rtc_library("fir_filter_factory") {
    }
  }
  
@@ -104,7 +104,7 @@ index eb960a5d40..e95cf4bada 100644
    rtc_library("common_audio_sse2") {
      sources = [
        "fir_filter_sse.cc",
-@@ -274,7 +274,7 @@ if (rtc_build_with_neon) {
+@@ -278,7 +278,7 @@ if (rtc_build_with_neon) {
        "resampler/sinc_resampler_neon.cc",
      ]
  
@@ -113,7 +113,7 @@ index eb960a5d40..e95cf4bada 100644
        # Enable compilation for the NEON instruction set.
        suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
        cflags = [ "-mfpu=neon" ]
-@@ -297,7 +297,7 @@ if (rtc_build_with_neon) {
+@@ -301,7 +301,7 @@ if (rtc_build_with_neon) {
        "signal_processing/min_max_operations_neon.c",
      ]
  
@@ -241,7 +241,7 @@ index f915ae783a..5fbe21ec30 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index d1ba151a7b..4e92913c44 100644
+index 0cfd6ef2d1..ef70e0f538 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")
@@ -254,7 +254,7 @@ index d1ba151a7b..4e92913c44 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 943d77d02e..daaaeb754d 100644
+index 92eb683a12..d9f904daf5 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -160,7 +160,7 @@ declare_args() {

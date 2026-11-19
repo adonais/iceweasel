@@ -2027,9 +2027,9 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                                                      // ContentProcess, no
                                                      // DOM windows.
         /* aUtilityInfo = */ std::move(utilityActors),
-        /* aChild = */ 0  // Without a ContentProcess, no ChildId.
+        /* aChild = */ geckoProcess->GetChildID()
 #ifdef XP_MACOSX
-        ,
+            ,
         /* aChildTask = */ geckoProcess->GetChildTask()
 #endif  // XP_MACOSX
     );

@@ -10,7 +10,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -46,7 +45,7 @@ class SummarizePageMenuItemProviderTest {
     fun `GIVEN the feature is not available WHEN providing the item THEN don't show it`() = runTest {
         val provider = provider(settings = settings(showMenuItem = false))
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -54,7 +53,7 @@ class SummarizePageMenuItemProviderTest {
         runTest {
             val provider = provider()
 
-            assertEquals(summarizePageItem(isEnabled = false), provider.itemFlow.value)
+            assertEquals(summarizePageItem(isEnabled = false), provider.itemsFlow.value.single())
         }
 
     @Test
@@ -63,7 +62,7 @@ class SummarizePageMenuItemProviderTest {
 
         runCurrent()
 
-        assertEquals(summarizePageItem(isEnabled = true), provider.itemFlow.value)
+        assertEquals(summarizePageItem(isEnabled = true), provider.itemsFlow.value.single())
     }
 
     @Test
@@ -80,7 +79,22 @@ class SummarizePageMenuItemProviderTest {
 
         runCurrent()
 
-        assertEquals(summarizePageItem(isEnabled = true), provider.itemFlow.value)
+        assertEquals(summarizePageItem(isEnabled = true), provider.itemsFlow.value.single())
+    }
+
+    @Test
+    fun `GIVEN target is CustomizeMenu WHEN providing the item THEN show item without click events`() = runTest {
+        val provider = provider(target = MenuTarget.CustomizeMenu)
+
+        assertEquals(
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_summarize_page)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_lightning_24),
+                onClickEvent = null,
+                state = MenuItemState.DEFAULT,
+            ),
+            provider.itemsFlow.value.single(),
+        )
     }
 
     @Test
@@ -89,7 +103,7 @@ class SummarizePageMenuItemProviderTest {
 
         runCurrent()
 
-        assertEquals(summarizePageItem(isEnabled = false), provider.itemFlow.value)
+        assertEquals(summarizePageItem(isEnabled = false), provider.itemsFlow.value.single())
     }
 
     @Test
@@ -102,14 +116,14 @@ class SummarizePageMenuItemProviderTest {
 
         runCurrent()
 
-        assertEquals(summarizePageItem(isEnabled = false, isHighlighted = false), provider.itemFlow.value)
+        assertEquals(summarizePageItem(isEnabled = false, isHighlighted = false), provider.itemsFlow.value.single())
     }
 
     @Test
     fun `GIVEN the feature is to be highlighted WHEN providing the item THEN highlight its icon`() = runTest {
         val provider = provider(settings = settings(shouldHighlightMenuItem = true))
 
-        assertEquals(summarizePageItem(isEnabled = false, isHighlighted = true), provider.itemFlow.value)
+        assertEquals(summarizePageItem(isEnabled = false, isHighlighted = true), provider.itemsFlow.value.single())
     }
 
     @Test
@@ -212,7 +226,7 @@ class SummarizePageMenuItemProviderTest {
                 val provider = provider(eligibilityChecker = eligibilityChecker(isEligible = isEligible))
                 runCurrent()
 
-                val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+                val events = provider.itemsFlow.value.single().reachableEvents()
 
                 assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
                 assertFalse(provider.handles(MenuAction.Navigate.Translate))

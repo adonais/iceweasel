@@ -353,7 +353,7 @@ class nsZipItemPtr final : public nsZipItemPtr_base {
       mReturnBuf = nullptr;
       return mozilla::UniquePtr<T[]>(reinterpret_cast<T*>(mAutoBuf.release()));
     }
-    auto ret = mozilla::MakeUnique<T[]>(Length());
+    auto ret = std::make_unique<T[]>(Length());
     memcpy(ret.get(), mReturnBuf, Length());
     mReturnBuf = nullptr;
     return ret;

@@ -218,7 +218,7 @@ nsresult MediaDrmProxySupport::Init(
 
   MediaDrmJavaCallbacksSupport::AttachNative(
       mJavaCallbacks,
-      mozilla::MakeUnique<MediaDrmJavaCallbacksSupport>(std::move(aCallback)));
+      std::make_unique<MediaDrmJavaCallbacksSupport>(std::move(aCallback)));
   return mBridgeProxy != nullptr ? NS_OK : NS_ERROR_FAILURE;
 }
 

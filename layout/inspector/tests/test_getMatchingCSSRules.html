@@ -213,7 +213,6 @@ const tests = [
     title: "Check pres hints",
     async run(doc, win) {
       checkDeclaration(doc, "img", "pres-hints", { width: "10px", height: "15px", "aspect-ratio": "auto 10 / 15" });
-      checkDeclaration(doc, "table", "pres-hints", {color: "-moz-inherit-from-body-quirk"});
       checkDeclaration(doc, ".anim", "animations", {"z-index": "1"});
       checkDeclaration(doc, "[style]", "style-attribute", {"z-index": "1"});
       // TODO: transitions/SMIL are a bit more annoying to test.

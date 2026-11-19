@@ -71,7 +71,7 @@ nsresult BoxArrayPrimitive(JSContext* aCx, JS::Handle<JSObject*> aData,
                            jni::Object::LocalRef& aOut, size_t aLength,
                            JS::Handle<JS::Value> aElement) {
   JS::Rooted<JS::Value> element(aCx);
-  auto data = MakeUnique<Type[]>(aLength);
+  auto data = std::make_unique<Type[]>(aLength);
   data[0] = (aElement.get().*ToType)();
 
   for (size_t i = 1; i < aLength; i++) {

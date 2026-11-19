@@ -90,6 +90,12 @@ class Http3SessionStub final : public Http3SessionBase {
     return false;
   }
 
+  void SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) override {}
+
+  void SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) override {}
+
   void SendDatagram(Http3WebTransportSession* aSession,
                     nsTArray<uint8_t>& aData, uint64_t aTrackingId,
                     uint64_t aSendGroupId, int64_t aSendOrder,
@@ -223,7 +229,7 @@ class DummyHttpTransaction : public nsAHttpTransaction {
       return mRequestHead.get();
     }
 
-    mRequestHead = MakeUnique<nsHttpRequestHead>();
+    mRequestHead = std::make_unique<nsHttpRequestHead>();
 
     (void)mRequestHead->SetHeader(nsHttp::Host, "example.com"_ns);
     return mRequestHead.get();

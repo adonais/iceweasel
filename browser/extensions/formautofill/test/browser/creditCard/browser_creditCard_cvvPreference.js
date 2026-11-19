@@ -103,3 +103,55 @@ add_task(async function test_toggle_updates_pref() {
 
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(async function test_toggle_records_telemetry() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [CVV_SUPPORTED_PREF, "on"],
+      [CVV_ENABLED_PREF, true],
+    ],
+  });
+
+  for (const hadSavedCvv of [false, true]) {
+    if (hadSavedCvv) {
+      await setStorage({ ...TEST_CREDIT_CARD_1, "cc-csc": "123" });
+    }
+    Services.fog.testResetFOG();
+
+    await withPaymentsPane(async ({ doc }) => {
+      const checkbox = doc.getElementById("saveSecurityCodes");
+      const prefChanged = TestUtils.waitForPrefChange(CVV_ENABLED_PREF);
+      checkbox.click();
+      await prefChanged;
+      checkbox.click();
+    });
+
+    await TestUtils.waitForCondition(
+      () =>
+        (Glean.formautofillCreditcards.cvvSavingToggled.testGetValue() ?? [])
+          .length == 2,
+      "Waiting for both cvv_saving_toggled events"
+    );
+    Assert.deepEqual(
+      Glean.formautofillCreditcards.cvvSavingToggled
+        .testGetValue()
+        .map(event => event.extra),
+      [
+        {
+          enabled: "false",
+          source: "settings",
+          had_saved_cvv: `${hadSavedCvv}`,
+        },
+        {
+          enabled: "true",
+          source: "settings",
+          had_saved_cvv: `${hadSavedCvv}`,
+        },
+      ],
+      `Toggling the setting is recorded with had_saved_cvv ${hadSavedCvv}`
+    );
+  }
+
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+});

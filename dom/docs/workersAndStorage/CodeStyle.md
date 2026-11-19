@@ -163,7 +163,6 @@ factory functions:
 | Type                 | Factory function      | Header file          |
 | -------------------- | --------------------- | -------------------- |
 | `mozilla::RefPtr`    | `mozilla::MakeRefPtr` | `"mfbt/RefPtr.h"`    |
-| `mozilla::UniquePtr` | `mozilla::MakeUnique` | `"mfbt/UniquePtr.h"` |
 | `std::unique_ptr`    | `std::make_unique`    | `<memory>`           |
 | `std::shared_ptr`    | `std::make_shared`    | `<memory>`           |
 

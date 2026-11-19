@@ -31,7 +31,6 @@ import mozilla.components.feature.accounts.push.CloseTabsCommandReceiver
 import mozilla.components.feature.accounts.push.CloseTabsFeature
 import mozilla.components.feature.accounts.push.FxaPushSupportFeature
 import mozilla.components.feature.accounts.push.SendTabFeature
-import mozilla.components.feature.automotive.isAndroidAutomotiveAvailable
 import mozilla.components.feature.syncedtabs.SyncedTabsAutocompleteProvider
 import mozilla.components.feature.syncedtabs.commands.SyncedTabsCommands
 import mozilla.components.feature.syncedtabs.commands.SyncedTabsCommandsFlushScheduler
@@ -61,7 +60,6 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.ext.recordEventInNimbus
 import org.mozilla.fenix.perf.StrictModeManager
-import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.sync.SyncedTabsIntegration
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getUndoDelay
@@ -89,7 +87,7 @@ class BackgroundServices(
     creditCardsStorage: Lazy<AutofillCreditCardsAddressesStorage>,
     strictMode: StrictModeManager,
     private val applicationScope: CoroutineScope,
-    isAndroidAutomotiveAvailable: Boolean = context.isAndroidAutomotiveAvailable(),
+    areCredentialsSyncable: Boolean = settings.isAutofillSupported,
 ) {
     // Allows executing tasks which depend on the account manager, but do not need to eagerly initialize it.
     val accountManagerAvailableQueue = RunWhenReadyQueue()
@@ -121,10 +119,6 @@ class BackgroundServices(
             secureStateAtRest = Config.channel.isNightlyOrDebug,
         )
 
-    // Password and credit card syncing is disabled on Android Automotive until we implement the UX Google
-    // requires for handling sensitive information there. See bug 2060936.
-    private val areCredentialsSyncable = !isAndroidAutomotiveAvailable
-
     @VisibleForTesting
     val supportedEngines =
         setOfNotNull(
@@ -135,7 +129,7 @@ class BackgroundServices(
             if (areCredentialsSyncable) SyncEngine.CreditCards else null,
             if (settings.isAddressSyncEnabled) SyncEngine.Addresses else null,
         )
-    private val syncConfig by lazyMonitored {
+    private val syncConfig by lazy {
         SyncConfig(
             supportedEngines = supportedEngines,
             periodicSyncConfig = PeriodicSyncConfig(periodMinutes = 240), // four hours
@@ -148,7 +142,7 @@ class BackgroundServices(
      * [org.mozilla.fenix.components.accounts.FxaWebChannelIntegration] to communicate client capabilities with firefox
      * accounts (FxA)
      */
-    val fxaCapabilities: Set<FxaCapability> by lazyMonitored {
+    val fxaCapabilities: Set<FxaCapability> by lazy {
         buildSet {
             add(FxaCapability.ChooseWhatToSync)
             add(FxaCapability.PairingV2)
@@ -159,8 +153,8 @@ class BackgroundServices(
         }
     }
 
-    private val creditCardKeyProvider by lazyMonitored { creditCardsStorage.value.crypto }
-    private val passwordKeyProvider by lazyMonitored { passwordsStorage.value.crypto }
+    private val creditCardKeyProvider by lazy { creditCardsStorage.value.crypto }
+    private val passwordKeyProvider by lazy { passwordsStorage.value.crypto }
 
     init {
         // Make the "history", "bookmark", "passwords", "tabs", "credit cards" stores
@@ -193,34 +187,34 @@ class BackgroundServices(
 
     val accountAbnormalities = AccountAbnormalities(context, crashReporter, strictMode)
 
-    val syncStore by lazyMonitored {
+    val syncStore by lazy {
         SyncStore(middleware = listOf(TelemetryMiddleware()))
     }
 
     private lateinit var syncStoreSupport: SyncStoreSupport
 
-    val accountManager by lazyMonitored {
+    val accountManager by lazy {
         makeAccountManager(context, serverConfig, deviceConfig, syncConfig, crashReporter)
     }
 
-    val syncedTabsStorage by lazyMonitored {
+    val syncedTabsStorage by lazy {
         SyncedTabsStorage(accountManager, context.components.core.store, remoteTabsStorage.value, maxActiveTime)
     }
-    val syncedTabsAutocompleteProvider by lazyMonitored {
+    val syncedTabsAutocompleteProvider by lazy {
         SyncedTabsAutocompleteProvider(syncedTabsStorage)
     }
-    val syncedTabsCommands by lazyMonitored {
+    val syncedTabsCommands by lazy {
         SyncedTabsCommands(accountManager, remoteTabsStorage.value).apply {
             register(SyncedTabsCommandsObserver(syncedTabsCommandsFlushScheduler))
         }
     }
-    val syncedTabsCommandsFlushScheduler by lazyMonitored {
+    val syncedTabsCommandsFlushScheduler by lazy {
         SyncedTabsCommandsFlushScheduler(
             context = context,
             flushDelay = settings.getUndoDelay().milliseconds + DEFAULT_SYNCED_TABS_COMMANDS_EXTRA_FLUSH_DELAY,
         )
     }
-    val closeSyncedTabsCommandReceiver by lazyMonitored {
+    val closeSyncedTabsCommandReceiver by lazy {
         CloseTabsCommandReceiver(context.components.core.store).apply {
             register(SyncedTabsClosedNotificationObserver(context, notificationManager))
         }
@@ -290,7 +284,7 @@ class BackgroundServices(
             }
 
     /** Provides notification functionality, manages notification channels. */
-    private val notificationManager by lazyMonitored {
+    private val notificationManager by lazy {
         NotificationManager(context)
     }
 }

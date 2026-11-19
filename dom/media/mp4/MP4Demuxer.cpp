@@ -320,7 +320,7 @@ MP4TrackDemuxer::MP4TrackDemuxer(MediaResource* aResource,
       mInfo(std::move(aInfo)),
       mIndex(new MP4SampleIndex(aIndices, mStream, mInfo->mTrackId,
                                 mInfo->IsAudio(), aTimeScale)),
-      mIterator(MakeUnique<SampleIterator>(mIndex)),
+      mIterator(std::make_unique<SampleIterator>(mIndex)),
       mNeedReIndex(true) {
   EnsureUpToDateIndex();  // Force update of index
 

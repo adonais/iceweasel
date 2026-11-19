@@ -15,7 +15,7 @@ for (const [op, insn] of [
     `(module (memory 1) (func (export "f") (param i32) (result v128) (v128.${op} (local.get 0))))`,
     "f",
     `bstrpick\\.d \\$t6, \\$a0, 0x1f, 0x0
-     fldx\\.d \\$f0, \\$s7, \\$t6
+     fldx\\.d \\$f0, \\$t6, \\$s7
      ${insn} \\$vr0, \\$vr0, 0x0`);
   // Offset can be encoded as an si12.
   codegenTestLOONG64_adhoc(
@@ -28,7 +28,7 @@ for (const [op, insn] of [
     `(module (memory 1) (func (export "f") (result v128) (v128.${op} (i32.const 4096))))`,
     "f",
     `lu12i\\.w \\$t6, 1
-     fldx\\.d \\$f0, \\$s7, \\$t6
+     fldx\\.d \\$f0, \\$t6, \\$s7
      ${insn} \\$vr0, \\$vr0, 0x0`);
 }
 

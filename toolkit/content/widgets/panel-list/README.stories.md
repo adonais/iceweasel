@@ -88,10 +88,14 @@ And used as follows:
 ```
 
 The `toggle` method takes the event you received on your anchor button and opens
-the menu attached to that element.
+the menu attached to that element. The anchor button also needs to be
+registered as the menu's popover invoker, see
+[Showing the menu](#showing-the-menu) for the full setup.
 
 ```js
+anchorButton.popoverTargetElement = panelList;
 anchorButton.addEventListener("mousedown", e => panelList.toggle(e));
+anchorButton.addEventListener("click", e => e.preventDefault());
 ```
 
 Accesskeys are activated with the bare accesskey letter when the menu is opened.
@@ -145,21 +149,37 @@ the `event.inputSource` property in chrome contexts or `event.detail` in
 non-chrome contexts (`event.detail` will be the click count which is `0` when a
 click is from the keyboard).
 
+Since the menu uses `popover="auto"`, its anchor must be registered as an
+invoker via `popoverTargetElement`, otherwise the mouse release after the
+`mousedown` that opened the menu light-dismisses it. Call `preventDefault()` on
+`click` so `panel-list` handles toggling.
+
+The invoker must be a `<button>` or `<input type="button">`.
+
 ```js
+let panelList = document.querySelector("panel-list");
+
 function openMenu(event) {
+  if (event.type == "click") {
+    event.preventDefault();
+  }
   if (
     event.type == "mousedown" ||
     event.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD ||
     !event.detail
   ) {
-    document.querySelector("panel-list").toggle(event);
+    panelList.toggle(event);
   }
 }
 
 let menuButton = document.getElementById("open-menu-button");
+menuButton.popoverTargetElement = panelList;
 menuButton.addEventListener("mousedown", openMenu);
 menuButton.addEventListener("click", openMenu);
 ```
+
+`moz-button` handles all of this when its `menuId` is set to the `id` of the
+`panel-list`.
 
 
 ### Checkbox

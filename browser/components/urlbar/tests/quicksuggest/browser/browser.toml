@@ -63,6 +63,9 @@ support-files = [
 
 ["browser_quicksuggest_temporal.js"]
 
+["browser_quicksuggest_temporal_zeroPrefixLayout.js"]
+support-files = ["../../../../search/test/browser/trendingSuggestionEngine.sjs"]
+
 ["browser_quicksuggest_yelp.js"]
 
 ["browser_telemetry_environment.js"]

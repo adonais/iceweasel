@@ -23,7 +23,7 @@ def eslint(lint):
 
 
 def test_lint_with_global_exclude(lint, config, paths):
-    config["exclude"] = ["subdir", "import"]
+    config["global_exclude"] = ["subdir", "import"]
     # This uses lint directly as we need to not ignore the excludes.
     results = lint(paths(), config=config, root=build.topsrcdir)
     assert len(results) == 0

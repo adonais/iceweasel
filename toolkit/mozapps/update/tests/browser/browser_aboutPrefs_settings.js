@@ -79,14 +79,10 @@ async function changeAndVerifyUpdateWrites({
 }
 
 add_task(async function testUpdateAutoPrefUI() {
-  let settingsRedesignEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:preferences#about"
   );
-  let prefUrl = settingsRedesignEnabled
-    ? "about:preferences#about"
-    : "about:preferences";
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, prefUrl);
 
   // Hack: make the test run faster:
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {

@@ -1,0 +1,134 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Check for webglcontextlost/restored events after GPU process restart</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<canvas id="restore" width="64" height="64"></canvas>
+<canvas id="noRestore" width="64" height="64"></canvas>
+
+<script type="application/javascript">
+
+function waitRAF() {
+  return new Promise(resolve => {
+    window.requestAnimationFrame(resolve);
+  });
+}
+
+async function restartGPUProcess() {
+  return await SpecialPowers.spawnChrome([], async () => {
+    const gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
+
+    if (gfxInfo.usingGPUProcess) {
+      const { TestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/TestUtils.sys.mjs"
+      );
+      let promise = TestUtils.topicObserved("compositor-reinitialized");
+
+      ok(true, "Restarting GPU process");
+
+      gfxInfo.killGPUProcessForTests();
+      await promise;
+
+      return true;
+    }
+
+    ok(true, "Not using GPU process");
+    return false;
+  });
+}
+
+function fillAndCheck(gl, color, msg) {
+  gl.clearColor(color[0] / 255, color[1] / 255, color[2] / 255, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  const pixel = new Uint8Array(4);
+  gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+  is(pixel.join(","), [...color, 255].join(","), msg);
+}
+
+const restoreCanvas = document.getElementById("restore");
+const restoreGl = restoreCanvas.getContext("webgl", { preserveDrawingBuffer: true });
+const noRestoreCanvas = document.getElementById("noRestore");
+const noRestoreGl = noRestoreCanvas.getContext("webgl");
+
+let countLostEvents = 0;
+let countRestoredEvents = 0;
+let countNoRestoreLostEvents = 0;
+let countNoRestoreRestoredEvents = 0;
+
+let restoredPromiseResolve;
+let restoredPromiseReject;
+const restoredPromise = new Promise((resolve, reject) => {
+  restoredPromiseResolve = resolve;
+  restoredPromiseReject = reject;
+});
+
+restoreCanvas.addEventListener("webglcontextlost", e => {
+  ok(restoreGl.isContextLost(), "Context should be lost during webglcontextlost event");
+  countLostEvents += 1;
+  e.preventDefault();
+});
+
+restoreCanvas.addEventListener("webglcontextrestored", () => {
+  ok(!restoreGl.isContextLost(), "Context should not be lost during webglcontextrestored event");
+  countRestoredEvents += 1;
+  restoredPromiseResolve();
+});
+
+noRestoreCanvas.addEventListener("webglcontextlost", () => {
+  ok(noRestoreGl.isContextLost(), "Context should be lost during webglcontextlost event");
+  countNoRestoreLostEvents += 1;
+});
+
+noRestoreCanvas.addEventListener("webglcontextrestored", () => {
+  countNoRestoreRestoredEvents += 1;
+});
+
+function waitContextRestored() {
+  let timeoutId = window.setTimeout(restoredPromiseReject, 5000);
+  return restoredPromise.then(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
+
+async function start() {
+  try {
+    ok(restoreGl, "Should have a WebGL context");
+    ok(noRestoreGl, "Should have a second WebGL context");
+
+    fillAndCheck(restoreGl, [255, 0, 0], "Initial fill should be red");
+    await waitRAF();
+
+    const restarted = await restartGPUProcess();
+    const expectedEvents = restarted ? 1 : 0;
+
+    if (expectedEvents) {
+      await waitContextRestored();
+    }
+    await waitRAF();
+
+    is(countLostEvents, expectedEvents, "Should have fired " + expectedEvents + " webglcontextlost events");
+    is(countRestoredEvents, expectedEvents, "Should have fired " + expectedEvents + " webglcontextrestored events");
+    ok(!restoreGl.isContextLost(), "Context should not be lost after restoration");
+    fillAndCheck(restoreGl, [0, 255, 0], "Fill after restoration should be green");
+
+    is(countNoRestoreLostEvents, expectedEvents, "Should have fired " + expectedEvents + " webglcontextlost events without preventDefault");
+    is(countNoRestoreRestoredEvents, 0, "Should not restore without preventDefault");
+    is(noRestoreGl.isContextLost(), restarted, "Context without preventDefault should stay lost");
+  } catch (err) {
+    ok(false, "Caught exception " + err);
+  } finally {
+    SimpleTest.finish();
+  }
+}
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestFlakyTimeout("Wait for failure condition");
+start();
+
+</script>
+</body>
+</html>

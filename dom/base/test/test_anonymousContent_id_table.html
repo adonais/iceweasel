@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Native-anonymous elements must not appear in an enclosing shadow root's ID table</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<body>
+<script>
+"use strict";
+
+// We use a <video> as it creates native-anonymous elements outside of a UA
+// shadow tree. If the video is in an author defined shadow tree, that tree is
+// also the root of those native elements.
+function setupNativeAnonymousElementInAuthorShadow() {
+  const host = document.body.appendChild(document.createElement("div"));
+  const shadow = host.attachShadow({ mode: "open" });
+
+  const video = shadow.appendChild(document.createElement("video"));
+  video.width = 320;
+  video.height = 180;
+  video.getBoundingClientRect();
+
+  const children = SpecialPowers.InspectorUtils.getChildrenForNode(
+    video,
+    true,
+    false
+  );
+  let firstElementChild;
+  for (const node of children) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      firstElementChild = node;
+      break;
+    }
+  }
+  ok(firstElementChild, "video has a native-anonymous child element");
+  ok(
+    SpecialPowers.wrap(firstElementChild).isNativeAnonymous,
+    "the child is native-anonymous"
+  );
+
+  return { host, shadow, element: firstElementChild };
+}
+
+add_task(function test_native_anon_not_in_author_shadow_id_table() {
+  const { host, shadow, element } = setupNativeAnonymousElementInAuthorShadow();
+
+  const id = "native-anon-shadow-id-test";
+  SpecialPowers.wrap(element).id = id;
+
+  is(
+    shadow.getElementById(id),
+    null,
+    "native-anonymous element must not appear in shadow getElementById"
+  );
+  is(
+    shadow.querySelector("#" + id),
+    null,
+    "native-anonymous element must not appear in shadow querySelector"
+  );
+
+  host.remove();
+});
+</script>

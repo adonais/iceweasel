@@ -110,6 +110,53 @@ add_task(async function test_late_event_for_destroyed_window() {
   );
 });
 
+// The same as test_late_event_for_destroyed_window, in a content process.
+add_task(async function test_late_event_for_destroyed_window_in_content() {
+  await BrowserTestUtils.withNewTab(
+    "https://example.com/browser/dom/console/tests/file_empty.html",
+    async browser => {
+      let counts = await SpecialPowers.spawn(browser, [], async () => {
+        let storage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
+          Ci.nsIConsoleAPIStorage
+        );
+        let iframe = content.document.createElement("iframe");
+        content.document.body.appendChild(iframe);
+        let id = String(iframe.contentWindow.windowGlobalChild.innerWindowId);
+        let recordEvent = text =>
+          storage.recordEvent(id, {
+            level: "warn",
+            arguments: [text],
+            timeStamp: Date.now(),
+            wrappedJSObject: null,
+          });
+
+        recordEvent("early event");
+        let early = storage.getEvents(id).length;
+
+        let destroyed = new Promise(resolve => {
+          let observer = subject => {
+            if (subject.QueryInterface(Ci.nsISupportsPRUint64).data == id) {
+              Services.obs.removeObserver(observer, "inner-window-destroyed");
+              resolve();
+            }
+          };
+          Services.obs.addObserver(observer, "inner-window-destroyed");
+        });
+        iframe.remove();
+        await destroyed;
+        let cleared = storage.getEvents(id).length;
+
+        recordEvent("late event");
+        let late = storage.getEvents(id).length;
+        return { early, cleared, late };
+      });
+      is(counts.early, 1, "Event recorded while window is alive is cached");
+      is(counts.cleared, 0, "Cached events cleared on window destruction");
+      is(counts.late, 0, "Late event for destroyed window was not cached");
+    }
+  );
+});
+
 // When a system module logs an error created inside a Sandbox whose
 // prototype is a window, the message should still be keyed by that
 // window's ID.

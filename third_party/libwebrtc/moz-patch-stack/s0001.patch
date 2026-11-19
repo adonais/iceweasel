@@ -413,10 +413,10 @@ index 316e4365d9..4ff8b2d617 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index cf67941aa0..c1e7e71d3b 100644
+index 9147ea7d6d..a950a57217 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
-@@ -24,6 +24,7 @@ rtc_library("call_interfaces") {
+@@ -25,6 +25,7 @@ rtc_library("call_interfaces") {
    sources = [
      "audio_receive_stream.cc",
      "audio_receive_stream.h",
@@ -424,7 +424,7 @@ index cf67941aa0..c1e7e71d3b 100644
      "audio_send_stream.h",
      "audio_state.cc",
      "audio_state.h",
-@@ -36,9 +37,6 @@ rtc_library("call_interfaces") {
+@@ -37,9 +38,6 @@ rtc_library("call_interfaces") {
      "syncable.cc",
      "syncable.h",
    ]
@@ -521,10 +521,10 @@ index 72f2716e03..dc96455f99 100644
      x_display_->AddEventHandler(xfixes_event_base_ + XFixesCursorNotify, this);
  
 diff --git a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-index 6088a3286b..089164ed65 100644
+index 06e6a9331a..4379265558 100644
 --- a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-@@ -311,7 +311,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
+@@ -331,7 +331,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
  
      // Note name is an X11 Atom used to id the monitor.
      sources->push_back(
@@ -769,10 +769,10 @@ index 0b87d6d065..d69ae9420b 100644
  }  // namespace webrtc
  
 diff --git a/modules/rtp_rtcp/source/rtp_sender.cc b/modules/rtp_rtcp/source/rtp_sender.cc
-index cdd47994ee..7293a99aee 100644
+index 447016f423..930dc75ec0 100644
 --- a/modules/rtp_rtcp/source/rtp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtp_sender.cc
-@@ -140,6 +140,10 @@ bool IsNonVolatile(RTPExtensionType type) {
+@@ -143,6 +143,10 @@ bool IsNonVolatile(RTPExtensionType type) {
      case kRtpExtensionNumberOfExtensions:
        RTC_DCHECK_NOTREACHED();
        return false;
@@ -1392,10 +1392,10 @@ index 849c7ce530..27f1b22422 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index cd7421c3d0..890683be72 100644
+index 59c902b1c9..a11e75fd88 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -524,6 +524,12 @@ rtc_library("logging") {
+@@ -526,6 +526,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1510,7 +1510,7 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 82cb3af9df..efefd6989e 100644
+index 42c6a4acaa..10aa1021b0 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -110,7 +110,7 @@ declare_args() {

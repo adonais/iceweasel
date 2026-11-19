@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Database: "resource://services-settings/Database.sys.mjs",
   FilterExpressions:
     "resource://gre/modules/components-utils/FilterExpressions.sys.mjs",
-  pushBroadcastService: "resource://gre/modules/PushBroadcastService.sys.mjs",
+  pushBroadcastService: "moz-src:///dom/push/PushBroadcastService.sys.mjs",
   RemoteSettingsClient:
     "resource://services-settings/RemoteSettingsClient.sys.mjs",
   SyncHistory: "resource://services-settings/SyncHistory.sys.mjs",

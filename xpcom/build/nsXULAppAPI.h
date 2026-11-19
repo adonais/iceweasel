@@ -295,8 +295,6 @@ bool XRE_IsE10sParentProcess();
 #include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
 
-bool XRE_IsSocketProcess();
-
 /**
  * Returns true if the appshell should run its own native event loop. Returns
  * false if we should rely solely on the Gecko event loop.

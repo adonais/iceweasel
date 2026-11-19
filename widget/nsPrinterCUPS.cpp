@@ -388,7 +388,7 @@ void nsPrinterCUPS::TryEnsurePrinterInfo(PrinterInfoLock& aLock,
       // possible. Otherwise, if the hostname starts with the same text as the
       // entire server name, it would compare equal when it's not.
       const size_t hostnameMemLength = serverName.Length() + 2;
-      auto hostnameMem = MakeUnique<char[]>(hostnameMemLength);
+      auto hostnameMem = std::make_unique<char[]>(hostnameMemLength);
 
       // We don't expect httpGetHostname to return null when a connection is
       // passed, but it's better not to make assumptions.

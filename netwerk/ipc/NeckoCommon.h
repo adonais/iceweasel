@@ -95,11 +95,6 @@ inline bool IsNeckoChild() {
   return amChild;
 }
 
-inline bool IsSocketProcessChild() {
-  static bool amChild = (XRE_GetProcessType() == GeckoProcessType_Socket);
-  return amChild;
-}
-
 class HttpChannelSecurityWarningReporter : public nsISupports {
  public:
   [[nodiscard]] virtual nsresult ReportSecurityMessage(

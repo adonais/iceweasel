@@ -15,14 +15,23 @@ JSObject* WebTransportError::WrapObject(JSContext* aCx,
 
 /* static */
 already_AddRefed<WebTransportError> WebTransportError::Constructor(
-    const GlobalObject& aGlobal, const nsAString& aMessage,
+    const GlobalObject& aGlobal, const StringOrWebTransportErrorInit& aMessage,
     const WebTransportErrorOptions& aOptions) {
   // https://w3c.github.io/webtransport/#dom-webtransporterror-webtransporterror
+
+  if (aMessage.IsWebTransportErrorInit()) {
+    const WebTransportErrorInit& init = aMessage.GetAsWebTransportErrorInit();
+    return do_AddRef(new WebTransportError(
+        NS_ConvertUTF16toUTF8(init.mMessage), WebTransportErrorSource::Stream,
+        init.mStreamErrorCode.WasPassed()
+            ? Nullable<uint32_t>(init.mStreamErrorCode.Value())
+            : Nullable<uint32_t>()));
+  }
 
   // Steps 1-2: set this's name to "WebTransportError" and message to
   // message (both handled by the DOMException base constructor below).
   nsCString message;
-  CopyUTF16toUTF8(aMessage, message);
+  CopyUTF16toUTF8(aMessage.GetAsString(), message);
 
   // Step 3: set [[Source]] to options.source and [[StreamErrorCode]] to
   // options.streamErrorCode.

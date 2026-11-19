@@ -21,6 +21,8 @@ class LIRGeneratorX64 : public LIRGeneratorX86Shared {
                           size_t lirIndex);
   void defineInt64Phi(MPhi* phi, size_t lirIndex);
 
+  bool canStoreConstantWithoutRegister(MDefinition* value);
+
   void lowerForALUInt64(LInstructionHelper<INT64_PIECES, INT64_PIECES, 0>* ins,
                         MDefinition* mir, MDefinition* input);
   void lowerForALUInt64(

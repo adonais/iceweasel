@@ -1119,7 +1119,7 @@ private fun IconListItemWithAfterListActionPreview() {
                 label = "IconListItem + right icon + clicks",
                 beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
                 beforeIconDescription = null,
-                afterIconPainter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                afterIconPainter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                 afterIconDescription = "click me",
                 onAfterIconClick = { Toast.makeText(context, "icon click", TOAST_LENGTH).show() },
             )
@@ -1141,7 +1141,7 @@ private fun FaviconListItemPreview() {
                 url = "",
                 description = "Description text",
                 onClick = { Toast.makeText(context, "list item click", TOAST_LENGTH).show() },
-                iconPainter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                iconPainter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                 onIconClick = { Toast.makeText(context, "icon click", TOAST_LENGTH).show() },
                 showDivider = true,
             )
@@ -1238,18 +1238,18 @@ private class SelectableFaviconListItemParameterProvider :
                 SelectableFaviconListItemPreviewState(
                     label = "Favicon + right icon",
                     faviconRes = iconsR.drawable.mozac_ic_collection_24,
-                    iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                    iconRes = iconsR.drawable.mozac_ic_more_vertical_round_24,
                 ),
                 SelectableFaviconListItemPreviewState(
                     label = "Favicon + right icon + overline",
                     faviconRes = iconsR.drawable.mozac_ic_collection_24,
-                    iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                    iconRes = iconsR.drawable.mozac_ic_more_vertical_round_24,
                 ),
                 SelectableFaviconListItemPreviewState(
                     label = "Selected favicon + right icon",
                     isSelected = true,
                     faviconRes = iconsR.drawable.mozac_ic_collection_24,
-                    iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                    iconRes = iconsR.drawable.mozac_ic_more_vertical_round_24,
                 ),
                 SelectableFaviconListItemPreviewState(
                     label = "Favicon + painter",
@@ -1418,7 +1418,7 @@ private fun SelectableListItemPreview() {
                         modifier = Modifier.size(ICON_SIZE),
                     ) {
                         Icon(
-                            painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                            painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                             contentDescription = null,
                         )
                     }
@@ -1437,7 +1437,7 @@ private fun SelectableListItemPreview() {
                         modifier = Modifier.size(ICON_SIZE),
                     ) {
                         Icon(
-                            painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                            painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                             contentDescription = null,
                         )
                     }

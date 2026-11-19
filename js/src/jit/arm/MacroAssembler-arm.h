@@ -1239,12 +1239,12 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
                                 Register scratch);
 
   FaultingCodeRange store8(Register src, const Address& address);
-  void store8(Imm32 imm, const Address& address);
+  FaultingCodeRange store8(Imm32 imm, const Address& address);
   FaultingCodeRange store8(Register src, const BaseIndex& address);
   void store8(Imm32 imm, const BaseIndex& address);
 
   FaultingCodeRange store16(Register src, const Address& address);
-  void store16(Imm32 imm, const Address& address);
+  FaultingCodeRange store16(Imm32 imm, const Address& address);
   FaultingCodeRange store16(Register src, const BaseIndex& address);
   void store16(Imm32 imm, const BaseIndex& address);
 

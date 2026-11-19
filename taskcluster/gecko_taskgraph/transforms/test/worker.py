@@ -249,10 +249,7 @@ def set_worker_type(config, tasks):
             else:
                 task["worker-type"] = "t-bitbar-gw-perf-s24"
         elif test_platform.startswith("android-hw-a55"):
-            if task["suite"] != "raptor":
-                task["worker-type"] = "t-lambda-perf-a55"
-            else:
-                task["worker-type"] = "t-bitbar-gw-perf-a55"
+            task["worker-type"] = "t-lambda-perf-a55"
         elif test_platform.startswith("android-em-14-arm64"):
             task["worker-type"] = MACOSX_WORKER_TYPES["macosx1500-aarch64"]
         elif test_platform.startswith("android-em-"):
@@ -289,6 +286,19 @@ def set_wayland_env(config, tasks):
         env["MOZ_ENABLE_WAYLAND"] = "1"
         env["WAYLAND_DISPLAY"] = "wayland-0"
         env["NEED_GNOME_KEYRING"] = "true"
+        yield task
+
+
+@transforms.add
+def set_ml_accelerator_env(config, tasks):
+    """Tell the ML tests that llama.cpp must find an accelerator (Metal)."""
+    for task in tasks:
+        if (
+            task["test-platform"].startswith("macosx")
+            and task["worker-type"] == MACOSX_WORKER_TYPES["macosx1500-aarch64"]
+        ):
+            env = task.setdefault("worker", {}).setdefault("env", {})
+            env["MOZ_ML_EXPECT_ACCELERATOR"] = "1"
         yield task
 
 

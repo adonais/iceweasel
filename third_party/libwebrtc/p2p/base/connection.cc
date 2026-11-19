@@ -91,7 +91,7 @@ inline bool TooLongWithoutResponse(
   if (pings_since_last_response.empty())
     return false;
 
-  auto first = pings_since_last_response[0];
+  const auto& first = pings_since_last_response[0];
   return now > (first.sent_time + maximum_time);
 }
 
@@ -666,7 +666,8 @@ void Connection::MaybeHandleDtlsPiggybackingAttributes(
       piggyback_acks->push_back(sent_hash);
     }
   }
-  dtls_stun_piggyback_callbacks_.recv_data(piggyback_data, piggyback_acks);
+  dtls_stun_piggyback_callbacks_.recv_data(piggyback_data,
+                                           std::move(piggyback_acks));
 }
 
 void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {

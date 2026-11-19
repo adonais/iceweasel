@@ -16,6 +16,8 @@ import org.mozilla.gecko.util.ThreadUtils;
  */
 @ExperimentalGeckoViewApi
 public class PictureInPictureController {
+  /** Public constructor for PictureInPictureController. */
+  public PictureInPictureController() {}
 
   /**
    * Session picture-in-picture drives the picture-in-picture window for the video a single session

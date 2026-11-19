@@ -252,7 +252,7 @@ nsresult StartupCache::Init() {
   }
 
   RegisterWeakMemoryReporter(this);
-  mDecompressionContext = MakeUnique<LZ4FrameDecompressionContext>(true);
+  mDecompressionContext = std::make_unique<LZ4FrameDecompressionContext>(true);
 
   return NS_OK;
 }
@@ -575,7 +575,7 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
                                  true,      /* aChecksum */
                                  true);     /* aStableSrc */
   size_t writeBufLen = ctx.GetRequiredWriteBufferLength();
-  auto writeBuffer = MakeUnique<char[]>(writeBufLen);
+  auto writeBuffer = std::make_unique<char[]>(writeBufLen);
   auto writeSpan = Span(writeBuffer.get(), writeBufLen);
 
   for (auto& e : entries) {

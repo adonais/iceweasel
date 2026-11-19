@@ -889,6 +889,24 @@ bool WarpOracle::addFuseDependency(RealmFuses::FuseIndex fuseIndex) {
                               CompilationDependency::Type::RegExpPrototype>;
       return addDep(Dependency());
     }
+    case RealmFuses::FuseIndex::ObjectProtoHasNoIndexedPropsFuse: {
+      using Dependency = RealmFuseDependency<
+          &RealmFuses::objectProtoHasNoIndexedPropsFuse,
+          CompilationDependency::Type::ObjectProtoHasNoIndexedProps>;
+      return addDep(Dependency());
+    }
+    case RealmFuses::FuseIndex::ArrayProtoHasNoIndexedPropsFuse: {
+      using Dependency = RealmFuseDependency<
+          &RealmFuses::arrayProtoHasNoIndexedPropsFuse,
+          CompilationDependency::Type::ArrayProtoHasNoIndexedProps>;
+      return addDep(Dependency());
+    }
+    case RealmFuses::FuseIndex::StringProtoHasNoIndexedPropsFuse: {
+      using Dependency = RealmFuseDependency<
+          &RealmFuses::stringProtoHasNoIndexedPropsFuse,
+          CompilationDependency::Type::StringProtoHasNoIndexedProps>;
+      return addDep(Dependency());
+    }
     default:
       MOZ_CRASH("Unexpected invalidating fuse");
   }
@@ -1202,6 +1220,19 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
           return abort(AbortReason::Error);
         }
         break;
+      case CacheOp::CallDOMGetterResult:
+      case CacheOp::CallDOMFunction:
+      case CacheOp::CallDOMFunctionWithAllocSite: {
+        // WebIDL sequences map to JS arrays. A sequence that doesn't
+        // contain any objects can be allocated without side-effects
+        // if the Array constructor has already been resolved.
+        reader.skip(opInfo.argLength);
+        Handle<GlobalObject*> global = cx_->global();
+        if (!GlobalObject::ensureConstructor(cx_, global, JSProto_Array)) {
+          return abort(AbortReason::Error);
+        }
+        break;
+      }
       case CacheOp::GuardFuse: {
         auto [fuseIndex] = reader.argsForGuardFuse();
         if (!RealmFuses::isInvalidatingFuse(fuseIndex)) {

@@ -1541,7 +1541,7 @@ class PeerConnectionIceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
     pc_factory_ = CreatePeerConnectionFactory(
-        network_thread_.get(), network_thread_.get(), Thread::Current(),
+        network_thread_.get(), Thread::Current(),
         FakeAudioCaptureModule::Create(), CreateBuiltinAudioEncoderFactory(),
         CreateBuiltinAudioDecoderFactory(),
         std::make_unique<VideoEncoderFactoryTemplate<
@@ -1568,7 +1568,6 @@ class PeerConnectionIceConfigTest : public ::testing::Test {
   }
 
   test::RunLoop main_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   std::unique_ptr<SocketServer> socket_server_;
   std::unique_ptr<Thread> network_thread_;
   scoped_refptr<PeerConnectionFactoryInterface> pc_factory_ = nullptr;

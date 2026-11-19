@@ -2,3 +2,6 @@
 
 ["test_device_reset.html"]
 subsuite = "gpu"
+
+["test_gpu_process_kill_for_testing.html"]
+subsuite = "gpu"

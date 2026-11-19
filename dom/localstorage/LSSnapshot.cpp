@@ -13,6 +13,7 @@
 
 // Global includes
 #include <cstdint>
+#include <memory>
 #include <new>
 #include <utility>
 
@@ -24,7 +25,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/LSValue.h"
 #include "mozilla/dom/PBackgroundLSDatabase.h"
@@ -228,9 +228,9 @@ nsresult LSSnapshot::Init(const nsAString& aKey,
 #endif
 
   if (mHasOtherProcessObservers) {
-    mWriteAndNotifyInfos = MakeUnique<nsTArray<LSWriteAndNotifyInfo>>();
+    mWriteAndNotifyInfos = std::make_unique<nsTArray<LSWriteAndNotifyInfo>>();
   } else {
-    mWriteOptimizer = MakeUnique<SnapshotWriteOptimizer>();
+    mWriteOptimizer = std::make_unique<SnapshotWriteOptimizer>();
   }
 
   if (!mExplicit) {

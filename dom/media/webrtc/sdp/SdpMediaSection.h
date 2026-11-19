@@ -69,6 +69,12 @@ class SdpMediaSection {
       return MatchesTypeOf(aOther) &&
              unknown.map(formatString) == aOther.unknown.map(formatString);
     }
+
+    bool IsRtp() const { return type == kAudio || type == kVideo; }
+
+    bool IsDataChannel() const { return type == kApplication; }
+
+    bool IsUnknown() const { return type == kUnknown; }
   };
   static const size_t kMediaTypes = static_cast<size_t>(kUnknown) + 1;
 
@@ -119,6 +125,9 @@ class SdpMediaSection {
 
   virtual MediaType GetMediaType() const = 0;
   virtual MediaTypeInfo GetMediaTypeInfo() const = 0;
+  // Only the format list of an unknown media type can be replaced; the media
+  // type itself is fixed once the section exists.
+  virtual void SetUnknownFormatString(const std::string& formatString) = 0;
   virtual unsigned int GetPort() const = 0;
   virtual void SetPort(unsigned int port) = 0;
   virtual unsigned int GetPortCount() const = 0;
@@ -174,7 +183,7 @@ class SdpMediaSection {
 
   inline void SetDirection(const SdpDirectionAttribute::Direction direction) {
     GetAttributeList().SetAttribute(
-        MakeUnique<SdpDirectionAttribute>(direction));
+        std::make_unique<SdpDirectionAttribute>(direction));
   }
 
   inline SdpDirectionAttribute::Direction GetDirection() const {

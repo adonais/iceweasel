@@ -264,7 +264,8 @@ class APZFindScrollTargetTester : public APZCTreeManagerTester {
     SetScrollHandoff(layers[1], root);
     SetScrollHandoff(layers[2], layers[1]);
 
-    registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+    registration =
+        std::make_unique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
 
     mRoot = ApzcOf(root);

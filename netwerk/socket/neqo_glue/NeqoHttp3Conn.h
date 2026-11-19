@@ -265,6 +265,17 @@ class NeqoHttp3Conn final {
     return neqo_http3conn_webtransport_register_send_group(this, aSessionId,
                                                            aGroupId);
   }
+  nsresult SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) {
+    return neqo_http3conn_webtransport_set_anticipated_concurrent_incoming_uni_streams(
+        this, aSessionId, aValue);
+  }
+
+  nsresult SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) {
+    return neqo_http3conn_webtransport_set_anticipated_concurrent_incoming_bidi_streams(
+        this, aSessionId, aValue);
+  }
   nsresult GetWebTransportSessionProtocol(uint64_t aSessionId,
                                           nsACString& aProtocol) {
     return neqo_http3conn_webtransport_session_protocol(this, aSessionId,

@@ -246,8 +246,16 @@ RefPtr<ShutdownPromise> FFmpegDataEncoder<LIBAV_VER>::Shutdown() {
 
 RefPtr<GenericPromise> FFmpegDataEncoder<LIBAV_VER>::SetBitrate(
     uint32_t aBitrate) {
-  FFMPEG_LOG("SetBitrate");
-  return GenericPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
+  FFMPEG_LOG("SetBitrate: {}", aBitrate);
+  return InvokeAsync(
+      mTaskQueue, __func__,
+      [self = RefPtr{this}, aBitrate]() -> RefPtr<GenericPromise> {
+        auto changes = MakeRefPtr<EncoderConfigurationChangeList>();
+        changes->Push(BitrateChange(Some(aBitrate)));
+        return self->ProcessReconfigure(changes)->MapErr(
+            self->mTaskQueue, __func__,
+            [](const MediaResult& aError) { return aError.Code(); });
+      });
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> FFmpegDataEncoder<
@@ -282,7 +290,13 @@ FFmpegDataEncoder<LIBAV_VER>::ProcessReconfigure(
 
   FFMPEG_LOG("ProcessReconfigure");
 
+  if (NS_WARN_IF(!mCodecContext)) {
+    return ReconfigurationPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                                   __func__);
+  }
+
   bool ok = true;
+  nsresult rv = NS_ERROR_DOM_MEDIA_FATAL_ERR;
   for (const auto& confChange : aConfigurationChanges->mChanges) {
     // A reconfiguration on the fly succeeds if all changes can be applied
     // successfuly. In case of failure, the encoder will be drained and
@@ -293,18 +307,25 @@ FFmpegDataEncoder<LIBAV_VER>::ProcessReconfigure(
         [&](const DisplayDimensionsChange& aChange) -> bool { return false; },
         [&](const BitrateModeChange& aChange) -> bool { return false; },
         [&](const BitrateChange& aChange) -> bool {
-          // Verified on x264
-          if (!strcmp(mCodecContext->codec->name, "libx264")) {
-            if (aChange.get().isNothing()) {
-              return false;
-            }
-            MOZ_ASSERT(aChange.get().ref() != 0);
-            mConfig.mBitrate = aChange.get().ref();
-            mCodecContext->bit_rate =
-                AssertedCast<FFmpegBitRate>(mConfig.mBitrate);
-            return true;
+          if (aChange.get().isNothing()) {
+            return false;
           }
-          return false;
+          // Verified on x264. mediacodecenc forwards bit_rate changes with
+          // setParameters.
+          bool supported = !strcmp(mCodecContext->codec->name, "libx264");
+#ifdef MOZ_WIDGET_ANDROID
+          supported |= mIsMediaCodec;
+#endif
+          if (!supported) {
+            return false;
+          }
+          if (aChange.get().ref() == 0) {
+            rv = NS_ERROR_INVALID_ARG;
+            return false;
+          }
+          mConfig.mBitrate = SaturatingCast<int32_t>(aChange.get().ref());
+          SetContextBitrate();
+          return true;
         },
         [&](const FramerateChange& aChange) -> bool { return false; },
         [&](const UsageChange& aChange) -> bool { return false; },
@@ -316,7 +337,7 @@ FFmpegDataEncoder<LIBAV_VER>::ProcessReconfigure(
   if (ok) {
     return P::CreateAndResolve(true, __func__);
   }
-  return P::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__);
+  return P::CreateAndReject(rv, __func__);
 }
 
 RefPtr<MediaDataEncoder::EncodePromise>
@@ -383,6 +404,9 @@ void FFmpegDataEncoder<LIBAV_VER>::ShutdownInternal() {
 
 Result<AVCodecContext*, MediaResult>
 FFmpegDataEncoder<LIBAV_VER>::AllocateCodecContext(bool aHardware) {
+#ifdef MOZ_WIDGET_ANDROID
+  mIsMediaCodec = aHardware;
+#endif
   AVCodec* codec = nullptr;
   if (aHardware) {
 #ifdef MOZ_USE_HWDECODE

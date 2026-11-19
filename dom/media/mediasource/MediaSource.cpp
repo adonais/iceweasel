@@ -678,8 +678,7 @@ already_AddRefed<Promise> MediaSource::MozDebugReaderData(ErrorResult& aRv) {
     return nullptr;
   }
   MOZ_ASSERT(domPromise);
-  UniquePtr<MediaSourceDecoderDebugInfo> info =
-      MakeUnique<MediaSourceDecoderDebugInfo>();
+  auto info = std::make_unique<MediaSourceDecoderDebugInfo>();
   mDecoder->RequestDebugInfo(*info)->Then(
       mAbstractMainThread, __func__,
       [domPromise, infoPtr = std::move(info)] {

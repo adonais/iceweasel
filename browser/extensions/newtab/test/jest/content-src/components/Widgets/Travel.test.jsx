@@ -21,6 +21,11 @@ const mockState = {
       "widgets.travel.interaction": false,
     },
   },
+  FramedWidgets: {
+    travel: {
+      url: "https://stage-widgets-kayak-travel.merino.nonprod.webservices.mozgcp.net/1.0.202610272219/index.html",
+    },
+  },
 };
 
 const renderWidget = (dispatch = jest.fn(), props = {}, state = mockState) => {
@@ -40,6 +45,29 @@ const renderWidget = (dispatch = jest.fn(), props = {}, state = mockState) => {
 };
 
 describe("Travel widget", () => {
+  it("loads the manifest url in a sandboxed iframe labelled by the title", () => {
+    const { container } = renderWidget();
+    const frame = container.querySelector("iframe.travel-frame");
+    expect(frame).toHaveAttribute("src", mockState.FramedWidgets.travel.url);
+    expect(frame).toHaveAttribute("aria-labelledby", "travel-widget-label");
+    expect(frame).toHaveAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+    );
+  });
+
+  it("renders nothing without a manifest entry", () => {
+    const { container } = renderWidget(
+      jest.fn(),
+      {},
+      {
+        ...mockState,
+        FramedWidgets: {},
+      }
+    );
+    expect(container.querySelector("article.travel")).toBeNull();
+  });
+
   it("renders the widget at the resolved size", () => {
     const { container } = renderWidget();
     const root = container.querySelector("article.travel");
@@ -63,13 +91,6 @@ describe("Travel widget", () => {
         ".travel-context-menu-button[data-l10n-id='newtab-travel-widget-open-menu-button']"
       )
     ).toBeTruthy();
-  });
-
-  it("renders an empty body with no rows", () => {
-    const { container } = renderWidget();
-    const body = container.querySelector(".travel-body");
-    expect(body).toBeTruthy();
-    expect(body.children.length).toBe(0);
   });
 
   it("shows the New badge until the widget has been interacted with", () => {
@@ -109,13 +130,16 @@ describe("Travel widget", () => {
     ).toBeNull();
   });
 
-  it("renders the shared menu footer without a leading divider", () => {
+  it("puts Powered by Kayak first, above the shared menu footer", () => {
     const { container } = renderWidget();
     const menu = container.querySelector(
       "panel-list[id='travel-context-menu']"
     );
-    expect(menu).toBeTruthy();
-    expect(menu.querySelector("hr")).toBeNull();
+    expect(menu.firstElementChild).toHaveAttribute(
+      "data-l10n-id",
+      "newtab-travel-menu-powered-by-kayak"
+    );
+    expect(menu.firstElementChild.nextElementSibling.tagName).toBe("HR");
     expect(
       menu.querySelector("panel-item[data-l10n-id='newtab-widget-menu-hide']")
     ).toBeTruthy();
@@ -152,6 +176,34 @@ describe("Travel widget", () => {
         widget_source: "context_menu",
         action_value: "large",
         widget_size: "large",
+      });
+      expect(handleUserInteraction).toHaveBeenCalledWith("travel");
+    });
+
+    it("Powered by Kayak opens kayak.com in a new tab and records the click", () => {
+      const { container, dispatch, handleUserInteraction } = renderWidget();
+      fireEvent.click(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-travel-menu-powered-by-kayak']"
+        )
+      );
+
+      const openLink = dispatch.mock.calls.find(
+        ([action]) => action?.type === at.OPEN_LINK
+      );
+      expect(openLink[0].data).toEqual({
+        url: "https://www.kayak.com/",
+        where: "tab",
+      });
+
+      const userEvent = dispatch.mock.calls.find(
+        ([action]) =>
+          action?.type === at.WIDGETS_USER_EVENT &&
+          action.data?.user_action === "powered_by_kayak"
+      );
+      expect(userEvent[0].data).toMatchObject({
+        widget_name: "travel",
+        widget_source: "context_menu",
       });
       expect(handleUserInteraction).toHaveBeenCalledWith("travel");
     });

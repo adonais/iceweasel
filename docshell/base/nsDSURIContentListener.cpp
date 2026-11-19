@@ -87,7 +87,8 @@ MaybeCloseWindowHelper::ChooseNewBrowsingContext(BrowsingContext* aBC) {
 }
 
 NS_IMETHODIMP
-MaybeCloseWindowHelper::Notify(nsITimer* timer) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+MaybeCloseWindowHelper::Notify(nsITimer* /*timer*/)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   NS_ASSERTION(mBCToClose, "No window to close after timer fired");
 
   const RefPtr<BrowsingContext> bc = std::move(mBCToClose);
@@ -224,7 +225,7 @@ nsDSURIContentListener::IsPreferred(const char* aContentType,
 
 NS_IMETHODIMP
 nsDSURIContentListener::CanHandleContent(const char* aContentType,
-                                         bool aIsContentPreferred,
+                                         bool /*aIsContentPreferred*/,
                                          char** aDesiredContentType,
                                          bool* aCanHandleContent) {
   MOZ_ASSERT(aCanHandleContent, "Null out param?");

@@ -125,6 +125,23 @@ quotamanager:
         description: >
           floor(log2(abs(usage))), the order of magnitude of the negative value.
         type: quantity
+  had_temporary_storage_usage_underflow:
+    type: boolean
+    description: >
+      Whether the in-memory total temporary storage usage tracked by the quota
+      manager went negative at least once during this session. False means the
+      quota manager was initialized and no underflow was seen.
+    lifetime: ping
+    bugs:
+      - https://bugzil.la/2053492
+    data_reviews:
+      - https://bugzil.la/2053492
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - abienner@mozilla.com
+      - storage-telemetry@mozilla.com
+    expires: never
   restore_origin_directory_metadata_counter:
     type: counter
     description: >

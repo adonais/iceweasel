@@ -8,11 +8,8 @@
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/net/ClassOfService.h"
 #include "mozilla/net/DNS.h"
-#include "mozilla/net/HttpTrafficAnalyzer.h"
-#include "mozilla/net/HttpTransactionShell.h"
 #include "nsExceptionHandler.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIDNSService.h"
@@ -143,24 +140,6 @@ struct ParamTraits<nsIClassOfService::FetchPriority>
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::ClassOfService, mClassFlags,
                                   mIncremental, mFetchPriority);
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(struct mozilla::net::LNAPerms,
-                                  mLocalHostPermission,
-                                  mLocalNetworkPermission);
-
-template <>
-struct ParamTraits<mozilla::net::LNAPermission>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::net::LNAPermission, mozilla::net::LNAPermission::Granted,
-          mozilla::net::LNAPermission::Pending> {};
-
-template <>
-struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND
-    ParamTraits<mozilla::net::HttpTrafficCategory>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::net::HttpTrafficCategory,
-          mozilla::net::HttpTrafficCategory::eN1Sys,
-          mozilla::net::HttpTrafficCategory::eInvalid> {};
 
 template <>
 struct ParamTraits<nsICacheInfoChannel::CacheDisposition>

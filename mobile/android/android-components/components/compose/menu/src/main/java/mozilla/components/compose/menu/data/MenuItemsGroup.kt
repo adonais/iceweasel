@@ -4,7 +4,7 @@
 
 package mozilla.components.compose.menu.data
 
-/** Group of menu items to be shown in a [Menu]. */
+/** Group of menu items to be shown in a `Menu`. */
 sealed class MenuItemsGroup {
     abstract val id: String
     abstract val items: List<MenuItem>

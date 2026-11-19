@@ -16,9 +16,6 @@ let h2Port;
 let h3Port;
 let trrServer;
 
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
 ].getService(Ci.nsICertOverrideService);
@@ -33,11 +30,6 @@ add_setup(async function setup() {
   h2Port = trrServer.port();
 
   trr_test_setup();
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; // Needed to trigger socket process.
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 
   Services.prefs.setIntPref("network.trr.mode", 2); // TRR first
   Services.prefs.setBoolPref("network.http.http3.enable", true);

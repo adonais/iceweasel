@@ -393,6 +393,8 @@ class SurfaceTextureHost : public TextureHost {
   // SurfaceTexture uses android fence internally,
   bool NeedsDeferredDeletion() const override { return false; }
 
+  SurfaceDescriptor GetSurfaceDescriptor() override;
+
  protected:
   mozilla::java::GeckoSurfaceTexture::GlobalRef mSurfTex;
   const gfx::IntSize mSize;

@@ -72,10 +72,21 @@ media::DecodeSupportSet RemoteDecoderModule::Supports(
   }
 #endif
 #ifdef ANDROID
-  if ((aParams.mCDM && mLocation != RemoteMediaIn::RddProcess) ||
-      (!aParams.mCDM && aParams.mConfig.IsAudio() &&
-       mLocation != RemoteMediaIn::UtilityProcess_Generic)) {
+  // Decoders using a CDM must be in the same process as the CDM. Otherwise
+  // audio is only decoded in the utility process.
+  if (aParams.mCDM) {
+    if (aParams.mCDM->GetLocation() != mLocation) {
+      support = {};
+    }
+  } else if (aParams.mConfig.IsAudio() &&
+             mLocation != RemoteMediaIn::UtilityProcess_Generic) {
     support = {};
+  } else if (mLocation == RemoteMediaIn::RddProcess &&
+             RemoteMediaManagerChild::IsGpuProcessDecodingAvailable()) {
+    // Platform decoders must be used in the GPU process, unless it is disabled.
+    // Pure software decoding may still be performed in the RDD process since it
+    // is not permitted in the GPU process.
+    support -= media::DecodeSupport::HardwareDecode;
   }
   if (const auto* videoInfo = aParams.mConfig.GetAsVideoInfo()) {
     const media::MediaCodec codec =

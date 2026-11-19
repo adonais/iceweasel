@@ -20,23 +20,23 @@ nsParentalControlsService::GetParentalControlsEnabled(bool* aResult) {
 }
 
 NS_IMETHODIMP
-nsParentalControlsService::GetBlockFileDownloadsEnabled(bool* aResult) {
+nsParentalControlsService::GetBlockFileDownloadsEnabled(bool* /*aResult*/) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP
-nsParentalControlsService::GetLoggingEnabled(bool* aResult) {
+nsParentalControlsService::GetLoggingEnabled(bool* /*aResult*/) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP
-nsParentalControlsService::Log(int16_t aEntryType, bool blocked,
-                               nsIURI* aSource, nsIFile* aTarget) {
+nsParentalControlsService::Log(int16_t /*aEntryType*/, bool /*blocked*/,
+                               nsIURI* /*aSource*/, nsIFile* /*aTarget*/) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP
-nsParentalControlsService::IsAllowed(int16_t aAction, nsIURI* aUri,
-                                     bool* _retval) {
+nsParentalControlsService::IsAllowed(int16_t /*aAction*/, nsIURI* /*aUri*/,
+                                     bool* /*_retval*/) {
   return NS_ERROR_NOT_AVAILABLE;
 }

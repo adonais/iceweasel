@@ -337,13 +337,13 @@ _cairo_clip_intersect_clip (cairo_clip_t *clip,
 	    else
 		clip = _cairo_clip_intersect_clip_path (clip, other->path);
 	}
-    }
 
-    if (clip->region) {
-	cairo_region_destroy (clip->region);
-	clip->region = NULL;
+        if (clip->region) {
+	    cairo_region_destroy (clip->region);
+	    clip->region = NULL;
+        }
+        clip->is_region = FALSE;
     }
-    clip->is_region = FALSE;
 
     return clip;
 }

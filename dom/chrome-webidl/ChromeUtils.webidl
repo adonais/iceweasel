@@ -1047,7 +1047,6 @@ enum WebIDLProcType {
  "gpu",
  "vr",
  "rdd",
- "socket",
  "inference",
 #ifdef MOZ_ENABLE_FORKSERVER
  "forkServer",

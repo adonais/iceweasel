@@ -43,11 +43,17 @@ add_task(async function test_submit_creditCard_autofill() {
     ccFormArgsv2("popup_shown", { field_name: "cc-name" }),
     ccFormArgsv2(
       "filled",
-      buildccFormv2Extra({ cc_exp: "unavailable" }, "filled")
+      buildccFormv2Extra(
+        { cc_exp: "unavailable", cc_csc: "not_filled" },
+        "filled"
+      )
     ),
     ccFormArgsv2(
       "submitted",
-      buildccFormv2Extra({ cc_exp: "unavailable" }, "autofilled")
+      buildccFormv2Extra(
+        { cc_exp: "unavailable", cc_csc: "not_filled" },
+        "autofilled"
+      )
     ),
   ];
 
@@ -89,7 +95,10 @@ add_task(async function test_clear_creditCard_autofill() {
     ccFormArgsv2("popup_shown", { field_name: "cc-name" }),
     ccFormArgsv2(
       "filled",
-      buildccFormv2Extra({ cc_exp: "unavailable" }, "filled")
+      buildccFormv2Extra(
+        { cc_exp: "unavailable", cc_csc: "not_filled" },
+        "filled"
+      )
     ),
   ];
 

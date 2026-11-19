@@ -45,6 +45,7 @@ SUPPORTED_METRIC_TYPES = [
     "boolean",
     "labeled_boolean",  # static labels only; dynamic labels are not supported
     "string_list",
+    "labeled_quantity",
 ]
 
 
@@ -83,6 +84,8 @@ def generate_metric_type(metric_type: str) -> str:
         return "time.Time"
     elif metric_type == "string_list":
         return "[]string"
+    elif metric_type == "labeled_quantity":
+        return "map[string]int64"
     else:
         print("❌ Unable to generate Go type from metric type: " + metric_type)
         exit
@@ -109,6 +112,27 @@ def validate_labeled_boolean(metric: metrics.Metric) -> bool:
             "❌ Ignoring labeled_boolean metric without static labels: "
             + f"{metric.name}."
             + " Define labels in metrics.yaml to use this metric type."
+        )
+        return False
+
+    return True
+
+
+def validate_labeled_quantity(metric: metrics.Metric) -> bool:
+    """
+    Validate that a labeled_quantity metric does not have static labels defined.
+
+    The Go server outputter does not support static labels. It generates a Go map[string]int64
+    Dynamic labels are supported.
+
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    if getattr(metric, "ordered_labels", None):
+        print(
+            "❌ Ignoring labeled_quantity metric with static labels: "
+            + f"{metric.name}."
+            + " Do not define labels in metrics.yaml to use this metric type."
         )
         return False
 
@@ -155,6 +179,8 @@ def output_go(
     # unique list of labeled_boolean metrics used in any ping
     labeled_boolean_metrics: List[metrics.Metric] = []
 
+    has_labeled_quantity: bool = False
+
     # Go through all metrics in objs and build a map of
     # ping->list of metric categories->list of metrics
     # for easier processing in the template.
@@ -176,6 +202,12 @@ def output_go(
                     metric
                 ):
                     continue
+
+                # Validate labeled_quantity metrics
+                if metric.type == "labeled_quantity":
+                    if not validate_labeled_quantity(metric):
+                        continue
+                    has_labeled_quantity = True
 
                 for ping in metric.send_in_pings:
                     if metric.type == "event" and metric not in event_metrics:
@@ -209,6 +241,7 @@ def output_go(
                 pings=ping_to_metrics,
                 events=event_metrics,
                 labeled_booleans=labeled_boolean_metrics,
+                has_labeled_quantity=has_labeled_quantity,
                 transport=transport,
             )
         )

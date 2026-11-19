@@ -140,10 +140,6 @@
 #include "nsSubDocumentFrame.h"
 #include "nsThreadUtils.h"
 
-#ifdef XP_WIN
-#  include "FxRWindowManager.h"
-#endif
-
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 #  include "mozilla/a11y/AccessibleWrap.h"
 #  include "mozilla/a11y/Compatibility.h"
@@ -267,7 +263,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION_CLASS(BrowserParent)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BrowserParent)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameLoader)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDestroyingFrameLoader)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBrowsingContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBrowserDOMWindow)
@@ -277,7 +273,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BrowserParent)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(BrowserParent)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameLoader)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDestroyingFrameLoader)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBrowsingContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBrowserDOMWindow)
@@ -299,7 +295,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mBrowsingContext(aBrowsingContext),
       mFrameElement(nullptr),
       mBrowserDOMWindow(nullptr),
-      mFrameLoader(nullptr),
+      mDestroyingFrameLoader(nullptr),
       mChromeFlags(aChromeFlags),
       mContentCache(*this),
       mRect(0, 0, 0, 0),
@@ -685,7 +681,17 @@ void BrowserParent::SetOwnerElement(Element* aElement) {
 }
 
 void BrowserParent::CacheFrameLoader(nsFrameLoader* aFrameLoader) {
-  mFrameLoader = aFrameLoader;
+  mDestroyingFrameLoader = aFrameLoader;
+}
+
+void BrowserParent::SetOwnerFrameLoader(nsFrameLoader* aFrameLoader) {
+  mOwnerFrameLoader = aFrameLoader;
+
+  VisitChildren([aFrameLoader](BrowserBridgeParent* aBrowser) {
+    if (auto* browserParent = aBrowser->GetBrowserParent()) {
+      browserParent->SetOwnerFrameLoader(aFrameLoader);
+    }
+  });
 }
 
 void BrowserParent::AddWindowListeners() {
@@ -781,7 +787,7 @@ void BrowserParent::Destroy() {
   }
 }
 
-mozilla::ipc::IPCResult BrowserParent::RecvDidUnsuppressPainting() {
+mozilla::ipc::IPCResult BrowserParent::RecvReadyToReplaceRetainedPaint() {
   if (!mFrameElement) {
     return IPC_OK();
   }
@@ -791,6 +797,24 @@ mozilla::ipc::IPCResult BrowserParent::RecvDidUnsuppressPainting() {
     subdocFrame->ClearRetainedPaintData();
   }
   return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+BrowserParent::RecvReadyToReplaceRetainedPaintNormalPriority() {
+  // Only an initial about:blank document sends this. The frame retains the
+  // paint of the previous document only while a BFCache swap waits for a
+  // document that has been loaded or restored, so the initial document must not
+  // replace it. If that document never comes, for example because the load
+  // fails after the swap, the previous document stays visible until this
+  // BrowserParent is destroyed.
+  if (mFrameElement) {
+    nsSubDocumentFrame* subdocFrame =
+        do_QueryFrame(mFrameElement->GetPrimaryFrame());
+    if (subdocFrame && subdocFrame->HasRetainedPaintData()) {
+      return IPC_OK();
+    }
+  }
+  return RecvReadyToReplaceRetainedPaint();
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(
@@ -891,7 +915,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
     }
   }
 
-  mFrameLoader = nullptr;
+  mDestroyingFrameLoader = nullptr;
 
   // If we were destroyed due to our ManagedEndpoints being dropped, make a
   // point of showing the subframe crashed UI. We don't fire the full
@@ -2836,12 +2860,21 @@ mozilla::ipc::IPCResult BrowserParent::RecvReplyKeyEvent(
     localEvent.GetAccessKeyCandidates(accessCharCodes);
     if (esm->HandleAccessKey(&localEvent, presContext, accessCharCodes)) {
       status = nsEventStatus_eConsumeNoDefault;
+      // If there is a keyboard event listener, localEvent.PreventDefault() will
+      // be called by EventListenerManager. However, otherwise, the default
+      // shortcut keys in OS may be executed later unless we explicitly consume
+      // the event itself here. To prevent to execute both access key and
+      // shortcut key in OS, we should call PreventDefault() explicitly here.
+      localEvent.PreventDefault();
     }
   }
 
-  RefPtr<Element> frameElement = mFrameElement;
-  EventDispatcher::Dispatch(frameElement, presContext, &localEvent, nullptr,
-                            &status);
+  if (const RefPtr<Element> frameElement = mFrameElement) {
+    EventDispatcher::Dispatch(frameElement, presContext, &localEvent, nullptr,
+                              &status);
+  } else {
+    MOZ_ASSERT(localEvent.DefaultPrevented());
+  }
 
   if (!localEvent.DefaultPrevented() &&
       !localEvent.mFlags.mIsSynthesizedForTests) {
@@ -3538,13 +3571,8 @@ already_AddRefed<nsFrameLoader> BrowserParent::GetFrameLoader(
     return nullptr;
   }
 
-  if (mFrameLoader) {
-    RefPtr<nsFrameLoader> fl = mFrameLoader;
-    return fl.forget();
-  }
-  RefPtr<Element> frameElement(mFrameElement);
-  RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(frameElement);
-  return frameLoaderOwner ? frameLoaderOwner->GetFrameLoader() : nullptr;
+  RefPtr<nsFrameLoader> fl = mOwnerFrameLoader.get();
+  return fl.forget();
 }
 
 void BrowserParent::TryCacheDPIAndScale() {
@@ -4260,12 +4288,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvScrollForKeyboard(
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingProtectedMedia(
-    const uint64_t& aOuterWindowID,
-    IsWindowSupportingProtectedMediaResolver&& aResolve) {
+    const uint64_t&, IsWindowSupportingProtectedMediaResolver&& aResolve) {
 #ifdef XP_WIN
-  bool isFxrWindow =
-      FxRWindowManager::GetInstance()->IsFxRWindow(aOuterWindowID);
-  aResolve(!isFxrWindow);
+  aResolve(true);
 #else
 #  ifdef FUZZING_SNAPSHOT
   return IPC_FAIL(this, "Should only be called on Windows");
@@ -4277,15 +4302,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingProtectedMedia(
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingWebVR(
-    const uint64_t& aOuterWindowID,
-    IsWindowSupportingWebVRResolver&& aResolve) {
-#ifdef XP_WIN
-  bool isFxrWindow =
-      FxRWindowManager::GetInstance()->IsFxRWindow(aOuterWindowID);
-  aResolve(!isFxrWindow);
-#else
+    const uint64_t&, IsWindowSupportingWebVRResolver&& aResolve) {
   aResolve(true);
-#endif
 
   return IPC_OK();
 }

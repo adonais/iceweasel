@@ -418,6 +418,15 @@ class nsCocoaUtils {
   static uint32_t ConvertGeckoKeyCodeToMacCharCode(uint32_t aKeyCode);
 
   /**
+   * Converts a Cocoa key equivalent character without a printable form (a
+   * function key, Delete, Return, ...) to the Gecko key name (like "VK_F13")
+   * that a XUL key element takes in its keycode attribute. Returns false if
+   * there is no such name.
+   */
+  static bool GetGeckoKeyCodeNameForMacCharCode(uint32_t aCharCode,
+                                                nsAString& aKeyCodeName);
+
+  /**
    * Converts Gecko native modifier flags for `nsIWidget::SynthesizeNative*()`
    * to native modifier flags of macOS.
    */

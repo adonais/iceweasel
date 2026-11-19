@@ -107,7 +107,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-xsmall);
-    margin-block-end: var(--space-xsmall);
+    margin-block-end: var(--space-small);
     min-height: 24px;
     position: relative;
     z-index: 1;
@@ -125,19 +125,37 @@
     .lists-switcher {
       align-items: center;
       display: inline-flex;
-      gap: var(--space-xxsmall);
       min-width: 0;
-
-      .lists-title {
-        flex: 0 1 auto;
-      }
     }
 
     moz-button.lists-switcher-button {
-      flex: 0 0 auto;
       margin: 0;
-      min-height: 24px;
-      min-width: 24px;
+      min-inline-size: 0;
+      max-inline-size: 100%;
+
+      &::part(button) {
+        overflow: hidden;
+      }
+
+      &::part(button):hover {
+        background-color: var(--button-background-color-hover);
+      }
+
+      &::part(button):active {
+        background-color: var(--button-background-color-active);
+      }
+
+      &::part(moz-button-label) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    @media (forced-colors: none) {
+      moz-button.lists-switcher-button::part(button) {
+        background-color: transparent;
+      }
     }
 
     .lists-title {
@@ -610,13 +628,22 @@
       }
     }
 
-    .lists-add-button.icon-only,
     .lists-completed-button {
       block-size: 32px;
       inline-size: 32px;
       min-height: 32px;
       min-width: 32px;
       padding: 0;
+    }
+
+    .lists-add-button.icon-only {
+      padding: 0;
+
+      .icon.icon-add {
+        background-size: var(--icon-size-xsmall);
+        block-size: var(--icon-size-xsmall);
+        inline-size: var(--icon-size-xsmall);
+      }
     }
 
     .lists-add-action {

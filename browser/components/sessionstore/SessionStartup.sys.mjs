@@ -258,7 +258,8 @@ class _SessionStartup {
           }, 0)
         );
       }, 0);
-      let savedGroupsCount = initialState.savedGroups.length;
+      // Session files written by Firefox 132 and earlier have no savedGroups.
+      let savedGroupsCount = initialState.savedGroups?.length ?? 0;
       lazy.sessionStoreLogger.debug(
         `initialState contains ${pinnedTabCount} pinned tabs and ${savedGroupsCount} saved groups`
       );

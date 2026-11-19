@@ -429,7 +429,8 @@ WinTaskbar::CreateJumpListBuilder(bool aPrivateBrowsing,
   nsAutoString aumid;
   GenerateAppUserModelID(aumid, aPrivateBrowsing);
 
-  nsCOMPtr<nsIJumpListBuilder> builder = new JumpListBuilder(aumid);
+  nsCOMPtr<nsIJumpListBuilder> builder =
+      new JumpListBuilder(aumid, aPrivateBrowsing);
   if (!builder) {
     return NS_ERROR_UNEXPECTED;
   }

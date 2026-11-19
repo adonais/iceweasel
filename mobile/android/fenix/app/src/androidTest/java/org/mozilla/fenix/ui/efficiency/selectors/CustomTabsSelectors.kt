@@ -84,15 +84,15 @@ object CustomTabsSelectors : SelectorContainer {
 
     val MENU_OPEN_IN_APP =
         Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
-            value = "Open in $appName",
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+            value = getStringResource(R.string.browser_menu_open_in_fenix, appName),
             description = "Custom tab menu: Open in app",
             groups = setOf(Group.CUSTOM_TAB_MAIN_MENU_ITEMS),
         )
 
     val MENU_FIND_IN_PAGE =
         Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.browser_menu_find_in_page),
             description = "Custom tab menu: Find in page",
             groups = setOf(Group.CUSTOM_TAB_MAIN_MENU_ITEMS),
@@ -100,7 +100,7 @@ object CustomTabsSelectors : SelectorContainer {
 
     val MENU_DESKTOP_SITE =
         Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.browser_menu_desktop_site),
             description = "Custom tab menu: Desktop site",
             groups = setOf(Group.CUSTOM_TAB_MAIN_MENU_ITEMS),

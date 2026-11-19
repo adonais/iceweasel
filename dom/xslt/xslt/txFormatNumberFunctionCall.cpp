@@ -251,7 +251,7 @@ nsresult txFormatNumberFunctionCall::evaluate(txIEvalContext* aContext,
   else
     bufsize = 1 + 30;
 
-  auto buf = mozilla::MakeUnique<char[]>(bufsize);
+  auto buf = std::make_unique<char[]>(bufsize);
   int bufIntDigits, sign;
   char* endp;
   PR_dtoa(value, 0, 0, &bufIntDigits, &sign, &endp, buf.get(), bufsize - 1);

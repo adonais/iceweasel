@@ -19,7 +19,8 @@ the UI layer.
 
 `ERRORS.NETWORK`
 
-: The device is offline at activation time. The UI renders a dedicated
+: The device is offline at activation time, or the user switched to offline
+  mode while the proxy was active. The UI renders a dedicated
   network error message distinct from the generic one.
 
 `ERRORS.TIMEOUT`

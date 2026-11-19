@@ -235,7 +235,7 @@ void gfxUserFontEntry::StoreUserFontData(
     const nsACString& aOriginalName, FallibleTArray<uint8_t>* aMetadata,
     uint32_t aMetaOrigLen, uint8_t aCompression, RefPtr<FontData>&& aFontData) {
   if (!aFontEntry->mUserFontData) {
-    aFontEntry->mUserFontData = MakeUnique<gfxUserFontData>();
+    aFontEntry->mUserFontData = std::make_unique<gfxUserFontData>();
   }
   gfxUserFontData* userFontData = aFontEntry->mUserFontData.get();
   userFontData->mSrcIndex = aSrcIndex;
@@ -829,10 +829,14 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 #if MOZ_FONTATIONS
   // Give the new gfxFontEntry a Skrifa reference backed by our downloaded and
   // sanitized font data.
-  if (StaticPrefs::gfx_font_rendering_fontations_enabled_AtStartup()) {
+  if (StaticPrefs::gfx_font_rendering_fontations_enabled()) {
     SkrifaFontRef* skf = skrifa_font_new(fontData->Data(), fontData->Length());
     if (skf) {
+      // We can safely call SetSkrifaFont without locking, as the font entry is
+      // newly-created and not yet shared with any other thread.
+      MOZ_PUSH_IGNORE_THREAD_SAFETY
       fe->SetSkrifaFont(skf);
+      MOZ_POP_THREAD_SAFETY
 #  if NIGHTLY_BUILD
       // also append (skrifa) to the name for devtools visibility
       originalFullName.AppendLiteral(" (skrifa)");
@@ -1310,6 +1314,11 @@ void gfxUserFontSet::UserFontCache::CacheFont(gfxFontEntry* aFontEntry) {
     // be safe to call even after UserFontCache::Shutdown has deleted
     // the cache.
     RegisterStrongMemoryReporter(MakeAndAddRef<MemoryReporter>());
+
+#if MOZ_FONTATIONS
+    Preferences::RegisterCallback(PrefChangedCallback,
+                                  "gfx.font_rendering.fontations.enabled");
+#endif
   }
 
   // For data: URIs, the principal is ignored; anyone who has the same
@@ -1390,6 +1399,11 @@ gfxFontEntry* gfxUserFontSet::UserFontCache::GetFont(
 
 void gfxUserFontSet::UserFontCache::Shutdown() {
   if (sUserFonts) {
+#if MOZ_FONTATIONS
+    Preferences::UnregisterCallback(PrefChangedCallback,
+                                    "gfx.font_rendering.fontations.enabled");
+#endif
+
     delete sUserFonts;
     sUserFonts = nullptr;
   }

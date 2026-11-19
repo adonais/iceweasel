@@ -43,7 +43,6 @@
 #include "nsString.h"
 
 using mozilla::AsBytes;
-using mozilla::MakeUnique;
 using mozilla::PodCopy;
 using mozilla::Span;
 using mozilla::UniquePtr;
@@ -839,7 +838,7 @@ nsBinaryInputStream::ReadArrayBuffer(uint64_t aLength,
   }
 
   uint32_t bufSize = std::min<uint64_t>(aLength, 4096);
-  UniquePtr<char[]> buf = MakeUnique<char[]>(bufSize);
+  auto buf = std::make_unique<char[]>(bufSize);
 
   uint64_t pos = 0;
   *aReadLength = 0;

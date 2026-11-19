@@ -17,7 +17,8 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     display: flex;
     flex-direction: column;
     gap: var(--space-small);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 15%);
+    border: var(--card-border);
+    box-shadow: var(--card-box-shadow);
     border-radius: var(--border-radius-medium);
     position: relative;
     overflow: hidden;
@@ -393,7 +394,8 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
   // Loading Animation
   &.placeholder {
-    box-shadow: 0 2px 6px #15141A24;
+    border: var(--card-border);
+    box-shadow: var(--card-box-shadow);
     border-radius: var(--border-radius-large);
   }
 
@@ -404,7 +406,8 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     @include newtab-card-style;
 
     &:not(.placeholder) {
-      box-shadow: 0 1px 2px 0 rgba(58, 57, 68, 20%);
+      border: var(--card-border);
+      box-shadow: var(--card-box-shadow);
       border-radius: var(--border-radius-large);
 
       &.active,

@@ -30,6 +30,7 @@ class BaseRunner(metaclass=ABCMeta):
     process_handler = None
     timeout = None
     output_timeout = None
+    cleanup_ran = False
 
     def __init__(
         self,
@@ -71,7 +72,7 @@ class BaseRunner(metaclass=ABCMeta):
         self.explicit_cleanup = explicit_cleanup
 
     def __del__(self):
-        if not self.explicit_cleanup:
+        if not self.explicit_cleanup and not self.cleanup_ran:
             # If we're relying on the gc for cleanup do the same with the profile
             self.cleanup(keep_profile=True)
 
@@ -111,6 +112,7 @@ class BaseRunner(metaclass=ABCMeta):
         """
         self.timeout = timeout
         self.output_timeout = outputTimeout
+        self.cleanup_ran = False
         cmd = self.command
 
         # ensure the runner is stopped
@@ -213,7 +215,12 @@ class BaseRunner(metaclass=ABCMeta):
         self.process_handler = None
 
     def check_for_crashes(
-        self, dump_directory=None, dump_save_path=None, test_name=None, quiet=False
+        self,
+        dump_directory=None,
+        dump_save_path=None,
+        test_name=None,
+        quiet=False,
+        group=None,
     ):
         """Check for possible crashes and output the stack traces.
 
@@ -221,6 +228,7 @@ class BaseRunner(metaclass=ABCMeta):
         :param dump_save_path: Directory to save the minidump files to
         :param test_name: Name to use in the crash output
         :param quiet: If `True` don't print the PROCESS-CRASH message to stdout
+        :param group: Test group (e.g. manifest) to attribute the crashes to
 
         :returns: Number of crashes which have been detected since the last invocation
         """
@@ -244,6 +252,7 @@ class BaseRunner(metaclass=ABCMeta):
                         self.symbols_path,
                         dump_save_path=dump_save_path,
                         test=test_name,
+                        group=group,
                     )
                 else:
                     self.logger.warning("Can not log crashes without mozcrash")
@@ -266,6 +275,7 @@ class BaseRunner(metaclass=ABCMeta):
         """
         Cleanup all runner state
         """
+        self.cleanup_ran = True
         self.stop()
         if not keep_profile:
             self.profile.cleanup()

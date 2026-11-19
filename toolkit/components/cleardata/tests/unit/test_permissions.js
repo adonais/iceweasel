@@ -282,6 +282,12 @@ add_task(async function test_removeBySite() {
 // Test that passing an OriginAttributesPattern into deleteDataFromSite only
 // clears permissions matching the pattern.
 add_task(async function test_removeBySiteAndOAPattern() {
+  // Private browsing permissions are only stored separately when isolated.
+  const isolatePB = Services.prefs.getBoolPref(
+    "permissions.isolateBy.privateBrowsing"
+  );
+  Services.prefs.setBoolPref("permissions.isolateBy.privateBrowsing", true);
+
   let principalRegular = Services.scriptSecurityManager.createContentPrincipal(
     Services.io.newURI("https://example.net"),
     {}
@@ -359,6 +365,10 @@ add_task(async function test_removeBySiteAndOAPattern() {
   });
 
   Services.perms.removeAll();
+  Services.prefs.setBoolPref(
+    "permissions.isolateBy.privateBrowsing",
+    isolatePB
+  );
 });
 
 add_task(async function removeByHost() {

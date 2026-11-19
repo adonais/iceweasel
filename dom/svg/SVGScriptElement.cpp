@@ -209,6 +209,9 @@ bool SVGScriptElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       ParseFetchPriority(aValue, aResult);
       return true;
     }
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
+    }
   }
 
   return SVGScriptElementBase::ParseAttribute(aNamespaceID, aAttribute, aValue,
@@ -226,6 +229,10 @@ void SVGScriptElement::GetFetchPriority(nsAString& aFetchPriority) const {
 
 FetchPriority SVGScriptElement::GetFetchPriority() const {
   return Element::GetFetchPriority();
+}
+
+mozilla::dom::ReferrerPolicy SVGScriptElement::GetReferrerPolicy() {
+  return GetReferrerPolicyAsEnum();
 }
 
 }  // namespace mozilla::dom

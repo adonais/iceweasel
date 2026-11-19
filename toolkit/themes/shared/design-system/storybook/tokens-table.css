@@ -321,6 +321,55 @@ td:first-of-type {
   }
 }
 
+/** Motion **/
+
+.motion-preview {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  width: 75%;
+  padding-inline: var(--space-small);
+  background-color: var(--background-color-space-demo);
+  border-radius: var(--border-radius-small);
+
+  & .item {
+    height: var(--size-item-small);
+    width: var(--size-item-small);
+    background-color: var(--background-color-padding-demo);
+    border-radius: var(--border-radius-circle);
+    animation: motion-preview-slide 1.5s infinite alternate;
+  }
+}
+
+@keyframes motion-preview-slide {
+  to {
+    margin-inline-start: calc(100% - var(--size-item-small));
+  }
+}
+
+/* The scale and translate tokens are the state a panel animates out of, so
+ * they preview as that transform being applied to a panel-like surface. */
+.motion-preview .surface {
+  height: var(--size-item-large);
+  width: 100%;
+  background-color: var(--background-color-padding-demo);
+  border-radius: var(--border-radius-small);
+  animation: motion-preview-transform 1.5s infinite alternate;
+}
+
+@keyframes motion-preview-transform {
+  to {
+    transform: var(--motion-preview-transform);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-preview .item,
+  .motion-preview .surface {
+    animation: none;
+  }
+}
+
 /** Space and size **/
 
 .space-size-preview {

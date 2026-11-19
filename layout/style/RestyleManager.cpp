@@ -480,20 +480,29 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
   }
 }
 
-void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
+void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
+                                          const ContentRemoveInfo& aInfo) {
   auto* container = aOldChild->GetParentNode();
   MOZ_ASSERT(container);
 
   // Computed style data isn't useful for detached nodes, and we'll need to
-  // recompute it anyway if we ever insert the nodes back into a document.
+  // recompute it anyway if we ever insert the nodes back into a document. We do
+  // need to keep our data for moveBefore().
   if (auto* element = Element::FromNode(aOldChild)) {
-    RestyleManager::ClearServoDataFromSubtree(element);
+    const bool preserveRootData =
+        aInfo.mNewParent && aInfo.mNewParent->IsElement() &&
+        aInfo.mNewParent->AsElement()->HasServoData() &&
+        !Servo_Element_IsDisplayNone(aInfo.mNewParent->AsElement());
+    ClearServoDataFromSubtree(element, IncludeRoot(!preserveRootData));
     // If this element is undisplayed or may have undisplayed descendants, we
     // need to invalidate the cache, since there's the unlikely event of those
     // elements getting destroyed and their addresses reused in a way that we
     // look up the cache with their address for a different element before it's
     // invalidated.
     IncrementUndisplayedRestyleGeneration();
+    if (preserveRootData) {
+      PostRestyleEvent(element, RestyleHint::RestyleSubtree(), nsChangeHint(0));
+    }
   }
 
   // This is called with anonymous nodes explicitly by editor and view
@@ -1671,7 +1680,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 
   MaybeClearDestroyedFrames maybeClear(mDestroyedFrames);
   if (!mDestroyedFrames) {
-    mDestroyedFrames = MakeUnique<nsTHashSet<const nsIFrame*>>();
+    mDestroyedFrames = std::make_unique<nsTHashSet<const nsIFrame*>>();
   }
 
   AUTO_PROFILER_LABEL("RestyleManager::ProcessRestyledFrames", LAYOUT);
@@ -1728,15 +1737,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
     // skip any frame that has been destroyed due to a ripple effect
     if (frame && mDestroyedFrames->Contains(frame)) {
       continue;
-    }
-
-    if (frame && frame->GetContent() != content) {
-      // XXXbz this is due to image maps messing with the primary frame of
-      // <area>s.  See bug 135040.  Remove this block once that's fixed.
-      frame = nullptr;
-      if (!(hint & nsChangeHint_ReconstructFrame)) {
-        continue;
-      }
     }
 
     TryToDealWithScrollbarChange(hint, content, frame, presContext);
@@ -2901,13 +2901,6 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
 
   RefPtr<ComputedStyle> upToDateStyleIfRestyled =
       wasRestyled ? ServoStyleSet::ResolveServoStyle(*aElement) : nullptr;
-
-  // We should really fix the weird primary frame mapping for image maps
-  // (bug 135040)...
-  if (styleFrame && styleFrame->GetContent() != aElement) {
-    MOZ_ASSERT(styleFrame->IsImageFrameOrSubclass());
-    styleFrame = nullptr;
-  }
 
   // Handle lazy frame construction by posting a reconstruct for any lazily-
   // constructed roots.

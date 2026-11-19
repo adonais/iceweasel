@@ -409,3 +409,108 @@ add_task(async function test_suggestion_enterSelection() {
   );
   BrowserTestUtils.removeTab(tab);
 });
+
+const PARTNER_CODE_SEARCH_URL =
+  "https://example.org/browser/browser/components/search/test/browser/telemetry/searchTelemetry.html";
+
+/**
+ * Searches with a config engine as the default, and checks the partner code
+ * used for the search and its telemetry.
+ *
+ * @param {(tab: MozTabbrowserTab) => Promise<MozTabbrowserTab>} searchFn
+ *   Performs the search from the given tab, and resolves to the tab the search
+ *   is loaded in.
+ */
+async function checkPartnerCode(searchFn) {
+  let partnerDetails;
+  if (SearchUtils.configV3FeatureGate) {
+    partnerDetails = {
+      partner: {
+        default: { code: "defaultcode" },
+        searchbar: { code: "searchbarcode", telemetrySuffix: "searchbarsx" },
+      },
+    };
+  } else {
+    partnerDetails = { partnerCode: "defaultcode" };
+  }
+  await SearchTestUtils.updateRemoteSettingsConfig([
+    {
+      identifier: "engine",
+      base: {
+        urls: {
+          search: {
+            base: PARTNER_CODE_SEARCH_URL,
+            params: [{ name: "pc", value: "{partnerCode}" }],
+            searchTermParamName: "s",
+          },
+        },
+        ...partnerDetails,
+      },
+    },
+  ]);
+  let previousEngine = await SearchService.getDefault();
+  await SearchService.setDefault(
+    SearchService.getEngineById("engine"),
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+
+  Services.fog.testResetFOG();
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+
+  // The searchbar only opens searches in new tabs from non-empty tabs.
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com/"
+  );
+  let searchTab = await searchFn(tab);
+
+  // Per-SAP partner codes are only supported by search-config-v3.
+  let { partnerCode, telemetrySuffix } = SearchUtils.configV3FeatureGate
+    ? { partnerCode: "searchbarcode", telemetrySuffix: "-searchbarsx" }
+    : { partnerCode: "defaultcode", telemetrySuffix: "" };
+  Assert.equal(
+    URL.fromURI(searchTab.linkedBrowser.currentURI).searchParams.get("pc"),
+    partnerCode,
+    "Should have loaded the search with the expected partner code"
+  );
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineId: "engine",
+    engineName: "engine",
+    partnerCode,
+    source: "searchbar",
+    telemetrySuffix,
+    count: 1,
+  });
+
+  if (searchTab != tab) {
+    BrowserTestUtils.removeTab(searchTab);
+  }
+  BrowserTestUtils.removeTab(tab);
+  await SearchService.setDefault(
+    previousEngine,
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+}
+
+add_task(async function test_partnerCode_current_tab() {
+  await checkPartnerCode(async tab => {
+    let p = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url =>
+      url.startsWith(PARTNER_CODE_SEARCH_URL)
+    );
+    await searchInSearchbar("current tab");
+    EventUtils.synthesizeKey("KEY_Enter");
+    await p;
+    return tab;
+  });
+});
+
+add_task(async function test_partnerCode_new_tab() {
+  await checkPartnerCode(async () => {
+    let p = BrowserTestUtils.waitForNewTab(gBrowser, url =>
+      url.startsWith(PARTNER_CODE_SEARCH_URL)
+    );
+    await searchInSearchbar("new tab");
+    EventUtils.synthesizeKey("KEY_Enter", { altKey: true });
+    return p;
+  });
+});

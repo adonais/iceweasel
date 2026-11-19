@@ -4,6 +4,9 @@
 
 #include <objc/objc-runtime.h>
 
+#include <memory>
+
+#include "TextInputHandler.h"
 #include "nsChangeObserver.h"
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
@@ -20,8 +23,8 @@
 #include "nsObjCExceptions.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
+#include "nsUnicharUtils.h"
 
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Document.h"
 #include "nsIAppStartup.h"
 #include "nsIContent.h"
@@ -61,8 +64,8 @@ BOOL sApplicationMenuIsFallback = NO;
 BOOL gSomeMenuBarPainted = NO;
 
 // Controls whether or not native menu items should invoke their commands. See
-// class comments for `GeckoNSMenuItem` and `GeckoNSMenu` below for an
-// explanation of why this switch is necessary.
+// the class comment for `GeckoNSMenuItem` below for an explanation of why this
+// switch is necessary.
 static BOOL gMenuItemsExecuteCommands = YES;
 
 // defined in nsCocoaWindow.mm.
@@ -124,6 +127,7 @@ nsMenuBarX::nsMenuBarX(mozilla::dom::Element* aElement)
 
   mMenuGroupOwner = new nsMenuGroupOwnerX(aElement, this);
   mMenuGroupOwner->RegisterForLocaleChanges();
+  mMenuGroupOwner->RegisterForKeyCommands();
   mNativeMenu = [[GeckoNSMenu alloc] initWithTitle:@"MainMenuBar"];
 
   mContent = aElement;
@@ -132,6 +136,7 @@ nsMenuBarX::nsMenuBarX(mozilla::dom::Element* aElement)
     AquifyMenuBar();
     mMenuGroupOwner->RegisterForContentChanges(mContent, this);
     ConstructNativeMenus();
+    CopyAppMenuUserKeyEquivalentsToKeyElements();
   } else {
     ConstructFallbackNativeMenus();
   }
@@ -162,6 +167,7 @@ nsMenuBarX::~nsMenuBarX() {
   }
 
   mMenuGroupOwner->UnregisterForLocaleChanges();
+  mMenuGroupOwner->UnregisterForKeyCommands();
 
   // make sure we unregister ourselves as a content observer
   if (mContent) {
@@ -562,6 +568,10 @@ nsresult nsMenuBarX::Paint() {
 
   gSomeMenuBarPainted = YES;
 
+  // AppKit applies assignments made in System Settings to the main menu, so
+  // this menu bar may have missed a change made while another one was main.
+  CopyAllUserKeyEquivalentsToKeyElements();
+
   return NS_OK;
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -647,6 +657,130 @@ void nsMenuBarX::ApplicationMenuOpened() {
 
 bool nsMenuBarX::PerformKeyEquivalent(NSEvent* aEvent) {
   return [mNativeMenu performSuperKeyEquivalent:aEvent];
+}
+
+/* static */
+void nsMenuBarX::HighlightNativeMenuItem(NSMenuItem* aItem) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  NSMenu* menu = aItem.menu;
+  if (!menu || aItem.hidden || !aItem.enabled) {
+    return;
+  }
+  NSMenu* root = menu;
+  while (root.supermenu) {
+    root = root.supermenu;
+  }
+  if (root != NSApp.mainMenu) {
+    return;
+  }
+
+  // performActionForItemAtIndex: highlights the item's menu bar title and
+  // sends the action. With commands switched off, the action does nothing.
+  gMenuItemsExecuteCommands = NO;
+  [menu performActionForItemAtIndex:[menu indexOfItem:aItem]];
+  gMenuItemsExecuteCommands = YES;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuBarX::CopyAllUserKeyEquivalentsToKeyElements() {
+  for (nsMenuX* menu : mMenuArray) {
+    menu->CopyAllUserKeyEquivalentsToKeyElements();
+  }
+  CopyAppMenuUserKeyEquivalentsToKeyElements();
+}
+
+void nsMenuBarX::CopyAppMenuUserKeyEquivalentsToKeyElements() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (!sApplicationMenu || !mContent) {
+    return;
+  }
+  RefPtr<dom::Document> document = mContent->GetUncomposedDoc();
+  if (!document) {
+    return;
+  }
+  for (NSMenuItem* item in sApplicationMenu.itemArray) {
+    if (!item.identifier) {
+      continue;
+    }
+    nsAutoString nodeID;
+    nsCocoaUtils::GetStringForNSString(item.identifier, nodeID);
+    RefPtr<dom::Element> menuItemElement = document->GetElementById(nodeID);
+    nsMenuGroupOwnerX::CopyUserKeyEquivalentToKeyElement(item, menuItemElement);
+  }
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+/* static */
+void nsMenuBarX::CopyUserKeyEquivalentOfItemToKeyElements(NSMenuItem* aItem) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (aItem.menu == sApplicationMenu) {
+    if (!aItem.identifier) {
+      return;
+    }
+    for (NSWindow* window in NSApp.windows) {
+      if (![window.delegate isKindOfClass:[WindowDelegate class]]) {
+        continue;
+      }
+      nsCocoaWindow* widget = [(WindowDelegate*)window.delegate geckoWidget];
+      RefPtr<nsMenuBarX> menuBar = widget ? widget->GetMenuBar() : nullptr;
+      if (menuBar) {
+        menuBar->CopyAppMenuUserKeyEquivalentsToKeyElements();
+      }
+    }
+    return;
+  }
+
+  MOZMenuItemRepresentedObject* representedObject = aItem.representedObject;
+  if (![representedObject isKindOfClass:[MOZMenuItemRepresentedObject class]]) {
+    return;
+  }
+  nsMenuGroupOwnerX* menuGroupOwner = representedObject.menuGroupOwner;
+  if (!menuGroupOwner) {
+    return;
+  }
+  if (RefPtr<nsMenuItemX> menuItem = menuGroupOwner->GetMenuItemForCommandID(
+          static_cast<uint32_t>(aItem.tag))) {
+    menuItem->CopyUserKeyEquivalentToKeyElement();
+  }
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+/* static */
+NSMenuItem* nsMenuBarX::ApplicationMenuItemForKeyElement(
+    dom::Element* aKeyElement) {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  dom::Document* document = aKeyElement->GetUncomposedDoc();
+  if (!sApplicationMenu || !document) {
+    return nil;
+  }
+  nsAutoString keyElementId;
+  aKeyElement->GetAttr(nsGkAtoms::id, keyElementId);
+  if (keyElementId.IsEmpty()) {
+    return nil;
+  }
+  for (NSMenuItem* item in sApplicationMenu.itemArray) {
+    if (!item.identifier) {
+      continue;
+    }
+    nsAutoString nodeID;
+    nsCocoaUtils::GetStringForNSString(item.identifier, nodeID);
+    dom::Element* menuItemElement = document->GetElementById(nodeID);
+    if (menuItemElement &&
+        menuItemElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::key,
+                                     keyElementId, eCaseMatters)) {
+      return item;
+    }
+  }
+  return nil;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
 void nsMenuBarX::MenuChildChangedVisibility(const MenuChild& aChild,
@@ -831,13 +965,16 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* aMenu,
   newMenuItem.target = aTarget;
   newMenuItem.keyEquivalentModifierMask = macKeyModifiers;
   newMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
+  // Lets each menu bar find the item's XUL node in its own document, see
+  // ApplicationMenuItemForKeyElement.
+  newMenuItem.identifier = nsCocoaUtils::ToNSString(aNodeID);
 
   // While "regular" menuitems can load images via CSS, we don't want to load
   // all the relevant CSS in the hidden window, so we only support the image
   // attribute for now.
   if (menuItem->HasAttr(nsGkAtoms::image)) {
     mAppMenuIcons.AppendElement(
-        MakeUnique<nsAppMenuItemIcon>(newMenuItem, menuItem));
+        std::make_unique<nsAppMenuItemIcon>(newMenuItem, menuItem));
   }
 
   return newMenuItem;
@@ -1096,9 +1233,10 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 }
 
 // Objective-C class used for menu items to allow Gecko to override their
-// standard behavior in order to stop key equivalents from firing in certain
-// instances. When gMenuItemsExecuteCommands is NO, we return a dummy target and
-// action instead of the actual target and action.
+// standard behavior in order to highlight an item without running its action,
+// see nsMenuBarX::HighlightNativeMenuItem. When gMenuItemsExecuteCommands is
+// NO, we return a dummy target and action instead of the actual target and
+// action.
 @implementation GeckoNSMenuItem
 
 - (id)target {
@@ -1122,18 +1260,87 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 @end
 
+// Whether aEvent is the key equivalent of aItem. System Settings stores the
+// key as typed on the keyboard layout in use: a letter or digit on its own,
+// with Shift in the modifier mask or as an uppercase letter, and a character
+// that needs Shift, such as "@", as that character. So the pressed key is
+// compared through what it produces on the current layout with and without
+// Shift, and Option and Control never change the character that counts.
+static bool EventMatchesKeyEquivalent(NSEvent* aEvent, NSMenuItem* aItem) {
+  NSString* keyEquivalent = aItem.keyEquivalent;
+  if (keyEquivalent.length != 1) {
+    return false;
+  }
+  uint32_t key = [keyEquivalent characterAtIndex:0];
+  uint32_t lowercaseKey = ToLowerCase(key);
+
+  const NSEventModifierFlags relevantFlags =
+      NSEventModifierFlagCommand | NSEventModifierFlagOption |
+      NSEventModifierFlagControl | NSEventModifierFlagShift;
+  NSEventModifierFlags eventFlags = aEvent.modifierFlags & relevantFlags;
+  NSEventModifierFlags requiredFlags =
+      aItem.keyEquivalentModifierMask & relevantFlags;
+  if (lowercaseKey != key) {
+    // AppKit expresses Shift through an uppercase key equivalent.
+    requiredFlags |= NSEventModifierFlagShift;
+  }
+
+  mozilla::widget::TISInputSourceWrapper& inputSource =
+      mozilla::widget::TISInputSourceWrapper::CurrentInputSource();
+  uint32_t unshifted = inputSource.CharForKeyCode(aEvent.keyCode, 0);
+  uint32_t shifted = inputSource.CharForKeyCode(aEvent.keyCode, shiftKey);
+  if (!unshifted && !shifted) {
+    // A key without a character on the layout, such as a function key, is
+    // compared through the character AppKit gives the event for it.
+    NSString* characters = aEvent.charactersIgnoringModifiers;
+    return characters.length == 1 && [characters characterAtIndex:0] == key &&
+           eventFlags == requiredFlags;
+  }
+  if (unshifted && ToLowerCase(unshifted) == lowercaseKey) {
+    return eventFlags == requiredFlags;
+  }
+  if (shifted && shifted == key) {
+    return eventFlags == (requiredFlags | NSEventModifierFlagShift);
+  }
+  return false;
+}
+
+// The item in aMenu or its submenus that the user assigned aEvent's shortcut
+// to in System Settings, or nil.
+static NSMenuItem* UserAssignedItemMatchingEvent(NSMenu* aMenu,
+                                                 NSEvent* aEvent) {
+  for (NSMenuItem* item in aMenu.itemArray) {
+    if (item.hidden) {
+      continue;
+    }
+    if (item.submenu) {
+      if (NSMenuItem* match =
+              UserAssignedItemMatchingEvent(item.submenu, aEvent)) {
+        return match;
+      }
+    } else if (item.userKeyEquivalent.length > 0 &&
+               EventMatchesKeyEquivalent(aEvent, item)) {
+      return item;
+    }
+  }
+  return nil;
+}
+
 //
-// Objective-C class used to allow us to have keyboard commands
-// look like they are doing something but actually do nothing.
-// We allow mouse actions to work normally.
+// Objective-C class used to allow us to leave keyboard shortcuts to the Gecko
+// window that is key. We allow mouse actions to work normally.
 //
 @implementation GeckoNSMenu
 
-// Keyboard commands should not cause menu items to invoke their
-// commands when there is a key window because we'd rather send
-// the keyboard command to the window. We still have the menus
-// go through the mechanics so they'll give the proper visual
-// feedback.
+// A built-in key equivalent is not run from here while a Gecko window is key:
+// the window handles the key event, its XUL key element runs the command, and
+// nsMenuBarX::HighlightNativeMenuItem highlights the item then, so the menu
+// bar only lights up for shortcuts that actually run, as in other
+// applications. A key the window does not handle comes back to the menu bar
+// through nsCocoaWindow::PostHandleKeyEvent. A shortcut the user assigned to
+// an item in System Settings is the exception: it belongs to the menu rather
+// than to the window, so it runs here and neither Gecko nor web content sees
+// the key.
 - (BOOL)performKeyEquivalent:(NSEvent*)aEvent {
   // We've noticed that macOS expects this check in subclasses before
   // calling NSMenu's "performKeyEquivalent:".
@@ -1144,45 +1351,36 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     return NO;
   }
 
+  // Behave normally when there is no key window, which probably means that
+  // this menu is associated with Gecko's hidden window.
   NSWindow* keyWindow = NSApp.keyWindow;
-
-  // If there is no key window then just behave normally. This
-  // probably means that this menu is associated with Gecko's
-  // hidden window.
   if (!keyWindow) {
     return [super performKeyEquivalent:aEvent];
   }
 
-  // Handle only shortcuts that include Command here, whichever window has
-  // focus, and leave plain keys to that window. Native text fields read such
-  // keys as plain editing or navigation keys, and a Gecko window that does not
-  // handle one hands it back to the menu bar afterwards through
-  // nsCocoaWindow::PostHandleKeyEvent, so matching plain keys here buys
-  // nothing and can cost a menu flash on every keystroke.
-  if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
-    return NO;
+  if (![keyWindow isKindOfClass:[BaseWindow class]]) {
+    // A native window such as a sheet is key. Its text fields read keys that
+    // carry no Command modifier as plain editing or navigation keys, so those
+    // are left to that window: matching them here would run Edit > Delete on
+    // every forward delete and pay for a menu flash each time.
+    if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
+      return NO;
+    }
+    return [super performKeyEquivalent:aEvent];
   }
 
-  NSResponder* firstResponder = keyWindow.firstResponder;
-
-  if ([keyWindow isKindOfClass:[BaseWindow class]]) {
-    gMenuItemsExecuteCommands = NO;
-  }
-
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
-  [super performKeyEquivalent:aEvent];
-  NS_OBJC_END_TRY_IGNORE_BLOCK
-
-  gMenuItemsExecuteCommands = YES;  // return to default
-
-  // Return YES if we invoked a command and there is now no key window or we
-  // changed the first responder. In this case we do not want to propagate the
-  // event because we don't want it handled again.
-  if (!NSApp.keyWindow || NSApp.keyWindow.firstResponder != firstResponder) {
+  if (NSMenuItem* item = UserAssignedItemMatchingEvent(self, aEvent)) {
+    // AppKit consumes a key equivalent that matches a disabled item without
+    // running it.
+    if (item.enabled) {
+      nsAutoRetainCocoaObject kungFuDeathGrip(self);
+      [item.menu performActionForItemAtIndex:[item.menu indexOfItem:item]];
+    }
     return YES;
   }
 
-  // Return NO so that we can handle the event via NSView's "keyDown:".
+  // Return NO so that the key window handles the event via NSView's
+  // "keyDown:".
   return NO;
 }
 
@@ -1237,6 +1435,34 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 //
 
 @implementation NativeMenuItemTarget
+
+- (id)init {
+  if ((self = [super init])) {
+    // AppKit posts this for each item whose shortcut it changes when the user
+    // edits the assignments in System Settings while we are running.
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(menuDidChangeItem:)
+               name:NSMenuDidChangeItemNotification
+             object:nil];
+  }
+  return self;
+}
+
+- (void)menuDidChangeItem:(NSNotification*)aNotification {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  NSMenu* menu = aNotification.object;
+  NSNumber* index = aNotification.userInfo[@"NSMenuItemIndex"];
+  if (![menu isKindOfClass:[NSMenu class]] || !index ||
+      index.integerValue < 0 || index.integerValue >= menu.numberOfItems) {
+    return;
+  }
+  nsMenuBarX::CopyUserKeyEquivalentOfItemToKeyElements(
+      [menu itemAtIndex:index.integerValue]);
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
 
 // called when some menu item in this menu gets hit
 - (IBAction)menuItemHit:(id)aSender {

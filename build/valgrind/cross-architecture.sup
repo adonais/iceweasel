@@ -169,9 +169,9 @@
    match-leak-kinds: definite
    fun:calloc
    ...
-   fun:_ZN3std3sys12thread_local6native4lazy20Storage*16get_or_init_slow*
+   fun:_*3std3sys12thread_local6native4lazy*Storage*16get_or_init_slow*
    ...
-   fun:_ZN5style5bloom19StyleBloom$LT$E$GT$3new*
+   fun:_*5style5bloom*StyleBloom*3new*
    ...
 }
 {
@@ -191,9 +191,9 @@
    match-leak-kinds: definite
    fun:malloc
    ...
-   fun:_ZN3std3sys12thread_local6native4lazy20Storage*16get_or_init_slow*
+   fun:_*3std3sys12thread_local6native4lazy*Storage*16get_or_init_slow*
    ...
-   fun:_ZN5style7sharing26StyleSharingCache$LT$E$GT$3new*
+   fun:_*5style7sharing*StyleSharingCache*3new*
    ...
 }
 {

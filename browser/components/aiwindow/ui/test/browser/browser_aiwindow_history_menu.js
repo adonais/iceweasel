@@ -3,8 +3,13 @@
 
 "use strict";
 
-const { ChatStore, ChatConversation } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
+const { ChatStore, ChatConversation, MESSAGE_ROLE } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
+  );
+
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
 );
 
 async function seedConversations(count) {
@@ -236,5 +241,88 @@ add_task(async function test_fullpage_open_recent_chat() {
     }
     await cleanUpConversations();
     sb.restore();
+  }
+});
+
+/**
+ * A chat started in the sidebar on a website reopens on that website with the
+ * chat in the sidebar, not in fullpage.
+ */
+add_task(async function test_reopen_sidebar_chat_on_its_page() {
+  const restoreSignIn = skipSignIn();
+  const mockEngineManager = new MockEngineManager();
+  const pageUrl = "https://example.com/";
+  let aiWin;
+
+  try {
+    await cleanUpConversations();
+    aiWin = await openAIWindow();
+
+    const pageTab = aiWin.gBrowser.selectedTab;
+    const { sidebarBrowser } = await openAIWindowSidebar(aiWin, pageUrl);
+    await typeInSmartbar(sidebarBrowser, "What is this page about?");
+    await submitSmartbar(sidebarBrowser);
+    await mockEngineManager.respondTo({ purpose: "chat", response: "Hello" });
+
+    const convId = AIWindow.getActiveConversation(aiWin).id;
+    let saved;
+    await TestUtils.waitForCondition(async () => {
+      saved = await ChatStore.findConversationById(convId);
+      return saved?.messages.some(m => m.role == MESSAGE_ROLE.USER);
+    }, "The chat should be saved with its user message");
+    Assert.equal(
+      saved.getMostRecentPageVisited()?.href,
+      pageUrl,
+      "The saved chat should remember the page the prompt was sent from"
+    );
+
+    await BrowserTestUtils.openNewForegroundTab(aiWin.gBrowser, AIWINDOW_URL);
+    BrowserTestUtils.removeTab(pageTab);
+    const aiWindow = await getFullpageAiWindow(aiWin);
+    const menuRoot = await getHistoryMenuRoot(aiWindow);
+
+    await openMenu(
+      menuRoot,
+      "[data-l10n-id='aiwindow-fullpage-chat-history']",
+      "fullpage-chats-menu"
+    );
+    await TestUtils.waitForCondition(
+      () => menuRoot.querySelector(".history-menu-chat"),
+      "Recent chat item should be rendered"
+    );
+
+    const newTabPromise = BrowserTestUtils.waitForNewTab(
+      aiWin.gBrowser,
+      pageUrl,
+      true
+    );
+    menuRoot.querySelector(".history-menu-chat").click();
+    const reopenedTab = await newTabPromise;
+
+    Assert.equal(
+      reopenedTab.linkedBrowser.currentURI.spec,
+      pageUrl,
+      "The chat should reopen on the page it was about"
+    );
+    await waitForSidebarOpen(aiWin);
+    const reopenedSidebar = aiWin.document.getElementById("ai-window-browser");
+    Assert.equal(
+      reopenedSidebar.getAttribute("data-conversation-id"),
+      convId,
+      "The reopened chat should be shown in the sidebar"
+    );
+    await TestUtils.waitForCondition(async () => {
+      const messages = await getSidebarChatMessages(reopenedSidebar);
+      return messages.some(
+        m => m.role == "user" && m.message == "What is this page about?"
+      );
+    }, "The reopened chat's prompt should be rendered in the sidebar");
+  } finally {
+    if (aiWin) {
+      await BrowserTestUtils.closeWindow(aiWin);
+    }
+    await cleanUpConversations();
+    mockEngineManager.cleanupMocks();
+    restoreSignIn();
   }
 });

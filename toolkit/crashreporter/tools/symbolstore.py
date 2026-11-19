@@ -337,6 +337,13 @@ def TryGetGitRepoInfoFromHg(srcdir):
     return None
 
 
+def GetGitRepoInfoFromGit(srcdir):
+    rev = os.environ.get("GECKO_HEAD_REV") or read_output(
+        "git", "-C", srcdir, "rev-parse", "HEAD"
+    )
+    return GitRepoInfo(srcdir, rev, f"https://{FIREFOX_GITHUB}")
+
+
 def GetVCSFilenameFromSrcdir(file, srcdir):
     if srcdir not in Dumper.srcdirRepoInfo:
         # Not in cache, so find it and cache it
@@ -346,6 +353,8 @@ def GetVCSFilenameFromSrcdir(file, srcdir):
                 Dumper.srcdirRepoInfo[srcdir] = git_repo_info
             else:
                 Dumper.srcdirRepoInfo[srcdir] = HGRepoInfo(srcdir)
+        elif os.path.exists(os.path.join(srcdir, ".git")):
+            Dumper.srcdirRepoInfo[srcdir] = GetGitRepoInfoFromGit(srcdir)
         else:
             # Unknown VCS or file is not in a repo.
             return None

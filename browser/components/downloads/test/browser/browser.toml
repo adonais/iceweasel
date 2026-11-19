@@ -44,9 +44,6 @@ run-if = [
 
 ["browser_downloads_jsonview.js"]
 support-files = ["cookies-json.sjs"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking", # Bug 1929561
-]
 
 ["browser_downloads_keynav.js"]
 

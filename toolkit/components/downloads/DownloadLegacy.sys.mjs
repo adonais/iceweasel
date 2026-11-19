@@ -16,6 +16,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   DownloadError: "resource://gre/modules/DownloadCore.sys.mjs",
+  DownloadLegacySaver: "resource://gre/modules/DownloadCore.sys.mjs",
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
 });
 
@@ -136,6 +137,11 @@ DownloadLegacyTransfer.prototype = {
       // associated Download object to be available before notifying.
       this._promiseDownload
         .then(download => {
+          // Only the legacy saver implements the following. Blocked downloads
+          // use a copy saver instead, as their channel is already closed.
+          if (!(download.saver instanceof lazy.DownloadLegacySaver)) {
+            return;
+          }
           // At this point, the hash has been set and we need to copy it to the
           // DownloadSaver.
           if (Components.isSuccessCode(aStatus)) {

@@ -30,3 +30,9 @@ with Files("public/**"):
     SCHEDULES.inclusive += ["jittest", "jsreftest"]
 
 SPHINX_TREES["/js"] = "src/doc"
+
+# Listed here because artifact builds don't traverse js/src.
+if CONFIG["ENABLE_WEBDRIVER"]:
+    MOZ_SRC_FILES += [
+        "src/debugger/DebugSession.sys.mjs",
+    ]

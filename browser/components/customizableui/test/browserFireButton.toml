@@ -8,3 +8,5 @@ prefs = [
 ]
 
 ["browser_fireButton.js"]
+
+["browser_fireButton_focusRing.js"]

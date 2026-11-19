@@ -25,10 +25,10 @@ ScreamV2Parameters::ScreamV2Parameters(const FieldTrialsView& trials)
 ScreamV2Parameters::ScreamV2Parameters(const FieldTrialsView* trials)
     : min_ref_window("MinRefWindow", DataSize::Bytes(1000)),
       l4s_avg_g_up("L4sAvgGUp", 1.0 / 8.0),
-      l4s_avg_g_down("L4sAvgGDown", 1.0 / 128.0),
+      l4s_avg_g_down("L4sAvgGDown", 1.0 / 16.0),
+      scale_l4s_alpha_with_rtt("ScaleL4sAlphaWithRtt", true),
       rtts_with_loss_before_backoff("RttsWithLossBeforeBackoff", 3),
       lossless_rtts_before_clear("LosslessRttsBeforeClear", 2),
-
       smoothed_rtt_avg_g("SmoothedRttAvgG", 1.0 / 8.0),
       smoothed_rtt_avg_in_alr_g("SmoothedRttAvgInAlrG", 1.0 / 128.0),
       max_segment_size("MaxSegmentSize", DataSize::Bytes(1280)),
@@ -72,6 +72,11 @@ ScreamV2Parameters::ScreamV2Parameters(const FieldTrialsView* trials)
       pacing_factor("PacingFactor", 1.1),
       pacing_rate_received_factor("PacingRateReceivedFactor", 0.8),
       feedback_hold_time_avg_g("FeedbackHoldTimeAvgG", 1.0 / 8.0),
+      feedback_interval_avg_g("FeedbackIntervalAvgG", 0.1),
+      use_feedback_interval_for_virtual_rtt("UseFeedbackIntervalForVirtualRtt",
+                                            true),
+      allow_initial_ref_window_clamping("AllowInitialRefWindowClamping", true),
+      use_non_linear_backoff_scale("UseNonLinearBackoffScale", true),
       allow_large_pacing_bursts_after_congestion_time(
           "AllowLargePacingBurstsAfterCongestionTime",
           TimeDelta::Seconds(15)),
@@ -87,6 +92,7 @@ ScreamV2Parameters::ScreamV2Parameters(const FieldTrialsView* trials)
       {&min_ref_window,
        &l4s_avg_g_up,
        &l4s_avg_g_down,
+       &scale_l4s_alpha_with_rtt,
        &rtts_with_loss_before_backoff,
        &lossless_rtts_before_clear,
 
@@ -122,6 +128,10 @@ ScreamV2Parameters::ScreamV2Parameters(const FieldTrialsView* trials)
        &pacing_factor,
        &pacing_rate_received_factor,
        &feedback_hold_time_avg_g,
+       &feedback_interval_avg_g,
+       &use_feedback_interval_for_virtual_rtt,
+       &allow_initial_ref_window_clamping,
+       &use_non_linear_backoff_scale,
        &allow_large_pacing_bursts_after_congestion_time,
        &enable_alr,
        &alr_threshold,

@@ -248,6 +248,7 @@ class TokensTable extends LitElement {
     link: this.linkTemplate,
     margin: this.spaceAndSizeTemplate,
     "min-height": this.spaceAndSizeTemplate,
+    motion: this.motionTemplate,
     outline: this.outlineTemplate,
     padding: this.paddingTemplate,
     "box-shadow": this.shadowTemplate,
@@ -417,6 +418,33 @@ class TokensTable extends LitElement {
         style="gap: ${value};"
       >
         ${items}
+      </div>
+    `;
+  }
+
+  motionTemplate(_, value, tokenName) {
+    // The category holds durations, easing curves and the transforms panels
+    // animate from, which preview as different parts of the same animation.
+    if (tokenName.includes("scale") || tokenName.includes("translate")) {
+      let transform = tokenName.includes("scale")
+        ? `scale(${value})`
+        : `translateY(${value})`;
+      return html`
+        <div class="motion-preview">
+          <div
+            class="surface"
+            style="--motion-preview-transform: ${transform};"
+          ></div>
+        </div>
+      `;
+    }
+
+    let property = /^[\d.]+m?s$/.test(value)
+      ? "animation-duration"
+      : "animation-timing-function";
+    return html`
+      <div class="motion-preview">
+        <div class="item" style="${property}: ${value};"></div>
       </div>
     `;
   }

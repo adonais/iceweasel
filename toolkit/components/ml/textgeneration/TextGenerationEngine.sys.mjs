@@ -90,6 +90,7 @@ function toCreateOptions(options) {
     ubatchSize: options.numUbatch ?? undefined,
     flashAttn: options.flashAttn ?? undefined,
     featureId: options.featureId ?? "",
+    placement: options.device ?? undefined,
   };
   if (options.kvCacheDtype) {
     createOptions.kvCacheDtype = toKVCacheDtype(options.kvCacheDtype);
@@ -247,6 +248,8 @@ export class TextGenerationEngine {
 
   /** @type {TextGenerator | null} */
   #generator = null;
+  /** @type {HWInferenceDeviceKind | null} */
+  #deviceKind = null;
   /** @type {RunTimestamp[]} */
   #initTimestamps = [];
   #inFlight = false;
@@ -280,6 +283,7 @@ export class TextGenerationEngine {
       engine.telemetry.recordEngineCreationSuccessFlow({
         engineId,
         duration: ChromeUtils.now() - start,
+        deviceKind: engine.#deviceKind,
       });
     } catch (error) {
       engine.telemetry.recordEngineCreationFailure({
@@ -351,6 +355,7 @@ export class TextGenerationEngine {
 
     const createOptions = toCreateOptions(options);
     this.#generator = await TextGenerator.create(modelBlob, createOptions);
+    this.#deviceKind = this.#generator.deviceKind;
     this.pipelineOptions.backend = "llama.cpp";
     this.#initTimestamps.push({
       name: "initializationEnd",
@@ -416,6 +421,7 @@ export class TextGenerationEngine {
       modelId: this.pipelineOptions.modelId,
       backend: this.pipelineOptions.backend,
       backendSourceRevision: lazy.LLAMA_CPP_VERSION,
+      deviceKind: this.#deviceKind,
       ...(stats.streaming ? stats.metrics(result) : {}),
     });
   }

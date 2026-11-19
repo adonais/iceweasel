@@ -10,15 +10,18 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import kotlin.time.Instant
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.AccountState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.DataVolume
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.PendingActivationRequest
+import mozilla.components.feature.ipprotection.store.state.UsageQuota
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +51,7 @@ class IPProtectionStateDebugTest {
         composeTestRule.onNodeWithText("Active").assertExists()
         composeTestRule.onNodeWithText("Ready").assertExists()
         composeTestRule.onNodeWithText("EnrolledAndEntitled").assertExists()
-        composeTestRule.onNodeWithText("2026-06-01").assertExists()
+        composeTestRule.onNodeWithText("2026-06-01T00:00:00Z").assertExists()
         composeTestRule.onNodeWithText("Activate").assertExists()
         composeTestRule.onNodeWithText("JP").assertExists()
     }
@@ -62,8 +65,20 @@ class IPProtectionStateDebugTest {
         }
 
         composeTestRule.onNodeWithText("lastError").assertExists()
-        // resetDate, lastError, activate state and selected location code all default to "null" placeholders.
-        composeTestRule.onAllNodesWithText("null").assertCountEquals(4)
+        // lastError, the four usage quota rows, activate state and selected location code all default to "null"
+        // placeholders.
+        composeTestRule.onAllNodesWithText("null").assertCountEquals(7)
+    }
+
+    @Test
+    fun `WHEN usage quota is unmetered THEN the usage quota rows show unlimited`() {
+        composeTestRule.setContent {
+            AcornTheme {
+                IPProtectionStateDebugContent(state = IPProtectionState(usageQuota = UsageQuota.Unmetered()))
+            }
+        }
+
+        composeTestRule.onAllNodesWithText("Unlimited").assertCountEquals(3)
     }
 
     @Test
@@ -82,9 +97,12 @@ class IPProtectionStateDebugTest {
             eligibilityStatus = EligibilityStatus.Eligible,
             proxyStatus = Authorized.Active,
             serviceStatus = ServiceState.Ready,
-            remainingDataBytes = 2_000_000_000L,
-            maxDataBytes = 5_000_000_000L,
-            resetDate = "2026-06-01",
+            usageQuota =
+                UsageQuota.Metered(
+                    resetTime = Instant.parse("2026-06-01T00:00:00Z"),
+                    max = DataVolume(5_000_000_000L),
+                    remaining = DataVolume(2_000_000_000L),
+                ),
             accountState = AccountState(status = AccountStatus.EnrolledAndEntitled),
             lastError = null,
             pendingActivationRequest = PendingActivationRequest.Activate("JP"),

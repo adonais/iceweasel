@@ -208,7 +208,7 @@ void UpdateLog::WarnPrintf(const char* fmt, ...) {
  * macOS/Linux).
  * @return a pointer to the FILE struct or nullptr on error.
  */
-FILE* CreateAndOpenFile(NS_tchar* filePath, bool binary) {
+FILE* CreateAndOpenFile(NS_tchar* filePath, [[maybe_unused]] bool binary) {
 #ifdef XP_WIN
   return NS_tfopen(filePath, binary ? NS_T("wb+") : NS_T("w+"));
 #else
@@ -286,8 +286,8 @@ bool PathContainsInvalidLinks(wchar_t* const fullPath) {
         }
       }
 
-      mozilla::UniquePtr<UINT8[]> byteBuffer =
-          mozilla::MakeUnique<UINT8[]>(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+      auto byteBuffer =
+          std::make_unique<UINT8[]>(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
       ZeroMemory(byteBuffer.get(), MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
       REPARSE_DATA_BUFFER* buffer = (REPARSE_DATA_BUFFER*)byteBuffer.get();
       DWORD bytes = 0;
@@ -351,8 +351,7 @@ bool IsProgramFilesPath(NS_tchar* fullPath) {
   if (longInstallPathChars == 0) {
     return false;
   }
-  mozilla::UniquePtr<wchar_t[]> longInstallPath =
-      mozilla::MakeUnique<wchar_t[]>(longInstallPathChars);
+  auto longInstallPath = std::make_unique<wchar_t[]>(longInstallPathChars);
   if (!GetLongPathNameW(fullPath, longInstallPath.get(),
                         longInstallPathChars)) {
     return false;
@@ -387,8 +386,8 @@ bool IsProgramFilesPath(NS_tchar* fullPath) {
       // Allocate space for a copy of the string along with a terminator and one
       // extra character for the trailing backslash.
       length += 1;
-      mozilla::UniquePtr<wchar_t[]> programFiles32PathWithSlash =
-          mozilla::MakeUnique<wchar_t[]>(length + 1);
+      auto programFiles32PathWithSlash =
+          std::make_unique<wchar_t[]>(length + 1);
 
       NS_tsnprintf(programFiles32PathWithSlash.get(), length + 1, NS_T("%s\\"),
                    programFiles32Path.get());
@@ -421,8 +420,7 @@ bool IsProgramFilesPath(NS_tchar* fullPath) {
     if (lengthChars <= 1) {
       return false;
     }
-    mozilla::UniquePtr<wchar_t[]> programFilesNativePath =
-        mozilla::MakeUnique<wchar_t[]>(lengthChars);
+    auto programFilesNativePath = std::make_unique<wchar_t[]>(lengthChars);
 
     // Now actually read the value.
     if (RegGetValueW(
@@ -447,8 +445,8 @@ bool IsProgramFilesPath(NS_tchar* fullPath) {
       // Allocate space for a copy of the string along with a terminator and one
       // extra character for the trailing backslash.
       nativePathStrLen += 1;
-      mozilla::UniquePtr<wchar_t[]> programFilesNativePathWithSlash =
-          mozilla::MakeUnique<wchar_t[]>(nativePathStrLen + 1);
+      auto programFilesNativePathWithSlash =
+          std::make_unique<wchar_t[]>(nativePathStrLen + 1);
 
       NS_tsnprintf(programFilesNativePathWithSlash.get(), nativePathStrLen + 1,
                    NS_T("%s\\"), programFilesNativePath.get());

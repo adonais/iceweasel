@@ -37,7 +37,8 @@ void CompositeProcessFencesHolderMap::Register(
   MonitorAutoLock lock(mMonitor);
 
   DebugOnly<bool> inserted =
-      mFencesHolderById.emplace(aHolderId, MakeUnique<FencesHolder>()).second;
+      mFencesHolderById.emplace(aHolderId, std::make_unique<FencesHolder>())
+          .second;
   MOZ_ASSERT(inserted, "Map already contained FencesHolder for id!");
 }
 

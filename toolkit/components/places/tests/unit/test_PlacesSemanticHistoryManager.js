@@ -777,6 +777,87 @@ add_task(async function test_infer_respects_distance_threshold() {
   );
 });
 
+add_task(async function test_infer_domain_scoped_search() {
+  await PlacesUtils.history.clear();
+  Services.prefs.setBoolPref("places.semanticHistory.featureGate", true);
+
+  const makeVector = (size, components) => {
+    let v = Array(size).fill(0);
+    for (let [i, val] of Object.entries(components)) {
+      v[i] = val;
+    }
+    return v;
+  };
+
+  const searchString = "github.com/firefox-bugs";
+  const embeddingSize =
+    createPlacesSemanticHistoryManager().embedder.embeddingSize;
+  const queryVector = makeVector(embeddingSize, { 0: 1 });
+  // Pages outside github.com are the nearest to the query, so they would be
+  // returned by an unscoped search.
+  const entries = [
+    {
+      url: "https://github.com/firefox",
+      title: "github firefox page",
+      vector: makeVector(embeddingSize, { 0: 1, 1: 0.2 }),
+    },
+    {
+      url: "https://gist.github.com/firefox",
+      title: "gist firefox page",
+      vector: makeVector(embeddingSize, { 0: 1, 1: 0.3 }),
+    },
+    {
+      url: "https://other.com/firefox",
+      title: "other firefox page",
+      vector: makeVector(embeddingSize, { 0: 1 }),
+    },
+    {
+      url: "https://notgithub.com/firefox",
+      title: "notgithub firefox page",
+      vector: makeVector(embeddingSize, { 0: 1, 1: 0.01 }),
+    },
+  ];
+  await PlacesTestUtils.addVisits(entries);
+
+  let manager = createPlacesSemanticHistoryManager({
+    changeThresholdCount: 1,
+    deferredTaskInterval: 100,
+  });
+  await manager.semanticDB.removeDatabaseFiles();
+  await manager.getConnection();
+  manager.embedder.setEngine(
+    new MockMLEngine(embeddingSize, [
+      ...entries,
+      { title: searchString, vector: queryVector },
+      { title: "firefox bugs", vector: queryVector },
+    ])
+  );
+  await TestUtils.topicObserved(
+    "places-semantichistorymanager-update-complete"
+  );
+
+  let { results } = await manager.infer({ searchString });
+  Assert.ok(
+    results.some(r => r.url == "https://other.com/firefox"),
+    "Unscoped search should return pages outside the domain"
+  );
+
+  ({ results } = await manager.inferWithDomain("firefox bugs", "github.com"));
+  Assert.deepEqual(
+    results.map(r => r.url),
+    ["https://github.com/firefox", "https://gist.github.com/firefox"],
+    "Scoped search should only return pages from the domain and subdomains"
+  );
+
+  Assert.equal(
+    await manager.inferWithDomain("firefox bugs", "unvisited.com"),
+    null,
+    "Scoped search should return null for a domain without indexed pages"
+  );
+
+  await manager.shutdown();
+});
+
 // Adds enough history to require several indexing chunks. The throttle only
 // evaluates once it has a full window (CHUNK_LATENCY_MONITORING_WINDOW, 9) of
 // recent chunk samples, so with the default chunk size of 25 we need clearly

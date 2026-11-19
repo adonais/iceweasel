@@ -446,6 +446,9 @@ website-language-heading =
 website-preferred-language =
   .label = Preferred languages
 
+website-language-list =
+  .aria-label = Preferred languages
+
 website-add-language =
   .label = Add language
 
@@ -988,6 +991,9 @@ home-homepage-custom-homepage-button =
 home-custom-homepage-card-header =
     .label = Website address(es)
 
+home-custom-homepage-list =
+    .aria-label = Website addresses
+
 home-custom-homepage-address =
     .placeholder = Enter address
 home-custom-homepage-address-button =
@@ -1149,6 +1155,9 @@ search-one-click-header-3 =
     .label = Additional search engines
     .description = Choose which search engines and shortcuts appear in your address bar.
 
+search-engine-list =
+    .aria-label = Search engines and shortcuts
+
 update-search-engine-success =
     .message = Search engine successfully updated
 
@@ -1214,6 +1223,9 @@ containers-card-header2 =
 containers-add-button2 =
     .label = Add new container
     .accesskey = A
+
+containers-list =
+    .aria-label = Containers
 
 containers-new-tab-check3 =
     .label = Select a container for each new tab
@@ -1465,9 +1477,10 @@ sync-engine-history =
     .label = History
     .accesskey = r
 
-sync-engine-tabs =
+# This string is a modified noun (i.e. tabs that are open)
+sync-engine-tabs2 =
     .label = Open tabs
-    .tooltiptext = A list of what’s open on all synced devices
+    .tooltiptext = Open tabs from your other devices
     .accesskey = t
 
 sync-engine-passwords =
@@ -1475,24 +1488,24 @@ sync-engine-passwords =
     .tooltiptext = Passwords you’ve saved
     .accesskey = P
 
-sync-engine-addresses =
+sync-engine-addresses2 =
     .label = Addresses
-    .tooltiptext = Postal addresses you’ve saved (desktop only)
+    .tooltiptext = Addresses you’ve saved in { -brand-short-name }
     .accesskey = e
 
-sync-engine-payment-methods2 =
+sync-engine-payment-methods3 =
     .label = Payment methods
-    .tooltiptext = Names, card numbers, and expiry dates
+    .tooltiptext = Payment methods you’ve saved
     .accesskey = n
 
-sync-engine-addons =
+sync-engine-addons2 =
     .label = Add-ons
-    .tooltiptext = Extensions and themes for { -brand-short-name } desktop
+    .tooltiptext = Extensions and themes you’ve added to { -brand-short-name } for desktop
     .accesskey = A
 
-sync-engine-settings =
+sync-engine-settings2 =
     .label = Settings
-    .tooltiptext = General, Privacy, and Security settings you’ve changed
+    .tooltiptext = { -brand-short-name } settings where applicable
     .accesskey = s
 
 ## The device name controls.
@@ -1674,8 +1687,8 @@ autofill-payment-methods-manage-payments-button =
     .label = Manage payment methods
     .accesskey = m
 # This operation requires the user to authenticate with the operating system (device sign-in)
-autofill-reauth-payment-methods-checkbox-2 =
-    .label = Require device sign in to autofill and manage payment methods
+autofill-payment-methods-require-device-sign-in-checkbox =
+    .label = Require device sign-in to autofill
     .accesskey = o
 # Security codes are the CVV/CVC card codes
 autofill-payment-methods-save-security-codes-checkbox =
@@ -1708,22 +1721,27 @@ payment-moz-box-item =
 
 # Used in place of payment-moz-box-item when a security code is saved alongside
 # the card. Only the presence of a saved security code is ever shown, never the
-# code itself. "CVV" is a common abbreviation for the security code printed on a
-# payment card; use whichever abbreviation is most familiar in your locale.
+# code itself: "•••" stands for the hidden code, so keep it as is rather than
+# translating it into words.
 # Variables:
 #   $cardNumber (string) - The obscured credit card number (for example: ********* 2423)
 #   $expDate (string) - The obscured expiry date of the credit card (for example: XX/2027)
-payment-moz-box-item-with-security-code =
+#   $securityCode (string) - The name of the card's security code, which depends
+#     on the card network (for example: CVV)
+payment-moz-box-item-with-security-code-2 =
   .label = { $cardNumber }
-  .description = { $expDate } | CVV saved
+  .description = { $expDate } | { $securityCode } •••
 
-# Used in place of payment-moz-box-item-with-security-code for a card that has a
-# saved security code but no expiry date to show alongside it.
+# Used in place of payment-moz-box-item-with-security-code-2 for a card that has
+# a saved security code but no expiry date to show alongside it. "•••" stands for
+# the hidden code.
 # Variables:
 #   $cardNumber (string) - The obscured credit card number (for example: ********* 2423)
-payment-moz-box-item-security-code-only =
+#   $securityCode (string) - The name of the card's security code, which depends
+#     on the card network (for example: CVV)
+payment-moz-box-item-security-code-only-2 =
   .label = { $cardNumber }
-  .description = CVV saved
+  .description = { $securityCode } •••
 
 addresses-group =
     .label = Addresses and more

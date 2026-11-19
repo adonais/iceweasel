@@ -23,6 +23,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   logger: () =>
     lazy.UrlbarShared.getLogger({ prefix: "SemanticHistorySearch" }),
   /**
@@ -45,6 +47,8 @@ const lazy = XPCOMUtils.declareLazy({
     });
   },
 });
+
+const MIN_DOMAIN_SCOPED_SEARCH_TEXT_LENGTH = 4;
 
 /**
  * @typedef {ReturnType<import("resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs").getPlacesSemanticHistoryManager>} PlacesSemanticHistoryManager
@@ -73,6 +77,55 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
    */
   static get semanticManager() {
     return lazy.semanticManager;
+  }
+
+  /**
+   * Returns the domain a search should be scoped to, when the search string
+   * starts with an origin or URL, like "example.com some topic" or
+   * "https://example.com/some-topic".
+   *
+   * @param {UrlbarQueryContext} queryContext
+   * @returns {{host: string, searchText: string}|null}
+   *   `host` is the domain without any leading "www.", and `searchText` is the
+   *   text to search for: the final path segment followed by the other tokens.
+   *   Null if the search should not be scoped to a domain, including when the
+   *   text to search for is shorter than MIN_DOMAIN_SCOPED_SEARCH_TEXT_LENGTH.
+   */
+  static getDomainScope(queryContext) {
+    if (!lazy.UrlbarPrefs.get("suggest.semanticHistory.domainScopedSearch")) {
+      return null;
+    }
+
+    // Filter out special tokens used to trigger Bookmarks etc.
+    let tokens = queryContext.tokens.filter(
+      t => !lazy.UrlbarTokenizer.isRestrictionToken(t)
+    );
+    let originInfo =
+      tokens.length && lazy.UrlbarTokenizer.getOriginInfo(tokens[0]);
+    if (
+      !originInfo ||
+      !originInfo.host.includes(".") ||
+      !Services.eTLD.hasKnownPublicSuffixFromHost(originInfo.host)
+    ) {
+      return null;
+    }
+
+    let pathText = originInfo.path.slice(originInfo.path.lastIndexOf("/") + 1);
+    try {
+      pathText = decodeURIComponent(pathText);
+    } catch {}
+    let searchText = [pathText, ...tokens.slice(1).map(t => t.value)]
+      .join(" ")
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .trim();
+    if (searchText.length < MIN_DOMAIN_SCOPED_SEARCH_TEXT_LENGTH) {
+      return null;
+    }
+
+    return {
+      host: originInfo.host,
+      searchText,
+    };
   }
 
   /**
@@ -125,8 +178,23 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
    */
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
-    let resultObject = await lazy.semanticManager.infer(queryContext);
     this.#maybeRecordExposure();
+    let domainScope =
+      UrlbarProviderSemanticHistorySearch.getDomainScope(queryContext);
+    let resultObject = null;
+    if (domainScope) {
+      resultObject = await lazy.semanticManager.inferWithDomain(
+        domainScope.searchText,
+        domainScope.host
+      );
+    }
+    if (instance != this.queryInstance) {
+      return;
+    }
+    // inferWithDomain returns null when no page in the domain is indexed.
+    if (!resultObject) {
+      resultObject = await lazy.semanticManager.infer(queryContext);
+    }
     let results = resultObject.results;
     if (!results || instance != this.queryInstance) {
       return;
@@ -157,11 +225,25 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
               Services.urlFormatter.formatURLPref("app.support.baseURL") +
               "awesome-bar-result-menu",
             frecency: res.frecency,
+            semanticDistance: this.#distanceForTelemetry(res.distance),
           },
         });
         addCallback(this, result);
       }
     }
+  }
+
+  /**
+   * Returns the distance formatted for telemetry.
+   *
+   * @param {number} distance The cosine distance from the search string.
+   * @returns {number|undefined} The distance multiplied by 100, rounded to an
+   *   integer and capped at 100, or undefined if it is not a finite number.
+   */
+  #distanceForTelemetry(distance) {
+    return Number.isFinite(distance)
+      ? Math.min(100, Math.round(distance * 100))
+      : undefined;
   }
 
   /**
@@ -208,6 +290,7 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
           userContext: UrlbarUtils.getUserContextData(tabUserContextId),
           tabGroup: tabGroupId,
           lastVisit: res.lastVisit,
+          semanticDistance: this.#distanceForTelemetry(res.distance),
           action: lazy.UrlbarPrefs.get("secondaryActions.switchToTab")
             ? UrlbarUtils.createTabSwitchSecondaryAction(tabUserContextId)
             : undefined,

@@ -242,7 +242,7 @@ SVGDrawingCallback::~SVGDrawingCallback() = default;
 // Based loosely on SVGIntegrationUtils' PaintFrameCallback::operator()
 bool SVGDrawingCallback::operator()(gfxContext* aContext,
                                     const gfxRect& aFillRect,
-                                    const SamplingFilter aSamplingFilter,
+                                    const SamplingFilter /*aSamplingFilter*/,
                                     const gfxMatrix& aTransform) {
   MOZ_ASSERT(mSVGDocumentWrapper, "need an SVGDocumentWrapper");
 
@@ -564,10 +564,9 @@ nsresult VectorImage::GetHotspotY(int32_t* aY) {
   return Image::GetHotspotY(aY);
 }
 
-nsIntSize VectorImage::OptimalImageSizeForDest(const gfxSize& aDest,
-                                               uint32_t aWhichFrame,
-                                               SamplingFilter aSamplingFilter,
-                                               uint32_t aFlags) {
+nsIntSize VectorImage::OptimalImageSizeForDest(
+    const gfxSize& aDest, uint32_t /*aWhichFrame*/,
+    SamplingFilter /*aSamplingFilter*/, uint32_t /*aFlags*/) {
   MOZ_ASSERT(aDest.width >= 0 || ceil(aDest.width) <= INT32_MAX ||
                  aDest.height >= 0 || ceil(aDest.height) <= INT32_MAX,
              "Unexpected destination size");
@@ -679,6 +678,7 @@ VectorImage::GetFrameAtSize(const IntSize& aSize, uint32_t aWhichFrame,
 
   bool didCache;  // Was the surface put into the cache?
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   AutoRestoreSVGState autoRestore(params, mSVGDocumentWrapper,
                                   /* aContextPaint */ false);
 
@@ -705,7 +705,7 @@ bool VectorImage::HasDecodedPixels() {
 
 NS_IMETHODIMP_(bool)
 VectorImage::IsImageContainerAvailable(WindowRenderer* aRenderer,
-                                       uint32_t aFlags) {
+                                       uint32_t /*aFlags*/) {
   if (mError || !mIsFullyLoaded ||
       aRenderer->GetBackendType() != LayersBackend::LAYERS_WR) {
     return false;
@@ -810,6 +810,7 @@ VectorImage::GetImageProvider(WindowRenderer* aRenderer,
   // generating blob keys and recording bindings. The recording won't happen
   // until the caller requests the key explicitly.
   RefPtr<ISurfaceProvider> provider;
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   if (blobRecording) {
     provider = MakeRefPtr<BlobSurfaceProvider>(ImageKey(this), surfaceKey,
                                                mSVGDocumentWrapper, aFlags);
@@ -916,6 +917,8 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
     return ImgDrawResult::NOT_READY;
   }
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
+
   if (mAnimationConsumers == 0 && mHaveAnimations) {
     SendOnUnlockedDraw(aFlags);
   }
@@ -981,19 +984,19 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
 }
 
 NS_IMETHODIMP
-VectorImage::StartDecoding(uint32_t aFlags, uint32_t aWhichFrame) {
+VectorImage::StartDecoding(uint32_t /*aFlags*/, uint32_t /*aWhichFrame*/) {
   // Nothing to do for SVG images
   return NS_OK;
 }
 
-bool VectorImage::StartDecodingWithResult(uint32_t aFlags,
-                                          uint32_t aWhichFrame) {
+bool VectorImage::StartDecodingWithResult(uint32_t /*aFlags*/,
+                                          uint32_t /*aWhichFrame*/) {
   // SVG images are ready to draw when they are loaded
   return mIsFullyLoaded;
 }
 
 imgIContainer::DecodeResult VectorImage::RequestDecodeWithResult(
-    uint32_t aFlags, uint32_t aWhichFrame) {
+    uint32_t /*aFlags*/, uint32_t /*aWhichFrame*/) {
   // SVG images are ready to draw when they are loaded and don't have an error.
 
   if (mError) {
@@ -1008,8 +1011,9 @@ imgIContainer::DecodeResult VectorImage::RequestDecodeWithResult(
 }
 
 NS_IMETHODIMP
-VectorImage::RequestDecodeForSize(const nsIntSize& aSize, uint32_t aFlags,
-                                  uint32_t aWhichFrame) {
+VectorImage::RequestDecodeForSize(const nsIntSize& /*aSize*/,
+                                  uint32_t /*aFlags*/,
+                                  uint32_t /*aWhichFrame*/) {
   if (mError) {
     return NS_ERROR_FAILURE;
   }
@@ -1092,6 +1096,7 @@ VectorImage::RequestRefresh(const TimeStamp& aTime) {
     return;
   }
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   EvaluateAnimation();
 
   mSVGDocumentWrapper->TickRefreshDriver();
@@ -1112,6 +1117,7 @@ VectorImage::ResetAnimation() {
     return NS_OK;  // There are no animations to be reset.
   }
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   mSVGDocumentWrapper->ResetAnimation();
 
   return NS_OK;
@@ -1178,6 +1184,7 @@ void VectorImage::MediaFeatureValuesChangedAllDocuments(
     return;
   }
 
+  RefPtr<VectorImage> kungFuDeathGrip(this);
   if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
     if (RefPtr<nsPresContext> presContext = doc->GetPresContext()) {
       presContext->MediaFeatureValuesChanged(
@@ -1195,7 +1202,7 @@ void VectorImage::MediaFeatureValuesChangedAllDocuments(
 }
 
 //******************************************************************************
-nsresult VectorImage::GetNativeSizes(nsTArray<IntSize>& aNativeSizes) {
+nsresult VectorImage::GetNativeSizes(nsTArray<IntSize>& /*aNativeSizes*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -1430,7 +1437,7 @@ void VectorImage::RecoverFromLossOfSurfaces() {
   SurfaceCache::RemoveImage(ImageKey(this));
 }
 
-void VectorImage::OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey) {
+void VectorImage::OnSurfaceDiscarded(const SurfaceKey& /*aSurfaceKey*/) {
   MOZ_ASSERT(mProgressTracker);
 
   NS_DispatchToMainThread(NewRunnableMethod("ProgressTracker::OnDiscard",
@@ -1548,6 +1555,10 @@ void VectorImage::OnSVGDocumentLoaded() {
              "These flags shouldn't get set until OnSVGDocumentLoaded. "
              "Duplicate calls to OnSVGDocumentLoaded?");
 
+  // ProgressTracker::SyncNotifyProgress may release us, so ensure we
+  // stick around long enough to complete our work.
+  RefPtr<VectorImage> kungFuDeathGrip(this);
+
   CancelAllListeners();
 
   // XXX Flushing is wasteful if embedding frame hasn't had initial reflow.
@@ -1563,10 +1574,6 @@ void VectorImage::OnSVGDocumentLoaded() {
 
   // Start listening to our image for rendering updates.
   mRenderingObserver = new SVGRootRenderingObserver(mSVGDocumentWrapper, this);
-
-  // ProgressTracker::SyncNotifyProgress may release us, so ensure we
-  // stick around long enough to complete our work.
-  RefPtr<VectorImage> kungFuDeathGrip(this);
 
   // Tell *our* observers that we're done loading.
   if (mProgressTracker) {

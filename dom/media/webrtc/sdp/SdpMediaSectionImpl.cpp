@@ -40,7 +40,7 @@ SdpMediaSectionImpl::SdpMediaSectionImpl(
       mProtocol(aOrig.mProtocol),
       mFormats(aOrig.mFormats),
       mConnection(aOrig.mConnection
-                      ? MakeUnique<SdpConnection>(*aOrig.mConnection)
+                      ? std::make_unique<SdpConnection>(*aOrig.mConnection)
                       : nullptr),
       mBandwidths(aOrig.mBandwidths),
       mAttributeList(std::move(attributeList)) {}
@@ -91,7 +91,7 @@ void SdpMediaSectionImpl::AddCodec(const std::string& pt,
                                    const uint16_t channels) {
   mFormats.push_back(pt);
 
-  auto rtpmap = MakeUnique<SdpRtpmapAttributeList>();
+  auto rtpmap = std::make_unique<SdpRtpmapAttributeList>();
   if (mAttributeList->HasAttribute(SdpAttribute::kRtpmapAttribute)) {
     const SdpRtpmapAttributeList& old = mAttributeList->GetRtpmap();
     for (auto it = old.mRtpmaps.begin(); it != old.mRtpmaps.end(); ++it) {
@@ -137,22 +137,22 @@ void SdpMediaSectionImpl::AddDataChannel(const std::string& name,
   if ((mProtocol == kUdpDtlsSctp) || (mProtocol == kTcpDtlsSctp)) {
     // new data channel format according to draft 21
     mFormats.push_back(name);
-    mAttributeList->SetAttribute(
-        MakeUnique<SdpNumberAttribute>(SdpAttribute::kSctpPortAttribute, port));
+    mAttributeList->SetAttribute(std::make_unique<SdpNumberAttribute>(
+        SdpAttribute::kSctpPortAttribute, port));
     if (message_size) {
-      mAttributeList->SetAttribute(MakeUnique<SdpNumberAttribute>(
+      mAttributeList->SetAttribute(std::make_unique<SdpNumberAttribute>(
           SdpAttribute::kMaxMessageSizeAttribute, message_size));
     }
   } else {
     // old data channels format according to draft 05
     std::string port_str = std::to_string(port);
     mFormats.push_back(port_str);
-    auto sctpmap = MakeUnique<SdpSctpmapAttributeList>();
+    auto sctpmap = std::make_unique<SdpSctpmapAttributeList>();
     sctpmap->PushEntry(port_str, name, streams);
     mAttributeList->SetAttribute(std::move(sctpmap));
     if (message_size) {
       // This is a workaround to allow detecting Firefox's w/o EOR support
-      mAttributeList->SetAttribute(MakeUnique<SdpNumberAttribute>(
+      mAttributeList->SetAttribute(std::make_unique<SdpNumberAttribute>(
           SdpAttribute::kMaxMessageSizeAttribute, message_size));
     }
   }

@@ -9,6 +9,16 @@ LAUNCH_EXTRAS="--ez performancetest true"
 
 XML_FILE=$TESTING_DIR/window_dump.xml
 XMLSTARLET_CMD=${XMLSTARLET:-xmlstarlet}
+
+# Emulates `xmlstarlet sel -t -v XPATH FILE` on hosts without xmlstarlet,
+# such as the macOS workers running the Android emulator.
+xmllint_sel() {
+    xmllint --xpath "string($4)" "$5" 2>/dev/null
+}
+
+if ! command -v "$XMLSTARLET_CMD" > /dev/null && command -v xmllint > /dev/null; then
+    XMLSTARLET_CMD=xmllint_sel
+fi
 TEST_TIME=$1
 
 URL_MOZILLA="https://www.mozilla.org/"
@@ -16,6 +26,7 @@ URL_MOZILLA="https://www.mozilla.org/"
 if [[ $BROWSER_BINARY == *"chrome"* ]]; then
   ACTIVITY="com.google.android.apps.chrome.Main"
   TOOLBAR_RESOURCE_ID="$BROWSER_BINARY:id/search_box_text"
+  TOOLBAR_FALLBACK_RESOURCE_ID="$BROWSER_BINARY:id/url_bar"
   TABS_TRAY_BUTTON_RESOURCE_ID="$BROWSER_BINARY:id/tab_switcher_button"
   LAUNCH_EXTRAS=""
 fi
@@ -81,6 +92,20 @@ if [[ $BROWSER_BINARY == *"chrome"* ]]; then
         tap_at_coords
     fi
     sleep 1
+
+    # navigate away from notification permission prompt
+    adb shell uiautomator dump
+    adb pull /sdcard/window_dump.xml $XML_FILE
+    sleep 1
+
+    DISMISS_BOUNDS=$($XMLSTARLET_CMD sel -t -v 'string(//node[@resource-id = "'$BROWSER_BINARY':id/negative_button"]/@bounds)' "$XML_FILE")
+    sleep 1
+
+    if [ -n "$DISMISS_BOUNDS" ]; then
+        calculate_tap_coords "$DISMISS_BOUNDS"
+        tap_at_coords
+    fi
+    sleep 1
 fi
 
 adb shell uiautomator dump
@@ -89,6 +114,11 @@ sleep 1
 
 # calculate toolbar coordinates
 TOOLBAR_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id = "'$TOOLBAR_RESOURCE_ID'"]/@bounds' $XML_FILE)
+# Chrome may start on a non-NTP homepage (e.g. carrier builds), which only has the omnibox
+if [ -z "$TOOLBAR_BOUNDS" ] && [ -n "$TOOLBAR_FALLBACK_RESOURCE_ID" ]; then
+    TOOLBAR_RESOURCE_ID=$TOOLBAR_FALLBACK_RESOURCE_ID
+    TOOLBAR_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id = "'$TOOLBAR_RESOURCE_ID'"]/@bounds' $XML_FILE)
+fi
 sleep 1
 
 calculate_tap_coords "$TOOLBAR_BOUNDS" "$TOOLBAR_RESOURCE_ID"
@@ -111,7 +141,7 @@ adb pull /sdcard/window_dump.xml $XML_FILE
 
 # calculate new tab button coordinates
 if [[ $BROWSER_BINARY == *"chrome"* ]]; then
-    ADD_TAB_BUTTON_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id="new_tab_view_button"]/@bounds' $XML_FILE)
+    ADD_TAB_BUTTON_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@resource-id="new_tab_view_button" or @resource-id="'$BROWSER_BINARY':id/toolbar_action_button"]/@bounds' $XML_FILE)
 else
     ADD_TAB_BUTTON_BOUNDS=$($XMLSTARLET_CMD sel -t -v '//node[@content-desc="Add tab"]/@bounds' $XML_FILE)
 fi

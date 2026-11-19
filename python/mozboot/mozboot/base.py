@@ -2,8 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -574,14 +576,13 @@ class BaseBootstrapper:
 
     def cargo_tools_installed(self):
         """Return True if all cargo developer tools are already installed."""
-        _, cargo_bin = self.cargo_home()
-        extra = [str(cargo_bin)]
-        return all(which(tool, extra_search_dirs=extra) for tool in self.CARGO_TOOLS)
+        bin_dir = str(self.mozbuild_bin_dir())
+        return all(which(tool, path=bin_dir) for tool in self.CARGO_TOOLS)
 
     def ensure_cargo_tools(self):
         """Install required developer tools from prebuilt toolchain artifacts."""
-        cargo_home, cargo_bin = self.cargo_home()
-        cargo_bin.mkdir(parents=True, exist_ok=True)
+        bin_dir = self.mozbuild_bin_dir()
+        bin_dir.mkdir(parents=True, exist_ok=True)
 
         print("Installing cargo tools: {}...".format(", ".join(self.CARGO_TOOLS)))
         for tool in self.CARGO_TOOLS:
@@ -590,6 +591,206 @@ class BaseBootstrapper:
                 print(f"Could not install {tool}.")
                 continue
             exe = Path(tool_dir) / (tool + rust.exe_suffix())
-            dest = cargo_bin / exe.name
+            dest = bin_dir / exe.name
             dest.unlink(missing_ok=True)
             shutil.copy2(exe, dest)
+
+    NPM_TOOLS = ("profiler-cli",)
+
+    def npm_tools_installed(self):
+        """Return True if all npm developer tools are already installed."""
+        bin_dir = str(self.mozbuild_bin_dir())
+        return all(which(tool, path=bin_dir) for tool in self.NPM_TOOLS)
+
+    def ensure_npm_tools(self):
+        """Install npm developer tools from prebuilt toolchain artifacts, with
+        launchers that run them with the bootstrapped Node."""
+        print("Installing npm tools: {}...".format(", ".join(self.NPM_TOOLS)))
+        node_dir = self.install_toolchain_artifact("node")
+        if not node_dir:
+            print("Could not install node.")
+            return
+        if sys.platform.startswith("win"):
+            node = Path(node_dir) / "node.exe"
+        else:
+            node = Path(node_dir) / "bin" / "node"
+
+        bin_dir = self.mozbuild_bin_dir()
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        for tool in self.NPM_TOOLS:
+            tool_dir = self.install_toolchain_artifact(tool)
+            if not tool_dir:
+                print(f"Could not install {tool}.")
+                continue
+            package = json.loads(
+                (Path(tool_dir) / "package.json").read_text(encoding="utf-8")
+            )
+            bins = package["bin"]
+            if isinstance(bins, str):
+                bins = {package["name"].split("/")[-1]: bins}
+            for name, script in bins.items():
+                self._write_node_launcher(bin_dir / name, node, Path(tool_dir) / script)
+
+    def _write_node_launcher(self, launcher: Path, node: Path, script: Path):
+        launcher.unlink(missing_ok=True)
+        # Written as bytes so that it keeps LF line endings on Windows, where
+        # it is used from MozillaBuild and Git Bash.
+        launcher.write_bytes(
+            f"#!/bin/sh\nexec {shlex.quote(node.as_posix())} "
+            f'{shlex.quote(script.as_posix())} "$@"\n'.encode()
+        )
+        launcher.chmod(0o755)
+
+        if sys.platform.startswith("win"):
+            # cmd.exe reads .cmd files in the console code page, so switch it
+            # to UTF-8 to support non-ASCII paths.
+            launcher.with_name(launcher.name + ".cmd").write_text(
+                f'@chcp 65001 >nul\n@"{node}" "{script}" %*\n', encoding="utf-8"
+            )
+
+    def mozbuild_bin_dir(self):
+        return self.state_dir / "bin"
+
+    def _split_home(self, path: Path):
+        try:
+            return "$HOME/", path.relative_to(Path.home()).as_posix()
+        except ValueError:
+            if sys.platform.startswith("win"):
+                return "", str(win_to_msys_path(path))
+            return "", path.as_posix()
+
+    def _shell_path(self, path: Path, special_chars=r'\\`"$'):
+        """Return path for use within double quotes in a shell where
+        special_chars need to be escaped with a backslash."""
+        prefix, shell_path = self._split_home(path)
+        return prefix + re.sub(f"([{special_chars}])", r"\\\1", shell_path)
+
+    def _csh_path(self, path: Path):
+        prefix, shell_path = self._split_home(path)
+        quoted = "'" + shell_path.replace("'", "'\\''").replace("!", "\\!") + "'"
+        if prefix:
+            return f'"{prefix}"{quoted}'
+        return quoted
+
+    def _user_shell(self):
+        shell = Path(os.environ.get("SHELL", "")).name
+        if not shell and sys.platform.startswith("win"):
+            shell = "bash"
+        return shell
+
+    def _shell_configs(self, shell):
+        """Return the shell configuration files that should set up PATH for
+        the given shell, or an empty list if the shell isn't supported."""
+        home = Path.home()
+        if shell == "fish":
+            config_home = Path(os.environ.get("XDG_CONFIG_HOME") or home / ".config")
+            return [config_home / "fish" / "conf.d" / "mozbuild.fish"]
+        if shell == "zsh":
+            return [Path(os.environ.get("ZDOTDIR") or home) / ".zshenv"]
+        if shell == "bash":
+            # Login shells only read the first one of these that exists.
+            login_configs = [home / f for f in (".bash_profile", ".bash_login")]
+            login_config = next(
+                (f for f in login_configs if f.exists()), home / ".profile"
+            )
+            return [home / ".bashrc", login_config]
+        if shell in ("sh", "dash", "ksh"):
+            return [home / ".profile"]
+        if shell in ("tcsh", "csh"):
+            # tcsh only reads ~/.cshrc if ~/.tcshrc doesn't exist.
+            tcshrc = home / ".tcshrc"
+            return [tcshrc if tcshrc.exists() else home / ".cshrc"]
+        return []
+
+    def ensure_mozbuild_bin_in_path(self):
+        """Offer to add the mozbuild bin directory to PATH in the shell
+        configuration if it isn't already there."""
+        bin_dir = self.mozbuild_bin_dir()
+        for path in os.environ.get("PATH", "").split(os.pathsep):
+            try:
+                if path and bin_dir.samefile(path):
+                    return
+            except OSError:
+                pass
+
+        shell = self._user_shell()
+        configs = self._shell_configs(shell)
+        configs_str = ", ".join(str(c) for c in configs)
+        if not configs:
+            print(
+                f"Tools installed by mach bootstrap are in {bin_dir}. Add it "
+                f"to your PATH in your shell configuration."
+            )
+            return
+
+        env = None
+        if shell == "fish":
+            shell_bin_dir = self._shell_path(bin_dir, special_chars=r'\\"$')
+            line = f'fish_add_path --prepend --path "{shell_bin_dir}"'
+        elif shell in ("tcsh", "csh"):
+            env = self.state_dir / "env.csh"
+            csh_bin_dir = self._csh_path(bin_dir)
+            env_content = (
+                "# Generated by mach bootstrap.\n"
+                f'if ( ":${{PATH}}:" !~ *:{csh_bin_dir}:* ) '
+                f'setenv PATH {csh_bin_dir}":${{PATH}}"\n'
+            )
+            line = f"source {self._csh_path(env)}"
+        else:
+            env = self.state_dir / "env"
+            shell_bin_dir = self._shell_path(bin_dir)
+            env_content = (
+                "# Generated by mach bootstrap.\n"
+                'case ":$PATH:" in\n'
+                f'    *:"{shell_bin_dir}":*) ;;\n'
+                f'    *) export PATH="{shell_bin_dir}:$PATH" ;;\n'
+                "esac\n"
+            )
+            line = f'. "{self._shell_path(env)}"'
+
+        if env:
+            try:
+                env.write_text(
+                    env_content,
+                    encoding="utf-8",
+                    errors="surrogateescape",
+                    newline="\n",
+                )
+            except OSError as e:
+                print(f"WARNING: Could not write {env}: {e}", file=sys.stderr)
+                print(
+                    f"Tools installed by mach bootstrap are in {bin_dir}. Add it "
+                    f"to your PATH in {configs_str}."
+                )
+                return
+
+        instructions = (
+            f"Tools installed by mach bootstrap are in {bin_dir}. To add it "
+            f"to your PATH, add the following line to {configs_str}:"
+            f"\n\n    {line}\n"
+        )
+        if not self.prompt_yesno(f"Add {bin_dir} to your PATH in {configs_str}?"):
+            print(instructions)
+            return
+
+        for config in configs:
+            try:
+                content = (
+                    config.read_text(encoding="utf-8", errors="surrogateescape")
+                    if config.exists()
+                    else ""
+                )
+                if line in content.splitlines():
+                    continue
+                config.parent.mkdir(parents=True, exist_ok=True)
+                with config.open(
+                    "a", encoding="utf-8", errors="surrogateescape", newline="\n"
+                ) as f:
+                    if content and not content.endswith("\n"):
+                        f.write("\n")
+                    f.write(f"{line}\n")
+            except OSError as e:
+                print(f"WARNING: Could not update {config}: {e}", file=sys.stderr)
+                print(instructions)
+                return
+        print(f"Added {bin_dir} to your PATH. Restart your terminal to use it.")

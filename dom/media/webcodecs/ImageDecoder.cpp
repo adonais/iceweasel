@@ -80,15 +80,15 @@ class ImageDecoder::SelectTrackMessage final
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ImageDecoder)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ImageDecoder)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTracks)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCompletePromise)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOutstandingDecodes)
   // Do not cancel mReadRequest here: cancellation synchronously invokes the
   // page's UnderlyingSource.cancel() callback
   tmp->CloseWithoutRef(
       MediaResult(NS_ERROR_DOM_ABORT_ERR, "Cycle-collected decoder"_ns));
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParent)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTracks)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadRequest)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCompletePromise)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOutstandingDecodes)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -136,19 +136,20 @@ void ImageDecoder::QueueConfigureMessage(
     const Maybe<gfx::IntSize>& aOutputSize,
     ColorSpaceConversion aColorSpaceConversion) {
   mControlMessageQueue.push(
-      MakeUnique<ConfigureMessage>(aOutputSize, aColorSpaceConversion));
+      std::make_unique<ConfigureMessage>(aOutputSize, aColorSpaceConversion));
 }
 
 void ImageDecoder::QueueDecodeMetadataMessage() {
-  mControlMessageQueue.push(MakeUnique<DecodeMetadataMessage>());
+  mControlMessageQueue.push(std::make_unique<DecodeMetadataMessage>());
 }
 
 void ImageDecoder::QueueDecodeFrameMessage() {
-  mControlMessageQueue.push(MakeUnique<DecodeFrameMessage>());
+  mControlMessageQueue.push(std::make_unique<DecodeFrameMessage>());
 }
 
 void ImageDecoder::QueueSelectTrackMessage(uint32_t aSelectedIndex) {
-  mControlMessageQueue.push(MakeUnique<SelectTrackMessage>(aSelectedIndex));
+  mControlMessageQueue.push(
+      std::make_unique<SelectTrackMessage>(aSelectedIndex));
 }
 
 void ImageDecoder::ResumeControlMessageQueue() {

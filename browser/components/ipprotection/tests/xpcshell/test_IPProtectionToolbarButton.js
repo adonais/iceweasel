@@ -188,6 +188,7 @@ add_task(function test_update_icon_status_included() {
   // IP Protection is off and the site is included
   fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
     isActive: false,
+    isProxyActive: true,
     isError: false,
     isNetworkError: false,
     isExcluded: false,
@@ -204,9 +205,27 @@ add_task(function test_update_icon_status_included() {
     "Toolbaritem classlist should not include ipprotection-on"
   );
 
+  // The proxy isn't connected, so the inclusion isn't taking effect
+  fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
+    isActive: false,
+    isProxyActive: false,
+    isError: false,
+    isNetworkError: false,
+    isExcluded: false,
+    isIncluded: true,
+    isPaused: false,
+  });
+
+  Assert.equal(
+    fakeToolbarItem.classList.length,
+    0,
+    "Toolbaritem should be in the off state when the proxy is not active"
+  );
+
   // An active VPN already protects the site, so the inclusion is not surfaced
   fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
     isActive: true,
+    isProxyActive: true,
     isError: false,
     isNetworkError: false,
     isExcluded: false,
@@ -269,6 +288,7 @@ add_task(function test_update_icon_status_included() {
 
   fakeToolbarButton.updateIconStatus(fakeToolbarItem, {
     isActive: false,
+    isProxyActive: true,
     isError: false,
     isNetworkError: false,
     isExcluded: false,

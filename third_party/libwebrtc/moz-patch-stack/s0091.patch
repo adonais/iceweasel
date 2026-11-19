@@ -16,10 +16,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bbec1b95ddb5e0096
  5 files changed, 26 insertions(+), 6 deletions(-)
 
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index 1f910eb0e8..43d4c7ff57 100644
+index cf681f1e7b..e4c1353bde 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
-@@ -339,7 +339,7 @@ rtc_library("webrtc_opus_wrapper") {
+@@ -340,7 +340,7 @@ rtc_library("webrtc_opus_wrapper") {
      deps += [ rtc_opus_dir ]
      public_configs = [ "//third_party/opus:opus_config" ]
    } else if (build_with_mozilla) {
@@ -29,10 +29,10 @@ index 1f910eb0e8..43d4c7ff57 100644
  }
  
 diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index d2ddaa3b38..43317503c1 100644
+index 19b3b3e209..d675faee9e 100644
 --- a/modules/portal/BUILD.gn
 +++ b/modules/portal/BUILD.gn
-@@ -146,10 +146,10 @@ if (!build_with_mozilla) {
+@@ -147,10 +147,10 @@ if (!build_with_mozilla) {
        deps -= [ ":pipewire_stubs" ]
        defines -= [ "WEBRTC_DLOPEN_PIPEWIRE" ]
        public_deps = [
@@ -61,10 +61,10 @@ index 83dc72ba53..dbcc162510 100644
        }
      }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 0f599c5a0c..ac7adc4a26 100644
+index 6b85b32b36..e532dbd893 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
-@@ -623,6 +623,20 @@ if (is_ios || is_mac) {
+@@ -624,6 +624,20 @@ if (is_ios || is_mac) {
          "CoreGraphics.framework",
          "CoreVideo.framework",
        ]

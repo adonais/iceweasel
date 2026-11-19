@@ -9,12 +9,14 @@ export class SettingChangedEvent extends Event {
   /**
    * @param {object} details
    * @param {string} details.action
+   * @param {string} details.pref
    */
-  constructor({ action }) {
+  constructor({ action, pref }) {
     super(SettingChangedEvent.eventName, {
       bubbles: true,
       composed: true,
     });
     this.action = action;
+    this.pref = pref;
   }
 }

@@ -168,7 +168,7 @@ class DMABufFeedback final {
   DMABufFormatTable* FormatTable() { return &mFormatTable; }
   DMABufFeedbackTranche* PendingTranche() {
     if (!mPendingTranche) {
-      mPendingTranche = MakeUnique<DMABufFeedbackTranche>();
+      mPendingTranche = std::make_unique<DMABufFeedbackTranche>();
     }
     return mPendingTranche.get();
   }
@@ -199,7 +199,7 @@ class DMABufFeedback final {
 
 DMABufFeedback* DMABufFormats::GetPendingDMABufFeedback() {
   if (!mPendingDMABufFeedback) {
-    mPendingDMABufFeedback = MakeUnique<DMABufFeedback>();
+    mPendingDMABufFeedback = std::make_unique<DMABufFeedback>();
   }
   return mPendingDMABufFeedback.get();
 }
@@ -380,7 +380,7 @@ void DMABufFormats::EnsureBasicFormats() {
   MOZ_DIAGNOSTIC_ASSERT(!mPendingDMABufFeedback,
                         "Can't add extra formats during init!");
   if (!mDMABufFeedback) {
-    mDMABufFeedback = MakeUnique<DMABufFeedback>();
+    mDMABufFeedback = std::make_unique<DMABufFeedback>();
   }
 
   EnsureBasicFormat(GBM_FORMAT_XRGB8888);

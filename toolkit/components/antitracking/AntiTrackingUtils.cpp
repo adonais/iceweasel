@@ -11,6 +11,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/dom/Document.h"
@@ -18,10 +19,12 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/PermissionManager.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozIThirdPartyUtil.h"
 #include "nsGlobalWindowInner.h"
 #include "nsHttpChannel.h"
 #include "nsIChannel.h"
+#include "nsIClassifiedChannel.h"
 #include "nsICookieService.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIHttpChannel.h"
@@ -1095,6 +1098,51 @@ bool AntiTrackingUtils::IsThirdPartyChannel(nsIChannel* aChannel) {
     return true;
   }
   return thirdParty;
+}
+
+/* static */
+bool AntiTrackingUtils::IsThirdPartyTrackingChannel(nsIChannel* aChannel) {
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel);
+  return classifiedChannel && classifiedChannel->IsThirdPartyTrackingResource();
+}
+
+/* static */
+bool AntiTrackingUtils::IsFirstPartyTrackingChannel(nsIChannel* aChannel) {
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel);
+  return classifiedChannel &&
+         net::ChannelClassifierUtils::IsTrackingClassificationFlag(
+             classifiedChannel->GetFirstPartyClassificationFlags(),
+             NS_UsePrivateBrowsing(aChannel));
+}
+
+/* static */
+net::ClassificationFlags AntiTrackingUtils::GetClassificationFlags(
+    nsIChannel* aChannel) {
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel);
+  if (!classifiedChannel) {
+    return {0, 0};
+  }
+  return {classifiedChannel->GetFirstPartyClassificationFlags(),
+          classifiedChannel->GetThirdPartyClassificationFlags()};
+}
+
+/* static */
+bool AntiTrackingUtils::IsThirdPartySocialTrackingChannel(
+    nsIChannel* aChannel) {
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel);
+  return classifiedChannel &&
+         classifiedChannel->IsThirdPartySocialTrackingResource();
+}
+
+/* static */
+bool AntiTrackingUtils::IsTrackingProtectionEnabled(bool aIsPrivate) {
+  return StaticPrefs::privacy_trackingprotection_enabled() ||
+         (aIsPrivate &&
+          StaticPrefs::privacy_trackingprotection_pbmode_enabled());
 }
 
 /* static */

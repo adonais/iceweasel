@@ -139,7 +139,7 @@ InternalRequest::InternalRequest(const InternalRequest& aOther,
   // NOTE: does not copy body stream... use the fallible Clone() for that
   if (aOther.GetInterceptionTriggeringPrincipalInfo()) {
     mInterceptionTriggeringPrincipalInfo =
-        MakeUnique<mozilla::ipc::PrincipalInfo>(
+        std::make_unique<mozilla::ipc::PrincipalInfo>(
             *(aOther.GetInterceptionTriggeringPrincipalInfo().get()));
   }
 }
@@ -171,13 +171,13 @@ InternalRequest::InternalRequest(const IPCInternalRequest& aIPCRequest)
       mInterceptionRedirectChain(aIPCRequest.interceptionRedirectChain()),
       mInterceptionFromThirdParty(aIPCRequest.interceptionFromThirdParty()) {
   if (aIPCRequest.principalInfo()) {
-    mPrincipalInfo = MakeUnique<mozilla::ipc::PrincipalInfo>(
+    mPrincipalInfo = std::make_unique<mozilla::ipc::PrincipalInfo>(
         aIPCRequest.principalInfo().ref());
   }
 
   if (aIPCRequest.interceptionTriggeringPrincipalInfo()) {
     mInterceptionTriggeringPrincipalInfo =
-        MakeUnique<mozilla::ipc::PrincipalInfo>(
+        std::make_unique<mozilla::ipc::PrincipalInfo>(
             aIPCRequest.interceptionTriggeringPrincipalInfo().ref());
   }
 

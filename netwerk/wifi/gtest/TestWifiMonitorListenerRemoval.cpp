@@ -102,8 +102,8 @@ class TestWifiMonitor {
   explicit TestWifiMonitor(bool aExpectOnChange) {
     // Add two listeners so the one can stopWatching before we notify the
     // other one.
-    mWifiMonitor =
-        MakeRefPtr<nsWifiMonitor>(MakeUnique<MockWifiScanner>(aExpectOnChange));
+    mWifiMonitor = MakeRefPtr<nsWifiMonitor>(
+        std::make_unique<MockWifiScanner>(aExpectOnChange));
     mWifiMonitor->StartWatching(
         new MockWifiListener(mWifiMonitor, aExpectOnChange),
         false /* forcePolling */);

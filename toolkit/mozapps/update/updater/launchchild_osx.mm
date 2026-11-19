@@ -233,6 +233,9 @@ void LaunchMacPostProcess(const char* aAppBundle) {
   // variables intended to relaunch Firefox impacting post-update operations, in
   // particular background tasks.  The updater will invoke the callback
   // application with the current (non-minimal) environment.
+  //
+  // Unlike on Windows, where the run without elevation gets the user's default
+  // environment (bug 2078262), this always uses an empty environment.
   [task setEnvironment:@{}];
 
   [task launch];
@@ -340,7 +343,7 @@ bool ObtainUpdaterArguments(int* aArgc, char*** aArgv,
         [updateServer performSelector:@selector(getMARChannelID)];
     const char* channelIDStr = [channelID UTF8String];
     aMARStrings->MARChannelID =
-        mozilla::MakeUnique<char[]>(strlen(channelIDStr) + 1);
+        std::make_unique<char[]>(strlen(channelIDStr) + 1);
     strcpy(aMARStrings->MARChannelID.get(), channelIDStr);
   } @catch (NSException* e) {
     // Let's try our best and clean up.

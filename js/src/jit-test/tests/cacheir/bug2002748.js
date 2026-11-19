@@ -1,4 +1,4 @@
-// |jit-test| --fuzzing-safe; --blinterp-eager; --more-compartments
+// |jit-test| --blinterp-eager; --more-compartments
 
 gczeal(6);
 var x = newGlobal();

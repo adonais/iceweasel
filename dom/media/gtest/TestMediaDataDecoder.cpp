@@ -30,12 +30,12 @@ class PropertyTest : public ::testing::TestWithParam<ParamType> {
     gfxPlatform::GetPlatform();
 
     sFactory = MakeRefPtr<PDMFactory>();
-    sAVCInfo = MakeUnique<VideoInfo>(sDummyVideoSize);
+    sAVCInfo = std::make_unique<VideoInfo>(sDummyVideoSize);
     sAVCInfo->mMimeType = "video/avc"_ns;
     sAVCInfo->mExtraData = H264::CreateExtraData(
         H264_PROFILE::H264_PROFILE_BASE, 0 /* constraint */,
         H264_LEVEL::H264_LEVEL_1, sDummyVideoSize);
-    sVP9Info = MakeUnique<VideoInfo>(sDummyVideoSize);
+    sVP9Info = std::make_unique<VideoInfo>(sDummyVideoSize);
     sVP9Info->mMimeType = "video/vp9"_ns;
     sVP9Info->SetAlpha(true);
   }

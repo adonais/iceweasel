@@ -825,7 +825,7 @@ void MediaTrackGraphImpl::OpenAudioInput(DeviceInputTrack* aTrack) {
   mDeviceInputTrackManagerMainThread.Add(aTrack);
   UpdateEnumeratorDefaultDeviceTracking();
 
-  this->AppendMessage(MakeUnique<Message>(this, aTrack));
+  this->AppendMessage(std::make_unique<Message>(this, aTrack));
 }
 
 void MediaTrackGraphImpl::CloseAudioInputImpl(DeviceInputTrack* aTrack) {
@@ -883,7 +883,7 @@ void MediaTrackGraphImpl::CloseAudioInput(DeviceInputTrack* aTrack) {
   mDeviceInputTrackManagerMainThread.Remove(aTrack);
   UpdateEnumeratorDefaultDeviceTracking();
 
-  this->AppendMessage(MakeUnique<Message>(this, aTrack));
+  this->AppendMessage(std::make_unique<Message>(this, aTrack));
 
   if (aTrack->AsNativeInputTrack()) {
     LOG(LogLevel::Debug, ("{} Native input device {} is closed!",
@@ -1045,11 +1045,11 @@ void MediaTrackGraphImpl::DeviceChanged() {
               }
 
               self->AppendMessage(
-                  MakeUnique<MessageToGraph>(self, maxChannelCount));
+                  std::make_unique<MessageToGraph>(self, maxChannelCount));
             }));
       }));
 
-  AppendMessage(MakeUnique<Message>(this));
+  AppendMessage(std::make_unique<Message>(this));
 }
 
 static const char* GetAudioInputTypeString(const AudioInputType& aType) {
@@ -1760,7 +1760,7 @@ void MediaTrackGraphImpl::ForceShutDown() {
   if (mMainThreadTrackCount > 0 || mMainThreadPortCount > 0) {
     // If both the track and port counts are zero, the regular shutdown
     // sequence will progress shortly to shutdown threads and destroy the graph.
-    AppendMessage(MakeUnique<Message>(this));
+    AppendMessage(std::make_unique<Message>(this));
     InterruptJS();
   }
 }
@@ -2829,7 +2829,7 @@ SourceMediaTrack::SourceMediaTrack(MediaSegment::Type aType,
                      ? static_cast<MediaSegment*>(new AudioSegment())
                      : static_cast<MediaSegment*>(new VideoSegment())),
       mMutex("mozilla::media::SourceMediaTrack") {
-  mUpdateTrack = MakeUnique<TrackData>();
+  mUpdateTrack = std::make_unique<TrackData>();
   mUpdateTrack->mInputRate = aSampleRate;
   mUpdateTrack->mResamplerChannelCount = 0;
   mUpdateTrack->mData = UniquePtr<MediaSegment>(mSegment->CreateEmptyClone());
@@ -2875,7 +2875,7 @@ void SourceMediaTrack::SetPullingEnabled(bool aEnabled) {
     SourceMediaTrack* mTrack;
     bool mEnabled;
   };
-  GraphImpl()->AppendMessage(MakeUnique<Message>(this, aEnabled));
+  GraphImpl()->AppendMessage(std::make_unique<Message>(this, aEnabled));
 }
 
 bool SourceMediaTrack::PullNewData(GraphTime aDesiredUpToTime) {
@@ -3346,7 +3346,7 @@ void MediaInputPort::Destroy() {
   // Keep a reference to the graph, since Message might RunDuringShutdown()
   // synchronously and make GraphImpl() invalid.
   RefPtr<MediaTrackGraphImpl> graph = mGraph;
-  graph->AppendMessage(MakeUnique<Message>(this));
+  graph->AppendMessage(std::make_unique<Message>(this));
   --graph->mMainThreadPortCount;
 }
 
@@ -3397,7 +3397,7 @@ already_AddRefed<MediaInputPort> ProcessedMediaTrack::AllocateInputPort(
                               aOutputNumber);
   }
   ++GraphImpl()->mMainThreadPortCount;
-  GraphImpl()->AppendMessage(MakeUnique<Message>(port));
+  GraphImpl()->AppendMessage(std::make_unique<Message>(port));
   return port.forget();
 }
 
@@ -3415,7 +3415,7 @@ void ProcessedMediaTrack::QueueSetAutoend(bool aAutoend) {
   if (mMainThreadDestroyed) {
     return;
   }
-  GraphImpl()->AppendMessage(MakeUnique<Message>(this, aAutoend));
+  GraphImpl()->AppendMessage(std::make_unique<Message>(this, aAutoend));
 }
 
 void ProcessedMediaTrack::DestroyImpl() {
@@ -3688,7 +3688,7 @@ MediaTrackGraphImpl::CollectReports(nsIHandleReportCallback* aHandleReport,
     nsCOMPtr<nsISupports> mHandlerData;
   };
 
-  AppendMessage(MakeUnique<Message>(this, aHandleReport, aData));
+  AppendMessage(std::make_unique<Message>(this, aHandleReport, aData));
 
   return NS_OK;
 }
@@ -3837,7 +3837,7 @@ void MediaTrackGraph::AddTrack(MediaTrack* aTrack) {
   NS_ADDREF(aTrack);
   aTrack->SetGraphImpl(graph);
   ++graph->mMainThreadTrackCount;
-  graph->AppendMessage(MakeUnique<CreateMessage>(aTrack));
+  graph->AppendMessage(std::make_unique<CreateMessage>(aTrack));
 }
 
 void MediaTrackGraphImpl::RemoveTrack(MediaTrack* aTrack) {
@@ -4053,8 +4053,10 @@ auto MediaTrackGraph::ApplyAudioContextOperation(
   RefPtr<AudioContextOperationPromise> p = holder.Ensure(__func__);
   holder.RequireTailDispatch(__func__);
   MediaTrackGraphImpl* graphImpl = static_cast<MediaTrackGraphImpl*>(this);
-  graphImpl->AppendMessage(MakeUnique<AudioContextOperationControlMessage>(
-      aDestinationTrack, std::move(aTracks), aOperation, std::move(holder)));
+  graphImpl->AppendMessage(
+      std::make_unique<AudioContextOperationControlMessage>(
+          aDestinationTrack, std::move(aTracks), aOperation,
+          std::move(holder)));
   return p;
 }
 

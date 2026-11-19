@@ -9,6 +9,7 @@ import os
 import re
 
 import attr
+from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 from taskcluster.utils import fromNow
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.verify import (
@@ -43,6 +44,16 @@ verifications.add("full_task_graph")(verify_routes_notification_filters)
 verifications.add("full_task_graph")(verify_dependency_tiers)
 
 verifications.add("optimized_task_graph")(verify_always_optimized)
+
+
+def profiled_verifications(name, *args, **kwargs):
+    """Run the verifications of a generation phase, recording a marker covering
+    them in the resource usage profile."""
+    SystemResourceMonitor.begin_marker("Verify", name)
+    try:
+        verifications(name, *args, **kwargs)
+    finally:
+        SystemResourceMonitor.end_marker("Verify", name)
 
 
 @attr.s(frozen=True)
@@ -227,6 +238,20 @@ def verify_shippable_no_sccache(task, taskgraph, scratch_pad, graph_config, para
     if task and task.attributes.get("shippable"):
         if task.task.get("payload", {}).get("env", {}).get("USE_SCCACHE"):
             raise Exception(f"Shippable job {task.label} cannot use sccache")
+
+
+@verifications.add("full_task_graph", run_on_projects=RELEASE_PROJECTS)
+def verify_shipping_no_gradle_cache(
+    task, taskgraph, scratch_pad, graph_config, parameters
+):
+    if task and (
+        task.attributes.get("shippable") or task.attributes.get("shipping_phase")
+    ):
+        caches = task.task.get("payload", {}).get("cache", {})
+        if any("-gradle-user-home-" in name for name in caches):
+            raise Exception(
+                f"Shipping job {task.label} cannot use the Gradle user home cache"
+            )
 
 
 @verifications.add("full_task_graph")

@@ -159,8 +159,6 @@ The devices are split across two device farms: a subset of the performance tests
 * **Machines**: 67 devices total
 * **Worker pools, and their platforms**:
   * `proj-autophone/gecko-t-bitbar-gw-perf-a55`
-    * `test-android-hw-a55-14-0-aarch64-shippable/opt`
-    * `test-android-hw-a55-14-0-aarch64/opt`
   * `proj-autophone/gecko-t-lambda-perf-a55`
     * `test-android-hw-a55-14-0-aarch64-nightlyasrelease/opt`
     * `test-android-hw-a55-14-0-aarch64-shippable/opt`

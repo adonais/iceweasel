@@ -197,12 +197,14 @@ are considered and how engine evaluation chains:
   document is presented to the engine as an untyped (`other`) request.
 
 Which requests a feature considers in each mode is up to its
-`mRequestFilter`. The ETP features use `IsThirdPartyUnlessAnnotating`: they
+`mRequestFilter`. The ETP features use `ShouldClassifyForETP`: they
 block third-party requests only, like url-classifier's protection features,
 but annotate first-party requests as well, like its annotation features.
 Those first-party matches land on the channel as first-party
 classification flags, which the antitracking redirect, navigation and
-popup heuristics read off the top-level document channel. The harmful-addon
+popup heuristics read off the top-level document channel. Like
+url-classifier, they also do not block a request the loading extension has
+explicit host permission for. The harmful-addon
 feature instead filters on the requesting add-on, regardless of party.
 
 `ContentClassifierEngine::CheckNetworkRequest` builds the preparsed

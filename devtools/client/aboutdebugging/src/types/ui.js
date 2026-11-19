@@ -34,11 +34,11 @@ function makeCollapsibilitiesType(isRequired) {
     }
 
     // check that the keys refer to debug target panes
-    const areKeysValid = [...map.keys()].every(x =>
-      Object.values(DEBUG_TARGET_PANE).includes(x)
-    );
+    const areKeysValid = map
+      .keys()
+      .every(x => Object.values(DEBUG_TARGET_PANE).includes(x));
     // check that the values are boolean
-    const areValuesValid = [...map.values()].every(x => typeof x === "boolean");
+    const areValuesValid = map.values().every(x => typeof x === "boolean");
     // error if values or keys fail their checks
     if (!areKeysValid || !areValuesValid) {
       return error;

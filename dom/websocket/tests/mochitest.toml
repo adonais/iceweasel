@@ -97,9 +97,6 @@ support-files = ["websocket1.worker.js"]
 
 ["test_worker_websocket2.html"]
 support-files = ["websocket2.worker.js"]
-skip-if = [
-  "socketprocess_networking", # bug 1787044
-]
 
 ["test_worker_websocket3.html"]
 support-files = ["websocket3.worker.js"]

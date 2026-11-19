@@ -669,8 +669,10 @@ bool NativeLayerRootWayland::CommitToScreenLocked(WaylandSurfaceLock& aLock) {
 #endif
 
   // Commit all layers changes now so we can unmap removed layers without
-  // flickering.
-  aLock.Commit();
+  // flickering. Flush the display too: we're on the Renderer thread and the
+  // commit would otherwise wait for an unrelated flush on the main thread,
+  // which delays video frames by up to one refresh (Bug 2086053).
+  aLock.CommitAndFlushDisplay();
 
   if (mRootAllLayersRendered && !mRemovedSublayers.IsEmpty()) {
     ClearLayersLocked(aLock);

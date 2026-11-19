@@ -4,6 +4,12 @@
 
 "use strict";
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", false]],
+  });
+});
+
 /**
  * Tests that confirmation hints aren't shown if the site exceptions feature
  * is disabled.

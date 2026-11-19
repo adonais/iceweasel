@@ -47,13 +47,12 @@ Message::Message(const char* data, int data_len)
 /*static*/ mozilla::UniquePtr<Message> Message::IPDLMessage(
     routeid_t routing_id, msgid_t type, uint32_t segment_capacity,
     HeaderFlags flags) {
-  return mozilla::MakeUnique<Message>(routing_id, type, segment_capacity,
-                                      flags);
+  return std::make_unique<Message>(routing_id, type, segment_capacity, flags);
 }
 
 /*static*/ mozilla::UniquePtr<Message> Message::ForSyncDispatchError(
     NestedLevel level) {
-  auto m = mozilla::MakeUnique<Message>(0, 0, 0, HeaderFlags(level));
+  auto m = std::make_unique<Message>(0, 0, 0, HeaderFlags(level));
   auto& flags = m->header()->flags;
   flags.SetSync();
   flags.SetReply();

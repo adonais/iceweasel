@@ -3,6 +3,9 @@
 
 "use strict";
 
+// Each scenario loads a new tab, which is slow in chaos mode.
+requestLongerTimeout(2);
+
 const { NodeHTTPServer, NodeHTTPSServer, NodeHTTP2Server, with_node_servers } =
   ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
@@ -264,19 +267,24 @@ async function runAkamaiScenarios(server) {
     expected(),
     `[${label}] A non-Akamai subresource with the block page body is not counted`
   );
+}
 
+// The pref is checked before anything protocol specific, so one server is
+// enough.
+async function runPrefDisabledScenarios(server) {
+  await server.registerPathHandler("/akamai", akamaiHandler);
   await SpecialPowers.pushPrefEnv({
     set: [["network.http.akamai_waf_telemetry.enabled", false]],
   });
   Assert.deepEqual(
     await loadAndCollect(server, "blocked"),
     expected(),
-    `[${label}] Blocked documents are not counted when the pref is disabled`
+    "Blocked documents are not counted when the pref is disabled"
   );
   Assert.deepEqual(
     await loadAndCollect(server, "frame-blocked", ["blocked"]),
     expected(),
-    `[${label}] Blocked subresources are not counted when the pref is disabled`
+    "Blocked frames and subresources are not counted when the pref is disabled"
   );
   await SpecialPowers.popPrefEnv();
 }
@@ -295,4 +303,8 @@ add_task(async function test_akamai_waf_telemetry() {
     [NodeHTTPServer, NodeHTTPSServer, NodeHTTP2Server],
     runAkamaiScenarios
   );
+});
+
+add_task(async function test_akamai_waf_telemetry_pref_disabled() {
+  await with_node_servers([NodeHTTPServer], runPrefDisabledScenarios);
 });

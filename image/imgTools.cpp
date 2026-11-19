@@ -42,9 +42,9 @@ namespace image {
 
 namespace {
 
-static nsresult sniff_mimetype_callback(nsIInputStream* in, void* data,
+static nsresult sniff_mimetype_callback(nsIInputStream* /*in*/, void* data,
                                         const char* fromRawSegment,
-                                        uint32_t toOffset, uint32_t count,
+                                        uint32_t /*toOffset*/, uint32_t count,
                                         uint32_t* writeCount) {
   nsCString* mimeType = static_cast<nsCString*>(data);
   MOZ_ASSERT(mimeType, "mimeType is null!");
@@ -107,7 +107,7 @@ class ImageDecoderListener final : public nsIStreamListener,
   }
 
   NS_IMETHOD
-  OnStartRequest(nsIRequest* aRequest) override { return NS_OK; }
+  OnStartRequest(nsIRequest* /*aRequest*/) override { return NS_OK; }
 
   NS_IMETHOD
   OnStopRequest(nsIRequest* aRequest, nsresult aStatus) override {
@@ -130,7 +130,7 @@ class ImageDecoderListener final : public nsIStreamListener,
     }
   }
 
-  virtual void OnLoadComplete(bool aLastPart) override {
+  virtual void OnLoadComplete(bool /*aLastPart*/) override {
     // ProgressTracker dispatches LOAD_COMPLETE as OnLoadComplete, but *our*
     // observers need the Notify invocation for it.
     if (mObserver) {
@@ -244,7 +244,7 @@ class ImageDecoderHelper final : public Runnable,
   }
 
   NS_IMETHOD
-  OnInputStreamReady(nsIAsyncInputStream* aAsyncInputStream) override {
+  OnInputStreamReady(nsIAsyncInputStream* /*aAsyncInputStream*/) override {
     MOZ_ASSERT(!NS_IsMainThread());
     return Run();
   }

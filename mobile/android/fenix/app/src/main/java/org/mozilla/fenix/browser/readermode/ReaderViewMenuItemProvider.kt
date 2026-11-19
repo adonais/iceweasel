@@ -5,6 +5,7 @@
 package org.mozilla.fenix.browser.readermode
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -41,14 +42,18 @@ class ReaderViewMenuItemProvider(
     private val appStore: AppStore,
     scope: CoroutineScope,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        browserStore.stateFlow
-            .map { it.customizeReaderViewItem() }
-            .stateIn(
-                scope = scope,
-                started = SharingStarted.Eagerly,
-                initialValue = browserStore.state.customizeReaderViewItem(),
-            )
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            browserStore.stateFlow
+                .map { listOfNotNull(it.customizeReaderViewItem()) }
+                .stateIn(
+                    scope = scope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = listOfNotNull(browserStore.state.customizeReaderViewItem()),
+                )
+        }
 
     override fun handles(event: MenuEvent) = event == MenuAction.CustomizeReaderView
 
@@ -62,16 +67,15 @@ class ReaderViewMenuItemProvider(
     /** Customizing the reader view is only offered while the current page is shown in reader view. */
     private fun BrowserState.customizeReaderViewItem() =
         when ((target.browserSessionFrom(this) as? TabSessionState)?.readerState?.active) {
-            true -> CUSTOMIZE_READER_VIEW_ITEM
+            true -> DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.CustomizeReaderView)
             else -> null
         }
 
-    private companion object {
-        val CUSTOMIZE_READER_VIEW_ITEM =
+    companion object {
+        private val DEFAULT_MENU_ITEM =
             StandardMenuItem(
                 title = MenuItemTitle(Text.Resource(R.string.browser_menu_customize_reader_view_2)),
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_tool_24),
-                onClickEvent = MenuAction.CustomizeReaderView,
             )
     }
 }

@@ -6,7 +6,6 @@
 #define mozilla_net_ChildDNSService_h
 
 #include "DNSRequestChild.h"
-#include "DNSRequestParent.h"
 #include "DNSServiceBase.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
@@ -16,8 +15,6 @@
 
 namespace mozilla {
 namespace net {
-
-class TRRServiceParent;
 
 class ChildDNSService final : public DNSServiceBase, public nsPIDNSService {
  public:
@@ -62,7 +59,6 @@ class ChildDNSService final : public DNSServiceBase, public nsPIDNSService {
   nsClassHashtable<nsCStringHashKey, nsTArray<RefPtr<DNSRequestSender>>>
       mPendingRequests MOZ_GUARDED_BY(mPendingRequestsLock);
   Mutex mPendingRequestsLock{"DNSPendingRequestsLock"};
-  RefPtr<TRRServiceParent> mTRRServiceParent;
 
   nsCString mTRRDomain;
   // Only set in the content process.

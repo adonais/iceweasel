@@ -108,6 +108,7 @@ class TestAgenticTools(unittest.TestCase):
         bootstrapper.instance = MagicMock()
         bootstrapper.instance.no_interactive = no_interactive
         bootstrapper.instance.cargo_tools_installed.return_value = tools_installed
+        bootstrapper.instance.npm_tools_installed.return_value = tools_installed
         return bootstrapper
 
     def test_interactive_accept(self):

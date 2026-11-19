@@ -1123,11 +1123,9 @@ class HighlightersOverlay extends EventEmitter {
    */
   getParentGridHighlighter(node) {
     // Find the highlighter map value for the subgrid whose parent grid is the given node.
-    const value = Array.from(this.gridHighlighters.values()).find(
-      ({ parentGridNode }) => {
-        return parentGridNode === node;
-      }
-    );
+    const value = this.gridHighlighters.values().find(({ parentGridNode }) => {
+      return parentGridNode === node;
+    });
 
     if (!value) {
       return null;
@@ -1155,11 +1153,9 @@ class HighlightersOverlay extends EventEmitter {
    */
   async restoreParentGridHighlighter(node) {
     // Find the highlighter map entry for the subgrid whose parent grid is the given node.
-    const entry = Array.from(this.gridHighlighters.entries()).find(
-      ([, value]) => {
-        return value?.parentGridNode === node;
-      }
-    );
+    const entry = this.gridHighlighters.entries().find(([, value]) => {
+      return value?.parentGridNode === node;
+    });
 
     if (!Array.isArray(entry)) {
       return;

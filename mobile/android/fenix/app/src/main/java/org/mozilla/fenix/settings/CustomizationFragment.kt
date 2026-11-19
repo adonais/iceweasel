@@ -34,6 +34,7 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isTallWindow
 import org.mozilla.fenix.ext.isWideWindow
+import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.settingssearch.PreferenceFileInformation.CustomizationPreferences
@@ -51,6 +52,8 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     private lateinit var radioDarkestTheme: RadioButtonPreference
     private lateinit var radioAutoBatteryTheme: RadioButtonPreference
     private lateinit var radioFollowDeviceTheme: RadioButtonPreference
+    private lateinit var radioHomepageSearchMiddle: RadioButtonPreference
+    private lateinit var radioHomepageSearchTop: RadioButtonPreference
     private val args by navArgs<CustomizationFragmentArgs>()
 
     // Cached reactive feature state used when (re)building preferences.
@@ -115,10 +118,13 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         bindLightTheme()
         bindAutoBatteryTheme()
         setupRadioGroups()
+        bindHomepageSearchPosition()
         setupToolbarCategory()
+        updateHomepageSearchPositionVisibility()
         setupTabStripDisplayCategory()
         setupTabStripLocationCategory()
         setupToolbarLayout()
+        setupMenuCategory()
         updateToolbarShortcut()
 
         // if tab strip is enabled, swipe toolbar to switch tabs should not be enabled so the
@@ -284,6 +290,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.TOP.name))
 
             updateToolbarLayoutIcons()
+            updateHomepageSearchPositionVisibility()
         }
 
         val bottomPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_bottom)
@@ -291,6 +298,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.BOTTOM.name))
 
             updateToolbarLayoutIcons()
+            updateHomepageSearchPositionVisibility()
         }
 
         val toolbarPosition = requireComponents.settings.toolbarPosition
@@ -298,6 +306,26 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         bottomPreference.setCheckedWithoutClickListener(toolbarPosition == ToolbarPosition.BOTTOM)
 
         addToRadioGroup(topPreference, bottomPreference)
+    }
+
+    private fun bindHomepageSearchPosition() {
+        radioHomepageSearchMiddle = requirePreference(R.string.pref_key_enable_homepage_searchbar2)
+        radioHomepageSearchTop = requirePreference(R.string.pref_key_homepage_search_location_top)
+
+        val middleSearchEnabled = requireComponents.settings.enableHomepageSearchBar
+        radioHomepageSearchMiddle.setCheckedWithoutClickListener(middleSearchEnabled)
+        radioHomepageSearchTop.setCheckedWithoutClickListener(!middleSearchEnabled)
+
+        addToRadioGroup(radioHomepageSearchMiddle, radioHomepageSearchTop)
+    }
+
+    private fun updateHomepageSearchPositionVisibility() {
+        val settings = requireComponents.settings
+        val isVisible = settings.enableHomepageCustomization && settings.toolbarPosition == ToolbarPosition.TOP
+
+        requirePreference<Preference>(R.string.pref_key_homepage_search_location_header).isVisible = isVisible
+        radioHomepageSearchMiddle.isVisible = isVisible
+        radioHomepageSearchTop.isVisible = isVisible
     }
 
     private fun setupTabStripDisplayCategory() {
@@ -397,6 +425,11 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         }
     }
 
+    private fun setupMenuCategory() {
+        val isEnabled = requireComponents.settings.isMenuCustomizationScreenEnabled
+        requirePreference<PreferenceCategory>(R.string.pref_key_customization_category_menu).isVisible = isEnabled
+    }
+
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
         when (preference.key) {
             resources.getString(R.string.pref_key_website_pull_to_refresh) -> {
@@ -404,6 +437,12 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             }
             resources.getString(R.string.pref_key_dynamic_toolbar) -> {
                 CustomizationSettings.dynamicToolbar.set(requireComponents.settings.isDynamicToolbarEnabled)
+            }
+            resources.getString(R.string.pref_key_customize_menu) -> {
+                nav(
+                    id = R.id.customizationFragment,
+                    directions = CustomizationFragmentDirections.actionCustomizationFragmentToCustomizeMenuFragment(),
+                )
             }
         }
         return super.onPreferenceTreeClick(preference)

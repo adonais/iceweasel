@@ -137,24 +137,6 @@ export class _AdsClient {
   get environment() {
     const endpoint = Services.prefs.getStringPref(PREF_ENDPOINT, "");
 
-    /**
-     * @backward-compat { version 158 }
-     *
-     * If `MozAdsEnvironment.PROD` is defined,
-     * then only the simple enum variants exist.
-     * Once 158 is released this branch can be removed,
-     * as the constructed variants exist.
-     * Simple enum variants only support PROD and STAGING.
-     */
-    if (lazy.MozAdsEnvironment.PROD !== undefined) {
-      let environment = lazy.MozAdsEnvironment.PROD;
-      if (endpoint === STAGE_MARS_URL) {
-        environment = lazy.MozAdsEnvironment.STAGING;
-      }
-
-      return environment;
-    }
-
     if (endpoint === PROD_MARS_URL) {
       return new lazy.MozAdsEnvironment.Prod();
     } else if (endpoint === STAGE_MARS_URL) {

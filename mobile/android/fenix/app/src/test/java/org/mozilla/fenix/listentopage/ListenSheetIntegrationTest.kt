@@ -10,10 +10,14 @@ import androidx.activity.ComponentActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.isVisible
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.listentopage.ListenError
 import mozilla.components.feature.listentopage.ListenState
 import mozilla.components.feature.listentopage.ListenStore
 import mozilla.components.feature.listentopage.listenReducer
+import mozilla.components.feature.listentopage.settings.ListenEnabledState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -32,13 +36,14 @@ class ListenSheetIntegrationTest {
 
     private val container = CoordinatorLayout(activity)
 
-    private fun integration() =
+    private fun integration(isEnabled: StateFlow<ListenEnabledState> = MutableStateFlow(ListenEnabledState.Enabled)) =
         ListenSheetIntegration(
             container = container,
             browserStore = BrowserStore(),
             listenStore = ListenStore(ListenState(), ::listenReducer),
             engineView = mockk(relaxed = true),
             isAddressBarAtBottom = true,
+            isEnabled = isEnabled,
             onListenClicked = {},
             onCustomizeReaderViewClicked = {},
         )
@@ -79,5 +84,41 @@ class ListenSheetIntegrationTest {
 
         assertEquals(1, container.childCount)
         assertTrue(sheet.isVisible)
+    }
+
+    @Test
+    fun `GIVEN listening is disabled WHEN the feature is started THEN the sheet is still shown`() {
+        integration(isEnabled = MutableStateFlow(ListenEnabledState.Disabled)).start()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue(sheet.isVisible)
+    }
+
+    @Test
+    fun `GIVEN listening is not yet known WHEN the feature is started THEN the sheet is still shown`() {
+        integration(isEnabled = MutableStateFlow(ListenEnabledState.Loading)).start()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertTrue(sheet.isVisible)
+    }
+
+    @Test
+    fun `GIVEN a session still extracting its article THEN the player has nothing to show`() {
+        assertFalse(ListenState(tabId = "tab-1").hasPlayerContent)
+    }
+
+    @Test
+    fun `GIVEN a session whose article is ready THEN the player has it to show`() {
+        assertTrue(ListenState(tabId = "tab-1", languageTag = "en-US").hasPlayerContent)
+    }
+
+    @Test
+    fun `GIVEN a session whose extraction failed THEN the player shows the error`() {
+        assertTrue(ListenState(tabId = "tab-1", error = ListenError.ContentUnavailable).hasPlayerContent)
+    }
+
+    @Test
+    fun `GIVEN no session THEN the player has nothing to show`() {
+        assertFalse(ListenState().hasPlayerContent)
     }
 }

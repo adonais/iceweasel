@@ -954,25 +954,21 @@ struct BaseCompiler final {
   // `Nothing` means the map is for a call; `Some(t)` means it is for a trap of
   // kind `t`.  See further comments on StackMapGenerator::createStackMap.
 
-  // Create a vanilla stackmap.
-  [[nodiscard]] bool createStackMap(Maybe<Trap> reason);
-
-  // Create a stackmap as vanilla, but for a custom assembler offset.
-  [[nodiscard]] bool createStackMap(Maybe<Trap> reason,
-                                    CodeOffset assemblerOffset);
-
-  // Create a stack map as vanilla, and note the presence of a ref-typed
-  // DebugFrame on the stack.
-  [[nodiscard]] bool createStackMap(
-      Maybe<Trap> reason, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
-
-  // Create a stackmap for the instruction described by `insnRange`, and note
-  // the presence of a ref-typed DebugFrame on the stack.  The stackmap will be
-  // keyed to `insnRange.resumeOffset()`.  Prefer this method over the above 3,
-  // which are regarded as "legacy" and should be phased out.
+  // Create a stackmap for the instruction described by `insnRange`, and
+  // optionally note the presence of a ref-typed DebugFrame on the stack.  The
+  // stackmap will be keyed to `insnRange.resumeOffset()`.
   [[nodiscard]] bool createStackMap(
       Maybe<Trap> reason, FaultingCodeRange insnRange,
-      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs =
+          HasDebugFrameWithLiveRefs::No);
+
+  // The same, but key the map to `resumeOffset`.  Try to use the
+  // FaultingCodeRange variant in preference to this one, which is regarded as
+  // "legacy" and should be phased out.
+  [[nodiscard]] bool createStackMap(
+      Maybe<Trap> reason, CodeOffset resumeOffset,
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs =
+          HasDebugFrameWithLiveRefs::No);
 
   // When compiling for debugging, creates a stack map for a non-resuming trap
   // instruction of kind `t1`, and, if specified, `t2`.  When not compiling for
@@ -995,8 +991,9 @@ struct BaseCompiler final {
   // Debugger API
 
   // Insert a breakpoint almost anywhere.  This will create a call, with all the
-  // overhead that entails.
-  void insertBreakablePoint(CallSiteKind kind);
+  // overhead that entails.  Returned value is the return offset of the call
+  // that gets baked into the generated sequence.
+  [[nodiscard]] CodeOffset insertBreakablePoint(CallSiteKind kind);
 
   // Insert code at the end of a function for breakpoint filtering.
   void insertPerFunctionDebugStub();

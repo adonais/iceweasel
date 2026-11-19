@@ -29,7 +29,7 @@ already_AddRefed<ProgressTracker> DynamicImage::GetProgressTracker() {
 }
 
 size_t DynamicImage::SizeOfSourceWithComputedFallback(
-    SizeOfState& aState) const {
+    SizeOfState& /*aState*/) const {
   return 0;
 }
 
@@ -48,15 +48,16 @@ void DynamicImage::DecrementAnimationConsumers() {}
 uint32_t DynamicImage::GetAnimationConsumers() { return 0; }
 #endif
 
-nsresult DynamicImage::OnImageDataAvailable(nsIRequest* aRequest,
-                                            nsIInputStream* aInStr,
-                                            uint64_t aSourceOffset,
-                                            uint32_t aCount) {
+nsresult DynamicImage::OnImageDataAvailable(nsIRequest* /*aRequest*/,
+                                            nsIInputStream* /*aInStr*/,
+                                            uint64_t /*aSourceOffset*/,
+                                            uint32_t /*aCount*/) {
   return NS_OK;
 }
 
-nsresult DynamicImage::OnImageDataComplete(nsIRequest* aRequest,
-                                           nsresult aStatus, bool aLastPart) {
+nsresult DynamicImage::OnImageDataComplete(nsIRequest* /*aRequest*/,
+                                           nsresult /*aStatus*/,
+                                           bool /*aLastPart*/) {
   return NS_OK;
 }
 
@@ -173,26 +174,26 @@ NS_IMETHODIMP_(bool)
 DynamicImage::WillDrawOpaqueNow() { return false; }
 
 NS_IMETHODIMP_(bool)
-DynamicImage::IsImageContainerAvailable(WindowRenderer* aRenderer,
-                                        uint32_t aFlags) {
+DynamicImage::IsImageContainerAvailable(WindowRenderer* /*aRenderer*/,
+                                        uint32_t /*aFlags*/) {
   return false;
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
-DynamicImage::GetImageProvider(WindowRenderer* aRenderer,
-                               const gfx::IntSize& aSize,
-                               const SVGImageContext& aSVGContext,
-                               const Maybe<ImageIntRegion>& aRegion,
-                               uint32_t aFlags,
-                               WebRenderImageProvider** aProvider) {
+DynamicImage::GetImageProvider(WindowRenderer* /*aRenderer*/,
+                               const gfx::IntSize& /*aSize*/,
+                               const SVGImageContext& /*aSVGContext*/,
+                               const Maybe<ImageIntRegion>& /*aRegion*/,
+                               uint32_t /*aFlags*/,
+                               WebRenderImageProvider** /*aProvider*/) {
   return ImgDrawResult::NOT_SUPPORTED;
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
 DynamicImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
-                   const ImageRegion& aRegion, uint32_t aWhichFrame,
+                   const ImageRegion& aRegion, uint32_t /*aWhichFrame*/,
                    SamplingFilter aSamplingFilter,
-                   const SVGImageContext& aSVGContext, uint32_t aFlags,
+                   const SVGImageContext& /*aSVGContext*/, uint32_t /*aFlags*/,
                    float aOpacity) {
   MOZ_ASSERT(!aSize.IsEmpty(), "Unexpected empty size");
 
@@ -221,25 +222,26 @@ DynamicImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
 }
 
 NS_IMETHODIMP
-DynamicImage::StartDecoding(uint32_t aFlags, uint32_t aWhichFrame) {
+DynamicImage::StartDecoding(uint32_t /*aFlags*/, uint32_t /*aWhichFrame*/) {
   return NS_OK;
 }
 
-bool DynamicImage::StartDecodingWithResult(uint32_t aFlags,
-                                           uint32_t aWhichFrame) {
+bool DynamicImage::StartDecodingWithResult(uint32_t /*aFlags*/,
+                                           uint32_t /*aWhichFrame*/) {
   return true;
 }
 
 bool DynamicImage::HasDecodedPixels() { return true; }
 
 imgIContainer::DecodeResult DynamicImage::RequestDecodeWithResult(
-    uint32_t aFlags, uint32_t aWhichFrame) {
+    uint32_t /*aFlags*/, uint32_t /*aWhichFrame*/) {
   return imgIContainer::DECODE_SURFACE_AVAILABLE;
 }
 
 NS_IMETHODIMP
-DynamicImage::RequestDecodeForSize(const nsIntSize& aSize, uint32_t aFlags,
-                                   uint32_t aWhichFrame) {
+DynamicImage::RequestDecodeForSize(const nsIntSize& /*aSize*/,
+                                   uint32_t /*aFlags*/,
+                                   uint32_t /*aWhichFrame*/) {
   return NS_OK;
 }
 
@@ -262,13 +264,13 @@ DynamicImage::GetAnimationMode(uint16_t* aAnimationMode) {
 }
 
 NS_IMETHODIMP
-DynamicImage::SetAnimationMode(uint16_t aAnimationMode) { return NS_OK; }
+DynamicImage::SetAnimationMode(uint16_t /*aAnimationMode*/) { return NS_OK; }
 
 NS_IMETHODIMP
 DynamicImage::ResetAnimation() { return NS_OK; }
 
 NS_IMETHODIMP_(float)
-DynamicImage::GetFrameIndex(uint32_t aWhichFrame) { return 0; }
+DynamicImage::GetFrameIndex(uint32_t /*aWhichFrame*/) { return 0; }
 
 NS_IMETHODIMP_(int32_t)
 DynamicImage::GetFirstFrameDelay() { return 0; }
@@ -276,10 +278,9 @@ DynamicImage::GetFirstFrameDelay() { return 0; }
 NS_IMETHODIMP_(void)
 DynamicImage::SetAnimationStartTime(const mozilla::TimeStamp& aTime) {}
 
-nsIntSize DynamicImage::OptimalImageSizeForDest(const gfxSize& aDest,
-                                                uint32_t aWhichFrame,
-                                                SamplingFilter aSamplingFilter,
-                                                uint32_t aFlags) {
+nsIntSize DynamicImage::OptimalImageSizeForDest(
+    const gfxSize& /*aDest*/, uint32_t /*aWhichFrame*/,
+    SamplingFilter /*aSamplingFilter*/, uint32_t /*aFlags*/) {
   IntSize size(mDrawable->Size());
   return nsIntSize(size.width, size.height);
 }

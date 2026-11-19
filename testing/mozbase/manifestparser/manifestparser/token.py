@@ -214,12 +214,6 @@ class ManifestTokens:
         _remote_async: Token = self.add(Token(t_type=t_variant, value="remote_async"))
         _snapshot: Token = self.add(Token(t_type=t_variant, value="snapshot"))
         _standalone: Token = self.add(Token(t_type=t_variant, value="standalone"))
-        _socketprocess_e10s: Token = self.add(
-            Token(t_type=t_variant, value="socketprocess_e10s")
-        )
-        _socketprocess_networking: Token = self.add(
-            Token(t_type=t_variant, value="socketprocess_networking")
-        )  # DOES NOT appear in variants.yml
         _swgl: Token = self.add(Token(t_type=t_variant, value="swgl"))
         _trainhop: Token = self.add(Token(t_type=t_variant, value="trainhop"))
         _vertical_tab: Token = self.add(Token(t_type=t_variant, value="vertical_tab"))

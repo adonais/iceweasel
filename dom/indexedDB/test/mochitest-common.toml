@@ -155,14 +155,12 @@ skip-if = [
 skip-if = [
   "http2",
   "http3",
-  "socketprocess_networking", # Bug 1827221: test is toggled off here rather than in private.ini
 ]
 
 ["test_blob_worker_xhr_post_multifile.html"]
 skip-if = [
   "http2",
   "http3",
-  "socketprocess_networking", # Bug 1827221: test is toggled off here rather than in private.ini
 ]
 
 ["test_blob_worker_xhr_read.html"]

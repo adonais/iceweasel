@@ -43,7 +43,7 @@ class CTFontEntry final : public gfxFontEntry {
   gfxFontEntry* Clone() const override;
 
 #if MOZ_FONTATIONS
-  void InitSkrifaFontFace() override;
+  void InitSkrifaFontFace() override MOZ_REQUIRES(mLock);
 #endif
 
   // Return a non-owning reference to our CGFont; caller must not release it.

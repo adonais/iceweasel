@@ -166,10 +166,10 @@ Supported types
     }
     ```
 
-- **vpn**: checks whether IP Protection (IPP) is currently active.
+- **vpn**: checks whether IP Protection (IPP) is active and proxying the page loaded in the tab.
   - Fields:
-    - `active` (boolean, required): expected IPP state. Use `true` to match when IPP is active, `false` to match when it is not.
-  - Result: true if the current IPP state equals `active`. The condition reacts to IPP state changes and re-evaluates automatically.
+    - `active` (boolean, required): expected IPP state for the page. Use `true` to match when the page is proxied, `false` to match when it is not.
+  - Result: true if the page's IPP state equals `active`. A page is not proxied when IPP is off, when the site is excluded, or when IPP runs in a mode that does not cover it (for example inclusion mode on a site that is not included). The condition reacts to IPP state, mode and site rule changes and re-evaluates automatically.
   - Example:
     ```json
     { "type": "vpn", "active": true }

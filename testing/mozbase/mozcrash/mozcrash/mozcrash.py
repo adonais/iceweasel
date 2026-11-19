@@ -85,7 +85,8 @@ def check_for_crashes(
 
     `symbols_path` should be a path to a directory containing symbols to use for
     dump processing. This can either be a path to a directory containing Breakpad-format
-    symbols, or a URL to a zip file containing a set of symbols.
+    symbols, or a URL to a zip file containing a set of symbols. It can also be a list
+    of such paths and URLs.
 
     If `dump_save_path` is set, it should be a path to a directory in which to copy minidump
     files for safekeeping after a stack trace has been printed. If not set, the environment
@@ -254,7 +255,8 @@ class CrashInfo:
     :param symbols_path: Path to a path to a directory containing symbols to use for
                          dump processing. This can either be a path to a directory
                          containing Breakpad-format symbols, or a URL to a zip file
-                         containing a set of symbols.
+                         containing a set of symbols. It can also be a list of such
+                         paths and URLs.
     :param dump_save_path: Path to which to save the dump files. If this is None,
                            the MINIDUMP_SAVE_PATH environment variable will be used.
     :param stackwalk_binary: Path to the minidump-stackwalk binary. If this is None,
@@ -272,8 +274,11 @@ class CrashInfo:
         keep=False,
     ):
         self.dump_directory = dump_directory
-        self.symbols_path = symbols_path
-        self.remove_symbols = False
+        if isinstance(symbols_path, (list, tuple)):
+            self.symbols_paths = [p for p in symbols_path if p]
+        else:
+            self.symbols_paths = [symbols_path] if symbols_path else []
+        self.downloaded_symbols_path = None
         self.brief_output = False
         self.keep = keep
         self.use_debug_symbols = False
@@ -311,24 +316,36 @@ class CrashInfo:
 
     @retriable(attempts=5, sleeptime=5, sleepscale=2)
     def _get_symbols(self):
-        if not self.symbols_path:
+        if not self.symbols_paths:
             self.logger.warning(
                 "No local symbols_path provided, only http symbols will be used."
             )
 
-        # This updates self.symbols_path so we only download once.
-        if mozfile.is_url(self.symbols_path):
-            self.remove_symbols = True
-            self.logger.info(f"Downloading symbols from: {self.symbols_path}")
-            # Get the symbols and write them to a temporary zipfile
-            data = urlopen(self.symbols_path)
-            with tempfile.TemporaryFile() as symbols_file:
-                symbols_file.write(data.read())
-                # extract symbols to a temporary directory (which we'll delete after
-                # processing all crashes)
-                self.symbols_path = tempfile.mkdtemp()
-                with zipfile.ZipFile(symbols_file, "r") as zfile:
-                    mozfile.extract_zip(zfile, self.symbols_path)
+        urls = [p for p in self.symbols_paths if mozfile.is_url(p)]
+        if not urls:
+            return
+
+        # Extract all symbols to a single temporary directory (which we'll
+        # delete after processing all crashes).
+        extract_path = tempfile.mkdtemp()
+        try:
+            for url in urls:
+                self.logger.info(f"Downloading symbols from: {url}")
+                # Get the symbols and write them to a temporary zipfile
+                data = urlopen(url)
+                with tempfile.TemporaryFile() as symbols_file:
+                    symbols_file.write(data.read())
+                    with zipfile.ZipFile(symbols_file, "r") as zfile:
+                        mozfile.extract_zip(zfile, extract_path)
+        except Exception:
+            mozfile.remove(extract_path)
+            raise
+
+        self.downloaded_symbols_path = extract_path
+        # This updates self.symbols_paths so we only download once.
+        self.symbols_paths = [
+            p for p in self.symbols_paths if not mozfile.is_url(p)
+        ] + [extract_path]
 
     @property
     def dump_files(self):
@@ -371,8 +388,8 @@ class CrashInfo:
             rv = self._process_dump_file(path, extra)
             yield rv
 
-        if self.remove_symbols:
-            mozfile.remove(self.symbols_path)
+        if self.downloaded_symbols_path:
+            mozfile.remove(self.downloaded_symbols_path)
 
     def _process_dump_file(self, path, extra):
         """Process a single dump file using self.stackwalk_binary, and return a
@@ -440,8 +457,7 @@ class CrashInfo:
             # unecessarily play with fire).
             command.append(path)
 
-            if self.symbols_path:
-                command.append(self.symbols_path)
+            command.extend(self.symbols_paths)
 
             self.logger.info("Copy/paste: {}".format(" ".join(command)))
             # run minidump-stackwalk

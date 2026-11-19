@@ -79,6 +79,7 @@
       <observes element="Browser:Reload" attribute="disabled"/>
     </command>
     <command id="Browser:DuplicateTab" />
+    <command id="Browser:CopyTabURL" />
     <command id="Profiles:CreateProfile" />
     <command id="Profiles:ManageProfiles" />
     <command id="Profiles:LaunchProfile" />
@@ -374,10 +375,12 @@
 
     <key id="key_restoreLastClosedTabOrWindowOrSession" command="History:RestoreLastClosedTabOrWindowOrSession" data-l10n-id="tab-new-shortcut" modifiers="accel,shift"/>
     <key id="key_undoCloseWindow" command="History:UndoCloseWindow" data-l10n-id="window-new-shortcut" modifiers="accel,shift"/>
+    <key id="key_undoCloseTab" command="History:UndoCloseTab"/>
 
     <key id="key_addTabSplitView" command="Browser:AddTabSplitView"/>
     <key id="key_separateTabSplitView" command="Browser:SeparateTabSplitView"/>
     <key id="key_duplicateTab" command="Browser:DuplicateTab"/>
+    <key id="key_copyTabURL" command="Browser:CopyTabURL"/>
 
 #ifdef XP_GNOME
 #define NUM_SELECT_TAB_MODIFIER alt

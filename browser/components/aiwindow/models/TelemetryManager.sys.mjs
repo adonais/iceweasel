@@ -11,8 +11,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs",
   submitTelemetryResult:
     "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs",
+  openAIEngine:
+    "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs",
   setInterval: "resource://gre/modules/Timer.sys.mjs",
-  setTimeout: "resource://gre/modules/Timer.sys.mjs",
   clearInterval: "resource://gre/modules/Timer.sys.mjs",
 });
 
@@ -126,6 +127,10 @@ export class TelemetryScheduler {
       return;
     }
 
+    if (Services.startup.shuttingDown) {
+      return;
+    }
+
     if (this.#running) {
       lazy.console.debug(
         "Skipping run because a previous run is still in progress."
@@ -163,9 +168,13 @@ export class TelemetryScheduler {
             conversationObj.convId
           );
           if (!conversation) {
+            await lazy.ChatStore.markLLMTelemetryProcessed(
+              conversationObj.convId,
+              conversationObj.telemetryJobs,
+              conversationObj.turnIndex
+            );
             continue;
           }
-          const requestStart = ChromeUtils.now();
           const results = (
             await telemetryEngine.runTelemetryByName(
               telemetryNames,
@@ -176,7 +185,6 @@ export class TelemetryScheduler {
             samplingProbability:
               conversationObj.telemetryProbs[r.telemetry_name] ?? 0,
           }));
-          const requestDuration = ChromeUtils.now() - requestStart;
 
           lazy.submitTelemetryResult(
             results,
@@ -186,6 +194,8 @@ export class TelemetryScheduler {
               record_type: "endOfConversation",
               uniform_sampling_probability:
                 conversationObj.uniformSamplingProbability ?? 0,
+              triggers: conversationObj.triggers ?? [],
+              chat_version: conversation.systemPromptVersion,
             }
           );
           await lazy.ChatStore.markLLMTelemetryProcessed(
@@ -193,11 +203,14 @@ export class TelemetryScheduler {
             conversationObj.telemetryJobs,
             conversation.currentTurnIndex()
           );
-          const delay = Math.max(3000 - requestDuration, 0);
-          await new Promise(r =>
-            lazy.setTimeout(r, delay + Math.random() * 1000)
-          );
         } catch (error) {
+          if (lazy.openAIEngine.is429Error(error)) {
+            lazy.console.warn(
+              "Rate limited; stopping until the next scheduled run.",
+              error
+            );
+            break;
+          }
           lazy.console.error(
             `Failed to generate llm telemetry for conversation ${conversationObj.convId}`,
             error
@@ -212,9 +225,11 @@ export class TelemetryScheduler {
         { startTime: intervalStart },
         "LLMaJTelemetryManager"
       );
-      Services.prefs.setIntPref(LAST_RUN_PREF, Math.floor(Date.now() / 1000));
-      if (!this.#destroyed) {
-        this.#startInterval();
+      if (!Services.startup.shuttingDown) {
+        Services.prefs.setIntPref(LAST_RUN_PREF, Math.floor(Date.now() / 1000));
+        if (!this.#destroyed) {
+          this.#startInterval();
+        }
       }
       this.#running = false;
     }

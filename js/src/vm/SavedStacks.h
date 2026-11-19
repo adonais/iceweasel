@@ -187,15 +187,10 @@ class SavedStacks {
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
-  // An alloction metadata builder that marks cells with the JavaScript stack
-  // at which they were allocated.
-  struct MetadataBuilder : public AllocationMetadataBuilder {
-    MetadataBuilder() = default;
-    virtual JSObject* build(JSContext* cx, HandleObject obj,
-                            AutoEnterOOMUnsafeRegion& oomUnsafe) const override;
-  };
-
-  static const MetadataBuilder metadataBuilder;
+  // Return the allocation metadata for a new object: the JavaScript stack at
+  // which it was allocated, or nullptr if this allocation wasn't sampled.
+  static SavedFrame* buildAllocationMetadata(
+      JSContext* cx, HandleObject obj, AutoEnterOOMUnsafeRegion& oomUnsafe);
 
  private:
   SavedFrame::Set frames;

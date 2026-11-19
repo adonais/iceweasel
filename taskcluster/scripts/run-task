@@ -21,6 +21,7 @@ if sys.version_info[0:2] < (3, 5):
 
 
 import argparse
+import contextlib
 import datetime
 import errno
 import io
@@ -847,6 +848,35 @@ def vcs_checkout_from_args(args, project):
     )
 
 
+def start_resource_monitor():
+    if not os.environ.get("RUN_TASK_RESOURCE_USAGE"):
+        return None
+    try:
+        from run_task_resource_monitor import start_resource_monitor
+    except ImportError as e:
+        print_line(
+            b"setup",
+            b"not monitoring resource usage: %s\n" % str(e).encode("utf-8"),
+        )
+        # The profile is an artifact of the task, which generic-worker fails
+        # if it is missing.
+        with open(os.environ["RUN_TASK_RESOURCE_USAGE"], "w"):
+            pass
+        return None
+    return start_resource_monitor()
+
+
+@contextlib.contextmanager
+def resource_phase(monitor, name):
+    if monitor:
+        monitor.begin_phase(name)
+    try:
+        yield
+    finally:
+        if monitor:
+            monitor.finish_phase(name)
+
+
 def main(args):
     task_workdir = os.getcwd()
 
@@ -1086,8 +1116,11 @@ def main(args):
         os.setresgid(gid, gid, gid)
         os.setresuid(uid, uid, uid)
 
-    vcs_checkout_from_args(args, "gecko")
-    vcs_checkout_from_args(args, "comm")
+    monitor = start_resource_monitor()
+
+    with resource_phase(monitor, "vcs-checkout"):
+        vcs_checkout_from_args(args, "gecko")
+        vcs_checkout_from_args(args, "comm")
 
     for k in (
         "CARGO_HOME",
@@ -1110,7 +1143,8 @@ def main(args):
             )
 
     if "MOZ_FETCHES" in os.environ:
-        fetch_artifacts()
+        with resource_phase(monitor, "fetch-artifacts"):
+            fetch_artifacts()
 
         # If Python is a fetch dependency, add it to the PATH and setting
         # the mozilla-specific MOZ_PYTHON_HOME to relocate binaries.
@@ -1166,7 +1200,8 @@ def main(args):
                 b"setup", b"updated PATH with uv artifact: " + new.encode() + b"\n"
             )
 
-    return run_and_prefix_output(b"task", task_args, cwd=args.task_cwd)
+    with resource_phase(monitor, "task"):
+        return run_and_prefix_output(b"task", task_args, cwd=args.task_cwd)
 
 
 if __name__ == "__main__":

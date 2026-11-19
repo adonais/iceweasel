@@ -14,6 +14,24 @@ from unittest import mock
 import mozunit
 
 from mozbuild.action import run_cargo
+from mozbuild.rust_commands import TEST_SELECTION_ENV, CargoCommand
+
+SELECTION_DATA = Path(__file__).parent / "data" / "rust_test_selection"
+GKRUST_TESTS = {
+    "manifest_path": "/src/toolkit/library/rust/Cargo.toml",
+    "names": ["crashreporter", "l10nregistry", "selectors", "gkrust"],
+    "features": [
+        "moz_memory",
+        "gkrust-shared/for_xul",
+        "crashreporter/mock",
+        "crashping/gecko_tests",
+    ],
+}
+GECKODRIVER_TESTS = {
+    "manifest_path": "/src/testing/geckodriver/Cargo.toml",
+    "names": ["geckodriver", "webdriver"],
+    "features": ["http/server"],
+}
 
 
 class TestRunCargo(unittest.TestCase):
@@ -202,8 +220,8 @@ class TestRunCargo(unittest.TestCase):
             "RUST_TARGET": "x86_64-unknown-linux-gnu",
             "MOZ_CARGO_DEFAULT_PROFILE_DIR": "release",
             "MOZ_CARGO_PROFILE_PREFIX": "release",
-            "DLL_PREFIX": "lib",
-            "DLL_SUFFIX": ".so",
+            "CARGO": "cargo",
+            "MOZ_CARGO_FROZEN_ARGS": "--frozen",
         }
         spec = {
             "config": config,
@@ -219,36 +237,89 @@ class TestRunCargo(unittest.TestCase):
         }
         path = self.tmpdir / "spec.json"
         path.write_text(json.dumps(spec), encoding="utf-8")
-        dist_bin = self.tmpdir / "dist" / "bin"
-        dist_bin.mkdir(parents=True)
-        for name in ("libnss3.so", "libxul.so", "firefox"):
-            (dist_bin / name).write_bytes(name.encode())
         return str(path)
 
-    def _deps(self, profile="release"):
-        return self.tmpdir / "x86_64-unknown-linux-gnu" / profile / "deps"
+    def _run_selected(self, selection, **overrides):
+        spec = self._test_spec(**{**GKRUST_TESTS, **overrides})
+        with mock.patch.dict(
+            run_cargo.os.environ, {TEST_SELECTION_ENV: selection}
+        ), mock.patch.object(
+            run_cargo.subprocess,
+            "check_output",
+            return_value=(SELECTION_DATA / "metadata.json").read_bytes(),
+        ) as metadata:
+            rc, compose, seen = self._run(["--spec", spec])
+        return rc, compose, seen, metadata
 
-    def test_test_libs_staged(self):
-        self._run(["--spec", self._test_spec()])
+    def test_test_selection(self):
+        rc, compose, _, _ = self._run_selected("l10nregistry crashreporter")
+        self.assertEqual(rc, 0)
         self.assertEqual(
-            sorted(p.name for p in self._deps().iterdir()),
-            ["libnss3.so", "libxul.so"],
+            compose.call_args.args[0].names, ("crashreporter", "l10nregistry", "gkrust")
+        )
+        self.assertTrue(compose.call_args.kwargs["workspace_hack"])
+
+    def test_test_selection_metadata_argv(self):
+        _, _, _, metadata = self._run_selected("crashreporter")
+        metadata.assert_called_once_with(
+            [
+                "cargo",
+                "metadata",
+                "--no-deps",
+                "--frozen",
+                "--format-version",
+                "1",
+                "--manifest-path",
+                "/src/toolkit/library/rust/Cargo.toml",
+            ],
+            cwd=str(self.tmpdir),
         )
 
-    def test_test_libs_custom_profile(self):
-        self._run(["--spec", self._test_spec(cargo_profile_suffix="custom")])
+    def test_test_selection_other_edge(self):
+        rc, compose, seen, metadata = self._run_selected("webdriver")
+        self.assertEqual(rc, 0)
+        compose.assert_not_called()
+        metadata.assert_not_called()
+        self.assertEqual(seen, {})
+
+    def test_test_selection_library(self):
+        _, compose, _, metadata = self._run_selected("crashreporter", kind="library")
+        metadata.assert_not_called()
+        self.assertEqual(compose.call_args.args[0].names, tuple(GKRUST_TESTS["names"]))
+        self.assertEqual(compose.call_args.kwargs["workspace_hack"], True)
+
+    def _narrow(self, crates, edge):
+        with open(SELECTION_DATA / "metadata.json", encoding="utf-8") as fh:
+            metadata = json.load(fh)
+        packages = {package["name"]: package for package in metadata["packages"]}
+        command = CargoCommand(kind="test", working_directory="/obj", **edge)
+        return run_cargo.narrow_test_edge(command, crates, packages)
+
+    def test_narrow_test_edge(self):
+        command, workspace_hack = self._narrow(["crashreporter"], GKRUST_TESTS)
+        self.assertEqual(command.names, ("crashreporter", "gkrust"))
         self.assertEqual(
-            sorted(p.name for p in self._deps("release-custom").iterdir()),
-            ["libnss3.so", "libxul.so"],
+            command.features,
+            (
+                "moz_memory",
+                "gkrust-shared/for_xul",
+                "crashreporter/mock",
+                "crashping/gecko_tests",
+            ),
         )
+        self.assertTrue(workspace_hack)
 
-    def test_test_libs_not_staged_on_macos(self):
-        self._run(["--spec", self._test_spec(os_arch="Darwin")])
-        self.assertFalse(self._deps().exists())
+    def test_narrow_test_edge_non_member(self):
+        command, workspace_hack = self._narrow(["selectors"], GKRUST_TESTS)
+        self.assertEqual(command.names, ("selectors", "gkrust"))
+        self.assertEqual(command.features, ("moz_memory", "gkrust-shared/for_xul"))
+        self.assertTrue(workspace_hack)
 
-    def test_test_libs_not_staged_for_libraries(self):
-        self._run(["--spec", self._test_spec(kind="library")])
-        self.assertFalse(self._deps().exists())
+    def test_narrow_test_edge_renamed_dependency(self):
+        command, workspace_hack = self._narrow(["webdriver"], GECKODRIVER_TESTS)
+        self.assertEqual(command.names, ("webdriver",))
+        self.assertEqual(command.features, ("http/server",))
+        self.assertFalse(workspace_hack)
 
     def _networking(self, config=None, returncode=0, **overrides):
         base = {

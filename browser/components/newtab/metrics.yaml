@@ -1443,8 +1443,12 @@ newtab:
       and weather_impression.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1460,6 +1464,21 @@ newtab:
         description: >
           Size of widget (e.g., small, medium, large).
         type: string
+      widget_location: &widget_location
+        description: >
+          Where on the page the widget renders. One of home_space (pinned to
+          the Home space), widget_space (the Widgets space, where users pin
+          widgets to Home), widget_container (the widgets section in any other
+          layout), sidebar (the page's inline-end sidebar, e.g. small Weather)
+          or story_card (the first card of a story section).
+        type: string
+      widget_variant: &widget_variant
+        description: >
+          Optional, widget-defined state the widget was showing. Privacy sends
+          etp_off, no_trackers_blocked, count_only for the small card,
+          newtab-privacy-blank for the state with no message, or the ID of the
+          message shown.
+        type: string
     send_in_pings:
       - newtab
 
@@ -1472,8 +1491,12 @@ newtab:
       weather_open_provider_url and weather_change_display.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1491,11 +1514,15 @@ newtab:
         description: >
           Specific action taken by different widgets (e.g., list_copy, list_create,
           timer_set, timer_play, timer_pause, change_location, detect_location).
+          add_to_home and remove_from_home pin a widget to the Home space or
+          move it back to the Widgets space, without turning it on or off.
         type: string
       action_value:
         description: >
           Optional value associated with action (string representation).
         type: string
+      widget_location: *widget_location
+      widget_variant: *widget_variant
     send_in_pings:
       - newtab
 
@@ -1507,10 +1534,13 @@ newtab:
       and weather_enabled.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_sensitivity:
       - technical
+      - interaction
     notification_emails:
       - mcrawford@mozilla.com
     expires: never
@@ -1523,6 +1553,7 @@ newtab:
         description: >
           Whether widget is now enabled (true) or disabled (false).
         type: boolean
+      widget_variant: *widget_variant
     send_in_pings:
       - newtab
 
@@ -1533,10 +1564,13 @@ newtab:
       This metric replaces weather_load_error.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2079330
     data_sensitivity:
       - technical
+      - interaction
     notification_emails:
       - mcrawford@mozilla.com
     expires: never
@@ -1548,6 +1582,7 @@ newtab:
         description: >
           Type of error encountered (e.g., load_error, network_error, timeout).
         type: string
+      widget_variant: *widget_variant
     send_in_pings:
       - newtab
 
@@ -1557,8 +1592,10 @@ newtab:
       Recorded when user interacts with widget container controls.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2012821
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2012821
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1570,7 +1607,9 @@ newtab:
       action_type:
         description: >
           Type of container action. (hide_all, change_size_all,
-          change_row_visibility, feedback)
+          change_row_visibility, feedback, remove_all_from_home).
+          remove_all_from_home moves every widget on the Home space back to the
+          Widgets space without turning any off.
         type: string
       action_value:
         description: >
@@ -1592,6 +1631,28 @@ newtab:
       - interaction
     notification_emails:
       - mcrawford@mozilla.com
+    expires: never
+    lifetime: application
+    send_in_pings:
+      - newtab
+
+  widgets_home_list:
+    type: string_list
+    description: >
+      The list of widget telemetry names pinned to the Home space that it
+      currently shows. Recorded at startup and whenever the user pins or
+      unpins a widget or a widget is enabled or disabled. Only set in layouts
+      where users pin widgets to Home, so an empty list means nothing is
+      pinned there.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2085959
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mcrawford@mozilla.com
+      - jbrown@mozilla.com
     expires: never
     lifetime: application
     send_in_pings:

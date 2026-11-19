@@ -46,7 +46,7 @@ SharedSurface_AndroidHardwareBuffer::Create(const SharedSurfaceDesc& desc) {
     return nullptr;
   }
 
-  auto tex = MakeUnique<Texture>(*desc.gl);
+  auto tex = std::make_unique<Texture>(*desc.gl);
   {
     ScopedBindTexture texture(gle, tex->name, LOCAL_GL_TEXTURE_2D);
     gle->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MIN_FILTER,
@@ -133,8 +133,10 @@ void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
   const auto& gle = GLContextEGL::Cast(mDesc.gl);
   const auto& egl = gle->mEgl;
 
+  // eglCreateSyncKHR takes ownership of the fd even on failure.
+  // Release it here to avoid closing the fd again.
   const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
-                            fenceFd.get(), LOCAL_EGL_NONE};
+                            fenceFd.release(), LOCAL_EGL_NONE};
 
   EGLSync sync =
       egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
@@ -142,15 +144,18 @@ void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
     gfxCriticalNote << "Failed to create EGLSync from fd";
     return;
   }
-  // Release fd here, since it is owned by EGLSync
-  (void)fenceFd.release();
 
+  bool success;
   if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
-    egl->fWaitSync(sync, 0);
+    success = egl->fWaitSync(sync, 0) == LOCAL_EGL_TRUE;
   } else {
-    egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
+    success = egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER) ==
+              LOCAL_EGL_CONDITION_SATISFIED;
   }
   egl->fDestroySync(sync);
+  if (!success) {
+    gfxCriticalNote << "Failed to wait for AHB ownership fence";
+  }
 }
 
 /*static*/

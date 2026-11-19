@@ -227,7 +227,7 @@ add_task(async function test_cvv_entry_is_named_after_the_field() {
         getDisplayedPopupItems(browser)[0].getAttribute("aria-label");
       is(
         ariaLabel,
-        "Visa CVC ••••1111",
+        "Visa CVV ••••1111",
         "Entry is named after the field and identified by the card number"
       );
       ok(!ariaLabel.includes("123"), "The security code is not announced");

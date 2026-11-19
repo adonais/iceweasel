@@ -42,6 +42,12 @@ async function assertOrder(boxGroup, expected, message) {
   );
 }
 
+add_task(async function test_listbox_accessible_name() {
+  let { boxGroup, tab } = await openContainersPane();
+  await assertBoxGroupHasListboxAccessibleName(boxGroup);
+  await BrowserTestUtils.removeTab(tab);
+});
+
 add_task(async function test_reorder_with_drag_and_drop() {
   let { win, boxGroup, tab } = await openContainersPane();
   let [id0, id1, id2, id3] = getRenderedOrder(boxGroup);

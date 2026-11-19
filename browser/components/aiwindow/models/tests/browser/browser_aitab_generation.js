@@ -18,6 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ConversationStore:
     "moz-src:///browser/components/aiwindow/ui/modules/ConversationStore.sys.mjs",
+  createAITab: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
   MLTestUtils: "resource://testing-common/MLTestUtils.sys.mjs",
   MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   PURPOSES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -131,6 +132,43 @@ add_task(async function test_generateAITab_honors_aborted_signal() {
   );
   Assert.ok(result.error, "an aborted signal cancels generation");
   Assert.ok(!result.surface, "no surface is returned when canceled");
+});
+
+add_task(async function test_createAITab_does_not_save_canceled_page() {
+  const mockEngine = new lazy.MockEngineManager();
+  const controller = new AbortController();
+  const conversation = lazy.newConversation();
+
+  try {
+    const resultPromise = lazy.createAITab(
+      { raw_content: "Hotels in Lisbon", focus: "Make a hotel comparison" },
+      conversation,
+      controller.signal
+    );
+    await mockEngine.captureRequest({
+      purpose: lazy.MODEL_FEATURES.AITAB,
+    });
+
+    controller.abort();
+    const result = await resultPromise;
+
+    Assert.ok(
+      !result.success,
+      "A canceled generation process does not create an AITab"
+    );
+    Assert.ok(
+      result.toolResult.includes("canceled"),
+      "The result reports cancellation of the generation process"
+    );
+    Assert.deepEqual(
+      await lazy.AITabStore.getAITabPagesByConvId(conversation.id),
+      [],
+      "The canceled AITab is not saved"
+    );
+  } finally {
+    await mockEngine.rejectAllRequests();
+    mockEngine.cleanupMocks();
+  }
 });
 
 add_task(async function test_generateAITab_success() {
@@ -515,6 +553,9 @@ add_task(async function test_generateAITab_hydrates_favicon_for_denied_url() {
     conversation.securityProperties.setUntrustedInput();
     conversation.securityProperties.commit();
     conversation.addSerpUrlsForAnonymousFetch([ALLOWED_URL]);
+    // A refused URL may only be linked when the chat has seen it, as it would
+    // have from history search.
+    conversation.addSeenUrls([DENIED_URL]);
     const call = generatePage(mockEngine, conversation, {
       url_list: [DENIED_URL, ALLOWED_URL],
     });

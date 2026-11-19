@@ -73,7 +73,7 @@ void APZSampler::SampleForWebRender(const wr::WrWindowId& aWindowId,
 }
 
 void APZSampler::SetSampleTime(const SampleTime& aSampleTime) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MutexAutoLock lock(mSampleTimeLock);
   // This only gets called with WR, and the time provided is going to be
   // the time at which the current vsync interval ends. i.e. it is the timestamp
@@ -102,7 +102,7 @@ AsyncTransform APZSampler::GetCurrentAsyncTransform(
     const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
     AsyncTransformComponents aComponents,
     const MutexAutoLock& aProofOfMapLock) const {
-  MOZ_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
   AssertOnSamplerThread();
 
   RefPtr<AsyncPanZoomController> apzc =

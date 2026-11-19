@@ -34,7 +34,6 @@ const MAX_BAR_HEIGHT = 8;
 const MAX_BAR_CHARS = 25;
 const PREF_TELEMETRY_SERVER_OWNER = "toolkit.telemetry.server_owner";
 const PREF_TELEMETRY_ENABLED = "toolkit.telemetry.enabled";
-const PREF_DEBUG_SLOW_SQL = "toolkit.telemetry.debugSlowSql";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 
 // ms idle before applying the filter (allow uninterrupted typing)
@@ -640,139 +639,6 @@ var EnvironmentData = {
     let colTextElement = document.createTextNode(aColText);
     colElement.appendChild(colTextElement);
     aRowElement.appendChild(colElement);
-  },
-};
-
-var SlowSQL = {
-  /**
-   * Render slow SQL statistics
-   */
-  render: function SlowSQL_render(aPing) {
-    // We can add the debug SQL data to the current ping later.
-    // However, we need to be careful to never send that debug data
-    // out due to privacy concerns.
-    // We want to show the actual ping data for archived pings,
-    // so skip this there.
-
-    let debugSlowSql =
-      PingPicker.viewCurrentPingData &&
-      Services.prefs.getBoolPref(PREF_DEBUG_SLOW_SQL, false);
-    let slowSql = debugSlowSql ? Telemetry.debugSlowSQL : aPing.payload.slowSQL;
-    if (!slowSql) {
-      setHasData("slow-sql-section", false);
-      return;
-    }
-
-    let { mainThread, otherThreads } = debugSlowSql
-      ? Telemetry.debugSlowSQL
-      : aPing.payload.slowSQL;
-
-    let mainThreadCount = Object.keys(mainThread).length;
-    let otherThreadCount = Object.keys(otherThreads).length;
-    if (mainThreadCount == 0 && otherThreadCount == 0) {
-      setHasData("slow-sql-section", false);
-      return;
-    }
-
-    setHasData("slow-sql-section", true);
-    if (debugSlowSql) {
-      document.getElementById("sql-warning").hidden = false;
-    }
-
-    let slowSqlDiv = document.getElementById("slow-sql-tables");
-    removeAllChildNodes(slowSqlDiv);
-
-    // Main thread
-    if (mainThreadCount > 0) {
-      let table = document.createElement("table");
-      this.renderTableHeader(table, "main");
-      this.renderTable(table, mainThread);
-      slowSqlDiv.appendChild(table);
-    }
-
-    // Other threads
-    if (otherThreadCount > 0) {
-      let table = document.createElement("table");
-      this.renderTableHeader(table, "other");
-      this.renderTable(table, otherThreads);
-      slowSqlDiv.appendChild(table);
-    }
-  },
-
-  /**
-   * Creates a header row for a Slow SQL table
-   * Tabs & newlines added to cells to make it easier to copy-paste.
-   *
-   * @param aTable Parent table element
-   * @param aTitle Table's title
-   */
-  renderTableHeader: function SlowSQL_renderTableHeader(aTable, threadType) {
-    let caption = document.createElement("caption");
-    if (threadType == "main") {
-      document.l10n.setAttributes(caption, "about-telemetry-slow-sql-main");
-    }
-
-    if (threadType == "other") {
-      document.l10n.setAttributes(caption, "about-telemetry-slow-sql-other");
-    }
-    aTable.appendChild(caption);
-
-    let headings = document.createElement("tr");
-    document.l10n.setAttributes(
-      this.appendColumn(headings, "th"),
-      "about-telemetry-slow-sql-hits"
-    );
-    document.l10n.setAttributes(
-      this.appendColumn(headings, "th"),
-      "about-telemetry-slow-sql-average"
-    );
-    document.l10n.setAttributes(
-      this.appendColumn(headings, "th"),
-      "about-telemetry-slow-sql-statement"
-    );
-    aTable.appendChild(headings);
-  },
-
-  /**
-   * Fills out the table body
-   * Tabs & newlines added to cells to make it easier to copy-paste.
-   *
-   * @param aTable Parent table element
-   * @param aSql SQL stats object
-   */
-  renderTable: function SlowSQL_renderTable(aTable, aSql) {
-    for (let [sql, [hitCount, totalTime]] of Object.entries(aSql)) {
-      let averageTime = totalTime / hitCount;
-
-      let sqlRow = document.createElement("tr");
-
-      this.appendColumn(sqlRow, "td", hitCount + "\t");
-      this.appendColumn(sqlRow, "td", averageTime.toFixed(0) + "\t");
-      this.appendColumn(sqlRow, "td", sql + "\n");
-
-      aTable.appendChild(sqlRow);
-    }
-  },
-
-  /**
-   * Helper function for appending a column to a Slow SQL table.
-   *
-   * @param aRowElement Parent row element
-   * @param aColType Column's tag name
-   * @param aColText Column contents
-   */
-  appendColumn: function SlowSQL_appendColumn(
-    aRowElement,
-    aColType,
-    aColText = ""
-  ) {
-    let colElement = document.createElement(aColType);
-    if (aColText) {
-      let colTextElement = document.createTextNode(aColText);
-      colElement.appendChild(colTextElement);
-    }
-    aRowElement.appendChild(colElement);
-    return colElement;
   },
 };
 
@@ -2379,9 +2245,6 @@ function displayRichPingData(ping, updatePayloadList) {
   if (!isMainPing) {
     return;
   }
-
-  // Show slow SQL stats
-  SlowSQL.render(ping);
 
   // Render Addon details.
   AddonDetails.render(ping);

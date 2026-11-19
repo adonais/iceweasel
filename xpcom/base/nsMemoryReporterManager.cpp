@@ -9,7 +9,6 @@
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsIGlobalObject.h"
-#include "nsIOService.h"
 #include "nsIObserverService.h"
 #include "nsITimer.h"
 #include "nsIXPConnect.h"
@@ -1819,13 +1818,7 @@ nsMemoryReporterManager::nsMemoryReporterManager()
       mSavedWeakReporters(nullptr),
       mNextGeneration(1),
       mPendingProcessesState(nullptr),
-      mPendingReportersState(nullptr)
-#ifdef HAVE_JEMALLOC_STATS
-      ,
-      mThreadPool(do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID))
-#endif
-{
-}
+      mPendingReportersState(nullptr) {}
 
 nsMemoryReporterManager::~nsMemoryReporterManager() {
   NS_ASSERTION(!mSavedStrongEternalReporters,
@@ -1968,13 +1961,6 @@ nsresult nsMemoryReporterManager::StartGettingReports() {
 
   if (gfx::VRProcessManager* vr = gfx::VRProcessManager::Get()) {
     if (RefPtr<MemoryReportingProcess> proc = vr->GetProcessMemoryReporter()) {
-      s->mChildrenPending.AppendElement(proc.forget());
-    }
-  }
-
-  if (!IsRegistrationBlocked() && net::gIOService) {
-    if (RefPtr<MemoryReportingProcess> proc =
-            net::gIOService->GetSocketProcessMemoryReporter()) {
       s->mChildrenPending.AppendElement(proc.forget());
     }
   }

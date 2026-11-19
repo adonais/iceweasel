@@ -26,11 +26,17 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission;
  * <p>Retrieve an instance via {@link GeckoRuntime#getStorageController}.
  */
 public final class StorageController {
+  /** Public constructor for StorageController. */
+  public StorageController() {}
+
   private static final String LOGTAG = "StorageController";
 
   // Keep in sync with GeckoViewStorageController.ClearFlags.
   /** Flags used for data clearing operations. */
   public static class ClearFlags {
+    /** Public constructor for ClearFlags. */
+    public ClearFlags() {}
+
     /** Cookies. */
     public static final long COOKIES = 1 << 0;
 

@@ -7,9 +7,10 @@ EXPORTS.mozilla.net += [
     "NeqoHttp3Conn.h",
 ]
 
-UNIFIED_SOURCES += [
-    "AppleFastDatapathProbe.cpp",
-]
+if CONFIG["OS_TARGET"] == "Darwin":
+    UNIFIED_SOURCES += [
+        "AppleFastDatapathProbe.cpp",
+    ]
 
 LOCAL_INCLUDES += [
     "/security/manager/ssl",

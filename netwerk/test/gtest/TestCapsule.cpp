@@ -21,7 +21,7 @@ TEST(TestCapsule, UnknownCapsule)
   auto buffer = encoder.GetBuffer();
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
   bool res = parser->ProcessCapsuleData(buffer.Elements(), buffer.Length());
   ASSERT_TRUE(res);
 
@@ -46,7 +46,7 @@ TEST(TestCapsule, CloseWebTransportSessionCapsule)
   auto buffer = encoder.GetBuffer();
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
   bool res = parser->ProcessCapsuleData(buffer.Elements(), buffer.Length());
   ASSERT_TRUE(res);
 
@@ -77,7 +77,7 @@ TEST(TestCapsule, CloseWebTransportSessionCapsuleWithReasonTooLong)
   auto buffer = encoder.GetBuffer();
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
   bool res = parser->ProcessCapsuleData(buffer.Elements(), buffer.Length());
   ASSERT_FALSE(res);
 
@@ -106,7 +106,7 @@ TEST(TestCapsule, MultipleCapsules)
   auto buffer = encoder.GetBuffer();
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
   bool res = parser->ProcessCapsuleData(buffer.Elements(), buffer.Length());
   ASSERT_TRUE(res);
 
@@ -153,7 +153,7 @@ TEST(TestCapsule, WouldBlock)
   uint32_t secondHalf = buffer.Length() - firstHalf;
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
   bool res = parser->ProcessCapsuleData(buf1, firstHalf);
   ASSERT_TRUE(res);
 
@@ -206,7 +206,7 @@ TEST(TestCapsule, WouldBlock1)
   uint32_t secondHalf = buffer.Length() - firstHalf;
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
   bool res = parser->ProcessCapsuleData(buf1, firstHalf);
   ASSERT_TRUE(res);
 
@@ -265,7 +265,7 @@ TEST(TestCapsule, WouldBlock2)
   const uint8_t* buf3 = buffer.Elements() + part1Length + part2Length;
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
 
   // Process first part.
   bool res = parser->ProcessCapsuleData(buf1, part1Length);
@@ -321,7 +321,7 @@ TEST(TestCapsule, WebTransportMaxDataCapsule)
   Capsule::LogBuffer(buffer.Elements(), buffer.Length());
 
   RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-  UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+  auto parser = std::make_unique<CapsuleParser>(listener);
   bool res = parser->ProcessCapsuleData(buffer.Elements(), buffer.Length());
   ASSERT_TRUE(res);
 

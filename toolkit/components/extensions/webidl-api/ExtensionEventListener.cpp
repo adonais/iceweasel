@@ -221,7 +221,7 @@ ExtensionEventListener::SerializeCallArguments(const nsTArray<JS::Value>& aArgs,
   }
 
   UniquePtr<dom::StructuredCloneHolder> argsHolder =
-      MakeUnique<dom::StructuredCloneHolder>(
+      std::make_unique<dom::StructuredCloneHolder>(
           dom::StructuredCloneHolder::CloningSupported,
           dom::StructuredCloneHolder::TransferringNotSupported,
           JS::StructuredCloneScope::SameProcess);
@@ -632,7 +632,7 @@ void ExtensionListenerCallPromiseResultHandler::WorkerRunCallback(
   }
 
   UniquePtr<dom::StructuredCloneHolder> resHolder =
-      MakeUnique<dom::StructuredCloneHolder>(
+      std::make_unique<dom::StructuredCloneHolder>(
           dom::StructuredCloneHolder::CloningSupported,
           dom::StructuredCloneHolder::TransferringNotSupported,
           JS::StructuredCloneScope::SameProcess);

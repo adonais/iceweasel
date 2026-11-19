@@ -16,7 +16,7 @@
 #include "jit/SparseBitSet.h"
 #include "jit/StackSlotAllocator.h"
 
-// Gives better traces in Nightly/debug builds (could be EARLY_BETA_OR_EARLIER)
+// Gives better traces in Nightly/debug builds
 #if defined(NIGHTLY_BUILD) || defined(DEBUG)
 #  define AVOID_INLINE_FOR_DEBUGGING MOZ_NEVER_INLINE
 #else
@@ -858,7 +858,8 @@ class MOZ_STACK_CLASS BacktrackingAllocator : protected RegisterAllocator {
                                                         CodePosition to);
 
   // Merging and queueing of LiveRange groups
-  void tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1);
+  bool tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1,
+                       bool limitRangeComparisons = true);
   [[nodiscard]] bool allocateStackDefinition(VirtualRegister& reg);
   [[nodiscard]] bool tryMergeReusedRegister(VirtualRegister& def,
                                             VirtualRegister& input);

@@ -72,6 +72,10 @@ class GMPVideoEncoder final : public MediaDataEncoder,
   nsCOMPtr<mozIGeckoMediaPluginService> mMPS;
   GMPVideoEncoderProxy* mGMP = nullptr;
   GMPVideoHost* mHost = nullptr;
+  // The current rates given to the GMP.
+  uint32_t mBitrateKbps = 0;
+  uint32_t mMaxBitrateKbps = 0;
+  uint32_t mFramerate = 0;
   MozPromiseHolder<InitPromise> mInitPromise;
   MozPromiseHolder<EncodePromise> mDrainPromise;
 

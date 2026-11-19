@@ -14,7 +14,6 @@
 #include "ScopedNSSTypes.h"
 #include "certdb.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/psm/IPCClientCertsParent.h"
 #include "nsDebugImpl.h"
 
 namespace mozilla::psm {
@@ -387,7 +386,7 @@ ipc::IPCResult PKCS11ModuleChild::RecvFindObjects(
   mAuthTaskQueue->Dispatch(NS_NewRunnableFunction(
       __func__, [searchingFor(aSearchingFor), self = RefPtr{this},
                  resolver(std::move(aResolver))] {
-        nsTArray<IPCClientCertObject> objects;
+        nsTArray<CryptokiObject> objects;
         PK11CertListType certListType;
         switch (searchingFor) {
           case SearchingFor::ClientCertificates:
@@ -464,6 +463,61 @@ ipc::IPCResult PKCS11ModuleChild::RecvFindObjects(
             }));
       }));
   return IPC_OK();
+}
+
+static void SignDataGivenCertificate(const nsTArray<uint8_t>& certificate,
+                                     const nsTArray<uint8_t>& data,
+                                     const nsTArray<uint8_t>& params,
+                                     nsTArray<uint8_t>& signature, void* ctx) {
+  signature.Clear();
+  SECItem certItem = {siBuffer, const_cast<uint8_t*>(certificate.Elements()),
+                      static_cast<unsigned int>(certificate.Length())};
+  UniqueCERTCertificate cert(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &certItem, nullptr, false, true));
+  if (!cert) {
+    return;
+  }
+  UniqueSECKEYPrivateKey key(PK11_FindKeyByAnyCert(cert.get(), ctx));
+  if (!key) {
+    return;
+  }
+  SECItem hashItem = {siBuffer, const_cast<uint8_t*>(data.Elements()),
+                      static_cast<unsigned int>(data.Length())};
+  SECItem paramsItem = {siBuffer, const_cast<uint8_t*>(params.Elements()),
+                        static_cast<unsigned int>(params.Length())};
+  SECItem* paramsPtr = params.Length() > 0 ? &paramsItem : nullptr;
+  CK_MECHANISM_TYPE mechanism;
+  switch (key->keyType) {
+    case ecKey:
+      mechanism = CKM_ECDSA;
+      break;
+    case rsaKey:
+      // If we have params, this is RSA-PSS.
+      if (params.Length() > 0) {
+        mechanism = CKM_RSA_PKCS_PSS;
+      } else {
+        // If this is a DigestInfo or a TLS 1.0 MD5/SHA1 hash, this is RSA-PKCS.
+        // Otherwise, this is an emsa-pss-encoded digest that should be signed
+        // with raw RSA.
+        UniqueSGNDigestInfo digestInfo(SGN_DecodeDigestInfo(&hashItem));
+        if (digestInfo || data.Length() == 36) {
+          mechanism = CKM_RSA_PKCS;
+        } else {
+          mechanism = CKM_RSA_X_509;
+        }
+      }
+      break;
+    default:
+      return;
+  }
+  uint32_t len = PK11_SignatureLen(key.get());
+  UniqueSECItem sig(::SECITEM_AllocItem(nullptr, nullptr, len));
+  SECStatus srv = PK11_SignWithMechanism(key.get(), mechanism, paramsPtr,
+                                         sig.get(), &hashItem);
+  if (srv != SECSuccess) {
+    return;
+  }
+  signature.AppendElements(sig->data, sig->len);
 }
 
 ipc::IPCResult PKCS11ModuleChild::RecvSign(nsTArray<uint8_t> aCertificate,

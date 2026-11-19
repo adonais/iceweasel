@@ -177,8 +177,8 @@ addAccessibleTask(
     testRole(getAcc("aria_document_mixed"), ROLE_NON_NATIVE_DOCUMENT);
     testRole(getAcc("aria_form"), ROLE_TEXT);
     testRole(getAcc("aria_form_mixed"), ROLE_TEXT);
-    testRole(getAcc("aria_form_with_label"), ROLE_FORM);
-    testRole(getAcc("aria_form_with_label_mixed"), ROLE_FORM);
+    testRole(getAcc("aria_form_with_label"), ROLE_FORM_LANDMARK);
+    testRole(getAcc("aria_form_with_label_mixed"), ROLE_FORM_LANDMARK);
     testRole(getAcc("aria_feed"), ROLE_GROUPING);
     testRole(getAcc("aria_feed_mixed"), ROLE_GROUPING);
     testRole(getAcc("aria_figure"), ROLE_FIGURE);
@@ -375,8 +375,8 @@ addAccessibleTask(
     testRole(getAcc("articlemain_mixed"), ROLE_LANDMARK);
     testRole(getAcc("articleform"), ROLE_ARTICLE);
     testRole(getAcc("articleform_mixed"), ROLE_ARTICLE);
-    testRole(getAcc("articleform_label"), ROLE_FORM);
-    testRole(getAcc("articleform_label_mixed"), ROLE_FORM);
+    testRole(getAcc("articleform_label"), ROLE_FORM_LANDMARK);
+    testRole(getAcc("articleform_label_mixed"), ROLE_FORM_LANDMARK);
 
     // Test article exposed as article
     testRole(getAcc("testArticle"), ROLE_ARTICLE);
@@ -397,8 +397,8 @@ addAccessibleTask(
     testRole(getAcc("application_mixed"), ROLE_APPLICATION);
     testRole(getAcc("form"), ROLE_SECTION);
     testRole(getAcc("form_mixed"), ROLE_SECTION);
-    testRole(getAcc("form_label"), ROLE_FORM);
-    testRole(getAcc("form_label_mixed"), ROLE_FORM);
+    testRole(getAcc("form_label"), ROLE_FORM_LANDMARK);
+    testRole(getAcc("form_label_mixed"), ROLE_FORM_LANDMARK);
     testRole(getAcc("application_table"), ROLE_APPLICATION);
     testRole(getAcc("application_table_mixed"), ROLE_APPLICATION);
 

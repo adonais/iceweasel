@@ -12,11 +12,6 @@ PARAMS.update({
     "head_repository": "https://hg.mozilla.org/try",
     "project": "try",
     "target_kind": "mochitest",
-    # These ensure this isn't considered a backstop. The pushdate must
-    # be slightly higher than the one in data/pushes.json, and
-    # pushlog_id must not be a multiple of 10.
-    "pushdate": 1593029536,
-    "pushlog_id": "2",
 })
 
 PARAMS_NEW_CONFIG = TRY_AUTO_PARAMETERS.copy()
@@ -24,11 +19,6 @@ PARAMS_NEW_CONFIG.update({
     "head_repository": "https://hg.mozilla.org/try",
     "project": "try",
     "target_kind": "mochitest",
-    # These ensure this isn't considered a backstop. The pushdate must
-    # be slightly higher than the one in data/pushes.json, and
-    # pushlog_id must not be a multiple of 10.
-    "pushdate": 1593029536,
-    "pushlog_id": "2",
     "try_task_config": {"new-test-config": True},
     "try_mode": "try_task_config",
     "target_tasks_method": "try_tasks",

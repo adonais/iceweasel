@@ -7,6 +7,7 @@ package org.mozilla.fenix.browser
 import androidx.annotation.IdRes
 import androidx.navigation.NavDirections
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -51,19 +52,25 @@ class BackMenuItemProvider(
     private val settings: Settings,
     scope: CoroutineScope,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        browserStore.stateFlow
-            .map { state ->
-                target.browserSessionFrom(state)?.canGoBackInHistoryOrToStories() ?: false
-            }
-            .map { it.toMenuItem() }
-            .stateIn(
-                scope = scope,
-                started = SharingStarted.Eagerly,
-                initialValue =
-                    (target.browserSessionFrom(browserStore.state)?.canGoBackInHistoryOrToStories() ?: false)
-                        .toMenuItem(),
-            )
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target is MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            browserStore.stateFlow
+                .map { state ->
+                    target.browserSessionFrom(state)?.canGoBackInHistoryOrToStories() ?: false
+                }
+                .map { listOf(it.toMenuItem()) }
+                .stateIn(
+                    scope = scope,
+                    started = SharingStarted.Eagerly,
+                    initialValue =
+                        listOf(
+                            (target.browserSessionFrom(browserStore.state)?.canGoBackInHistoryOrToStories() ?: false)
+                                .toMenuItem()
+                        ),
+                )
+        }
 
     override fun handles(event: MenuEvent) = event is MenuAction.Navigate.Back
 
@@ -111,16 +118,22 @@ class BackMenuItemProvider(
             navigate(directions)
         }
     }
-}
 
-private fun Boolean.toMenuItem(): MenuItem {
-    val state = if (this) MenuItemState.DEFAULT else MenuItemState.DISABLED
+    private fun Boolean.toMenuItem(): MenuItem {
+        val canGoBack = this
 
-    return StandardMenuItem(
-        title = MenuItemTitle(Text.Resource(R.string.browser_menu_back)),
-        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_back_24),
-        onClickEvent = MenuAction.Navigate.Back(viewHistory = false),
-        onLongClickEvent = MenuAction.Navigate.Back(viewHistory = true),
-        state = state,
-    )
+        return DEFAULT_MENU_ITEM.copy(
+            onClickEvent = MenuAction.Navigate.Back(viewHistory = false),
+            onLongClickEvent = MenuAction.Navigate.Back(viewHistory = true),
+            state = if (canGoBack) MenuItemState.DEFAULT else MenuItemState.DISABLED,
+        )
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_back)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_back_24),
+            )
+    }
 }

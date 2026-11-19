@@ -39,8 +39,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
   SessionDataCategory:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
-  SessionDataMethod:
-    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   setDefaultAndAssertSerializationOptions:
     "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
@@ -810,40 +808,18 @@ class BrowsingContextModule extends RootBiDiModule {
     }
 
     const browsingContext = browser.browsingContext;
-    const sessionData =
-      this.messageHandler.sessionData.getSessionDataForContext(
-        "browsingContext",
-        "event",
-        browsingContext
-      );
 
-    const hasEventSubscriptionToContextCreated = sessionData.some(
-      item => item.value === "browsingContext.contextCreated"
-    );
-
-    let waitForContextCreatedEvent = Promise.withResolvers();
-
-    // If a client subscribed to "browsingContext.contextCreated" event,
-    // we have to wait for it to be submitted.
-    if (hasEventSubscriptionToContextCreated) {
-      if (!this.#waitForContextCreatedEvent.has(browsingContext)) {
-        this.#waitForContextCreatedEvent.set(
-          browsingContext,
-          Promise.withResolvers()
-        );
-      }
-      waitForContextCreatedEvent =
-        this.#waitForContextCreatedEvent.get(browsingContext);
-    } else {
-      waitForContextCreatedEvent.resolve();
-    }
+    // Wait until a pending "browsingContext.contextCreated" event is handled,
+    // even if the client is not subscribed for this context. Otherwise a
+    // subscription made right after this command returns could receive this
+    // event in addition to the one emitted by the subscribe steps.
     await Promise.all([
       lazy.waitForInitialNavigationCompleted(browsingContext.webProgress, {
         unloadTimeout: 5000,
       }),
       waitForVisibilityStatePromise,
       blocker.promise,
-      waitForContextCreatedEvent.promise,
+      this.#waitForContextCreatedEvent.get(browsingContext)?.promise,
     ]);
 
     this.#blockedCreateCommands.delete(browser);
@@ -1848,7 +1824,7 @@ class BrowsingContextModule extends RootBiDiModule {
       viewport,
     };
 
-    const sessionDataItems = [];
+    const contextDescriptors = [];
     if (userContextIds !== null) {
       for (const userContext of userContexts) {
         // Prepare the list of navigables to update.
@@ -1858,29 +1834,37 @@ class BrowsingContextModule extends RootBiDiModule {
             navigables.add(contentBrowser.browsingContext);
           }
         );
-        sessionDataItems.push({
-          category: lazy.SessionDataCategory.ViewportOverride,
-          moduleName: "_configuration",
-          values: [viewportOverride],
-          contextDescriptor: {
-            type: lazy.ContextDescriptorType.UserContext,
-            id: userContext,
-          },
-          method: lazy.SessionDataMethod.Add,
+        contextDescriptors.push({
+          type: lazy.ContextDescriptorType.UserContext,
+          id: userContext,
         });
       }
     } else {
       for (const navigable of navigables) {
-        sessionDataItems.push({
-          category: lazy.SessionDataCategory.ViewportOverride,
-          moduleName: "_configuration",
-          values: [viewportOverride],
-          contextDescriptor: {
-            type: lazy.ContextDescriptorType.TopBrowsingContext,
-            id: navigable.browserId,
-          },
-          method: lazy.SessionDataMethod.Add,
+        contextDescriptors.push({
+          type: lazy.ContextDescriptorType.TopBrowsingContext,
+          id: navigable.browserId,
         });
+      }
+    }
+
+    const sessionDataItems = [];
+    for (const contextDescriptor of contextDescriptors) {
+      for (const [category, value] of [
+        [lazy.SessionDataCategory.ViewportOverride, viewport],
+        [lazy.SessionDataCategory.DevicePixelRatioOverride, devicePixelRatio],
+      ]) {
+        if (value !== undefined) {
+          sessionDataItems.push(
+            ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
+              "_configuration",
+              category,
+              contextDescriptor,
+              false,
+              value
+            )
+          );
+        }
       }
     }
 
@@ -2495,56 +2479,50 @@ class BrowsingContextModule extends RootBiDiModule {
         return;
       }
 
-      // If `waitForTopBrowsingContextToBeReady` returns `null`,
-      // it means that the browsing context was discarded.
-      // Do not send an event in this case.
-      if (
-        !browsingContext.parent &&
-        (await lazy.waitForTopBrowsingContextToBeReady(browsingContext)) ===
-          null
-      ) {
-        return;
-      }
-
-      const browsingContextInfo = getBrowsingContextInfo(browsingContext, {
-        maxDepth: 0,
-      });
-
-      this.#emitContextEventForBrowsingContext(
-        browsingContext.id,
-        "browsingContext.contextCreated",
-        browsingContextInfo
+      const waitForContextCreatedEvent = Promise.withResolvers();
+      this.#waitForContextCreatedEvent.set(
+        browsingContext,
+        waitForContextCreatedEvent
       );
 
-      // This is an internal event is used by the script module
-      // to ensure that "script.realmCreated" event is emitted
-      // after "browsingContext.contextCreated".
-      this.emitEvent(
-        "browsingContext._contextCreatedEmitted",
-        { browsingContext },
-        browsingContextInfo
-      );
+      try {
+        // If `waitForTopBrowsingContextToBeReady` returns `null`,
+        // it means that the browsing context was discarded.
+        // Do not send an event in this case.
+        if (
+          !browsingContext.parent &&
+          (await lazy.waitForTopBrowsingContextToBeReady(browsingContext)) ===
+            null
+        ) {
+          return;
+        }
 
-      if (!this.#waitForContextCreatedEvent.has(browsingContext)) {
-        this.#waitForContextCreatedEvent.set(
-          browsingContext,
-          Promise.withResolvers()
+        const browsingContextInfo = getBrowsingContextInfo(browsingContext, {
+          maxDepth: 0,
+        });
+
+        this.#emitContextEventForBrowsingContext(
+          browsingContext.id,
+          "browsingContext.contextCreated",
+          browsingContextInfo
         );
-      }
 
-      this.#waitForContextCreatedEvent.get(browsingContext).resolve();
+        // This internal event is used by the script module to ensure that a
+        // "script.realmCreated" event is emitted after
+        // "browsingContext.contextCreated".
+        this.emitEvent(
+          "browsingContext._contextCreatedEmitted",
+          { browsingContext },
+          browsingContextInfo
+        );
+      } finally {
+        waitForContextCreatedEvent.resolve();
+      }
     }
   };
 
   #onContextDiscarded = async (eventName, data = {}) => {
     const { browsingContext, why } = data;
-
-    // In case the newly created browsing context got discarded immediately resolve pending promise.
-    if (this.#waitForContextCreatedEvent.has(browsingContext)) {
-      const waitForContextCreatedEvent =
-        this.#waitForContextCreatedEvent.get(browsingContext);
-      waitForContextCreatedEvent.resolve();
-    }
 
     if (this.#subscribedEvents.has("browsingContext.contextDestroyed")) {
       // Filter out top-level browsing contexts that are destroyed because of a

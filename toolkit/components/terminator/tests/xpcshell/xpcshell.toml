@@ -5,8 +5,3 @@ run-if = [
 head = ""
 
 ["test_terminator_advance_phases.js"]
-skip-if = [
-  "asan", # Disabled by bug 1242084, bug 1255484 will enable it again
-  "ccov", # Bug 1607583 tracks the ccov failure
-  "debug",
-]

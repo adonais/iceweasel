@@ -581,22 +581,6 @@
       </hbox>
     `;
     }
-
-    get _learnMoreString() {
-      if (!this.__learnMoreString) {
-        this.__learnMoreString = Services.strings
-          .createBundle("chrome://passwordmgr/locale/passwordmgr.properties")
-          .GetStringFromName("insecureFieldWarningLearnMore");
-      }
-      return this.__learnMoreString;
-    }
-
-    /**
-     * Override _getSearchTokens to have the Learn More text emphasized
-     */
-    _getSearchTokens() {
-      return [this._learnMoreString.toLowerCase()];
-    }
   }
 
   class MozAutocompleteRichlistitemLoginsFooter

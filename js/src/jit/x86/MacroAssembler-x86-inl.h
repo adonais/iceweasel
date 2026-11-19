@@ -1140,6 +1140,12 @@ void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
   bind(&notMagic);
 }
 
+void MacroAssembler::branchTestNullOrUndefined(Condition cond,
+                                               const ValueOperand& value,
+                                               Label* label) {
+  branchTestNullOrUndefined(cond, value.typeReg(), label);
+}
+
 template <typename T>
 void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {

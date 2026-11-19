@@ -247,8 +247,9 @@ $side-col-width-px: $col-width-px * 2;
   @include newtab-card-style;
 
   padding: var(--space-medium);
+  border: var(--card-border);
   border-radius: var(--border-radius-large);
-  box-shadow: var(--box-shadow-level-2);
+  box-shadow: var(--card-box-shadow);
   color: var(--text-color);
   display: flex;
   flex-direction: column;
@@ -266,11 +267,74 @@ $side-col-width-px: $col-width-px * 2;
 
   &:hover,
   &:focus-within {
-    outline: 1px solid var(--border-color-deemphasized);
+    border-color: var(--border-color-deemphasized);
     box-shadow: var(--card-box-shadow-hover);
   }
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
+  }
+}
+
+// Suggestions dropdown under a widget search field (Clocks, Weather). The
+// parent of the field needs position: relative.
+@mixin widget-search-results {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-xxsmall));
+  inset-inline: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxsmall);
+  // 180px fits ~4–5 results before scrolling.
+  max-block-size: 180px;
+  overflow-y: auto;
+  padding: var(--space-xsmall);
+  background: var(--newtab-background-color-secondary);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--box-shadow-level-4);
+
+  @media (prefers-contrast) {
+    background-color: var(--background-color-box);
+  }
+}
+
+// One row in widget-search-results: a primary label followed by a smaller,
+// deemphasized secondary label.
+@mixin widget-search-result($primary, $secondary) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  padding-inline: var(--space-small);
+  padding-block: var(--space-xsmall);
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-small);
+  color: var(--text-color);
+  font: inherit;
+  text-align: start;
+  cursor: default;
+
+  &:hover,
+  &:focus {
+    background: var(--button-background-color-hover);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  #{$primary},
+  #{$secondary} {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #{$secondary} {
+    color: var(--text-color-deemphasized);
+    font-size: var(--font-size-small);
   }
 }

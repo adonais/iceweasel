@@ -23,6 +23,7 @@
 class nsCocoaWindow;
 class nsChildView;
 class nsMenuBarX;
+class nsMenuItemX;
 @class ChildView;
 
 namespace mozilla {
@@ -452,6 +453,8 @@ class nsCocoaWindow final : public nsIWidget {
   nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) override;
   nsresult GetNativeMenuItemKeyEquivalent(const nsAString& aElementId,
                                           nsAString& aResult) override;
+  nsresult GetNativeMenuItemTitle(const nsAString& aElementId,
+                                  nsAString& aResult) override;
   [[nodiscard]] nsresult GetSelectionAsPlaintext(nsAString& aResult) override;
   TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override;
   [[nodiscard]] nsresult AttachNativeKeyEvent(
@@ -483,6 +486,9 @@ class nsCocoaWindow final : public nsIWidget {
 
   bool HasModalDescendants() const { return mNumModalDescendants > 0; }
   bool IsModal() const { return mModal; }
+  bool IsMediaPiPWindow() const {
+    return mPiPType == mozilla::widget::PiPType::MediaPiP;
+  }
 
   NSWindow* GetCocoaWindow() { return [[mWindow retain] autorelease]; }
 
@@ -670,6 +676,7 @@ class nsCocoaWindow final : public nsIWidget {
   // period, we presume the window is visible, which prevents us from sending
   // unnecessary OcclusionStateChanged events.
   bool mHasStartedNativeFullscreen;
+  bool mIsWaitingForFullscreenVisibility = false;
 
   bool mModal = false;
   bool mIsAnimationSuppressed = false;
@@ -708,6 +715,10 @@ class nsCocoaWindow final : public nsIWidget {
       nullptr;
 
  private:
+  // Finds the item in this window's native menu bar that was built from the
+  // element with id aElementId. Only used by native menu test hooks.
+  nsMenuItemX* FindMenuBarItemByElementId(const nsAString& aElementId);
+
   // This is class state for tracking which nsCocoaWindow, if any, is in the
   // middle of a native fullscreen transition.
   static nsCocoaWindow* sWindowInNativeTransition;

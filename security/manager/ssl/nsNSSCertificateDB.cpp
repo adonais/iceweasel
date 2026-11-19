@@ -840,7 +840,7 @@ nsNSSCertificateDB::ImportCertsFromFile(nsIFile* aFile, uint32_t aType) {
     return NS_ERROR_FAILURE;
   }
 
-  auto buf = MakeUnique<unsigned char[]>(fileInfo.size);
+  auto buf = std::make_unique<unsigned char[]>(fileInfo.size);
   int32_t bytesObtained = PR_Read(fd, buf.get(), fileInfo.size);
   PR_Close(fd);
 

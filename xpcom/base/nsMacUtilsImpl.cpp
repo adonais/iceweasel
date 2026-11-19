@@ -594,7 +594,7 @@ std::string CFStringToStdString(CFStringRef aString) {
   CFIndex length = CFStringGetLength(aString);
   CFIndex maxSize =
       CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8) + 1;
-  mozilla::UniquePtr<char[]> buffer = mozilla::MakeUnique<char[]>(maxSize);
+  auto buffer = std::make_unique<char[]>(maxSize);
   if (!buffer) {
     return std::string();
   }

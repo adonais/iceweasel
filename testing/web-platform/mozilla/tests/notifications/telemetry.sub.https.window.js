@@ -59,4 +59,24 @@ promise_test(async (t) => {
   const clicked = await GleanTest.webNotification.clicked.testGetValue();
   assert_equals(clicked.length, 1, "clicked should have one entry");
   assert_equals(clicked[0].extra.site_category, "social", "site_category should be set to 'social'");
+  assert_equals(clicked[0].extra.app_state_before_click, "unknown", "app_state_before_click should be set to 'unknown'");
 }, "Clicking notification");
+
+for (const [appState, expected] of [
+  ["FOREGROUND", "foreground"],
+  ["BACKGROUND_WINDOWS", "background_with_window"],
+  ["BACKGROUND_NO_WINDOWS", "background_no_window"],
+]) {
+  promise_test(async (t) => {
+    await overrideSiteCategory(t, "other");
+
+    const notification = new Notification("foo");
+    await new Promise((resolve) => notification.onshow = resolve);
+
+    await MockAlertsService.clickNotifications(appState);
+
+    const clicked = await GleanTest.webNotification.clicked.testGetValue();
+    assert_equals(clicked.length, 1, "clicked should have one entry");
+    assert_equals(clicked[0].extra.app_state_before_click, expected, `app_state_before_click should be set to '${expected}'`);
+  }, `Clicking notification with application state ${appState}`);
+}

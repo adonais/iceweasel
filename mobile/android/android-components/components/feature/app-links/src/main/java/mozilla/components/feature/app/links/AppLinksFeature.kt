@@ -80,15 +80,15 @@ data class RedirectDialogData(
  * @param sessionId The session ID to observe.
  * @param dialog Function to create custom redirect dialogs. Receives [RedirectDialogData]. If this is null, then
  *   [SimpleRedirectDialogFragment] is used.
- * @param launchInApp If {true} then launch app links in third party app(s). Default to false because of security
- *   concerns.
+ * @param launchInApp Given the request url, returns {true} if the link should be launched in a third party app. Default
+ *   returns false because of security concerns.
  * @param useCases These use cases allow for the detection of, and opening of links that other apps have registered to
  *   open.
  * @param failedToLaunchAction Action to perform when failing to launch in third party app.
  * @param loadUrlUseCase Used to load URL if user decides not to launch in third party app.
  * @param engineSupportedSchemes Set of URI schemes the engine supports.
  * @param mainDispatcher [CoroutineDispatcher] used for store observation
- * @param shouldPrompt If {true} then user should be prompted before launching app links.
+ * @param shouldPrompt Given the link url, returns {true} if the user should be prompted before launching app links.
  * @param alwaysOpenCheckboxAction Action to perform when user checked the always open checkbox in the prompt.
  */
 class AppLinksFeature(
@@ -97,13 +97,13 @@ class AppLinksFeature(
     private val fragmentManager: FragmentManager,
     private val sessionId: String? = null,
     private val dialog: ((data: RedirectDialogData) -> RedirectDialogFragment)? = null,
-    private val launchInApp: () -> Boolean = { false },
+    private val launchInApp: (String) -> Boolean = { false },
     private val useCases: AppLinksUseCases = AppLinksUseCases(context, launchInApp),
     private val failedToLaunchAction: (fallbackUrl: String?) -> Unit = {},
     private val loadUrlUseCase: SessionUseCases.DefaultLoadUrlUseCase? = null,
     private val engineSupportedSchemes: Set<String> = ENGINE_SUPPORTED_SCHEMES,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-    private val shouldPrompt: () -> Boolean = { true },
+    private val shouldPrompt: (url: String) -> Boolean = { true },
     private val alwaysOpenCheckboxAction: (() -> Unit)? = null,
 ) : LifecycleAwareFeature {
 
@@ -156,7 +156,7 @@ class AppLinksFeature(
         val isPrivate = sessionState.content.private
         val isWallet = isWalletLink(url, appIntent)
 
-        if (shouldBypassPrompt(isPrivate, isWallet)) {
+        if (shouldBypassPrompt(url, isPrivate, isWallet)) {
             openApp(appIntent)
             return
         }
@@ -180,10 +180,11 @@ class AppLinksFeature(
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun shouldBypassPrompt(
+        url: String,
         isPrivate: Boolean,
         isWallet: Boolean,
     ): Boolean {
-        val shouldShowPrompt = isPrivate || isWallet || shouldPrompt()
+        val shouldShowPrompt = isPrivate || isWallet || shouldPrompt(url)
         return !shouldShowPrompt
     }
 

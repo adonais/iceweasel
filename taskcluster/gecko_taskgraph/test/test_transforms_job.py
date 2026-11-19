@@ -82,14 +82,14 @@ def transform(monkeypatch, config):
     [
         pytest.param("M", "Mochitests", id="no_variants"),
         pytest.param(
-            "M-spi",
-            "Mochitests with socket process enabled",
-            id="spi variant",
+            "M-xorig",
+            "Mochitests with cross-origin",
+            id="xorig variant",
         ),
         pytest.param(
-            "M-spi-nofis",
-            "Mochitests without fission enabled with socket process enabled",
-            id="spi and nofis variants",
+            "M-xorig-nofis",
+            "Mochitests without fission enabled with cross-origin",
+            id="xorig and nofis variants",
         ),
         pytest.param("M-fake", "", id="invalid group name"),
     ],
@@ -99,6 +99,31 @@ def test_group_name(config, groupSymbol, description):
     group_names = config.graph_config["treeherder"]["group-names"]
     generated_description = group_name_variant(group_names, groupSymbol)
     assert description == generated_description
+
+
+def test_use_gradle(transform):
+    taskdesc = transform({
+        "worker-type": "b-linux-docker-amd",
+        "use-gradle": "offline",
+        "use-gradle-cache": True,
+    })[2]
+
+    assert taskdesc["worker"] == {
+        "implementation": "docker-worker",
+        "os": "linux",
+        "env": {
+            "GRADLE_FLAGS": "--offline --daemon",
+            "GRADLE_USER_HOME": "/builds/worker/gradle-user-home",
+        },
+        "caches": [
+            {
+                "type": "persistent",
+                "name": "gradle-user-home",
+                "mount-point": "/builds/worker/gradle-user-home",
+                "skip-untrusted": False,
+            }
+        ],
+    }
 
 
 @pytest.mark.parametrize(
@@ -134,6 +159,103 @@ def test_group_name(config, groupSymbol, description):
 def test_get_platform(worker_os, worker_type, expected):
     task = {"worker": {"os": worker_os}, "worker-type": worker_type}
     assert get_platform(task) == expected
+
+
+@pytest.mark.parametrize(
+    "worker_os,worker_type,psutil_platforms",
+    [
+        pytest.param("windows", "b-win2022", ["win-amd64"], id="windows"),
+        pytest.param(
+            "windows", "win11-a64-25h2", ["win-arm64", "win-amd64"], id="windows-arm"
+        ),
+        pytest.param(
+            "macosx",
+            "t-osx-1500-m4",
+            ["macosx-arm64", "macosx-x86_64"],
+            id="mac-arm",
+        ),
+    ],
+)
+@pytest.mark.parametrize("repository_type", ["hg", "git"])
+def test_generic_worker_run_task_resource_monitor(
+    monkeypatch, config, worker_os, worker_type, psutil_platforms, repository_type
+):
+    job_ = {
+        "label": "fake-task-label",
+        "worker-type": worker_type,
+        "worker": {"implementation": "generic-worker", "os": worker_os, "env": {}},
+        "run": dict(run_task.worker_defaults, checkout=False, command="true"),
+    }
+    taskdesc = {"label": job_["label"], "worker": job_["worker"]}
+    monkeypatch.setitem(config.params, "repository_type", repository_type)
+    run_task.generic_worker_run_task(config, job_, taskdesc)
+
+    worker = taskdesc["worker"]
+    mounts = {m.get("file") or m.get("directory"): m for m in worker["mounts"]}
+    assert mounts["./run-task"]["content"]["url"].endswith(
+        f"/public/run-task-{repository_type}"
+    )
+    assert mounts["./run_task_resource_monitor.py"]["content"]["url"].endswith(
+        "/public/run_task_resource_monitor.py"
+    )
+    if repository_type == "git":
+        assert worker["env"]["RUN_TASK_STARTUP_HOOK"] == "run_task_resource_monitor.py"
+    else:
+        assert "RUN_TASK_STARTUP_HOOK" not in worker["env"]
+    assert mounts["./mozsystemmonitor/resourcemonitor.py"]["content"]["url"].endswith(
+        "/public/resourcemonitor.py"
+    )
+    deps = {
+        path.rsplit("/", 1)[1]: mount
+        for path, mount in mounts.items()
+        if path.startswith("./resource-monitor-deps/")
+    }
+    assert list(deps) == psutil_platforms
+    for psutil_platform, mount in deps.items():
+        assert mount["format"] == "zip"
+        fetch_label = f"fetch-{run_task.PSUTIL_FETCHES[psutil_platform]}"
+        assert mount["content"] == {
+            "artifact": f"public/psutil-{psutil_platform}.whl",
+            "task-id": {"task-reference": f"<{fetch_label}>"},
+        }
+        assert taskdesc["dependencies"][fetch_label] == fetch_label
+    assert worker["env"]["RUN_TASK_RESOURCE_USAGE"] == "run-task-resource-usage.json"
+    assert worker["env"]["RUN_TASK_RESOURCE_USAGE_NAME"] == "fake-task-label"
+    assert {
+        "name": run_task.RESOURCE_USAGE_ARTIFACT,
+        "path": "run-task-resource-usage.json",
+        "type": "file",
+    } in worker["artifacts"]
+
+
+@pytest.mark.parametrize("repository_type", ["hg", "git"])
+def test_docker_worker_run_task_resource_monitor(monkeypatch, config, repository_type):
+    job_ = {
+        "label": "fake-task-label",
+        "worker-type": "b-linux-docker-amd",
+        "worker": {"implementation": "docker-worker", "os": "linux", "env": {}},
+        "run": dict(run_task.worker_defaults, checkout=False, command="true"),
+    }
+    taskdesc = {"label": job_["label"], "worker": job_["worker"]}
+    monkeypatch.setitem(config.params, "repository_type", repository_type)
+    run_task.docker_worker_run_task(config, job_, taskdesc)
+
+    worker = taskdesc["worker"]
+    assert worker["command"][0] == f"/builds/worker/bin/run-task-{repository_type}"
+    if repository_type == "git":
+        assert (
+            worker["env"]["RUN_TASK_STARTUP_HOOK"]
+            == "/builds/worker/bin/run_task_resource_monitor.py"
+        )
+    else:
+        assert "RUN_TASK_STARTUP_HOOK" not in worker["env"]
+    path = worker["env"]["RUN_TASK_RESOURCE_USAGE"]
+    assert worker["env"]["RUN_TASK_RESOURCE_USAGE_NAME"] == "fake-task-label"
+    assert {
+        "name": run_task.RESOURCE_USAGE_ARTIFACT,
+        "path": path,
+        "type": "file",
+    } in worker["artifacts"]
 
 
 if __name__ == "__main__":

@@ -137,6 +137,9 @@ const char* const XPCJSRuntime::mStrings[] = {
     "locks",            // IDX_LOCKS
     "suppressed",       // IDX_SUPPRESSED
     "error",            // IDX_ERROR
+    // IDX_REACT_DEVTOOLS_GLOBAL_HOOK
+    // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+    "__REACT_DEVTOOLS_GLOBAL_HOOK__",
 };
 
 /***************************************************************************/
@@ -211,7 +214,7 @@ CompartmentPrivate::CompartmentPrivate(
       isUAWidgetCompartment(false),
       hasExclusiveExpandos(false),
       wasShutdown(false),
-      mWrappedJSMap(mozilla::MakeUnique<JSObject2WrappedJSMap>()),
+      mWrappedJSMap(std::make_unique<JSObject2WrappedJSMap>()),
       mScope(std::move(scope)) {
   MOZ_COUNT_CTOR(xpc::CompartmentPrivate);
 }
@@ -253,7 +256,7 @@ void RealmPrivate::Init(HandleObject aGlobal, const SiteIdentifier& aSite) {
   if (CompartmentPrivate* priv = CompartmentPrivate::Get(c)) {
     MOZ_ASSERT(priv->originInfo.IsSameOrigin(principal));
   } else {
-    auto scope = mozilla::MakeUnique<XPCWrappedNativeScope>(c, aGlobal);
+    auto scope = std::make_unique<XPCWrappedNativeScope>(c, aGlobal);
     priv = new CompartmentPrivate(c, std::move(scope),
                                   BasePrincipal::Cast(principal), aSite);
     JS_SetCompartmentPrivate(c, priv);
@@ -2654,10 +2657,6 @@ static void AccumulateTelemetryCallback(JSMetric id,
       glean::javascript_gc::slice_time.ProcessGet().AccumulateRawDuration(
           sample.as<TimeDuration>());
       break;
-    case JSMetric::ION_COMPILE_TIME:
-      glean::javascript_ion::compile_time.AccumulateRawDuration(
-          sample.as<TimeDuration>());
-      break;
     case JSMetric::GC_BUDGET_MS_2:
       glean::javascript_gc::budget.ProcessGet().AccumulateRawDuration(
           sample.as<TimeDuration>());
@@ -3137,10 +3136,10 @@ static const JSWrapObjectCallbacks WrapObjectCallbacks = {
 
 XPCJSRuntime::XPCJSRuntime(JSContext* aCx)
     : CycleCollectedJSRuntime(aCx),
-      mWrappedJSMap(mozilla::MakeUnique<JSObject2WrappedJSMap>()),
-      mIID2NativeInterfaceMap(mozilla::MakeUnique<IID2NativeInterfaceMap>()),
-      mClassInfo2NativeSetMap(mozilla::MakeUnique<ClassInfo2NativeSetMap>()),
-      mNativeSetMap(mozilla::MakeUnique<NativeSetMap>()),
+      mWrappedJSMap(std::make_unique<JSObject2WrappedJSMap>()),
+      mIID2NativeInterfaceMap(std::make_unique<IID2NativeInterfaceMap>()),
+      mClassInfo2NativeSetMap(std::make_unique<ClassInfo2NativeSetMap>()),
+      mNativeSetMap(std::make_unique<NativeSetMap>()),
       mGCIsRunning(false),
       mDoingFinalization(false),
       mAsyncSnowWhiteFreer(new AsyncFreeSnowWhite()) {
@@ -3272,8 +3271,7 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
   // isRunOnce mode and compiled function bodies (from
   // JS::CompileFunction). In practice, this means content scripts and event
   // handlers.
-  mozilla::UniquePtr<XPCJSSourceHook> hook =
-      std::make_unique<XPCJSSourceHook>();
+  auto hook = std::make_unique<XPCJSSourceHook>();
   js::SetSourceHook(cx, std::move(hook));
 
   // Register memory reporters and distinguished amount functions.

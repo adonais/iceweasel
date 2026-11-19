@@ -185,9 +185,6 @@ allowed_warnings:
     - "gecko_taskgraph\\.util\\.md.*WARNING: more than one target found for cross-reference"
     # This file has various warnings that need investigation.
     - "python/mozbuild/mozbuild/frontend/context\\.py"
-    # mozbuild.sphinx extension warnings.
-    - "WARNING: the mozbuild.sphinx extension does not declare"
-    - "WARNING: doing serial read"
     # Bug 2008577 - docutils rejects some JSDoc prose in these modules under
     # myst-parser 5. The markup lives in the JS sources, not these documents.
     - "webextensions/reference\\.md:.*: ERROR: Unexpected indentation"

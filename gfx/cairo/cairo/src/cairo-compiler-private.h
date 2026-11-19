@@ -54,7 +54,7 @@
 
 #define CAIRO_STACK_ARRAY_LENGTH(T) (CAIRO_STACK_BUFFER_SIZE / sizeof(T))
 
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
+#if defined (__GNUC__)
 #ifdef __MINGW32__
 #define CAIRO_PRINTF_FORMAT(fmt_index, va_index)                        \
 	__attribute__((__format__(__MINGW_PRINTF_FORMAT, fmt_index, va_index)))
@@ -67,8 +67,8 @@
 #endif
 
 #define CAIRO_HAS_HIDDEN_SYMBOLS 1
-#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) && \
-    (defined(__ELF__) || defined(__APPLE__)) &&			\
+#if defined(__GNUC__) && \
+    (defined(__ELF__) || defined(__APPLE__)) && \
     !defined(__sun)
 #define cairo_private_no_warn	__attribute__((__visibility__("hidden")))
 #elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)
@@ -97,7 +97,7 @@
    indicating that the old function has been deprecated by the new
    function.
 */
-#if __GNUC__ >= 2 && defined(__ELF__)
+#if defined (__GNUC__) && defined(__ELF__)
 # define CAIRO_FUNCTION_ALIAS(old, new)		\
 	extern __typeof (new) old		\
 	__asm__ ("" #old)			\
@@ -126,17 +126,21 @@
  * constant-folding, with 'cairo_const 'also guaranteeing that pointer contents
  * do not change across the function call.
  */
-#if __GNUC__ >= 3
+#if defined (__GNUC__)
 #define cairo_pure __attribute__((pure))
 #define cairo_const __attribute__((const))
 #define cairo_always_inline inline __attribute__((always_inline))
+#elif defined (_MSC_VER)
+#define cairo_pure
+#define cairo_const
+#define cairo_always_inline __forceinline
 #else
 #define cairo_pure
 #define cairo_const
 #define cairo_always_inline inline
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+#if defined(__GNUC__) && defined(__OPTIMIZE__)
 #define likely(expr) (__builtin_expect (!!(expr), 1))
 #define unlikely(expr) (__builtin_expect (!!(expr), 0))
 #else
@@ -150,27 +154,11 @@
 #endif
 
 #if (defined(__WIN32__) && !defined(__WINE__)) || defined(_MSC_VER)
-#define access _access
 #ifndef R_OK
 #define R_OK 4
 #endif
-#define fdopen _fdopen
-#define hypot _hypot
 #define pclose _pclose
 #define popen _popen
-#define strdup _strdup
-#define unlink _unlink
-#if _MSC_VER < 1900
-  #define vsnprintf _vsnprintf
-  #define snprintf _snprintf
-#endif
-#endif
-
-#ifdef _MSC_VER
-#ifndef __cplusplus
-#undef inline
-#define inline __inline
-#endif
 #endif
 
 #if defined(_MSC_VER) && defined(_M_IX86)

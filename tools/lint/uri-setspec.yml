@@ -1,0 +1,69 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+avoid-uri-setspec:
+    description: >-
+        nsIURIMutator.setSpec is reserved for URI construction inside necko.
+        Everywhere else, parse URLs with NS_NewURI() (C++) or
+        Services.io.newURI() (JS) so that the spec is handed to the URI
+        implementation that actually owns the scheme. See bug 1876483.
+    level: error
+    include: ['.']
+    type: external
+    payload: mozcheck:lint
+    setup: mozcheck:setup
+    check: rejected-words
+    check-config:
+        regex-pattern: '[.>]\s*[sS]etSpec\s*\('
+        ignore-case: false
+    support-files:
+        - 'tools/lint/mozcheck/**'
+    extensions:
+        - cpp
+        - h
+        - idl
+        - js
+        - mjs
+        - jsx
+        - html
+        - xhtml
+        - m
+        - mm
+    exclude:
+        # NS_NewURI() and the mutator machinery itself - this is the one place
+        # setSpec is meant to be called from.
+        - netwerk/base/nsIURIMutator.idl
+        - netwerk/base/nsISimpleURIMutator.idl
+        - netwerk/base/nsNetUtil.cpp
+        # Per-scheme URI construction reached *from* NS_NewURI(). These are the
+        # parsing entry points, so they cannot go through NS_NewURI().
+        - caps/NullPrincipal.cpp
+        - dom/file/uri/BlobURLProtocolHandler.cpp
+        - dom/jsurl/nsJSProtocolHandler.cpp
+        - netwerk/protocol/about/nsAboutProtocolHandler.cpp
+        - netwerk/protocol/data/nsDataHandler.cpp
+        - netwerk/protocol/viewsource/nsViewSourceHandler.cpp
+        # Unrelated API that happens to be spelled SetSpec().
+        - dom/smil/SMILTimedElement.cpp
+        # Tests that deliberately exercise setSpec or a specific URI
+        # implementation.
+        - dom/tests/unit/test_bug465752.js
+        - netwerk/test/fuzz/TestURIFuzzing.cpp
+        - netwerk/test/gtest/TestStandardURL.cpp
+        - netwerk/test/gtest/TestURIMutator.cpp
+        - netwerk/test/unit/test_URIs.js
+        - netwerk/test/unit/test_URIs2.js
+        - netwerk/test/unit/test_bug1177909.js
+        - netwerk/test/unit/test_bug261425.js
+        - netwerk/test/unit/test_bug412457.js
+        - netwerk/test/unit/test_bug429347.js
+        - netwerk/test/unit/test_bug479485.js
+        - netwerk/test/unit/test_bug660066.js
+        - netwerk/test/unit/test_bug894586.js
+        - netwerk/test/unit/test_defaultURI.js
+        - netwerk/test/unit/test_standardurl.js
+        - netwerk/test/unit/test_standardurl_port.js
+        - netwerk/test/unit/test_uri_mutator.js
+        - startupcache/test/TestStartupCache.cpp
+        - testing/mochitest/tests/Harness_sanity/test_SpecialPowersExtension.html

@@ -13,4 +13,3 @@ process_reader = { path = "../process_reader/" }
 thiserror = "2"
 
 [target."cfg(any(target_os = \"linux\", target_os = \"android\"))".dependencies]
-memoffset = "0.9"

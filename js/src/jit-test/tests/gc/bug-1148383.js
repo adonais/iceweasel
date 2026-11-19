@@ -12,6 +12,6 @@ function reportCompare () {
 }
 reportCompare();
 gczeal(4, 1000);
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 for (var i = 0; i < 10000; ++i)
   reportCompare();

@@ -101,6 +101,7 @@ using mozilla::NumbersAreIdentical;
 enum StructuredDataType : uint32_t {
   // Structured data types provided by the engine
   SCTAG_FLOAT_MAX = 0xFFF00000,
+  // The header data is a 32-bit value storing a <version,scope> pair.
   SCTAG_HEADER = 0xFFF10000,
   SCTAG_NULL = 0xFFFF0000,
   SCTAG_UNDEFINED,
@@ -200,6 +201,10 @@ enum TransferableMapHeader {
 
 static inline uint64_t PairToUInt64(uint32_t tag, uint32_t data) {
   return uint64_t(data) | (uint64_t(tag) << 32);
+}
+
+static inline uint32_t PairToUInt32(uint16_t hi, uint16_t lo) {
+  return uint32_t(lo) | (uint32_t(hi) << 16);
 }
 
 namespace js {
@@ -738,6 +743,10 @@ static void ReportDataCloneError(JSContext* cx,
 
     case JS_SCERR_NOT_CLONABLE_WITH_COOP_COEP:
       errorNumber = JSMSG_SC_NOT_CLONABLE_WITH_COOP_COEP;
+      break;
+
+    case JS_SCERR_BAD_CLONE_VERSION:
+      errorNumber = JSMSG_SC_BAD_CLONE_VERSION;
       break;
 
     default:
@@ -1915,7 +1924,7 @@ bool JSStructuredCloneWriter::traverseSavedFrame(HandleObject obj) {
     return false;
   }
 
-  val = Int32Value(*savedFrame->getColumn().addressOfValueForTranscode());
+  val = Int32Value(savedFrame->getColumn().rawValue());
   if (!writePrimitive(val)) {
     return false;
   }
@@ -2269,7 +2278,10 @@ bool JSStructuredCloneWriter::startWrite(HandleValue v) {
 }
 
 bool JSStructuredCloneWriter::writeHeader() {
-  return out.writePair(SCTAG_HEADER, (uint32_t)output().scope());
+  uint16_t scope = uint16_t(output().scope());
+  uint16_t version = JS_STRUCTURED_CLONE_VERSION;
+  uint32_t data = PairToUInt32(version, scope);
+  return out.writePair(SCTAG_HEADER, data);
 }
 
 bool JSStructuredCloneWriter::writeTransferMap() {
@@ -3502,7 +3514,16 @@ bool JSStructuredCloneReader::readHeader() {
   JS::StructuredCloneScope storedScope;
   if (tag == SCTAG_HEADER) {
     MOZ_ALWAYS_TRUE(in.readPair(&tag, &data));
-    storedScope = JS::StructuredCloneScope(data);
+    uint16_t scope = uint16_t(data);  // Grab low 16 bits.
+    uint16_t version = data >> (sizeof(uint16_t) * 8);
+    storedScope = JS::StructuredCloneScope(scope);
+    if (version > JS_STRUCTURED_CLONE_VERSION) {
+      // Version is too new. It was either written by a newer binary, or it's
+      // invalid. (Note: clones stored with version < 9 will have version=0.)
+      ReportDataCloneError(context(), callbacks, JS_SCERR_BAD_CLONE_VERSION,
+                           closure);
+      return false;
+    }
   } else {
     // Old structured clone buffer. We must have read it from disk.
     storedScope = JS::StructuredCloneScope::DifferentProcessForIndexedDB;
@@ -3792,11 +3813,18 @@ JSObject* JSStructuredCloneReader::readSavedFrameHeader(
   }
   savedFrame->initLine(line);
 
-  JS::TaggedColumnNumberOneOrigin column;
-  if (!readUint32(column.addressOfValueForTranscode())) {
+  uint32_t rawColumn;
+  if (!readUint32(&rawColumn)) {
     return nullptr;
   }
-  savedFrame->initColumn(column);
+  auto column = JS::TaggedColumnNumberOneOrigin::fromRawChecked(rawColumn);
+  if (column.isNothing()) {
+    JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                              JSMSG_SC_BAD_SERIALIZED_DATA,
+                              "invalid saved frame column");
+    return nullptr;
+  }
+  savedFrame->initColumn(*column);
 
   // Don't specify a source ID when reading a cloned saved frame, as these IDs
   // are only valid within a specific process.
@@ -4227,18 +4255,13 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp, size_t nbytes) {
 }
 
 JS_PUBLIC_API bool JS_ReadStructuredClone(
-    JSContext* cx, const JSStructuredCloneData& buf, uint32_t version,
+    JSContext* cx, const JSStructuredCloneData& buf,
     JS::StructuredCloneScope scope, MutableHandleValue vp,
     const JS::CloneDataPolicy& cloneDataPolicy,
     const JSStructuredCloneCallbacks* optionalCallbacks, void* closure) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
 
-  if (version > JS_STRUCTURED_CLONE_VERSION) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_SC_BAD_CLONE_VERSION);
-    return false;
-  }
   const JSStructuredCloneCallbacks* callbacks = optionalCallbacks;
   return ReadStructuredClone(cx, buf, scope, vp, cloneDataPolicy, callbacks,
                              closure);
@@ -4282,9 +4305,10 @@ JS_PUBLIC_API bool JS_StructuredClone(
   }
 
   const JSStructuredCloneCallbacks* callbacks = optionalCallbacks;
+  const JS::CloneDataPolicy policy;
+  const auto scope = JS::StructuredCloneScope::SameProcess;
 
-  JSAutoStructuredCloneBuffer buf(JS::StructuredCloneScope::SameProcess,
-                                  callbacks, closure);
+  JSStructuredCloneData data(scope);
   {
     if (value.isObject()) {
       RootedObject obj(cx, &value.toObject());
@@ -4295,93 +4319,20 @@ JS_PUBLIC_API bool JS_StructuredClone(
       }
       AutoRealm ar(cx, obj);
       RootedValue unwrappedVal(cx, ObjectValue(*obj));
-      if (!buf.write(cx, unwrappedVal, callbacks, closure)) {
+      if (!JS_WriteStructuredClone(cx, unwrappedVal, &data, scope, policy,
+                                   callbacks, closure, UndefinedHandleValue)) {
         return false;
       }
     } else {
-      if (!buf.write(cx, value, callbacks, closure)) {
+      if (!JS_WriteStructuredClone(cx, value, &data, scope, policy, callbacks,
+                                   closure, UndefinedHandleValue)) {
         return false;
       }
     }
   }
 
-  return buf.read(cx, vp, JS::CloneDataPolicy(), callbacks, closure);
-}
-
-JSAutoStructuredCloneBuffer::JSAutoStructuredCloneBuffer(
-    JSAutoStructuredCloneBuffer&& other)
-    : data_(other.scope()) {
-  version_ = other.version_;
-  other.giveTo(&data_);
-}
-
-JSAutoStructuredCloneBuffer& JSAutoStructuredCloneBuffer::operator=(
-    JSAutoStructuredCloneBuffer&& other) {
-  MOZ_ASSERT(&other != this);
-  MOZ_ASSERT(scope() == other.scope());
-  clear();
-  version_ = other.version_;
-  other.giveTo(&data_);
-  return *this;
-}
-
-void JSAutoStructuredCloneBuffer::clear() {
-  data_.discardTransferables();
-  data_.ownTransferables_ = OwnTransferablePolicy::NoTransferables;
-  data_.refsHeld_.releaseAll();
-  MOZ_ASSERT(data_.stringBufferRefsHeld_.isStorageConsistent());
-  data_.stringBufferRefsHeld_.clear();
-  data_.Clear();
-  version_ = 0;
-}
-
-void JSAutoStructuredCloneBuffer::adopt(
-    JSStructuredCloneData&& data, uint32_t version,
-    const JSStructuredCloneCallbacks* callbacks, void* closure) {
-  clear();
-  data_ = std::move(data);
-  version_ = version;
-  data_.setCallbacks(callbacks, closure,
-                     OwnTransferablePolicy::OwnsTransferablesIfAny);
-}
-
-void JSAutoStructuredCloneBuffer::giveTo(JSStructuredCloneData* data) {
-  *data = std::move(data_);
-  version_ = 0;
-  data_.setCallbacks(nullptr, nullptr, OwnTransferablePolicy::NoTransferables);
-  data_.Clear();
-}
-
-bool JSAutoStructuredCloneBuffer::read(
-    JSContext* cx, MutableHandleValue vp,
-    const JS::CloneDataPolicy& cloneDataPolicy,
-    const JSStructuredCloneCallbacks* optionalCallbacks, void* closure) {
-  MOZ_ASSERT(cx);
-  return !!JS_ReadStructuredClone(
-      cx, data_, version_, data_.scope(), vp, cloneDataPolicy,
-      optionalCallbacks ? optionalCallbacks : data_.callbacks_,
-      optionalCallbacks ? closure : data_.closure_);
-}
-
-bool JSAutoStructuredCloneBuffer::write(
-    JSContext* cx, HandleValue value,
-    const JSStructuredCloneCallbacks* optionalCallbacks, void* closure) {
-  HandleValue transferable = UndefinedHandleValue;
-  return write(cx, value, transferable, JS::CloneDataPolicy(),
-               optionalCallbacks ? optionalCallbacks : data_.callbacks_,
-               optionalCallbacks ? closure : data_.closure_);
-}
-
-bool JSAutoStructuredCloneBuffer::write(
-    JSContext* cx, HandleValue value, HandleValue transferable,
-    const JS::CloneDataPolicy& cloneDataPolicy,
-    const JSStructuredCloneCallbacks* optionalCallbacks, void* closure) {
-  clear();
-  version_ = JS_STRUCTURED_CLONE_VERSION;
-  return JS_WriteStructuredClone(
-      cx, value, &data_, data_.scopeForInternalWriting(), cloneDataPolicy,
-      optionalCallbacks ? optionalCallbacks : data_.callbacks_,
-      optionalCallbacks ? closure : data_.closure_, transferable);
+  return JS_ReadStructuredClone(cx, data, scope, vp, policy, callbacks,
+                                closure);
 }
 
 JS_PUBLIC_API bool JS_ReadUint32Pair(JSStructuredCloneReader* r, uint32_t* p1,

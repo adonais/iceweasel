@@ -4,6 +4,9 @@
 
 "use strict";
 
+// This symbol is available when running from workers
+/* globals setImmediate */
+
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   TYPES: { DOCUMENT_EVENT, NETWORK_EVENT_STACKTRACE, CONSOLE_MESSAGE },
@@ -14,8 +17,90 @@ const {
   ObjectActorPool,
 } = require("resource://devtools/server/actors/object/ObjectActorPool.js");
 
-const { throttle } = require("resource://devtools/shared/throttle.js");
+const RESOURCES_BOUNCING_DELAY = 10;
 const RESOURCES_THROTTLING_DELAY = 100;
+
+/**
+ * A mix between "bounce" and "throttle".
+ * tl;dr: short bounce with a longer throttle limit.
+ *
+ * The function call will be delayed until we no longer get two calls
+ * within the "bounce" duration. But in case this delay gets
+ * over the "throttle" duration, the original function will be called.
+ *
+ * Bounce is meant to be a small timeout, mostly ensuring we aggregate
+ * most of the early resources.
+ * Throttle is meant to be a larger timeout to ensure we don't delay
+ * the notification of resources for an unreasonable time.
+ *
+ * The downside of regular "throttle" is that it always calls
+ * the function right away after a calm period. So in our case
+ * we'd always notify the client about a single resources, even
+ * if we'd have to notify of other resources shortly after.
+ *
+ * The downside of regular "bounce" is that we may delay execution
+ * for an unreasonable duration if we keep bouncing.
+ */
+function bounceWithLimit(fun, bounceDelay, throttleDelay) {
+  let firstCallTime = null;
+  let calledDuringBounceDelay = false;
+  let timeoutId = null;
+  function call() {
+    firstCallTime = null;
+    calledDuringBounceDelay = false;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+
+    fun();
+  }
+
+  function checkOnBounceTimer() {
+    // If we got no additional call during any of the "bounce" delay,
+    // call/flush right away.
+    if (!calledDuringBounceDelay) {
+      call();
+      return;
+    }
+
+    // For any of the subsequent "bounce" timeout's,
+    // call/flush if we went over the "throttle" duration.
+    const timeSinceFirstCall = ChromeUtils.dateNow() - firstCallTime;
+    if (timeSinceFirstCall >= throttleDelay) {
+      call();
+      return;
+    }
+
+    // Otherwise pile up a new "bounce" timeout, while resetting
+    // the boolean which told us we were called during the last bounce.
+    calledDuringBounceDelay = false;
+    if (isWorker) {
+      setImmediate(checkOnBounceTimer);
+    } else {
+      timeoutId = setTimeout(checkOnBounceTimer, bounceDelay);
+    }
+  }
+
+  return function bounced() {
+    if (!firstCallTime) {
+      firstCallTime = ChromeUtils.dateNow();
+      calledDuringBounceDelay = false;
+      if (isWorker) {
+        setImmediate(checkOnBounceTimer);
+      } else {
+        timeoutId = setTimeout(checkOnBounceTimer, bounceDelay);
+      }
+    } else {
+      const timeSinceFirstCall = ChromeUtils.dateNow() - firstCallTime;
+      if (timeSinceFirstCall >= throttleDelay) {
+        call();
+        return;
+      }
+      calledDuringBounceDelay = true;
+    }
+  };
+}
 
 loader.lazyRequireGetter(
   this,
@@ -43,8 +128,9 @@ class BaseTargetActor extends Actor {
       destroyed: [],
     };
 
-    this.#throttledEmitResources = throttle(
+    this.#throttledEmitResources = bounceWithLimit(
       this.emitResources.bind(this),
+      RESOURCES_BOUNCING_DELAY,
       RESOURCES_THROTTLING_DELAY
     );
   }

@@ -34,6 +34,7 @@ support-files = [
   "ting-48k-2ch.wav",
   "sine-440-10s.opus",
   "webaudio.js",
+  "webaudio_asan_fill.js",
   # See ./generate-test-files.py
   "half-a-second-1ch-44100-aac.aac",
   "half-a-second-1ch-44100-aac.mp4",
@@ -118,6 +119,16 @@ run-if = [
 
 ["test_bug2038465.html"]
 
+["test_bug2059164.html"]
+support-files = [
+  "bug2059164_1hz_stereo.flac",
+  "webaudio_channel_fill_probe_processor.js",
+]
+scheme = "https"
+run-if = [
+  "asan",
+]
+
 ["test_channelMergerNode.html"]
 
 ["test_channelMergerNodeWithVolume.html"]
@@ -147,9 +158,6 @@ run-if = [
 ["test_convolverNodeNormalization.html"]
 
 ["test_convolverNodeOOM.html"]
-skip-if = [
-  "asan",
-]
 
 ["test_convolverNodePassThrough.html"]
 

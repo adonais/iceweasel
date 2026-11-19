@@ -42,9 +42,12 @@ using namespace mozilla::layers;
 GlobalKeyListener::GlobalKeyListener(dom::EventTarget* aTarget)
     : mTarget(aTarget), mHandler(nullptr) {}
 
+GlobalKeyListener::~GlobalKeyListener() = default;
+
 NS_IMPL_ISUPPORTS(GlobalKeyListener, nsIDOMEventListener)
 
-static void BuildHandlerChain(nsIContent* aContent, KeyEventHandler** aResult) {
+static void BuildHandlerChain(nsIContent* aContent,
+                              RefPtr<KeyEventHandler>* aResult) {
   *aResult = nullptr;
 
   // Since we chain each handler onto the next handler,
@@ -80,10 +83,10 @@ static void BuildHandlerChain(nsIContent* aContent, KeyEventHandler** aResult) {
       reserved = ReservedKey_False;
     }
 
-    KeyEventHandler* handler = new KeyEventHandler(keyElement, reserved);
+    RefPtr handler = MakeRefPtr<KeyEventHandler>(keyElement, reserved);
 
     handler->SetNextHandler(*aResult);
-    *aResult = handler;
+    *aResult = std::move(handler);
   }
 }
 
@@ -331,7 +334,7 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
   // Try all of the handlers until we find one that matches the event.
   bool foundDisabledHandler = false;
   Maybe<Command> relevantCommand;
-  for (KeyEventHandler* handler = mHandler; handler;
+  for (RefPtr<KeyEventHandler> handler = mHandler; handler;
        handler = handler->GetNextHandler()) {
     bool stopped = aKeyEvent->IsDispatchStopped();
     if (stopped) {
@@ -601,11 +604,7 @@ dom::Element* XULKeySetGlobalKeyListener::GetElement(bool* aIsDisabled) const {
   return element.get();
 }
 
-XULKeySetGlobalKeyListener::~XULKeySetGlobalKeyListener() {
-  if (mWeakPtrForElement) {
-    delete mHandler;
-  }
-}
+XULKeySetGlobalKeyListener::~XULKeySetGlobalKeyListener() = default;
 
 void XULKeySetGlobalKeyListener::EnsureHandlers() {
   if (mHandler) {
@@ -618,6 +617,16 @@ void XULKeySetGlobalKeyListener::EnsureHandlers() {
   }
 
   BuildHandlerChain(element, &mHandler);
+}
+
+/* static */
+void XULKeySetGlobalKeyListener::InvalidateHandlers(
+    dom::Element* aKeysetElement) {
+  auto* listener = static_cast<XULKeySetGlobalKeyListener*>(
+      aKeysetElement->GetProperty(nsGkAtoms::listener));
+  if (listener) {
+    listener->mHandler = nullptr;
+  }
 }
 
 bool XULKeySetGlobalKeyListener::IsDisabled() const {

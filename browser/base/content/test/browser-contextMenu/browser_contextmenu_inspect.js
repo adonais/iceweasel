@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { MiniWindowManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/miniwindow/MiniWindowManager.sys.mjs"
+);
+
 /**
  * Check that we show the inspect item(s) as appropriate.
  */
@@ -111,3 +115,87 @@ add_task(async function test_contextmenu_inspect_system_principal() {
     }
   });
 });
+
+add_task(async function test_contextmenu_inspect_mini_window() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["devtools.selfxss.count", 10],
+      ["devtools.everOpened", true],
+      ["browser.mini-window.enabled", true],
+    ],
+  });
+
+  let contextMenu = document.getElementById("contentAreaContextMenu");
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "data:text/html,<meta charset=utf8>hello"
+  );
+
+  // Sanity check
+  is(contextMenu.state, "closed", "popup is closed at first");
+  let promisePopupShown = BrowserTestUtils.waitForEvent(
+    contextMenu,
+    "popupshown"
+  );
+  await BrowserTestUtils.synthesizeMouse(
+    "body",
+    2,
+    2,
+    { type: "contextmenu", button: 2 },
+    tab.linkedBrowser
+  );
+  await promisePopupShown;
+  let inspectItem = document.getElementById("context-inspect");
+  ok(!inspectItem.hidden, `Inspect should be shown`);
+  let inspectA11y = document.getElementById("context-inspect-a11y");
+  ok(!inspectA11y.hidden, `A11y should be shown`);
+
+  let promisePopupHidden = BrowserTestUtils.waitForEvent(
+    contextMenu,
+    "popuphidden"
+  );
+  contextMenu.hidePopup();
+  await promisePopupHidden;
+  const miniWindow = await openTabInMiniWindow(tab);
+  const miniWindowContextMenu = miniWindow.document.getElementById(
+    "contentAreaContextMenu"
+  );
+  // Sanity check
+  is(miniWindowContextMenu.state, "closed", "popup is closed at first");
+  promisePopupShown = BrowserTestUtils.waitForEvent(
+    miniWindowContextMenu,
+    "popupshown"
+  );
+  await BrowserTestUtils.synthesizeMouse(
+    "body",
+    2,
+    2,
+    { type: "contextmenu", button: 2 },
+    miniWindow.gBrowser.selectedBrowser
+  );
+  await promisePopupShown;
+  inspectItem = miniWindow.document.getElementById("context-inspect");
+  ok(inspectItem.hidden, `Inspect should be hidden in mini window`);
+  inspectA11y = miniWindow.document.getElementById("context-inspect-a11y");
+  ok(inspectA11y.hidden, `A11y should be hidden in mini window`);
+  promisePopupHidden = BrowserTestUtils.waitForEvent(
+    miniWindowContextMenu,
+    "popuphidden"
+  );
+  miniWindowContextMenu.hidePopup();
+  await promisePopupHidden;
+
+  let mini = [...MiniWindowManager._miniwindows][0];
+  mini.close();
+  await BrowserTestUtils.domWindowClosed(miniWindow);
+  BrowserTestUtils.removeTab(tab);
+});
+
+async function openTabInMiniWindow(tab) {
+  let opened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
+  let winPromise = MiniWindowManager.popTab(tab);
+  let miniWin = await opened;
+  await winPromise;
+  return miniWin;
+}

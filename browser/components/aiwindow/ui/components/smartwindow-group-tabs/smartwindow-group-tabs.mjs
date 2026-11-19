@@ -9,7 +9,7 @@ import {
   styleMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/tabbrowser/tab-groups-list.mjs";
 
 const HEADING_ID = "smartwindow-group-tabs-heading";

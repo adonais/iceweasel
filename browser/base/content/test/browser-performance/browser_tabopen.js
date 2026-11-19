@@ -84,14 +84,7 @@ add_task(async function () {
 
   const kTabCloseIconWidth = 13;
 
-  // The '+' button uses a different glyph under nova which paints 1px
-  // shorter than the proton one.
-  const kNewTabIconHeight = Services.prefs.getBoolPref(
-    "browser.nova.enabled",
-    false
-  )
-    ? 12
-    : 13;
+  const kNewTabIconHeight = 12;
 
   let isExpectedChange = function (r) {
     // We expect all changes to be within the tab strip.

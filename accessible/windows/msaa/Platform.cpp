@@ -189,7 +189,7 @@ static bool GetInstantiatorExecutable(const DWORD aPid,
   UniquePtr<wchar_t[]> buf;
 
   while (true) {
-    buf = MakeUnique<wchar_t[]>(bufLen);
+    buf = std::make_unique<wchar_t[]>(bufLen);
     if (::QueryFullProcessImageName(callingProcess, 0, buf.get(), &bufLen)) {
       break;
     }

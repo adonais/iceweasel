@@ -4,13 +4,14 @@
 
 #include "ContentAnalysisBackend.h"
 
+#include <memory>
+
 #include "ContentAnalysis.h"
 #include "content_analysis/sdk/analysis_client.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -187,7 +188,7 @@ nsresult ContentAnalysisBackend::ConvertRequestToProtobuf(
   ULONG userLen = 0;
   GetUserNameExW(NameSamCompatible, nullptr, &userLen);
   if (GetLastError() == ERROR_MORE_DATA && userLen > 0) {
-    auto user = mozilla::MakeUnique<wchar_t[]>(userLen);
+    auto user = std::make_unique<wchar_t[]>(userLen);
     if (GetUserNameExW(NameSamCompatible, user.get(), &userLen)) {
       auto* clientMetadata = aOut->mutable_client_metadata();
       auto* browser = clientMetadata->mutable_browser();

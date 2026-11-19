@@ -562,17 +562,18 @@ def _recording_resource_usage(command_context):
     finally:
         monitor.stop()
 
-        if os.environ.get("MOZ_AUTOMATION") == "1":
-            profile_path = "/builds/worker/profile_resource-usage.json"
-        else:
-            log_subdir = os.path.join("logs", "static-analysis")
-            command_context._ensure_state_subdir_exists(log_subdir)
-            profile_path = command_context._get_state_filename(
-                construct_log_filename("profile"), subdir=log_subdir
-            )
+        if not monitor.forwarding:
+            if os.environ.get("MOZ_AUTOMATION") == "1":
+                profile_path = "/builds/worker/profile_resource-usage.json"
+            else:
+                log_subdir = os.path.join("logs", "static-analysis")
+                command_context._ensure_state_subdir_exists(log_subdir)
+                profile_path = command_context._get_state_filename(
+                    construct_log_filename("profile"), subdir=log_subdir
+                )
 
-        with open(profile_path, "w", encoding="utf-8", newline="\n") as f:
-            json.dump(monitor.as_profile(), f, separators=(",", ":"))
+            with open(profile_path, "w", encoding="utf-8", newline="\n") as f:
+                json.dump(monitor.as_profile(), f, separators=(",", ":"))
 
 
 @contextlib.contextmanager

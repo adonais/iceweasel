@@ -42,7 +42,7 @@ static void PostErrorToLog(const mozilla::LauncherError& aError) {
 
   size_t fileLen = strlen(aError.mFile);
   size_t dataLen = sizeof(HRESULT) + sizeof(uint32_t) + fileLen;
-  auto evtDataBuf = mozilla::MakeUnique<char[]>(dataLen);
+  auto evtDataBuf = std::make_unique<char[]>(dataLen);
   SerializedEventData& evtData =
       *reinterpret_cast<SerializedEventData*>(evtDataBuf.get());
   evtData.mHr = aError.mError.AsHResult();

@@ -14,12 +14,10 @@ const {
   NimbusTelemetry: { UnenrollReason },
 } = ChromeUtils.importESModule("resource://nimbus/lib/Telemetry.sys.mjs");
 
-add_setup(async function setup() {
-  const cleanup = await setupTest();
+add_setup(function setup() {
   Services.fog.testResetFOG();
 
-  registerCleanupFunction(async function () {
-    await cleanup();
+  registerCleanupFunction(function () {
     Services.fog.testResetFOG();
   });
 });

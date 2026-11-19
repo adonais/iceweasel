@@ -2,7 +2,7 @@
 if (!('oomTest' in this))
     a;
 
-enableShellAllocationMetadataBuilder()
+enableTrackAllocations()
 oomTest(() => {
   newGlobal()
 })

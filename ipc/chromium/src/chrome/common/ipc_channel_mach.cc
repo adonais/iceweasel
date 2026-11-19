@@ -32,8 +32,8 @@ ChannelMach::ChannelMach(mozilla::UniqueMachReceiveRight receive,
                          base::ProcessId other_pid)
     : receive_port_(std::move(receive)),
       send_port_(std::move(send)),
-      send_buffer_(mozilla::MakeUnique<char[]>(Channel::kReadBufferSize)),
-      receive_buffer_(mozilla::MakeUnique<char[]>(Channel::kReadBufferSize)),
+      send_buffer_(std::make_unique<char[]>(Channel::kReadBufferSize)),
+      receive_buffer_(std::make_unique<char[]>(Channel::kReadBufferSize)),
       other_pid_(other_pid) {
   EnqueueHelloMessage();
 }
@@ -356,8 +356,7 @@ bool ChannelMach::ProcessIncomingMessage() {
     return false;
   }
 
-  mozilla::UniquePtr<Message> message =
-      mozilla::MakeUnique<Message>(payload.data(), payload.size());
+  auto message = std::make_unique<Message>(payload.data(), payload.size());
 
   // Transfer ownership of the voucher port into the IPC::Message.
   if (MACH_MSGH_BITS_VOUCHER(header->msgh_bits) == MACH_MSG_TYPE_MOVE_SEND) {

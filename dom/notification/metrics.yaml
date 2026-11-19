@@ -96,7 +96,7 @@ web_notification:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
     notification_emails:
       - krosylight@mozilla.com
-    expires: 165
+    expires: 189
   clicked:
     type: event
     description: >
@@ -108,13 +108,25 @@ web_notification:
       action:
         description: How this click happened
         type: string
+      app_state_before_click:
+        description: >
+          The state of the application before the notification was clicked.
+          One of `foreground`, `background_with_window`,
+          `background_no_window`, `closed` or `unknown`. Only determined on
+          Windows and macOS. `background_no_window` means Firefox was running
+          with no browser windows open. `closed` means the click launched
+          Firefox because it wasn't running, and is only reported on Windows,
+          as macOS removes Firefox's notifications when it quits.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082836
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2082836
     notification_emails:
       - krosylight@mozilla.com
-    expires: 165
+    expires: 189
   ignored:
     type: event
     description: >
@@ -130,7 +142,7 @@ web_notification:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
     notification_emails:
       - krosylight@mozilla.com
-    expires: 165
+    expires: 189
   dismissed:
     type: event
     description: >
@@ -145,4 +157,4 @@ web_notification:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
     notification_emails:
       - krosylight@mozilla.com
-    expires: 165
+    expires: 189

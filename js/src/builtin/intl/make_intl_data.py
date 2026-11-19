@@ -4062,7 +4062,7 @@ if __name__ == "__main__":
         return v
 
     parser = argparse.ArgumentParser(description="Update intl data.")
-    subparsers = parser.add_subparsers(help="Select update mode")
+    subparsers = parser.add_subparsers(help="Select update mode", required=True)
 
     parser_cldr_tags = subparsers.add_parser(
         "langtags", help="Update CLDR language tags data"

@@ -8,7 +8,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
@@ -32,7 +31,7 @@ class PrintMenuItemProviderTest {
 
     @Test
     fun `GIVEN the app runs on Android Automotive WHEN building the menu item THEN return null`() {
-        assertNull(createProvider(isAndroidAutomotiveAvailable = true).itemFlow.value)
+        assertTrue(createProvider(isAndroidAutomotiveAvailable = true).itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -43,7 +42,7 @@ class PrintMenuItemProviderTest {
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_print_24),
                 onClickEvent = MenuAction.PrintRequested,
             ),
-            createProvider(isAndroidAutomotiveAvailable = false).itemFlow.value,
+            createProvider(isAndroidAutomotiveAvailable = false).itemsFlow.value.single(),
         )
     }
 
@@ -61,7 +60,7 @@ class PrintMenuItemProviderTest {
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
         val provider = createProvider(isAndroidAutomotiveAvailable = false)
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.SaveAsPdfRequested))

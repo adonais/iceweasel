@@ -150,11 +150,11 @@ class ObjectInspector extends Component {
       loadedProperties.size !== nextProps.loadedProperties.size ||
       evaluations.size !== nextProps.evaluations.size ||
       (expandedPaths.size !== nextProps.expandedPaths.size &&
-        [...nextProps.expandedPaths].every(path =>
+        nextProps.expandedPaths.values().every(path =>
           nextProps.loadedProperties.has(path)
         )) ||
       (expandedPaths.size === nextProps.expandedPaths.size &&
-        [...nextProps.expandedPaths].some(key => !expandedPaths.has(key))) ||
+        nextProps.expandedPaths.values().some(key => !expandedPaths.has(key))) ||
       this.focusedItem !== nextProps.focusedItem ||
       this.activeItem !== nextProps.activeItem ||
       this.roots !== nextProps.roots

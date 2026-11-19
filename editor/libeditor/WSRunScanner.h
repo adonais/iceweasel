@@ -134,9 +134,9 @@ class MOZ_STACK_CLASS WSScanResult final {
 
   WSScanResult(WSScanResult&& aResult, EditorLineBreak&& aIgnoredLineBreak,
                const Element& aEditingHost)
-      : WSScanResult(std::forward<WSScanResult>(aResult)) {
+      : WSScanResult(std::move(aResult)) {
     MOZ_ASSERT(ReachedBlockBoundary());
-    mIgnoredLineBreak.emplace(std::forward<EditorLineBreak>(aIgnoredLineBreak));
+    mIgnoredLineBreak.emplace(std::move(aIgnoredLineBreak));
     // If an editing host is specified and the reached content is outside the
     // editing host, we should store the editing host to make the method
     // returning the reached point to return a point in the editing host.

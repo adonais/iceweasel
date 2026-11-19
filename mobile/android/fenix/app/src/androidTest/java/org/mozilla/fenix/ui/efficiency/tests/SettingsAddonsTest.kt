@@ -30,7 +30,7 @@ class SettingsAddonsTest : BaseTest() {
         on.browserPage.navigateToPage(webPage).verifyPageContent("Lets test!")
         on.mainMenu
             .navigateToPage()
-            .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
+            .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON)
             .mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(addonName))
     }
 

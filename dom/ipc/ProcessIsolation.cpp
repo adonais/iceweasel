@@ -259,7 +259,7 @@ static const char* WorkerKindName(WorkerKind aWorkerKind) {
  * document; see the file:// URI allowlist handling below for why the two
  * differ.
  */
-static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
+static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI,
                                                  bool aForChannelCreationURI,
                                                  bool aIsWorker) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -341,8 +341,7 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
   nsCOMPtr<nsIURI> inner;
   if (nsCOMPtr<nsINestedURI> nested = do_QueryInterface(aURI);
       nested && NS_SUCCEEDED(nested->GetInnerURI(getter_AddRefs(inner)))) {
-    return IsolationBehaviorForURI(inner, aIsSubframe, aForChannelCreationURI,
-                                   aIsWorker);
+    return IsolationBehaviorForURI(inner, aForChannelCreationURI, aIsWorker);
   }
 
   // If we're doing the initial check based on the channel creation URI, stop
@@ -359,15 +358,10 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
     return IsolationBehavior::Parent;
   }
 
-  // There is more handling for extension content processes in the caller, but
-  // they should load in an extension content process unless we're loading a
-  // subframe.
+  // There is more handling for extension content processes in the caller,
+  // which is also where extension subframes that have to be loaded in the same
+  // process as their parent document are handled.
   if (scheme == "moz-extension"_ns) {
-    if (aIsSubframe) {
-      // As a temporary measure, extension iframes must be loaded within the
-      // same process as their parent document.
-      return IsolationBehavior::Inherit;
-    }
     return IsolationBehavior::Extension;
   }
 
@@ -684,7 +678,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
   // First, check for any special cases which should be handled using the
   // channel creation URI, and handle them.
-  auto behavior = IsolationBehaviorForURI(aChannelCreationURI, aParentWindow,
+  auto behavior = IsolationBehaviorForURI(aChannelCreationURI,
                                           /* aForChannelCreationURI */ true,
                                           /* aIsWorker */ false);
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
@@ -740,11 +734,24 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   if (auto* addonPolicy =
           BasePrincipal::Cast(resultOrPrecursor)->AddonPolicy()) {
     if (aParentWindow) {
-      // As a temporary measure, extension iframes must be loaded within the
-      // same process as their parent document.
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-              ("Loading extension subframe in same process as parent"));
-      behavior = IsolationBehavior::Inherit;
+      // As a temporary measure, extension iframes loaded within web content
+      // must be loaded within the same process as their parent document, such
+      // that content scripts can synchronously access them. The same applies
+      // to file:// process remote types and privilegedmozilla (in particular
+      // for the subset extensions that will be allowed to access FxA web pages)
+      // and when the extension process is completely disabled through prefs.
+      const RemoteType& parentRemoteType = aParentWindow->GetRemoteType();
+      if (!ExtensionPolicyService::GetSingleton().UseRemoteExtensions() ||
+          parentRemoteType.IsWeb() || parentRemoteType.IsFile() ||
+          parentRemoteType.IsPrivilegedMozilla()) {
+        MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+                ("Loading extension subframe in same process as parent"));
+        behavior = IsolationBehavior::Inherit;
+      } else {
+        MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+                ("Loading extension subframe in extension content process"));
+        behavior = IsolationBehavior::Extension;
+      }
     } else {
       MOZ_LOG(
           gProcessIsolationLog, LogLevel::Verbose,
@@ -785,7 +792,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
         behavior = IsolationBehavior::ForceWebRemoteType;
       }
     } else if (nsCOMPtr<nsIURI> principalURI = resultOrPrecursor->GetURI()) {
-      behavior = IsolationBehaviorForURI(principalURI, aParentWindow,
+      behavior = IsolationBehaviorForURI(principalURI,
                                          /* aForChannelCreationURI */ false,
                                          /* aIsWorker */ false);
     }
@@ -1101,7 +1108,7 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   IsolationBehavior behavior = IsolationBehavior::WebContent;
   if (resultOrPrecursor->GetIsContentPrincipal()) {
     nsCOMPtr<nsIURI> uri = resultOrPrecursor->GetURI();
-    behavior = IsolationBehaviorForURI(uri, /* aIsSubframe */ false,
+    behavior = IsolationBehaviorForURI(uri,
                                        /* aForChannelCreationURI */ false,
                                        /* aIsWorker */ true);
   } else if (resultOrPrecursor->IsSystemPrincipal()) {
@@ -1297,9 +1304,9 @@ Result<RemoteType, nsresult> PredictRemoteTypeForURI(
        aURI->GetSpecOrDefault().get(), aPreferredRemoteType.Stringify().get(),
        OriginAttributesString(aOriginAttributes).get(), aUseRemoteSubframes));
 
-  IsolationBehavior behavior = IsolationBehaviorForURI(
-      aURI, /* aIsSubframe */ false, /* aForChannelCreationURI */ true,
-      /* aIsWorker */ false);
+  IsolationBehavior behavior =
+      IsolationBehaviorForURI(aURI, /* aForChannelCreationURI */ true,
+                              /* aIsWorker */ false);
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
           ("Base Isolation Behavior: %s", IsolationBehaviorName(behavior)));
 
@@ -1309,7 +1316,7 @@ Result<RemoteType, nsresult> PredictRemoteTypeForURI(
   nsCOMPtr<nsIURI> uri = aURI;
   if (nsCOMPtr<nsIURI> webAppHandlerURI = MaybeResolveWebAppHandler(uri)) {
     uri = webAppHandlerURI;
-    behavior = IsolationBehaviorForURI(uri, /* aIsSubframe */ false,
+    behavior = IsolationBehaviorForURI(uri,
                                        /* aForChannelCreationURI */ true,
                                        /* aIsWorker */ false);
     MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
@@ -1348,7 +1355,7 @@ Result<RemoteType, nsresult> PredictRemoteTypeForURI(
                  "unexpected non-blob URI with system principal");
       behavior = IsolationBehavior::ForceWebRemoteType;
     } else if (nsCOMPtr<nsIURI> principalURI = principal->GetURI()) {
-      behavior = IsolationBehaviorForURI(principalURI, /* aIsSubframe */ false,
+      behavior = IsolationBehaviorForURI(principalURI,
                                          /* aForChannelCreationURI */ false,
                                          /* aIsWorker */ false);
     }
@@ -1647,7 +1654,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
 
     // NOTE: The logic for about URIs is somewhat complex, so we lean on
     // IsolationBehaviorForURI to ensure it matches.
-    switch (IsolationBehaviorForURI(aboutURI, /* aIsSubframe */ false,
+    switch (IsolationBehaviorForURI(aboutURI,
                                     /* aForChannelCreationURI */ true,
                                     /* aIsWorker */ false)) {
       case IsolationBehavior::Parent:

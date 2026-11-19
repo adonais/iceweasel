@@ -8,6 +8,8 @@ import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidCompo
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.TestAsset
@@ -37,8 +39,27 @@ class GlobalPrivacyControlTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2429327
+    @Converted(
+        replacedBy =
+            [
+                "org.mozilla.fenix.ui.efficiency.tests.GlobalPrivacyControlTest#verifyGlobalPrivacyControlInNormalBrowsingTest"
+            ],
+        bug = 2087418,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun testGPCinNormalBrowsing() {
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openEnhancedTrackingProtectionSubMenu {
+                scrollToGCPSettings()
+                verifyGPCTextWithSwitchWidget()
+                verifyGPCSwitchEnabled(false)
+            }
+            .goBackToHomeScreen(composeTestRule) {}
+
         navigationToolbar(composeTestRule) {}
             .enterURLAndEnterToBrowser(gpcPage.url) {
                 verifyPageContent("GPC not enabled.")
@@ -47,12 +68,12 @@ class GlobalPrivacyControlTest {
             .clickSettingsButton {}
             .openEnhancedTrackingProtectionSubMenu {
                 scrollToGCPSettings()
-                verifyGPCTextWithSwitchWidget()
-                verifyGPCSwitchEnabled(false)
                 switchGPCToggle()
             }
-            .goBack {}
-            .goBackToBrowser(composeTestRule) {
+            .goBackToHomeScreen(composeTestRule) {}
+
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser(gpcPage.url) {
                 verifyPageContent("GPC is enabled.")
             }
     }

@@ -79,7 +79,7 @@ CompositorBridgeChild::CompositorBridgeChild(CompositorManagerChild* aManager)
       mThread(NS_GetCurrentThread()),
       mProcessToken(0),
       mSectionAllocator(nullptr) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 }
 
 CompositorBridgeChild::~CompositorBridgeChild() {
@@ -207,8 +207,8 @@ void CompositorBridgeChild::ShutDown() {
 }
 
 void CompositorBridgeChild::InitForContent(uint32_t aNamespace) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aNamespace);
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(aNamespace);
 
   if (RefPtr<CompositorBridgeChild> old = sCompositorBridge.forget()) {
     // Note that at this point, ActorDestroy may not have been called yet,
@@ -226,9 +226,9 @@ void CompositorBridgeChild::InitForContent(uint32_t aNamespace) {
 
 void CompositorBridgeChild::InitForWidget(uint64_t aProcessToken,
                                           uint32_t aNamespace) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aProcessToken);
-  MOZ_ASSERT(aNamespace);
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(aProcessToken);
+  MOZ_RELEASE_ASSERT(aNamespace);
 
   mCanSend = true;
   mProcessToken = aProcessToken;
@@ -237,10 +237,10 @@ void CompositorBridgeChild::InitForWidget(uint64_t aProcessToken,
 
 RefPtr<WebRenderLayerManager> CompositorBridgeChild::CreateLayerManager(
     nsIWidget* aWidget, wr::PipelineId aPipelineId, nsCString& aError) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(XRE_IsParentProcess(),
-             "Must only be called for widget CompositorBridgeChild");
-  MOZ_ASSERT(!mLayerManager, "Must only be called once");
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess(),
+                     "Must only be called for widget CompositorBridgeChild");
+  MOZ_RELEASE_ASSERT(!mLayerManager, "Must only be called once");
 
   mLayerManager =
       WebRenderLayerManager::Create(aWidget, this, aPipelineId, aError);
@@ -252,19 +252,19 @@ CompositorBridgeChild* CompositorBridgeChild::Get() {
   // This is only expected to be used in child processes. While the parent
   // process does have CompositorBridgeChild instances, it has _multiple_ (one
   // per window), and therefore there is no global singleton available.
-  MOZ_ASSERT(!XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
   return sCompositorBridge;
 }
 
 /* static */
 bool CompositorBridgeChild::CompositorIsInGPUProcess() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (XRE_IsParentProcess()) {
     return !!GPUProcessManager::Get()->GetGPUChild();
   }
 
-  MOZ_ASSERT(XRE_IsContentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
   CompositorBridgeChild* bridge = CompositorBridgeChild::Get();
   if (!bridge) {
     return false;
@@ -278,8 +278,9 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvDidComposite(
     const TimeStamp& aCompositeStart, const TimeStamp& aCompositeEnd) {
   for (const auto& id : aTransactionIds) {
     if (mLayerManager) {
-      MOZ_ASSERT(!aId.IsValid());
-      MOZ_ASSERT(mLayerManager->GetBackendType() == LayersBackend::LAYERS_WR);
+      MOZ_RELEASE_ASSERT(!aId.IsValid());
+      MOZ_RELEASE_ASSERT(mLayerManager->GetBackendType() ==
+                         LayersBackend::LAYERS_WR);
       // Hold a reference to keep LayerManager alive. See Bug 1242668.
       RefPtr<WebRenderLayerManager> m = mLayerManager;
       m->DidComposite(id, aCompositeStart, aCompositeEnd);
@@ -419,8 +420,8 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvObserveLayersUpdate(
     const LayersId& aLayersId, const bool& aActive) {
   // This message is sent via the window compositor, not the tab compositor -
   // however it still has a layers id.
-  MOZ_ASSERT(aLayersId.IsValid());
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(aLayersId.IsValid());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   if (RefPtr<dom::BrowserParent> tab =
           dom::BrowserParent::GetBrowserParentFromLayersId(aLayersId)) {
@@ -431,8 +432,8 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvObserveLayersUpdate(
 
 mozilla::ipc::IPCResult CompositorBridgeChild::RecvCompositorOptionsChanged(
     const LayersId& aLayersId, const CompositorOptions& aNewOptions) {
-  MOZ_ASSERT(aLayersId.IsValid());
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(aLayersId.IsValid());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   if (RefPtr<dom::BrowserParent> tab =
           dom::BrowserParent::GetBrowserParentFromLayersId(aLayersId)) {
@@ -444,7 +445,7 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvCompositorOptionsChanged(
 mozilla::ipc::IPCResult CompositorBridgeChild::RecvNotifyJankedAnimations(
     const LayersId& aLayersId, nsTArray<uint64_t>&& aJankedAnimations) {
   if (mLayerManager) {
-    MOZ_ASSERT(!aLayersId.IsValid());
+    MOZ_RELEASE_ASSERT(!aLayersId.IsValid());
     mLayerManager->UpdatePartialPrerenderedAnimations(aJankedAnimations);
   } else if (aLayersId.IsValid()) {
     RefPtr<dom::BrowserChild> child = dom::BrowserChild::GetFrom(aLayersId);
@@ -517,7 +518,7 @@ already_AddRefed<PTextureChild> CompositorBridgeChild::CreateTexture(
 }
 
 already_AddRefed<CanvasChild> CompositorBridgeChild::GetCanvasChild() {
-  MOZ_ASSERT(gfxPlatform::UseRemoteCanvas());
+  MOZ_RELEASE_ASSERT(gfxPlatform::UseRemoteCanvas());
   if (auto* cm = gfx::CanvasManagerChild::Get()) {
     return cm->GetCanvasChild().forget();
   }

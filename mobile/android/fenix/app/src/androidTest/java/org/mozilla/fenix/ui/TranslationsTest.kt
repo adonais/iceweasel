@@ -9,6 +9,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.disableWifiNetworkConnection
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableDataSaverSystemSetting
@@ -170,7 +171,16 @@ class TranslationsTest {
         }
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2436642
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3105333
+    @Converted(
+        replacedBy =
+            [
+                "org.mozilla.fenix.ui.efficiency.tests.TranslationsTest#verifyFirstTranslationBottomSheetTranslateFunctionalityTest"
+            ],
+        bug = 2084594,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun verifyFirstTranslationBottomSheetTranslateFunctionalityTest() {
         val testPage = mockWebServer.firstForeignWebPageAsset
@@ -181,6 +191,7 @@ class TranslationsTest {
             }
             .clickTranslateButton {
                 verifyPageContent("Article of the day")
+                verifyTheTranslationBannerIsDisplayed(translatedFrom = "French", translatedTo = "English")
             }
     }
 

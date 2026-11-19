@@ -43,7 +43,6 @@ support-files = [
 ["test_fullscreen-api-race.html"]
 skip-if = [
   "os == 'android'", # same as test_fullscreen-api.html, 1356570
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov",
 ]
 
 ["test_fullscreen-api-rapid-cycle.html"]

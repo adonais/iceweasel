@@ -64,4 +64,11 @@ object RecentlyClosedTabsSelectors : SelectorContainer {
             value = getStringResource(R.string.recently_closed_show_full_history),
             description = "Recently closed tab item show full history button",
         )
+
+    val NAVIGATE_UP_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_CONTENT_DESC,
+            value = "Navigate up",
+            description = "Recently closed tabs navigate up toolbar button",
+        )
 }

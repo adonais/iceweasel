@@ -67,7 +67,7 @@ static Maybe<TimerToStampMutex::AutoLock> GetTimerIdToStartsLock() {
     return Nothing();
   }
   if (!*lock) {
-    *lock = MakeUnique<nsTHashMap<MetricTimerTupleHashKey, TimeStamp>>();
+    *lock = std::make_unique<nsTHashMap<MetricTimerTupleHashKey, TimeStamp>>();
     RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
         auto lock = sTimerIdToStarts.Lock();
@@ -146,7 +146,8 @@ static Maybe<LabelTimerToStampMutex::AutoLock> GetLabelTimerIdToStartsLock() {
     return Nothing();
   }
   if (!*lock) {
-    *lock = MakeUnique<nsTHashMap<MetricLabelTimerTupleHashKey, TimeStamp>>();
+    *lock =
+        std::make_unique<nsTHashMap<MetricLabelTimerTupleHashKey, TimeStamp>>();
     RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
         auto lock = sLabelTimerIdToStarts.Lock();

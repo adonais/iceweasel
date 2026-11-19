@@ -20,7 +20,7 @@
 
 .og-card-content {
   background-color: var(--panel-background-color);
-  border-bottom: 1px solid var(--panel-border-color);
+  border-block-end: 1px solid var(--panel-border-color);
   color: var(--text-color-deemphasized);
   display: flex;
   flex-direction: column;
@@ -145,7 +145,7 @@
       align-items: center;
       display: flex;
       justify-content: flex-end;
-      margin-top: var(--space-xlarge);
+      margin-block-start: var(--space-xlarge);
 
       .visit-link {
         align-items: center;
@@ -201,7 +201,7 @@
 
 .keypoints-list {
   .content-item {
-    margin-bottom: var(--space-xlarge);
+    margin-block-end: var(--space-xlarge);
     width: 100%;
 
     &.loading {
@@ -218,7 +218,7 @@
         background-size: 200% 100%;
         border-radius: 5px;
         height: var(--og-main-font-size);
-        margin-bottom: 4px;
+        margin-block-end: 4px;
         width: 100%;
         /* Add non-impactful references to the CSS variables to satisfy the test browser_parsable_css */
         outline-color: var(--skeleton-loader-background-color);
@@ -254,10 +254,10 @@
 model-optin {
   --font-size-xxlarge: var(--og-main-font-size);
   --optin-wrapper-box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+  inset-block-start: 60px;
   inset-inline: 0;
   margin-inline: auto;
   position: absolute;
-  top: 60px;
   width: 75%;
   z-index: 10;
 }

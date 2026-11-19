@@ -6,7 +6,7 @@ support-files = [
   "head.js",
   "richSuggestionEngine.sjs",
 ]
-prefs = ["browser.nova.enabled=true", "browser.urlbar.newtab.featureGate=true"]
+prefs = ["browser.urlbar.newtab.featureGate=true"]
 
 ["browser_blur.js"]
 
@@ -32,6 +32,8 @@ support-files = ["../browser/slow-page.sjs"]
 ["browser_inputmode.js"]
 
 ["browser_mousedown.js"]
+
+["browser_narrowWindow.js"]
 
 ["browser_pickResult.js"]
 

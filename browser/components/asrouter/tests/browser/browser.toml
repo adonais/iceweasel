@@ -12,9 +12,6 @@ tags = "remote-settings"
 ["browser_asrouter_experimentsAPILoader.js"]
 
 ["browser_asrouter_group_frequency.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone", # Bug 1775851
-]
 
 ["browser_asrouter_group_userprefs.js"]
 

@@ -11,7 +11,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
 import androidx.appcompat.widget.AppCompatEditText;
 
-public class LocationView extends AppCompatEditText {
+public final class LocationView extends AppCompatEditText {
 
   private CommitListener mCommitListener;
   private FocusAndCommitListener mFocusCommitListener = new FocusAndCommitListener();

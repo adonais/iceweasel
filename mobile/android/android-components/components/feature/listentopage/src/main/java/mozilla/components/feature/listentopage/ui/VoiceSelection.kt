@@ -12,6 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import java.util.Locale
 import mozilla.components.compose.base.menu.DropdownMenu
@@ -44,8 +47,15 @@ fun VoiceSelection(
         } else {
             availableVoices.toMenuItems(selectedVoice, onVoiceClick)
         }
+    val title = stringResource(R.string.mozac_feature_listentopage_voice_options)
 
-    DropdownMenu(expanded = expanded, menuItems = menuItems, onDismissRequest = onDismissRequest)
+    DropdownMenu(
+        expanded = expanded,
+        menuItems = menuItems,
+        modifier = Modifier.semantics { paneTitle = title },
+        focusCheckedItemFirst = false,
+        onDismissRequest = onDismissRequest,
+    )
 }
 
 private fun List<Voice>.toMenuItems(

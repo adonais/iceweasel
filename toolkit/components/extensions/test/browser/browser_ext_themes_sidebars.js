@@ -1,13 +1,5 @@
 "use strict";
 
-// Nova being enabled changes some of the styling that is being tested here.
-const novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true // If the pref isn't set to false assume Nova styles are enabled by default.
-);
-
-info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
 // This test checks whether the sidebar color properties work.
 const LIGHT_SALMON = "#ffa07a";
 
@@ -289,72 +281,6 @@ async function check_themes() {
     );
   }
 }
-add_task(async function test_old_sidebar_colors() {
-  if (novaEnabled) {
-    info("SKIP unsupported old sidebar when Nova is enabled");
-    return;
-  }
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.revamp", false]],
-  });
-  await check_themes();
-  await SpecialPowers.popPrefEnv();
-});
-
-add_task(async function test_old_sidebar_border_color() {
-  if (novaEnabled) {
-    info("SKIP unsupported old sidebar when Nova is enabled");
-    return;
-  }
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.revamp", false]],
-  });
-  const extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      theme: {
-        colors: {
-          sidebar_border: LIGHT_SALMON,
-        },
-      },
-    },
-  });
-
-  await extension.startup();
-
-  const sidebarHeader = document.getElementById("sidebar-header");
-  const sidebarHeaderCS = window.getComputedStyle(sidebarHeader);
-
-  is(
-    sidebarHeaderCS.borderBottomColor,
-    hexToCSS(LIGHT_SALMON),
-    "Sidebar header border should be colored properly"
-  );
-
-  if (AppConstants.platform !== "linux") {
-    const sidebarSplitter = document.getElementById("sidebar-splitter");
-    const sidebarSplitterCS = window.getComputedStyle(sidebarSplitter);
-
-    is(
-      sidebarSplitterCS.borderInlineEndColor,
-      hexToCSS(LIGHT_SALMON),
-      "Sidebar splitter should be colored properly"
-    );
-
-    SidebarController.reversePosition();
-
-    is(
-      sidebarSplitterCS.borderInlineStartColor,
-      hexToCSS(LIGHT_SALMON),
-      "Sidebar splitter should be colored properly after switching sides"
-    );
-
-    SidebarController.reversePosition();
-  }
-
-  await extension.unload();
-  await SpecialPowers.popPrefEnv();
-});
-
 add_task(async function test_support_sidebar_colors() {
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.revamp", true]],
@@ -384,16 +310,11 @@ add_task(async function test_support_sidebar_border_color() {
 
   await extension.startup();
 
-  const sidebarPanel = document.getElementById(
-    novaEnabled ? "sidebar-box" : "sidebar"
-  );
+  const sidebarPanel = document.getElementById("sidebar-box");
   const sidebarPanelCS = window.getComputedStyle(sidebarPanel);
 
-  // Nova draws the panel's separator as a border, everything else as an outline.
   is(
-    novaEnabled
-      ? sidebarPanelCS.borderBlockStartColor
-      : sidebarPanelCS.outlineColor,
+    sidebarPanelCS.borderBlockStartColor,
     hexToCSS(LIGHT_SALMON),
     "The card border of the history sidebar panel should be colored properly"
   );

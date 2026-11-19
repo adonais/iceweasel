@@ -55,27 +55,39 @@ class BookmarkMenuItemProvider(
 ) : MenuItemProvider {
     // Without a page shown there is nothing to bookmark. Knowing whether the shown page already is bookmarked means
     // reading from disk, which the menu should not wait for, so it starts out offered as not bookmarked.
-    private val mutableItem =
-        MutableStateFlow<MenuItem?>(ADD_BOOKMARK_ITEM.takeIf { target.browserSessionFrom(browserStore.state) != null })
+    private val mutableItems =
+        MutableStateFlow<List<MenuItem>>(
+            listOfNotNull(
+                if (target == MenuTarget.CustomizeMenu) {
+                    DEFAULT_MENU_ITEM
+                } else {
+                    DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.AddBookmark).takeIf {
+                        target.browserSessionFrom(browserStore.state) != null
+                    }
+                }
+            )
+        )
 
-    override val itemFlow: StateFlow<MenuItem?> = mutableItem.asStateFlow()
+    override val itemsFlow: StateFlow<List<MenuItem>> = mutableItems.asStateFlow()
 
     init {
-        // BookmarksStorage#getBookmarksWithUrl will run until completion even if the coroutine is canceled, so it is
-        // deliberately run on a scope outliving this menu. As such it must not reference this provider, which would
-        // then be leaked together with the menu it holds onto while waiting for the bookmarks.
-        val url = target.browserSessionFrom(browserStore.state)?.getTabUrl()
-        val mutableItem = mutableItem
-        if (url != null) {
-            applicationScope.launch {
-                val guidToEdit =
-                    bookmarksStorage
-                        .getBookmarksWithUrl(url)
-                        .getOrDefault(emptyList())
-                        .firstOrNull { it.url == url }
-                        ?.guid ?: return@launch
+        if (target != MenuTarget.CustomizeMenu) {
+            // BookmarksStorage#getBookmarksWithUrl will run until completion even if the coroutine is canceled, so it
+            // is deliberately run on a scope outliving this menu. As such it must not reference this provider, which
+            // would then be leaked together with the menu it holds onto while waiting for the bookmarks.
+            val url = target.browserSessionFrom(browserStore.state)?.getTabUrl()
+            val mutableItems = mutableItems
+            if (url != null) {
+                applicationScope.launch {
+                    val guidToEdit =
+                        bookmarksStorage
+                            .getBookmarksWithUrl(url)
+                            .getOrDefault(emptyList())
+                            .firstOrNull { it.url == url }
+                            ?.guid ?: return@launch
 
-                mutableItem.value = editBookmarkItem(guidToEdit)
+                    mutableItems.value = listOf(editBookmarkItem(guidToEdit))
+                }
             }
         }
     }
@@ -120,14 +132,15 @@ class BookmarkMenuItemProvider(
             menu.dismiss()
         }
     }
-}
 
-private val ADD_BOOKMARK_ITEM =
-    StandardMenuItem(
-        title = MenuItemTitle(Text.Resource(R.string.browser_menu_bookmark_this_page_2)),
-        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_bookmark_24),
-        onClickEvent = MenuAction.AddBookmark,
-    )
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_bookmark_this_page_2)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_bookmark_24),
+            )
+    }
+}
 
 private fun editBookmarkItem(guidToEdit: String) =
     StandardMenuItem(

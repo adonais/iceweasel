@@ -61,6 +61,8 @@
 #     - `string` -> `string`
 #     - `u32`/`u64`/`usize` -> `quantity`
 #     - `string` -> `string_list`
+#   - expires: The Glean metric `expires` value. Defaults to `never`. This only
+#     expires the metric: the annotation itself is still recorded.
 
 AbortMessage:
   description: >
@@ -464,6 +466,7 @@ CrashTime:
     metric: crash.time
     type: datetime
     time_unit: second
+    custom_convert: unix_timestamp
 
 CycleCollector:
   description: >
@@ -868,6 +871,24 @@ JavaStackTrace:
   type: string
   scope: report
 
+JumpListShellCallStart:
+  description: >
+    Time, in seconds since the Epoch, at which the Windows Shell call currently
+    running on the Jump List thread was started. It is cleared when the call
+    returns, so its presence in a crash report means the call never returned,
+    and CrashTime minus this value is how long it had been blocked. If calls
+    from the normal and private-browsing builders overlap, which in practice
+    only happens at startup, this reflects the most recent one.
+  type: string
+  scope: ping
+  bugs:
+    - 2073787
+  glean:
+    type: datetime
+    time_unit: second
+    custom_convert: unix_timestamp
+    expires: 165
+
 JSActorMessage:
   description: >
     If an actor is currently treating a message, this is the name of the message.
@@ -981,7 +1002,7 @@ MacStartupRunLoop:
     spins the native run loop during startup, in order, followed by the number
     of run loop wake-ups and the milliseconds since the loop started at the last
     one. Only present if the process crashed or hung inside that loop. macOS
-    only, early beta or earlier.
+    only, Nightly only.
   type: string
   scope: report
   bugs:
@@ -1046,6 +1067,14 @@ MainThreadRunnableName:
   type: string
   scope: ping
 
+MinidumpRemoteExecutorForTesting:
+  description: >
+    Set to 1 when the minidump was written using the remote executor. Only for
+    testing purposes.
+  type: boolean
+  bugs:
+    - 2071467
+
 MinidumpSha256Hash:
   description: >
     The sha256 hash of the minidump file, if available.
@@ -1107,6 +1136,31 @@ OSVersion:
   description: The operating system version number.
   type: string
   scope: ping
+
+OmnijarCanaryFailure:
+  description: >
+    JSON object recorded when the startup canary load of AppConstants.sys.mjs
+    fails. Fields: "rv" is the symbolic name of the nsresult returned by the
+    module loader. "exn" tells whether a JS exception was pending; if so,
+    "exnChrome" tells whether it was thrown by system principal code and
+    "exnNumber" is its JS error number. Only for system principal exceptions, "exnFile" and
+    "exnLine" give its location, with the file filtered like the script names
+    in background hang reports: the path of chrome://, resource:// and
+    moz-src:/// URLs without the scheme, the path below an extensions/
+    directory, otherwise only the leaf name. "omnijar" tells whether a GRE
+    omnijar path is known and "omnijarSize" is the size in bytes of that file
+    on disk (compare it with the size shipped in the release to detect a
+    mismatched omni.ja). "reader" tells whether the GRE omnijar is open,
+    "entry" whether it contains modules/AppConstants.sys.mjs, "entrySize" the
+    uncompressed size of that entry and "entryRead" whether reading it with
+    CRC check succeeded. Fields that could not be determined are omitted.
+    Illustrative example of a loader failure with an intact omnijar:
+    {"rv":"NS_ERROR_FAILURE","exn":true,"exnChrome":true,"exnNumber":0,"exnFile":"boot.sys.mjs","exnLine":12,"omnijar":true,"omnijarSize":47412435,"reader":true,"entry":true,"entrySize":4711,"entryRead":true}
+    while a damaged omnijar shows "entry":false or "entryRead":false.
+  type: string
+  scope: report
+  bugs:
+    - 2082797
 
 PluginFilename:
   description: >

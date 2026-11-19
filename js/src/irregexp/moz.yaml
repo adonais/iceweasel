@@ -9,8 +9,8 @@ origin:
   description: A fast regular expression engine from V8
   url: https://v8.dev
 
-  release: 48a0da03cb526a5eef4c7c096ef8047516c06e33 (Mon Oct 19 17:26:20 2026).
-  revision: 48a0da03cb526a5eef4c7c096ef8047516c06e33
+  release: 313f3ab0d6063f3e5af9eaf88fa1e1c66c94e222 (Mon Oct 26 18:52:49 2026).
+  revision: 313f3ab0d6063f3e5af9eaf88fa1e1c66c94e222
 
   license: BSD-3-Clause
   license-file: LICENSE.v8
@@ -33,6 +33,7 @@ vendoring:
   update-actions:
     - action: run-script
       script: 'import-irregexp.py'
+      args: ['{revision}']
       cwd: '{yaml_dir}'
 
 updatebot:

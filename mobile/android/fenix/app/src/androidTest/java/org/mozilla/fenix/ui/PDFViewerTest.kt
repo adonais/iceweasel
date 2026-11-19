@@ -6,13 +6,16 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.core.net.toUri
+import mozilla.components.support.ktx.kotlin.truncateMiddle
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.Config
 import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
+import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
 import org.mozilla.fenix.helpers.Constants.PackageName.GOOGLE_DOCS
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -152,7 +155,10 @@ class PDFViewerTest {
     @Test
     fun verifyDownloadedPDFIsOpenedInFirefoxTest() {
         val genericURL = mockWebServer.getGenericAsset(3)
-        val downloadFile = "pdfForm.pdf"
+        // Bug 2071966 will improve the naming situation
+        val downloadFilePrefix = if (Config.channel.isNightlyOrDebug) "Untitled document - " else ""
+        val downloadFile = "${downloadFilePrefix}pdfForm.pdf"
+        val secondDownloadNotificationTitle = "${downloadFilePrefix}pdfForm(1).pdf".truncateMiddle(maxLength = 25)
 
         navigationToolbar(composeTestRule) {}
             .enterURLAndEnterToBrowser(genericURL.url) {
@@ -187,13 +193,17 @@ class PDFViewerTest {
                 clickPageObject(composeTestRule, itemWithText("PDF form file"))
                 clickPageObject(composeTestRule, itemContainingText("Stay in"))
             }
-            .clickDownloadPDFButton {}
+            .clickDownloadPDFButton(confirmDownloadPrompt = false) {
+                runWithCondition(Config.channel.isNightlyOrDebug) {
+                    clickDownloadAgain()
+                }
+            }
 
         mDevice.openNotification()
 
         notificationShade {
-            expandMultipleDownloadNotification("pdfForm(1).pdf")
-            clickNotification("pdfForm(1).pdf")
+            expandMultipleDownloadNotification(secondDownloadNotificationTitle)
+            clickNotification(secondDownloadNotificationTitle)
         }
         browserScreen(composeTestRule) {
                 verifyUrl("content://media/external_primary/downloads/")
@@ -201,7 +211,7 @@ class PDFViewerTest {
             }
             .openThreeDotMenu {}
             .clickDownloadsButton {
-                clickDownloadedItem("pdfForm.pdf")
+                clickDownloadedItem(downloadFile)
             }
         browserScreen(composeTestRule) {
             verifyTabCounter("4")

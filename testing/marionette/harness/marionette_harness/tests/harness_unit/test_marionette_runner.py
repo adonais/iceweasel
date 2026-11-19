@@ -289,6 +289,44 @@ def test_increment_crash_count_in_run_test_set(runner, has_crashed, mock_marione
         _check_crash_counts(has_crashed, runner, runner.marionette)
 
 
+def test_run_test_set_sets_test_group(runner, mock_marionette):
+    mock_marionette.check_for_crash.return_value = False
+    fake_tests = [
+        {"filepath": "a", "expected": "pass", "group": "manifest1.toml"},
+        {"filepath": "b", "expected": "pass", "group": "manifest2.toml"},
+    ]
+    groups_at_run = []
+    groups_at_crash_check = []
+
+    def run_test(*args, **kwargs):
+        groups_at_run.append(mock_marionette.test_group)
+
+    mock_marionette.check_for_crash.side_effect = lambda: (
+        groups_at_crash_check.append(mock_marionette.test_group) or False
+    )
+
+    with patch.multiple(runner, run_test=run_test, marionette=mock_marionette):
+        runner.run_test_set(fake_tests)
+
+    expected = [runner._fix_test_path(t["group"]) for t in fake_tests]
+    assert groups_at_run == expected
+    assert groups_at_crash_check == expected
+    assert mock_marionette.test_group is None
+
+
+def test_run_test_set_resets_test_group_on_error(runner, mock_marionette):
+    def run_test(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    with patch.multiple(runner, run_test=run_test, marionette=mock_marionette):
+        with pytest.raises(KeyboardInterrupt):
+            runner.run_test_set([
+                {"filepath": "a", "expected": "pass", "group": "manifest1.toml"}
+            ])
+
+    assert mock_marionette.test_group is None
+
+
 @pytest.mark.parametrize("has_crashed", [True, False])
 def test_record_crash(runner, has_crashed, mock_marionette):
     with patch.object(runner, "marionette", mock_marionette):

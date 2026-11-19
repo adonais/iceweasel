@@ -96,6 +96,8 @@ add_task(async function test_batch_write_basic() {
     Ci.nsIBounceTrackingProtection
   );
   btp.clearAll();
+  // Storage initializes asynchronously. Wait for it to create the table.
+  await btp.testFlushStorage();
 
   let count = await countDatabaseEntries();
   Assert.equal(count, 0, "Database should be empty after clearAll");

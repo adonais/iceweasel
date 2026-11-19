@@ -2817,3 +2817,142 @@ add_task(async function test_scheduled_run_expires_but_manual_run_checks() {
     await resetMonitorAgentForTesting();
   }
 });
+
+add_task(async function test_monitors_do_not_run_when_blocked_by_ai_controls() {
+  await resetMonitorAgentForTesting();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ai.control.smartWindow", "blocked"]],
+  });
+
+  try {
+    Assert.ok(MonitorAgent.isBlocked, "The monitor agent reports blocked");
+
+    await Assert.rejects(
+      createMonitorWatching(["https://example.com/"], "Check for a change."),
+      /blocked by AI Controls/,
+      "Creating a monitor is refused while blocked"
+    );
+    Assert.equal(
+      (await MonitorAgent.listMonitors()).length,
+      0,
+      "No monitor was stored"
+    );
+
+    const monitor = new Monitor({
+      monitorPrompt: "Check for a change.",
+      watchUrls: ["https://example.com/"],
+      schedule: new IntervalSchedule(1),
+      lastRunTime: daysAgo(1),
+    });
+    await monitor.run();
+    await monitor.run({ manual: true });
+    Assert.equal(monitor.history.length, 0, "A blocked monitor does not run");
+    monitor.dispose();
+
+    await Assert.rejects(
+      MonitorAgent.runNow(monitor.id),
+      /blocked by AI Controls/,
+      "Check now is refused while blocked"
+    );
+    await Assert.rejects(
+      MonitorAgent.updateMonitor(monitor.id, { title: "Edited" }),
+      /blocked by AI Controls/,
+      "Editing a monitor is refused while blocked"
+    );
+    await Assert.rejects(
+      monitor.captureInitialSnapshot(),
+      /blocked by AI Controls/,
+      "Snapshots are not captured while blocked"
+    );
+  } finally {
+    await SpecialPowers.popPrefEnv();
+    await resetMonitorAgentForTesting();
+  }
+});
+
+add_task(async function test_blocking_suspends_and_unblocking_resumes() {
+  await resetMonitorAgentForTesting();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ai.control.smartWindow", "default"]],
+  });
+  const disposeSpy = sinon.spy(Monitor.prototype, "dispose");
+  const scheduleSpy = sinon.spy(Monitor.prototype, "scheduleNextRun");
+
+  try {
+    Assert.ok(!MonitorAgent.isBlocked, "The monitor agent starts unblocked");
+    await MonitorAgent.init();
+    const { id } = await createMonitorWatching(
+      ["https://example.com/"],
+      "Check for a change."
+    );
+
+    disposeSpy.resetHistory();
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.ai.control.smartWindow", "blocked"]],
+    });
+    await TestUtils.waitForCondition(
+      () => disposeSpy.called,
+      "Blocking disposes the running monitors"
+    );
+    Assert.ok(
+      disposeSpy.calledWith(MONITOR_ERROR_CODES.CANCELED),
+      "Monitors are canceled when blocked"
+    );
+    Assert.ok(
+      await findMonitor(id),
+      "Blocking keeps the monitor so it can resume later"
+    );
+
+    scheduleSpy.resetHistory();
+    await SpecialPowers.popPrefEnv();
+    await TestUtils.waitForCondition(
+      () => scheduleSpy.called,
+      "Unblocking reschedules the monitors"
+    );
+  } finally {
+    disposeSpy.restore();
+    scheduleSpy.restore();
+    await SpecialPowers.popPrefEnv();
+    await resetMonitorAgentForTesting();
+  }
+});
+
+add_task(
+  async function test_blocking_during_init_load_keeps_monitors_stopped() {
+    await resetMonitorAgentForTesting();
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.ai.control.smartWindow", "default"]],
+    });
+    await storeBackdatedMonitor({
+      id: "blocked-during-load",
+      activeSinceDays: 1,
+    });
+
+    const originalListMonitors = MonitorStore.listMonitors;
+    const listStub = sinon
+      .stub(MonitorStore, "listMonitors")
+      .callsFake(async (...args) => {
+        const monitors = await originalListMonitors.apply(MonitorStore, args);
+        Services.prefs.setStringPref(
+          "browser.ai.control.smartWindow",
+          "blocked"
+        );
+        return monitors;
+      });
+    const scheduleSpy = sinon.spy(Monitor.prototype, "scheduleNextRun");
+
+    try {
+      await MonitorAgent.init();
+      Assert.ok(MonitorAgent.isBlocked, "Smart Window was blocked during load");
+      Assert.ok(
+        scheduleSpy.notCalled,
+        "No monitor is scheduled when blocked during load"
+      );
+    } finally {
+      listStub.restore();
+      scheduleSpy.restore();
+      await SpecialPowers.popPrefEnv();
+      await resetMonitorAgentForTesting();
+    }
+  }
+);

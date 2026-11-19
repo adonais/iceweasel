@@ -60,7 +60,6 @@ namespace {
 PeerConnectionFactoryDependencies CreatePeerConnectionFactoryDependencies() {
   PeerConnectionFactoryDependencies deps;
   deps.network_thread = Thread::Current();
-  deps.worker_thread = Thread::Current();
   deps.signaling_thread = Thread::Current();
   EnableFakeMedia(deps);
   deps.sctp_factory = std::make_unique<FakeSctpTransportFactory>();

@@ -7,15 +7,18 @@ package org.mozilla.fenix.settings
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import android.view.ViewGroup.MarginLayoutParams
 import android.widget.RadioButton
 import android.widget.TextView
 import androidx.core.content.edit
 import androidx.core.content.res.TypedArrayUtils.getAttr
 import androidx.core.content.withStyledAttributes
 import androidx.core.text.HtmlCompat
+import androidx.core.view.updateLayoutParams
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import androidx.preference.R as preferenceR
+import mozilla.components.support.ktx.android.content.pixelSizeFor
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.view.GroupableRadioButton
@@ -35,9 +38,13 @@ constructor(
     private var shouldSummaryBeParsedAsHtmlContent: Boolean = true
     private var defaultValue: Boolean = false
     private var clickListener: (() -> Unit)? = null
+    private var radioMarginStart: Int? = null
 
     val isChecked: Boolean
         get() = radioButton?.isChecked == true
+
+    protected open val defaultRadioMarginStart: Int
+        get() = context.pixelSizeFor(R.dimen.radio_button_preference_horizontal)
 
     init {
         layoutResource = R.layout.preference_widget_radiobutton
@@ -60,6 +67,10 @@ constructor(
                         getBoolean(R.styleable.RadioButtonPreference_android_defaultValue, false)
                     else -> false
                 }
+
+            if (hasValue(R.styleable.RadioButtonPreference_radioMarginStart)) {
+                radioMarginStart = getDimensionPixelSize(R.styleable.RadioButtonPreference_radioMarginStart, 0)
+            }
         }
     }
 
@@ -126,6 +137,9 @@ constructor(
 
     private fun bindRadioButton(holder: PreferenceViewHolder) {
         radioButton = holder.findViewById(R.id.radio_button) as RadioButton
+        radioButton?.updateLayoutParams<MarginLayoutParams> {
+            marginStart = radioMarginStart ?: defaultRadioMarginStart
+        }
         radioButton?.isChecked = context.components.settings.preferences.getBoolean(key, defaultValue)
         radioButton?.setStartCheckedIndicator()
     }

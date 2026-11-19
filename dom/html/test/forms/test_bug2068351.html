@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test for Bug 2068351</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2068351">Mozilla Bug 2068351</a>
+<div id="content"></div>
+<script>
+/**
+ * Setting an attribute on a form control whose form owner has been set by the
+ * parser, but which is not registered with that form yet, must not add the
+ * control to the form's control list.
+ */
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestLongerTimeout(2);
+
+const doc = `<!DOCTYPE html>
+<html><body>
+<script>
+var stash = [];
+var hits = [];
+customElements.define("x-in", class extends HTMLInputElement {
+  constructor() {
+    super();
+    stash.push(this);
+    var t = performance.now();
+    while (performance.now() - t < 0.2) {}
+  }
+}, { extends: "input" });
+var mc = new MessageChannel();
+var done = false;
+mc.port1.onmessage = function() {
+  var el = stash.length ? stash[stash.length - 1] : null;
+  if (el && el.form && !el.parentNode && hits.indexOf(el) < 0) {
+    el.setAttribute("type", "checkbox");
+    hits.push(el);
+  }
+  if (!done) {
+    mc.port2.postMessage(0);
+  }
+};
+mc.port2.postMessage(0);
+window.addEventListener("load", () => { done = true; });
+<\/script>
+<form id="f"><input id="c1">` +
+  "<input is=x-in><!----><!----><!---->".repeat(10000) +
+  `</form></body></html>`;
+
+const iframe = document.createElement("iframe");
+iframe.src = URL.createObjectURL(new Blob([doc], { type: "text/html" }));
+iframe.onload = () => {
+  const win = iframe.contentWindow;
+  const form = win.document.getElementById("f");
+  const seen = new Set();
+  let duplicates = 0;
+  for (let i = 0; i < form.elements.length; i++) {
+    if (seen.has(form.elements[i])) {
+      duplicates++;
+    }
+    seen.add(form.elements[i]);
+  }
+  info(`Mutated ${win.hits.length} control(s) before they were appended`);
+  is(duplicates, 0, "No control is registered with the form twice");
+  is(form.elements.length, 10001, "Every control is registered exactly once");
+  SimpleTest.finish();
+};
+document.getElementById("content").appendChild(iframe);
+</script>
+</body>
+</html>

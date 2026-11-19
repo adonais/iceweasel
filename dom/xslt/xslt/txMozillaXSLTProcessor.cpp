@@ -80,9 +80,8 @@ nsresult txToDocHandlerFactory::createHandlerWith(
     }
 
     case eHTMLOutput: {
-      UniquePtr<txMozillaXMLOutput> handler =
-          std::make_unique<txMozillaXMLOutput>(mSourceDocument, aFormat,
-                                               mObserver);
+      auto handler = std::make_unique<txMozillaXMLOutput>(mSourceDocument,
+                                                          aFormat, mObserver);
 
       nsresult rv = handler->createResultDocument(
           u""_ns, kNameSpaceID_None, mSourceDocument, mDocumentIsData);
@@ -94,7 +93,7 @@ nsresult txToDocHandlerFactory::createHandlerWith(
     }
 
     case eTextOutput: {
-      UniquePtr<txMozillaTextOutput> handler =
+      auto handler =
           std::make_unique<txMozillaTextOutput>(mSourceDocument, mObserver);
 
       nsresult rv = handler->createResultDocument(mDocumentIsData);
@@ -123,9 +122,8 @@ nsresult txToDocHandlerFactory::createHandlerWith(
 
     case eXMLOutput:
     case eHTMLOutput: {
-      UniquePtr<txMozillaXMLOutput> handler =
-          std::make_unique<txMozillaXMLOutput>(mSourceDocument, aFormat,
-                                               mObserver);
+      auto handler = std::make_unique<txMozillaXMLOutput>(mSourceDocument,
+                                                          aFormat, mObserver);
 
       nsresult rv = handler->createResultDocument(aName, aNsID, mSourceDocument,
                                                   mDocumentIsData);
@@ -137,7 +135,7 @@ nsresult txToDocHandlerFactory::createHandlerWith(
     }
 
     case eTextOutput: {
-      UniquePtr<txMozillaTextOutput> handler =
+      auto handler =
           std::make_unique<txMozillaTextOutput>(mSourceDocument, mObserver);
 
       nsresult rv = handler->createResultDocument(mDocumentIsData);
@@ -452,8 +450,7 @@ txMozillaXSLTProcessor::AddXSLTParam(const nsString& aName,
     return error.StealNSResult();
   }
 
-  UniquePtr<OwningXSLTParameterValue> varValue =
-      MakeUnique<OwningXSLTParameterValue>();
+  auto varValue = std::make_unique<OwningXSLTParameterValue>();
   varValue->SetAsXPathResult() = xpathResult.forget();
 
   txExpandedName varName(nsId, name);
@@ -883,7 +880,7 @@ void txMozillaXSLTProcessor::SetParameter(const nsAString& aNamespaceURI,
     return;
   }
 
-  UniquePtr<txVariable> newVar = MakeUnique<txVariable>(std::move(value));
+  auto newVar = std::make_unique<txVariable>(std::move(value));
   mVariables.add(varName, newVar.release());
 }
 
@@ -1290,8 +1287,7 @@ void txMozillaXSLTProcessor::Shutdown() { txXSLTProcessor::shutdown(); }
 /* static */
 UniquePtr<txVariable::OwningXSLTParameterValue> txVariable::convertToOwning(
     const XSLTParameterValue& aValue, ErrorResult& aError) {
-  UniquePtr<OwningXSLTParameterValue> value =
-      MakeUnique<OwningXSLTParameterValue>();
+  auto value = std::make_unique<OwningXSLTParameterValue>();
   if (aValue.IsUnrestrictedDouble()) {
     value->SetAsUnrestrictedDouble() = aValue.GetAsUnrestrictedDouble();
   } else if (aValue.IsBoolean()) {

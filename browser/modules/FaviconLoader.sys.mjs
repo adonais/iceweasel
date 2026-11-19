@@ -48,7 +48,7 @@ const FAVICON_PARSING_TIMEOUT = 100;
 // Without an explicit idle timeout DeferredTask waits indefinitely for an idle
 // slot, letting a busy content process suppress favicon updates globally.
 const FAVICON_PARSING_MAX_IDLE_WAIT = 3000;
-const FAVICON_RICH_ICON_MIN_WIDTH = 96;
+const FAVICON_LARGE_ICON_MIN_WIDTH = 96;
 const PREFERRED_WIDTH = 16;
 
 const MAX_FAVICON_EXPIRATION = 7 * 24 * 60 * 60 * 1000;
@@ -475,7 +475,7 @@ function guessType(icon) {
 }
 
 /**
- * Selects the best rich icon and tab icon from a list of IconInfo objects.
+ * Selects the best large icon and tab icon from a list of IconInfo objects.
  *
  * @param {Array} iconInfos A list of IconInfo objects.
  * @param {integer} preferredWidth The preferred width for tab icons.
@@ -483,7 +483,7 @@ function guessType(icon) {
 function selectIcons(iconInfos, preferredWidth) {
   if (!iconInfos.length) {
     return {
-      richIcon: null,
+      largeIcon: null,
       tabIcon: null,
     };
   }
@@ -492,9 +492,9 @@ function selectIcons(iconInfos, preferredWidth) {
   let bestSizedIcon;
   // Other links with the "icon" tag are the default icons
   let defaultIcon;
-  // Rich icons are either apple-touch or fluid icons, or the ones of the
-  // dimension 96x96 or greater
-  let largestRichIcon;
+  // Large icons are either rich icons (apple-touch or fluid icons), or the ones
+  // with a declared width of at least FAVICON_LARGE_ICON_MIN_WIDTH.
+  let bestLargeIcon;
 
   for (let icon of iconInfos) {
     if (!icon.isRichIcon) {
@@ -527,9 +527,9 @@ function selectIcons(iconInfos, preferredWidth) {
 
     // Note that some sites use hi-res icons without specifying them as
     // apple-touch or fluid icons.
-    if (icon.isRichIcon || icon.width >= FAVICON_RICH_ICON_MIN_WIDTH) {
-      if (!largestRichIcon || largestRichIcon.width < icon.width) {
-        largestRichIcon = icon;
+    if (icon.isRichIcon || icon.width >= FAVICON_LARGE_ICON_MIN_WIDTH) {
+      if (!bestLargeIcon || bestLargeIcon.width < icon.width) {
+        bestLargeIcon = icon;
       }
     } else {
       defaultIcon = icon;
@@ -537,10 +537,10 @@ function selectIcons(iconInfos, preferredWidth) {
   }
 
   // Now set the favicons for the page in the following order:
-  // 1. Set the best rich icon if any.
+  // 1. Set the best large icon if any.
   // 2. Set the preferred one if any, otherwise check if there's a better
   //    sized fit.
-  // This order allows smaller icon frames to eventually override rich icon
+  // This order allows smaller icon frames to eventually override large icon
   // frames.
 
   let tabIcon = null;
@@ -553,7 +553,7 @@ function selectIcons(iconInfos, preferredWidth) {
   }
 
   return {
-    richIcon: largestRichIcon,
+    largeIcon: bestLargeIcon,
     tabIcon,
   };
 }
@@ -592,6 +592,7 @@ class IconLoader {
           iconInfo.beforePageShow && iconInfo.iconUri.schemeIs("data"),
         beforePageShow: iconInfo.beforePageShow,
         isRichIcon: iconInfo.isRichIcon,
+        isTabIcon: iconInfo.isTabIcon,
       });
       return;
     }
@@ -600,6 +601,7 @@ class IconLoader {
     this.actor.sendAsyncMessage("Link:LoadingIcon", {
       originalURL: iconInfo.iconUri.spec,
       isRichIcon: iconInfo.isRichIcon,
+      isTabIcon: iconInfo.isTabIcon,
     });
 
     try {
@@ -615,6 +617,7 @@ class IconLoader {
         canStoreIcon,
         beforePageShow: iconInfo.beforePageShow,
         isRichIcon: iconInfo.isRichIcon,
+        isTabIcon: iconInfo.isTabIcon,
       });
     } catch (e) {
       if (e.result != Cr.NS_BINDING_ABORTED) {
@@ -626,6 +629,7 @@ class IconLoader {
         this.actor.sendAsyncMessage("Link:SetFailedIcon", {
           originalURL: iconInfo.iconUri.spec,
           isRichIcon: iconInfo.isRichIcon,
+          isTabIcon: iconInfo.isTabIcon,
         });
       }
     } finally {
@@ -654,9 +658,9 @@ export class FaviconLoader {
     // randomly generated. This boolean can be used to track that case.
     this.beforePageShow = true;
 
-    // For every page we attempt to find a rich icon and a tab icon. These
+    // For every page we attempt to find a large icon and a tab icon. These
     // objects take care of the load process for each.
-    this.richIconLoader = new IconLoader(actor);
+    this.largeIconLoader = new IconLoader(actor);
     this.tabIconLoader = new IconLoader(actor);
 
     this.iconTask = new lazy.DeferredTask(
@@ -677,22 +681,24 @@ export class FaviconLoader {
 
     let preferredWidth =
       PREFERRED_WIDTH * Math.ceil(this.actor.contentWindow.devicePixelRatio);
-    let { richIcon, tabIcon } = selectIcons(this.iconInfos, preferredWidth);
+    let { largeIcon, tabIcon } = selectIcons(this.iconInfos, preferredWidth);
     this.iconInfos = [];
 
     let isForceReload =
       this.beforePageShow && (this.actor.docShell?.isForceReloading ?? false);
-    if (isForceReload && (richIcon || tabIcon)) {
+    if (isForceReload && (largeIcon || tabIcon)) {
       this.actor.sendAsyncMessage("Link:ExpireFavicons");
     }
 
-    if (richIcon) {
-      richIcon.isForceReload = isForceReload;
-      this.richIconLoader.load(richIcon).catch(console.error);
+    if (largeIcon) {
+      largeIcon.isForceReload = isForceReload;
+      largeIcon.isTabIcon = false;
+      this.largeIconLoader.load(largeIcon).catch(console.error);
     }
 
     if (tabIcon) {
       tabIcon.isForceReload = isForceReload;
+      tabIcon.isTabIcon = true;
       this.tabIconLoader.load(tabIcon).catch(console.error);
     }
   }
@@ -732,7 +738,7 @@ export class FaviconLoader {
   }
 
   onPageHide() {
-    this.richIconLoader.cancel();
+    this.largeIconLoader.cancel();
     this.tabIconLoader.cancel();
 
     this.iconTask.disarm();

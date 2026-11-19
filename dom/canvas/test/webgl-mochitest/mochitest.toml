@@ -50,6 +50,9 @@ fail-if = [
 ["ensure-exts/test_EXT_texture_filter_anisotropic.html"]
 
 ["ensure-exts/test_EXT_texture_norm16.html"]
+fail-if = [
+  "os == 'android'",
+]
 
 ["ensure-exts/test_OES_draw_buffers_indexed.html"]
 

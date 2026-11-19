@@ -18,6 +18,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
+#include "nsXULAppAPI.h"
 #include "prsystem.h"
 
 #if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
@@ -115,6 +116,12 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData() {
 MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
     AVDictionary** aOptions) {
   FFMPEG_LOG("Initialising FFmpeg decoder");
+
+  if (XRE_IsGPUProcess()) {
+    FFMPEG_LOG("  cannot use software decoder in GPU process");
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("SW decoder not allowed in GPU process"));
+  }
 
 #if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
   if (mCDM) {

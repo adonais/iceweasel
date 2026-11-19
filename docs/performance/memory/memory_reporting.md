@@ -101,7 +101,7 @@ public:
     // |gMyString.SizeOfExcludingThis(MallocSizeOf)| instead.
     return MOZ_COLLECT_REPORT(
       "explicit/mystring", KIND_HEAP, UNITS_BYTES,
-      gMyString-&gt;SizeOfIncludingThis(MallocSizeOf),
+      gMyString->SizeOfIncludingThis(MallocSizeOf),
       "Memory used for MyString.");
   }
 };

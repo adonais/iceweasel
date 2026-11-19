@@ -10,14 +10,10 @@ ChromeUtils.defineESModuleGetters(globalThis, {
 
 const NEVER_REMEMBER_HISTORY_PREF = "browser.privatebrowsing.autostart";
 
-// Different strings used for Nova UI.
-let isNovaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
-let NEVER_REMEMBER_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-dont-remember-history-empty-header-3"
-  : "firefoxview-dont-remember-history-empty-header-2";
-let NEVER_REMEMBER_DESCRIPTION_L10N_ID = isNovaEnabled
-  ? "firefoxview-dont-remember-history-empty-description-2"
-  : "firefoxview-dont-remember-history-empty-description-one";
+const NEVER_REMEMBER_HEADER_L10N_ID =
+  "firefoxview-dont-remember-history-empty-header-3";
+const NEVER_REMEMBER_DESCRIPTION_L10N_ID =
+  "firefoxview-dont-remember-history-empty-description-2";
 
 const RECENTLY_CLOSED_EVENT = [
   ["firefoxview_next", "recently_closed", "tabs", undefined],

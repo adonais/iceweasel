@@ -431,7 +431,7 @@ class WebRenderAPI final {
    public:
     static WrTransactionEvent Transaction(WebRenderAPI* aApi,
                                           TransactionBuilder& aTxn) {
-      auto transaction = MakeUnique<TransactionBuilder>(
+      auto transaction = std::make_unique<TransactionBuilder>(
           aApi, aTxn.Take(), aTxn.UseSceneBuilderThread(), /* aOwnsData */ true,
           aTxn.mRemoteTextureTxnScheduler, aTxn.mRemoteTextureTxnId);
       return WrTransactionEvent(Tag::Transaction, std::move(transaction));
@@ -447,7 +447,7 @@ class WebRenderAPI final {
         UniquePtr<layers::AsyncImagePipelineOps>&&
             aPendingAsyncImagePipelineOps,
         WebRenderAPI* aApi, const TransactionBuilder& aTxn) {
-      auto transaction = MakeUnique<TransactionBuilder>(
+      auto transaction = std::make_unique<TransactionBuilder>(
           aApi, aTxn.Raw(), aTxn.UseSceneBuilderThread(), /* aOwnsData */ false,
           aTxn.mRemoteTextureTxnScheduler, aTxn.mRemoteTextureTxnId);
       return WrTransactionEvent(Tag::PendingAsyncImagePipelineOps,
@@ -548,6 +548,27 @@ class MOZ_RAII AutoTransactionSender {
 };
 
 /**
+ * The parameters of a reference frame. By default an identity, flat,
+ * non-animated transform reference frame.
+ */
+struct MOZ_STACK_CLASS ReferenceFrameParams : public WrReferenceFrameParams {
+  ReferenceFrameParams()
+      : WrReferenceFrameParams{wr::ToLayoutTransform(gfx::Matrix4x4()),
+                               /* animation_id = */ 0,
+                               wr::TransformStyle::Flat,
+                               wr::WrReferenceFrameKind::Transform,
+                               /* is_2d_scale_translation = */ false,
+                               /* should_snap = */ false,
+                               /* paired_with_perspective = */ false,
+                               /* scrolling_relative_to = */ nullptr} {}
+
+  void SetPreserve3D(bool aPreserve) {
+    transform_style =
+        aPreserve ? wr::TransformStyle::Preserve3D : wr::TransformStyle::Flat;
+  }
+};
+
+/**
  * A set of optional parameters for stacking context creation.
  */
 struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
@@ -557,13 +578,7 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
             nullptr,
             nullptr,
             nullptr,
-            nullptr,
             wr::TransformStyle::Flat,
-            wr::WrReferenceFrameKind::Transform,
-            false,
-            false,
-            false,
-            nullptr,
             /* prim_flags = */ wr::PrimitiveFlags::IS_BACKFACE_VISIBLE,
             wr::MixBlendMode::Normal,
             wr::StackingContextFlags{0}} {}
@@ -579,7 +594,6 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   nsTArray<wr::WrFilterData> mFilterDatas;
   wr::LayoutRect mBounds = wr::ToLayoutRect(LayoutDeviceRect());
   const gfx::Matrix4x4* mBoundTransform = nullptr;
-  const wr::WrTransformInfo* mTransformPtr = nullptr;
   nsDisplayTransform* mDeferredTransformItem = nullptr;
   // Whether the stacking context is possibly animated. This alters how
   // coordinates are transformed/snapped to invalidate less when transforms
@@ -618,10 +632,18 @@ class DisplayListBuilder final {
   void End(wr::BuiltDisplayList& aOutDisplayList);
   void End(layers::DisplayListData& aOutTransaction);
 
-  Maybe<wr::WrSpatialId> PushStackingContext(
-      const StackingContextParams& aParams, const wr::LayoutRect& aBounds,
-      const wr::RasterSpace& aRasterSpace);
-  void PopStackingContext(bool aIsReferenceFrame);
+  // Reference frames are children of the current space. aOrigin is their
+  // offset in it.
+  wr::WrSpatialId DefineReferenceFrame(const wr::LayoutPoint& aOrigin,
+                                       const ReferenceFrameParams& aParams);
+  wr::WrSpatialId DefineComputedFrame(const wr::LayoutPoint& aOrigin,
+                                      const wr::WrComputedTransformData& aData);
+
+  // The stacking context is in aSpatialId if given, else in the current space.
+  void PushStackingContext(const StackingContextParams& aParams,
+                           const wr::RasterSpace& aRasterSpace,
+                           const Maybe<wr::WrSpatialId>& aSpatialId);
+  void PopStackingContext();
 
   wr::WrClipChainId DefineClipChain(Span<const wr::WrClipId> aClips,
                                     const Maybe<wr::WrClipChainId>& aParent);
@@ -635,9 +657,22 @@ class DisplayListBuilder final {
   wr::WrClipId DefineRoundedRectClip(Maybe<wr::WrSpatialId> aSpace,
                                      const wr::ComplexClipRegion& aComplex,
                                      bool aAntiAliased = false);
+  wr::WrClipId DefineBorderClip(
+      const wr::LayoutRect& aRect, const wr::LayoutSideOffsets& aWidths,
+      const mozilla::Range<const wr::BorderSide>& aSides,
+      const wr::BorderRadius& aRadius, const wr::LayoutSideOffsets& aInset);
   wr::WrClipId DefineRectClip(Maybe<wr::WrSpatialId> aSpace,
                               wr::LayoutRect aClipRect,
                               bool aAntiAliased = false);
+  // Clips to the inside of a path in the current space. See PathCommand for
+  // the number of points each command consumes. The points are relative to
+  // aRect's origin, aAabb contains all of them, and aRect also clips the
+  // path's content.
+  wr::WrClipId DefinePathClip(Span<const wr::PathCommand> aCommands,
+                              Span<const wr::LayoutPoint> aPoints,
+                              const wr::LayoutRect& aAabb,
+                              const wr::LayoutRect& aRect,
+                              wr::FillRule aFillRule);
 
   wr::WrSpatialId DefineStickyFrame(const ActiveScrolledRoot* aStickyAsr,
                                     Maybe<wr::WrSpatialId> aParentSpatialId,

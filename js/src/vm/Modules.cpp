@@ -38,11 +38,14 @@
 #include "vm/List.h"               // ListObject
 #include "vm/Runtime.h"            // JSRuntime
 #include "wasm/WasmCompile.h"
+#include "wasm/WasmFeatures.h"
+#include "wasm/WasmJS.h"
 
 #include "builtin/HandlerFunction-inl.h"  // js::ExtraValueFromHandler, js::NewHandler{,WithExtraValue}, js::TargetFromHandler
 #include "vm/JSAtomUtils-inl.h"           // AtomToId
 #include "vm/JSContext-inl.h"             // JSContext::{c,releaseC}heck
 #include "vm/JSObject-inl.h"
+#include "vm/List-inl.h"
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
@@ -175,19 +178,6 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
              JS::ModuleType::Unknown);
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
-
-  // TODO: Until we support evaluation phase imports of wasm modules, we need to
-  // guard against first importing a wasm module as source, and then
-  // subsequently as evaluation phase. The module will be retrieved from the
-  // module map, and then we'll attempt to link it, which isn't currently
-  // supported. See Bug 2030454.
-  if (moduleRequest->as<ModuleRequestObject>().phase() ==
-          ImportPhase::Evaluation &&
-      module->moduleSource()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED);
-    return FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
-  }
 
   // |loadedModules| is only required to be stored on modules.
   Rooted<ModuleObject*> referrerModule(cx, ReferrerModuleOrNull(referrer));
@@ -387,23 +377,16 @@ JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
 JS_PUBLIC_API JSObject* JS::CompileWasmModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
-  // TODO: Compilation of wasm modules will be added in
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=2030454.
-  // For now, we fail unconditionally.
-  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                           JSMSG_WASM_COMPILE_ERROR,
-                           "Compilation of wasm modules not implemented.");
-
-  return nullptr;
-}
-
-// https://webassembly.github.io/esm-integration/js-api/index.html#esm-integration
-JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
+
+  if (!wasm::HasSupport(cx)) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_COMPILE_ERROR,
+                             "WebAssembly is not supported");
+    return nullptr;
+  }
 
   SharedWasmCompileArgs compileArgs = BuildCompileArgsForESM(cx, options);
   if (!compileArgs) {
@@ -419,10 +402,38 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
     return nullptr;
   }
 
-  return CreateWasmSourcePhaseModule(cx, wasmModuleObject);
+  return CreateWasmModule(cx, wasmModuleObject);
 }
 
-JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
+static bool GetWasmExportNameAtoms(
+    JSContext* cx, Handle<JSObject*> wasmModuleObject,
+    MutableHandle<ExportNameVector> exportNames) {
+  MOZ_ASSERT(exportNames.empty());
+
+  JS::RootedVector<JSString*> exportNameStrings(cx);
+  if (!wasm::GetModuleExportNames(cx, wasmModuleObject, &exportNameStrings)) {
+    return false;
+  }
+
+  if (!exportNames.reserve(exportNameStrings.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  Rooted<JSAtom*> exportName(cx);
+  for (JSString* exportNameString : exportNameStrings) {
+    exportName = AtomizeString(cx, exportNameString);
+    if (!exportName) {
+      return false;
+    }
+
+    exportNames.infallibleAppend(exportName);
+  }
+
+  return true;
+}
+
+JS_PUBLIC_API JSObject* JS::CreateWasmModule(
     JSContext* cx, Handle<JSObject*> wasmModuleObject) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
   AssertHeapIsIdle();
@@ -442,9 +453,84 @@ JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
   }
   moduleObject->initScriptSourceObject(sso);
 
-  if (!ModuleObject::createWasmEnvironment(cx, moduleObject)) {
+  // https://webassembly.github.io/esm-integration/js-api/index.html#module-declaration-environment-setup
+  // Step 1. Let record be this WebAssembly Module Record.
+  // Step 2. Let env be NewModuleEnvironment(null).
+  // Step 3. Set record.[[Environment]] to env.
+  // Step 4. For each name in the export name list of record,
+  // Step 4.1. Perform ! env.CreateImmutableBinding(name, true).
+  //
+  // The specification does this in InitializeEnvironment, but we create the
+  // environment here, as we already do for JavaScript and synthetic modules.
+  // Module namespace bindings are resolved eagerly while linking, which
+  // requires the environment of an imported module to exist, and in a cycle
+  // linking can reach an importer before InitializeEnvironment has run for
+  // this record.
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!GetWasmExportNameAtoms(cx, wasmModuleObject, &exportNames)) {
     return nullptr;
   }
+
+  if (!ModuleObject::createWasmEnvironment(cx, moduleObject, exportNames)) {
+    return nullptr;
+  }
+
+  JS::RootedVector<std::pair<JSString*, JSString*>> wasmImports(cx);
+  if (!wasm::GetModuleImports(cx, wasmModuleObject, &wasmImports)) {
+    return nullptr;
+  }
+
+  Rooted<RequestedModuleVector> requestedModuleRecords(cx);
+  Rooted<ImportEntryVector> importEntries(cx);
+  if (!requestedModuleRecords.reserve(wasmImports.length()) ||
+      !importEntries.reserve(wasmImports.length())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  Rooted<JSAtom*> specifier(cx);
+  Rooted<JSAtom*> importName(cx);
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  for (const auto& wasmImport : wasmImports.get()) {
+    specifier = &wasmImport.first->asAtom();
+    moduleRequest = nullptr;
+    for (const RequestedModule& request : requestedModuleRecords.get()) {
+      if (request.moduleRequest()->specifier() == specifier) {
+        moduleRequest = request.moduleRequest();
+        break;
+      }
+    }
+
+    if (!moduleRequest) {
+      moduleRequest = ModuleRequestObject::create(
+          cx, specifier, JS::ModuleType::JavaScriptOrWasm,
+          ImportPhase::Evaluation);
+      if (!moduleRequest) {
+        return nullptr;
+      }
+
+      requestedModuleRecords.infallibleEmplaceBack(
+          moduleRequest, RequestedModule::WasmDefaultLineNumber,
+          JS::ColumnNumberOneOrigin());
+    }
+
+    importName = &wasmImport.second->asAtom();
+    importEntries.infallibleEmplaceBack(
+        moduleRequest, importName, importName, ImportNameValueType::String,
+        RequestedModule::WasmDefaultLineNumber, JS::ColumnNumberOneOrigin());
+  }
+
+  Rooted<ListObject*> asyncParentModulesList(cx, ListObject::create(cx));
+  if (!asyncParentModulesList) {
+    return nullptr;
+  }
+
+  moduleObject->initAsyncSlots(cx, /* hasTopLevelAwait = */ false,
+                               asyncParentModulesList);
+
+  Rooted<ExportEntryVector> exportEntries(cx);
+  moduleObject->initImportExportData(&requestedModuleRecords, &importEntries,
+                                     &exportEntries, 0, 0, 0);
 
   if (!ModuleObject::Freeze(cx, moduleObject)) {
     return nullptr;
@@ -568,8 +654,8 @@ JS_PUBLIC_API JSScript* JS::GetModuleScript(JS::HandleObject moduleRecord) {
 
   auto& module = moduleRecord->as<ModuleObject>();
 
-  // Synthetic modules and source phase modules do not have a script.
-  if (module.hasSyntheticModuleFields() || module.isSourcePhaseModule()) {
+  // Synthetic modules and wasm modules do not have a script.
+  if (module.hasSyntheticModuleFields() || module.isWasmModule()) {
     return nullptr;
   }
 
@@ -643,11 +729,8 @@ JS_PUBLIC_API JS::ModuleType JS::GetModuleRequestType(
   return moduleRequestArg->as<ModuleRequestObject>().moduleType();
 }
 
-JS_PUBLIC_API bool JS::ModuleRequestIsSourcePhase(
-    JSContext* cx, Handle<JSObject*> moduleRequestArg) {
+JS_PUBLIC_API bool JS::ModuleRequestIsSourcePhase(JSObject* moduleRequestArg) {
   AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(moduleRequestArg);
 
   return moduleRequestArg->as<ModuleRequestObject>().phase() ==
          ImportPhase::Source;
@@ -710,6 +793,12 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
                                          Handle<JSAtom*> exportName,
                                          MutableHandle<Value> result,
                                          ModuleErrorInfo* errorInfoOut);
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                                    Handle<JSAtom*> exportName,
+                                    MutableHandle<Value> result,
+                                    ModuleErrorInfo* errorInfoOut);
+#endif
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<UniquePtr<ExportNameVector>> exports,
@@ -811,6 +900,17 @@ static bool SyntheticModuleGetExportedNames(
   return true;
 }
 
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleGetExportedNames(
+    JSContext* cx, Handle<ModuleObject*> module,
+    MutableHandle<ExportNameVector> exportedNames) {
+  MOZ_ASSERT(exportedNames.empty());
+
+  Rooted<JSObject*> wasmModuleObject(cx, module->moduleSource());
+  return GetWasmExportNameAtoms(cx, wasmModuleObject, exportedNames);
+}
+#endif
+
 // https://tc39.es/ecma262/#sec-GetImportedModule
 ModuleObject* js::GetImportedModule(
     JSContext* cx, Handle<ModuleObject*> referrer,
@@ -863,6 +963,12 @@ static bool ModuleGetExportedNames(
   if (module->hasSyntheticModuleFields()) {
     return SyntheticModuleGetExportedNames(cx, module, exportedNames);
   }
+
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    return WasmModuleGetExportedNames(cx, module, exportedNames);
+  }
+#endif
 
   // Step 2. If exportStarSet contains module, then:
   if (exportStarSet.has(module)) {
@@ -1001,6 +1107,13 @@ static bool ModuleResolveExportWithResolveSet(
                                         errorInfoOut);
   }
 
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    return WasmModuleResolveExport(cx, module, exportName, result,
+                                   errorInfoOut);
+  }
+#endif
+
   // https://tc39.es/ecma262/#sec-resolveexport
   // Step 1. Assert: module.[[Status]] is not new.
   MOZ_ASSERT(module->status() != ModuleStatus::New);
@@ -1010,10 +1123,10 @@ static bool ModuleResolveExportWithResolveSet(
 
 // https://tc39.es/ecma262/#table-abstract-methods-of-module-records
 // Abstract Method 'ResolveExport(exportName)'
-static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
-                                Handle<JSAtom*> exportName,
-                                MutableHandle<Value> result,
-                                ModuleErrorInfo* errorInfoOut = nullptr) {
+bool js::ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                             Handle<JSAtom*> exportName,
+                             MutableHandle<Value> result,
+                             ModuleErrorInfo* errorInfoOut) {
   // https://tc39.es/ecma262/#sec-resolveexport
   // Step 2. If resolveSet is not present, set resolveSet to a new empty List.
   Rooted<ResolveSet> resolveSet(cx);
@@ -1292,6 +1405,28 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
   return CreateResolvedBindingObject(cx, module, exportName, result);
 }
 
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                                    Handle<JSAtom*> exportName,
+                                    MutableHandle<Value> result,
+                                    ModuleErrorInfo* errorInfoOut) {
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!WasmModuleGetExportedNames(cx, module, &exportNames)) {
+    return false;
+  }
+
+  if (!ContainsElement(exportNames.get(), exportName)) {
+    result.setNull();
+    if (errorInfoOut) {
+      errorInfoOut->setImportedModule(module);
+    }
+    return true;
+  }
+
+  return CreateResolvedBindingObject(cx, module, exportName, result);
+}
+#endif
+
 // https://tc39.es/ecma262/#sec-getmodulenamespace
 // https://tc39.es/proposal-defer-import-eval/#sec-getmodulenamespace
 ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
@@ -1359,7 +1494,7 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
   return ns;
 }
 
-static bool IsResolvedBinding(JSContext* cx, Handle<Value> resolution) {
+bool js::IsResolvedBinding(JSContext* cx, Handle<Value> resolution) {
   MOZ_ASSERT(resolution.isObjectOrNull() ||
              resolution.toString() == cx->names().ambiguous);
   return resolution.isObject();
@@ -1740,6 +1875,42 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
   // Step 24.a.iii.2. Perform ! env.InitializeBinding(dn, fo).
   return ModuleObject::instantiateFunctionDeclarations(cx, module);
 }
+
+#ifdef NIGHTLY_BUILD
+// https://webassembly.github.io/esm-integration/js-api/index.html#module-declaration-environment-setup
+static bool WasmModuleInitializeEnvironment(JSContext* cx,
+                                            Handle<ModuleObject*> module) {
+  MOZ_ASSERT(module->status() == ModuleStatus::Linking);
+
+  // The environment was created already by CreateWasmModule.
+  // Here we just validate that the imports resolve correctly.
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  Rooted<ModuleObject*> importedModule(cx);
+  Rooted<JSAtom*> importName(cx);
+  Rooted<Value> resolution(cx);
+  for (const ImportEntry& in : module->importEntries()) {
+    moduleRequest = in.moduleRequest();
+    importedModule = GetImportedModule(cx, module, moduleRequest);
+    if (!importedModule) {
+      return false;
+    }
+
+    importName = in.importName();
+    ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
+    if (!ModuleResolveExport(cx, importedModule, importName, &resolution,
+                             &errorInfo)) {
+      return false;
+    }
+
+    if (!IsResolvedBinding(cx, resolution)) {
+      ThrowResolutionError(cx, module, resolution, importName, &errorInfo);
+      return false;
+    }
+  }
+
+  return true;
+}
+#endif
 
 // Reject the load with the pending exception instead of unwinding out of it.
 // ContinueModuleLoading sets state.[[IsLoading]] to false and calls the state
@@ -2160,9 +2331,21 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   // Step 10. Perform ? module.InitializeEnvironment().
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    if (!WasmModuleInitializeEnvironment(cx, module)) {
+      return false;
+    }
+  } else {
+    if (!ModuleInitializeEnvironment(cx, module)) {
+      return false;
+    }
+  }
+#else
   if (!ModuleInitializeEnvironment(cx, module)) {
     return false;
   }
+#endif
 
   // Step 11. Assert: module occurs exactly once in stack.
   MOZ_ASSERT(CountElements(stack, module) == 1);

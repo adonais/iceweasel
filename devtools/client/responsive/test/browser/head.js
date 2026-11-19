@@ -274,6 +274,24 @@ var setViewportSize = async function (ui, manager, width, height) {
     const resized = waitForViewportResizeTo(ui, width, height);
     ui.setViewportSize({ width, height });
     await resized;
+    // content-resize is emitted before the content has the new size.
+    await waitFor(async () => {
+      const hasNewSize = await SpecialPowers.spawn(
+        ui.getViewportBrowser(),
+        [width, height],
+        async (w, h) => {
+          const viewerWidth = {};
+          const viewerHeight = {};
+          content.windowUtils.getDocumentViewerSize(viewerWidth, viewerHeight);
+          const ratio = content.devicePixelRatio;
+          return (
+            viewerWidth.value == Math.round(w * ratio) &&
+            viewerHeight.value == Math.round(h * ratio)
+          );
+        }
+      );
+      return hasNewSize;
+    });
   }
 };
 

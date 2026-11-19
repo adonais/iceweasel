@@ -1203,9 +1203,7 @@ class ThreadActor extends Actor {
    */
   async _handleResumeLimit({ resumeLimit, frameActorID }) {
     const steppingType = resumeLimit.type;
-    if (
-      !["break", "step", "next", "finish", "restart"].includes(steppingType)
-    ) {
+    if (!["step", "next", "finish", "restart"].includes(steppingType)) {
       return Promise.reject({
         error: "badParameterType",
         message: "Unknown resumeLimit type",
@@ -1262,7 +1260,6 @@ class ThreadActor extends Actor {
     if (stepFrame) {
       switch (steppingType) {
         case "step":
-        case "break":
         case "next":
           if (stepFrame.script) {
             if (!this.sourcesManager.isFrameBlackBoxed(stepFrame)) {
@@ -1334,7 +1331,7 @@ class ThreadActor extends Actor {
         this._clearSteppingHooks();
       }
 
-      this.doResume({ resumeLimit });
+      this.doResume();
       return {};
     } catch (error) {
       return error instanceof Error
@@ -2226,8 +2223,8 @@ class ThreadActor extends Actor {
 
       // Find the offsets in the HTML at which inline scripts might start.
       const scriptTagMatches = content.matchAll(/<script[^>]*>/gi);
-      const scriptStartOffsets = [...scriptTagMatches].map(
-        rv => rv.index + rv[0].length
+      const scriptStartOffsets = Array.from(
+        scriptTagMatches.map(rv => rv.index + rv[0].length)
       );
 
       // Find the script tags in this HTML page by parsing a new document from

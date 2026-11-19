@@ -24,10 +24,7 @@ rtc_library("numerics") {
 }
 
 if (rtc_include_tests) {
-  rtc_library("numerics_unittests") {
-    visibility = [ "*" ]
-    testonly = true
-
+  rtc_cc_test("numerics_unittests") {
     sources = [ "samples_stats_counter_unittest.cc" ]
 
     deps = [

@@ -18,7 +18,7 @@ class MockVideoDataDecoder : public DummyMediaDataDecoder {
  public:
   explicit MockVideoDataDecoder(const CreateDecoderParams& aParams)
       : DummyMediaDataDecoder(
-            MakeUnique<BlankVideoDataCreator>(
+            std::make_unique<BlankVideoDataCreator>(
                 aParams.VideoConfig().mDisplay.width,
                 aParams.VideoConfig().mDisplay.height, aParams.mImageContainer),
             "MockVideoDataDecoder"_ns, aParams) {

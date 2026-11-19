@@ -110,9 +110,8 @@ class InsecureLoginFormAutocompleteItem extends AutocompleteItem {
   constructor() {
     super("insecureWarning");
 
-    this.label = getLocalizedString(
-      "insecureFieldWarningDescription2",
-      getLocalizedString("insecureFieldWarningLearnMore")
+    this.label = lazy.l10n.formatValueSync(
+      "autocomplete-insecure-login-warning"
     );
     this.comment = JSON.stringify({
       fillMessageName: "PasswordManager:OpenInsecureFieldWarningLearnMore",

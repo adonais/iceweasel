@@ -26,13 +26,6 @@ nsDeviceContextSpecAndroid::~nsDeviceContextSpecAndroid() {
 }
 
 already_AddRefed<PrintTarget> nsDeviceContextSpecAndroid::MakePrintTarget() {
-  double width, height;
-  mPrintSettings->GetEffectiveSheetSize(&width, &height);
-
-  // convert twips to points
-  width /= TWIPS_PER_POINT_FLOAT;
-  height /= TWIPS_PER_POINT_FLOAT;
-
   auto stream = [&]() -> nsCOMPtr<nsIOutputStream> {
     if (mPrintSettings->GetOutputDestination() ==
         nsIPrintSettings::kOutputDestinationStream) {
@@ -53,7 +46,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecAndroid::MakePrintTarget() {
     return s;
   }();
 
-  return PrintTargetSkPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+  return PrintTargetSkPDF::CreateOrNull(stream);
 }
 
 NS_IMETHODIMP

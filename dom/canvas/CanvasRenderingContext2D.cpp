@@ -10,6 +10,7 @@
 #include "CanvasImageCache.h"
 #include "CanvasUtils.h"
 #include "GeckoBindings.h"
+#include "ImageData.h"
 #include "ImageEncoder.h"
 #include "ImageRegion.h"
 #include "LayerUserData.h"
@@ -76,7 +77,6 @@
 #include "mozilla/dom/VideoFrame.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/CanvasShutdownManager.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Filters.h"
 #include "mozilla/gfx/Helpers.h"
@@ -119,6 +119,7 @@
 #include "nsTArray.h"
 #include "nsWrapperCacheInlines.h"
 #include "nsXULElement.h"
+#include "qcms.h"
 
 #undef free  // apparently defined by some windows header, clashing with a
              // free() method in SkTypes.h
@@ -154,6 +155,34 @@ static PredefinedColorSpace GetColorSpaceFromImageDataSettings(
     const ImageDataSettings& aSettings, PredefinedColorSpace aColorSpace) {
   return aSettings.mColorSpace.WasPassed() ? aSettings.mColorSpace.Value()
                                            : aColorSpace;
+}
+// basically a wrapper over qcms_transform for now
+class ColorSpaceConverter {
+ public:
+  explicit ColorSpaceConverter(NotNull<qcms_transform*> aTransform)
+      : mTransform(aTransform) {}
+
+  void ConvertColorspace(uint8_t* src, uint8_t* dst, size_t len) const {
+    qcms_transform_data(mTransform, src, dst, len);
+  }
+
+ private:
+  NotNull<qcms_transform*> mTransform;
+};
+
+static Maybe<ColorSpaceConverter> GetColorSpaceConverter(
+    PredefinedColorSpace aSrc, PredefinedColorSpace aDst) {
+  qcms_transform* rawTransform = nullptr;
+
+  if (!StaticPrefs::gfx_canvas_colorspace_enabled() || aSrc == aDst) {
+    return Nothing();
+  }
+
+  rawTransform = aDst == PredefinedColorSpace::Display_p3
+                     ? gfxPlatform::GetCMSRGBP3Transform()
+                     : gfxPlatform::GetCMSP3RGBTransform();
+
+  return Some(ColorSpaceConverter(WrapNotNull(rawTransform)));
 }
 
 // Adds Save() / Restore() calls to the scope.
@@ -755,7 +784,7 @@ class AdjustedTarget {
           return;
         }
       }
-      mShadowTarget = MakeUnique<AdjustedTargetForShadow>(
+      mShadowTarget = std::make_unique<AdjustedTargetForShadow>(
           aCtx, aCtx->mTarget, boundsAfterFilter, mUsedOperation);
       mTarget = mShadowTarget->DT();
       offsetToFinalDT = mShadowTarget->OffsetToFinalDT();
@@ -785,7 +814,7 @@ class AdjustedTarget {
         mOptimizeFilter = true;
       }
 
-      mFilterTarget = MakeUnique<AdjustedTargetForFilter>(
+      mFilterTarget = std::make_unique<AdjustedTargetForFilter>(
           aCtx, mTarget, offsetToFinalDT, intBounds,
           gfx::RoundedToInt(boundsAfterFilter), mUsedOperation,
           mOptimizeFilter);
@@ -1047,13 +1076,16 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CanvasRenderingContext2D)
     ImplCycleCollectionUnlink(state.patternStyles[Style::FILL]);
     ImplCycleCollectionUnlink(state.gradientStyles[Style::STROKE]);
     ImplCycleCollectionUnlink(state.gradientStyles[Style::FILL]);
-    if (auto* autoSVGFiltersObserver = state.autoSVGFiltersObserver.get()) {
+    if (state.autoSVGFiltersObserver) {
       /*
-       * XXXjwatt: I don't think this is doing anything useful.  All we do under
-       * this function is clear a raw C-style (i.e. not strong) pointer.  That's
-       * clearly not helping in breaking any cycles.
+       * Before we unlink (null out) state.autoSVGFiltersObserver, we have to
+       * deactivate it, since it has a raw pointer back to us, which we don't
+       * want it to use after our impending destruction. (Our destructor will
+       * also attempt to deactivate it, but it won't be able to, since we're
+       * about to proactively null out state.autoSVGFiltersObserver which is
+       * how our destructor would reach it.)
        */
-      autoSVGFiltersObserver->SetIsActive(false);
+      state.autoSVGFiltersObserver->SetIsActive(false);
     }
     ImplCycleCollectionUnlink(state.autoSVGFiltersObserver);
   }
@@ -1146,6 +1178,7 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       filter(aOther.filter),
       filterAdditionalImages(aOther.filterAdditionalImages.Clone()),
       filterSourceGraphicTainted(aOther.filterSourceGraphicTainted),
+      filterDescriptionUpToDate(aOther.filterDescriptionUpToDate),
       imageSmoothingEnabled(aOther.imageSmoothingEnabled),
       explicitLang(aOther.explicitLang) {
   if (aOther.autoSVGFiltersObserver) {
@@ -1265,6 +1298,7 @@ CanvasRenderingContext2D::~CanvasRenderingContext2D() {
 
 nsresult CanvasRenderingContext2D::Initialize() {
   if (NS_WARN_IF(!AddShutdownObserver())) {
+    mHasShutdown = true;
     return NS_ERROR_FAILURE;
   }
 
@@ -1404,26 +1438,6 @@ void CanvasRenderingContext2D::OnShutdown() {
   mHasShutdown = true;
 }
 
-bool CanvasRenderingContext2D::AddShutdownObserver() {
-  auto* const canvasManager = CanvasShutdownManager::Get();
-  if (NS_WARN_IF(!canvasManager)) {
-    mHasShutdown = true;
-    return false;
-  }
-
-  canvasManager->AddShutdownObserver(this);
-  return true;
-}
-
-void CanvasRenderingContext2D::RemoveShutdownObserver() {
-  auto* const canvasManager = CanvasShutdownManager::MaybeGet();
-  if (!canvasManager) {
-    return;
-  }
-
-  canvasManager->RemoveShutdownObserver(this);
-}
-
 void CanvasRenderingContext2D::OnRemoteCanvasLost() {
   // We only lose context / data if we are using remote canvas, which is only
   // for accelerated targets.
@@ -1487,6 +1501,23 @@ void CanvasRenderingContext2D::OnRemoteCanvasRestored() {
           gfxCriticalNote << gfx::hexa(self.get()) << " accel canvas restored";
         }
       }));
+}
+
+void CanvasRenderingContext2D::OnRemoteCanvasReset(
+    const nsTArray<layers::RemoteTextureOwnerId>& aOwnerIds) {
+  auto* bufferProvider = GetBufferProvider();
+  if (!bufferProvider) {
+    return;
+  }
+
+  Maybe<layers::RemoteTextureOwnerId> ownerId =
+      bufferProvider->GetRemoteTextureOwnerId();
+  if (!ownerId || !aOwnerIds.Contains(*ownerId)) {
+    return;
+  }
+
+  OnRemoteCanvasLost();
+  OnRemoteCanvasRestored();
 }
 
 void CanvasRenderingContext2D::SetStyleFromString(const nsACString& aStr,
@@ -2232,6 +2263,7 @@ NS_IMETHODIMP
 CanvasRenderingContext2D::InitializeWithDrawTarget(
     nsIDocShell* aShell, NotNull<gfx::DrawTarget*> aTarget) {
   if (NS_WARN_IF(!AddShutdownObserver())) {
+    mHasShutdown = true;
     return NS_ERROR_FAILURE;
   }
 
@@ -2940,28 +2972,48 @@ CreateFilterDeclarationForServo(const nsACString& aFilter,
   return CreateDeclarationForServo(eCSSProperty_filter, aFilter, aDocument);
 }
 
-static already_AddRefed<const ComputedStyle> ResolveFilterStyleForServo(
+static bool ResolveFilterStyleForServo(
     const nsACString& aFilterString, const ComputedStyle* aParentStyle,
-    PresShell* aPresShell, ErrorResult& aError) {
+    PresShell* aPresShell, StyleOwnedSlice<StyleFilter>& aFilterChain,
+    ErrorResult& aError) {
+  // Try to parse an absolute filter first without having to go through the
+  // declaration path.
+  if (aParentStyle->EffectiveZoom() == StyleZoom::ONE &&
+      Servo_ParseFilters(&aFilterString, StyleFilterUrlHandling::Reject,
+                         aPresShell->GetDocument()->DefaultStyleAttrURLData(),
+                         &aFilterChain)) {
+    return true;
+  }
+
   RefPtr<StyleLockedDeclarationBlock> declarations =
       CreateFilterDeclarationForServo(aFilterString, aPresShell->GetDocument());
   if (!declarations) {
     // Refuse to accept the filter, but do not throw an error.
-    return nullptr;
+    return false;
   }
 
   // In addition to unparseable values, the spec says we need to reject
   // 'inherit' and 'initial'.
   if (Servo_DeclarationBlock_HasCSSWideKeyword(declarations,
                                                eCSSProperty_filter)) {
-    return nullptr;
+    return false;
   }
 
   ServoStyleSet* styleSet = aPresShell->StyleSet();
-  RefPtr<const ComputedStyle> computedValues =
+  RefPtr<const ComputedStyle> style =
       styleSet->ResolveForDeclarations(aParentStyle, declarations);
 
-  return computedValues.forget();
+  aFilterChain = std::move(style->StyleEffects()->mFilters);
+  return true;
+}
+
+static bool FiltersHaveUrl(Span<const StyleFilter> aFilters) {
+  for (const auto& filter : aFilters) {
+    if (filter.IsUrl()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool CanvasRenderingContext2D::ParseFilter(
@@ -2984,12 +3036,8 @@ bool CanvasRenderingContext2D::ParseFilter(
       return false;
     }
 
-    if (NS_WARN_IF(!Servo_ParseFilters(&aString, /* aIgnoreUrls */ true,
-                                       urlExtraData, &aFilterChain))) {
-      return false;
-    }
-
-    return true;
+    return Servo_ParseFilters(&aString, StyleFilterUrlHandling::Ignore,
+                              urlExtraData, &aFilterChain);
   }
 
   const ComputedStyle* parentStyle = GetCurrentFontComputedStyle();
@@ -2997,32 +3045,40 @@ bool CanvasRenderingContext2D::ParseFilter(
     return false;
   }
 
-  RefPtr<const ComputedStyle> style =
-      ResolveFilterStyleForServo(aString, parentStyle, presShell, aError);
-  if (!style) {
-    return false;
-  }
-
-  aFilterChain = style->StyleEffects()->mFilters;
-  return true;
+  return ResolveFilterStyleForServo(aString, parentStyle, presShell,
+                                    aFilterChain, aError);
 }
 
 void CanvasRenderingContext2D::SetFilter(const nsACString& aFilter,
                                          ErrorResult& aError) {
   StyleOwnedSlice<StyleFilter> filterChain;
-  if (ParseFilter(aFilter, filterChain, aError)) {
-    CurrentState().filterString = aFilter;
-    CurrentState().filterChain = std::move(filterChain);
-    if (mCanvasElement) {
-      if (CurrentState().autoSVGFiltersObserver) {
-        CurrentState().autoSVGFiltersObserver->SetIsActive(false);
-      }
-      CurrentState().autoSVGFiltersObserver =
-          SVGObserverUtils::ObserveFiltersForCanvasContext(
-              this, mCanvasElement, CurrentState().filterChain.AsSpan());
-    }
-    UpdateFilter(/* aFlushIfNeeded = */ true);
+  if (!ParseFilter(aFilter, filterChain, aError)) {
+    return;
   }
+
+  ContextState& state = CurrentState();
+  state.filterString = aFilter;
+  state.filterChain = std::move(filterChain);
+  if (state.autoSVGFiltersObserver) {
+    state.autoSVGFiltersObserver->SetIsActive(false);
+    state.autoSVGFiltersObserver = nullptr;
+  }
+
+  // Drop the description built for the old chain.
+  state.filter = FilterDescription();
+  state.filterAdditionalImages.Clear();
+  state.filterDescriptionUpToDate = false;
+
+  if (!FiltersHaveUrl(state.filterChain.AsSpan())) {
+    return;
+  }
+
+  if (mCanvasElement) {
+    state.autoSVGFiltersObserver =
+        SVGObserverUtils::ObserveFiltersForCanvasContext(
+            this, mCanvasElement, state.filterChain.AsSpan());
+  }
+  UpdateFilter(/* aFlushIfNeeded = */ true);
 }
 
 static already_AddRefed<const ComputedStyle> ResolveStyleForServo(
@@ -3263,18 +3319,6 @@ class CanvasUserSpaceMetrics final : public UserSpaceMetricsWithSize {
   nsPresContext* mPresContext;
 };
 
-// The filter might reference an SVG filter that is declared inside this
-// document. Flush frames so that we'll have a SVGFilterFrame to work
-// with.
-static bool FiltersNeedFrameFlush(Span<const StyleFilter> aFilters) {
-  for (const auto& filter : aFilters) {
-    if (filter.IsUrl()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void CanvasRenderingContext2D::UpdateFilter(bool aFlushIfNeeded) {
   const bool writeOnly = IsWriteOnly() ||
                          (mCanvasElement && mCanvasElement->IsWriteOnly()) ||
@@ -3286,6 +3330,7 @@ void CanvasRenderingContext2D::UpdateFilter(bool aFlushIfNeeded) {
     // reflect the current "taint" status of the canvas
     CurrentState().filter = FilterDescription();
     CurrentState().filterSourceGraphicTainted = writeOnly;
+    CurrentState().filterDescriptionUpToDate = false;
     return;
   }
 
@@ -3293,12 +3338,15 @@ void CanvasRenderingContext2D::UpdateFilter(bool aFlushIfNeeded) {
   // be used on worker threads.
   nsPresContext* presContext = nullptr;
   if (presShell) {
-    if (aFlushIfNeeded &&
-        FiltersNeedFrameFlush(CurrentState().filterChain.AsSpan())) {
+    // The filter might reference an SVG filter that is declared inside this
+    // document. Flush frames so that we'll have a SVGFilterFrame to work
+    // with.
+    if (aFlushIfNeeded && FiltersHaveUrl(CurrentState().filterChain.AsSpan())) {
       presShell->FlushPendingNotifications(FlushType::Frames);
     }
 
     if (presShell->IsDestroying()) [[unlikely]] {
+      CurrentState().filterDescriptionUpToDate = false;
       return;
     }
 
@@ -3330,6 +3378,7 @@ void CanvasRenderingContext2D::UpdateFilter(bool aFlushIfNeeded) {
                              explicitLanguage, canvasStyle, presContext),
       gfxRect(0, 0, mWidth, mHeight), state.filterAdditionalImages);
   state.filterSourceGraphicTainted = writeOnly;
+  state.filterDescriptionUpToDate = true;
 }
 
 //
@@ -4285,7 +4334,7 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   }
 
   if (!mFontStyleCache) {
-    mFontStyleCache = MakeUnique<FontStyleCache>();
+    mFontStyleCache = std::make_unique<FontStyleCache>();
   }
 
   nsPresContext* c = presShell->GetPresContext();
@@ -4528,7 +4577,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
 
   // Do we have a cached fontgroup that corresponds to this `font` value?
   if (!mFontGroupCache) {
-    mFontGroupCache = MakeUnique<FontGroupCache>();
+    mFontGroupCache = std::make_unique<FontGroupCache>();
   }
 
   FontGroupCacheKey key(
@@ -4812,7 +4861,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
   explicit CanvasBidiProcessor(gfx::FontPaletteValueSet* aPaletteValueSet)
       : mPaletteValueSet(aPaletteValueSet) {
     if (StaticPrefs::gfx_missing_fonts_notify()) {
-      mMissingFonts = MakeUnique<gfxMissingFontRecorder>();
+      mMissingFonts = std::make_unique<gfxMissingFontRecorder>();
     }
   }
 
@@ -5239,8 +5288,8 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
   if (currentFontStyle->GetStyle()->size == 0.0F) {
     aError = NS_OK;
     if (aOp == TextDrawOperation::MEASURE) {
-      return MakeUnique<TextMetrics>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                     0.0, 0.0, 0.0, 0.0);
+      return std::make_unique<TextMetrics>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                           0.0, 0.0, 0.0, 0.0, 0.0);
     }
     return nullptr;
   }
@@ -5250,8 +5299,8 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
     // This may not be correct - what should TextMetrics contain in the case of
     // infinite width or height?
     if (aOp == TextDrawOperation::MEASURE) {
-      return MakeUnique<TextMetrics>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                     0.0, 0.0, 0.0, 0.0);
+      return std::make_unique<TextMetrics>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                           0.0, 0.0, 0.0, 0.0, 0.0);
     }
     return nullptr;
   }
@@ -5412,7 +5461,7 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
         -processor.mBoundingBox.Y() - baselineAnchor;
     double actualBoundingBoxDescent =
         processor.mBoundingBox.YMost() + baselineAnchor;
-    return MakeUnique<TextMetrics>(
+    return std::make_unique<TextMetrics>(
         totalWidth, actualBoundingBoxLeft, actualBoundingBoxRight,
         fontMetrics.maxAscent - baselineAnchor,   // fontBBAscent
         fontMetrics.maxDescent + baselineAnchor,  // fontBBDescent
@@ -6786,7 +6835,7 @@ already_AddRefed<ImageData> CanvasRenderingContext2D::GetImageData(
   RecordCanvasUsage(CanvasExtractionAPI::GetImageData, CSSIntSize(w, h));
 
   JS::Rooted<JSObject*> array(aCx);
-  aError = GetImageDataArray(aCx, aSx, aSy, w, h, aSubjectPrincipal,
+  aError = GetImageDataArray(aCx, aSx, aSy, w, h, colorSpace, aSubjectPrincipal,
                              array.address());
   if (aError.Failed()) {
     return nullptr;
@@ -6808,7 +6857,8 @@ static IntRect ClipImageDataTransfer(IntRect& aSrc, const IntPoint& aDestOffset,
 
 nsresult CanvasRenderingContext2D::GetImageDataArray(
     JSContext* aCx, int32_t aX, int32_t aY, uint32_t aWidth, uint32_t aHeight,
-    nsIPrincipal& aSubjectPrincipal, JSObject** aRetval) {
+    PredefinedColorSpace aColorSpace, nsIPrincipal& aSubjectPrincipal,
+    JSObject** aRetval) {
   MOZ_ASSERT(aWidth && aHeight);
 
   // Restrict the typed array length to INT32_MAX because that's all we support.
@@ -6882,6 +6932,9 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
+  // instantiate a colorspace converter if needed
+  auto csConverter = GetColorSpaceConverter(mColorSpace, aColorSpace);
+
   do {
     uint8_t* randomData;
     const IntSize size = readback->GetSize();
@@ -6928,6 +6981,24 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
                         aWidth * 4, SurfaceFormat::R8G8B8A8,
                         dstWriteRect.Size());
     }
+    // transform it from the local colorspace if distinct from own canvas
+    // colorspace
+    if (csConverter) {
+      const int32_t dstStride = aWidth * 4;
+      const int32_t rowBytes = dstWriteRect.width * 4;
+      if (dstWriteRect.x == 0 && rowBytes == dstStride) {
+        csConverter->ConvertColorspace(
+            dst, dst,
+            AssertedCast<size_t>(dstWriteRect.width) *
+                AssertedCast<size_t>(dstWriteRect.height));
+      } else {
+        for (int32_t row = 0; row < dstWriteRect.height; ++row) {
+          uint8_t* rowData = dst + row * dstStride;
+          csConverter->ConvertColorspace(
+              rowData, rowData, AssertedCast<size_t>(dstWriteRect.width));
+        }
+      }
+    }
   } while (false);
 
   readback->Unmap();
@@ -6951,7 +7022,8 @@ void CanvasRenderingContext2D::EnsureErrorTarget() {
 void CanvasRenderingContext2D::PutImageData(ImageData& aImageData, int32_t aDx,
                                             int32_t aDy, ErrorResult& aRv) {
   RootedSpiderMonkeyInterface<Uint8ClampedArray> arr(RootingCx());
-  PutImageData_explicit(aDx, aDy, aImageData, false, 0, 0, 0, 0, aRv);
+  PutImageData_explicit(aDx, aDy, aImageData, false, 0, 0, 0, 0,
+                        aImageData.ColorSpace(), aRv);
 }
 
 void CanvasRenderingContext2D::PutImageData(ImageData& aImageData, int32_t aDx,
@@ -6961,13 +7033,14 @@ void CanvasRenderingContext2D::PutImageData(ImageData& aImageData, int32_t aDx,
                                             int32_t aDirtyHeight,
                                             ErrorResult& aRv) {
   PutImageData_explicit(aDx, aDy, aImageData, true, aDirtyX, aDirtyY,
-                        aDirtyWidth, aDirtyHeight, aRv);
+                        aDirtyWidth, aDirtyHeight, aImageData.ColorSpace(),
+                        aRv);
 }
 
 void CanvasRenderingContext2D::PutImageData_explicit(
     int32_t aX, int32_t aY, ImageData& aImageData, bool aHasDirtyRect,
     int32_t aDirtyX, int32_t aDirtyY, int32_t aDirtyWidth, int32_t aDirtyHeight,
-    ErrorResult& aRv) {
+    PredefinedColorSpace aColorSpace, ErrorResult& aRv) {
   RootedSpiderMonkeyInterface<Uint8ClampedArray> arr(RootingCx());
   if (!arr.Init(aImageData.GetDataObject())) {
     return aRv.ThrowInvalidStateError(
@@ -7079,23 +7152,42 @@ void CanvasRenderingContext2D::PutImageData_explicit(
     dstFormat = sourceSurface->GetFormat();
   }
 
-  arr.ProcessData(
-      [&](const Span<uint8_t>& aData, JS::AutoCheckCannotGC&& nogc) {
-        // Verify that the length hasn't changed.
-        if (aData.Length() != width * height * 4) {
-          // FIXME Should this call ReleaseBits/Unmap?
-          return aRv.ThrowInvalidStateError("Invalid width or height");
+  auto csConverter = GetColorSpaceConverter(aColorSpace, mColorSpace);
+
+  arr.ProcessData([&](const Span<uint8_t>& aData,
+                      JS::AutoCheckCannotGC&& nogc) {
+    // Verify that the length hasn't changed.
+    if (aData.Length() != width * height * 4) {
+      // FIXME Should this call ReleaseBits/Unmap?
+      return aRv.ThrowInvalidStateError("Invalid width or height");
+    }
+
+    int32_t srcStride = width * 4;
+    uint8_t* srcData = aData.Elements() + srcRect.y * srcStride + srcRect.x * 4;
+    const SurfaceFormat premulFormat = mOpaque ? SurfaceFormat::X8R8G8B8_UINT32
+                                               : SurfaceFormat::A8R8G8B8_UINT32;
+    if (csConverter) {
+      const int32_t rowBytes = dirtyRect.width * 4;
+      if (srcRect.x == 0 && rowBytes == srcStride && rowBytes == dstStride) {
+        csConverter->ConvertColorspace(
+            srcData, dstData,
+            AssertedCast<size_t>(dirtyRect.width) *
+                AssertedCast<size_t>(dirtyRect.height));
+      } else {
+        for (int32_t row = 0; row < dirtyRect.height; ++row) {
+          csConverter->ConvertColorspace(srcData + row * srcStride,
+                                         dstData + row * dstStride,
+                                         AssertedCast<size_t>(dirtyRect.width));
         }
-
-        uint8_t* srcData =
-            aData.Elements() + srcRect.y * (width * 4) + srcRect.x * 4;
-
-        PremultiplyData(srcData, width * 4, SurfaceFormat::R8G8B8A8, dstData,
-                        dstStride,
-                        mOpaque ? SurfaceFormat::X8R8G8B8_UINT32
-                                : SurfaceFormat::A8R8G8B8_UINT32,
-                        dirtyRect.Size());
-      });
+      }
+      // dstData has the converted in-place pixels, premultiply in place
+      PremultiplyData(dstData, dstStride, SurfaceFormat::R8G8B8A8, dstData,
+                      dstStride, premulFormat, dirtyRect.Size());
+    } else {
+      PremultiplyData(srcData, srcStride, SurfaceFormat::R8G8B8A8, dstData,
+                      dstStride, premulFormat, dirtyRect.Size());
+    }
+  });
 
   // Ensure surfaces unmapped before potential error exit.
   if (lockedBits) {

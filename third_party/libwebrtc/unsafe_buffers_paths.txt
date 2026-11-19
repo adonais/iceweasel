@@ -124,7 +124,7 @@
 -common_audio/signal_processing/real_fft_unittest.cc
 -common_audio/signal_processing/auto_corr_to_refl_coef.c
 -common_audio/signal_processing/complex_fft.c
--common_audio/signal_processing/auto_correlation.c
+-common_audio/signal_processing/auto_correlation.cc
 -common_audio/signal_processing/levinson_durbin.c
 -common_audio/signal_processing/lpc_to_refl_coef.c
 -common_audio/signal_processing/filter_ma_fast_q12.c
@@ -590,8 +590,6 @@
 -rtc_base/ssl_identity.cc
 -rtc_base/ssl_identity_unittest.cc
 -rtc_base/ssl_stream_adapter_unittest.cc
--rtc_base/string_encode.cc
--rtc_base/string_encode_unittest.cc
 -rtc_base/string_to_number.cc
 -rtc_base/string_utils.cc
 -rtc_base/string_utils.h

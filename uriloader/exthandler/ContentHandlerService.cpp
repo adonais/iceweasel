@@ -242,7 +242,7 @@ NS_IMETHODIMP ContentHandlerService::GetTypeFromExtension(
   _retval.Assign(*mExtToTypeMap.LookupOrInsertWith(aFileExtension, [&] {
     nsCString type;
     mHandlerServiceChild->SendGetTypeFromExtension(aFileExtension, &type);
-    return MakeUnique<nsCString>(type);
+    return std::make_unique<nsCString>(type);
   }));
   return NS_OK;
 }

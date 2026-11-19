@@ -66,11 +66,9 @@ static int nr_ice_candidate_initialize2(nr_ice_candidate *cand);
 static int nr_ice_get_foundation(nr_ice_ctx *ctx,nr_ice_candidate *cand);
 static int nr_ice_srvrflx_start_stun(nr_ice_candidate *cand);
 static void nr_ice_srvrflx_stun_finished_cb(NR_SOCKET sock, int how, void *cb_arg);
-#ifdef USE_TURN
 static int nr_ice_start_relay_turn(nr_ice_candidate *cand);
 static void nr_ice_turn_allocated_cb(NR_SOCKET sock, int how, void *cb_arg);
 static int nr_ice_candidate_resolved_cb(void *cb_arg, nr_transport_addr *addr);
-#endif /* USE_TURN */
 
 void nr_ice_candidate_compute_codeword(nr_ice_candidate *cand)
   {
@@ -321,7 +319,6 @@ int nr_ice_candidate_destroy(nr_ice_candidate **candp)
     switch(cand->type){
       case HOST:
         break;
-#ifdef USE_TURN
       case RELAYED:
         // record stats back to the ice ctx on destruction
         if (cand->u.relayed.turn) {
@@ -344,7 +341,6 @@ int nr_ice_candidate_destroy(nr_ice_candidate **candp)
         nr_turn_client_ctx_destroy(&cand->u.relayed.turn);
         nr_socket_destroy(&cand->u.relayed.turn_sock);
         break;
-#endif /* USE_TURN */
       case SERVER_REFLEXIVE:
         if (cand->u.srvrflx.stun_handle)
           nr_ice_socket_deregister(cand->isock, cand->u.srvrflx.stun_handle);
@@ -661,11 +657,9 @@ int nr_ice_candidate_initialize(nr_ice_candidate *cand, NR_async_cb ready_cb, vo
         cand->ready_cb_arg = cb_arg;
         NR_ASYNC_TIMER_SET(0, nr_ice_candidate_fire_ready_cb, (void *)cand, &cand->ready_cb_timer);
         break;
-#ifdef USE_TURN
       case RELAYED:
         protocol=NR_RESOLVE_PROTOCOL_TURN;
         [[fallthrough]];
-#endif
       case SERVER_REFLEXIVE:
         if (nr_transport_addr_cmp(&cand->base, &cand->stun_server->addr,
                                   NR_TRANSPORT_ADDR_CMP_MODE_PROTOCOL)) {
@@ -807,13 +801,11 @@ static int nr_ice_candidate_initialize2(nr_ice_candidate *cand)
         assert(0); /* Can't happen */
         ABORT(R_INTERNAL);
         break;
-#ifdef USE_TURN
       case RELAYED:
         if(r=nr_ice_start_relay_turn(cand))
           ABORT(r);
         ABORT(R_WOULDBLOCK);
         break;
-#endif /* USE_TURN */
       case SERVER_REFLEXIVE:
         /* Need to start stun */
         if(r=nr_ice_srvrflx_start_stun(cand))
@@ -882,7 +874,6 @@ static int nr_ice_srvrflx_start_stun(nr_ice_candidate *cand)
     return(_status);
   }
 
-#ifdef USE_TURN
 static void nr_ice_start_relay_turn_timer_cb(NR_SOCKET s, int how, void *cb_arg)
   {
     nr_ice_candidate *cand=(nr_ice_candidate*)cb_arg;
@@ -927,7 +918,6 @@ static int nr_ice_start_relay_turn(nr_ice_candidate *cand)
   abort:
     return(_status);
   }
-#endif /* USE_TURN */
 
 static void nr_ice_srvrflx_stun_finished_cb(NR_SOCKET sock, int how, void *cb_arg)
   {
@@ -969,7 +959,6 @@ static void nr_ice_srvrflx_stun_finished_cb(NR_SOCKET sock, int how, void *cb_ar
     }
   }
 
-#ifdef USE_TURN
 static void nr_ice_turn_allocated_cb(NR_SOCKET s, int how, void *cb_arg)
   {
     int r,_status;
@@ -1033,7 +1022,6 @@ static void nr_ice_turn_allocated_cb(NR_SOCKET s, int how, void *cb_arg)
       }
     }
   }
-#endif /* USE_TURN */
 
 /* Format the candidate attribute as per ICE S 15.1 */
 int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_raddr)

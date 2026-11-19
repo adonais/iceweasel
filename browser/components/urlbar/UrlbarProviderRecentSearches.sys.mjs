@@ -155,6 +155,7 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
         payload: {
           engine: engine.name,
           suggestion: result.value,
+          lowerCaseSuggestion: result.value.toLocaleLowerCase(),
           title: result.value,
           isBlockable: true,
           blockL10n: { id: "urlbar-result-menu-remove-from-history2" },

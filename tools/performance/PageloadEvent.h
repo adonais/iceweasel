@@ -48,6 +48,7 @@ struct PageLoadDomainExtra;
   _(sameOriginNav, bool)                       \
   _(loadedInForeground, bool)                  \
   _(timeToRequestStart, uint32_t)              \
+  _(timeToConnectStart, uint32_t)              \
   _(tlsHandshakeTime, uint32_t)                \
   _(trrDomain, nsCString)                      \
   _(userFeatures, uint32_t)                    \

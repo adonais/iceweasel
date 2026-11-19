@@ -27,12 +27,12 @@ void APZBridgeParent::Create(const LayersId& aLayersId,
 }
 
 APZBridgeParent::APZBridgeParent(const LayersId& aLayersId) {
-  MOZ_ASSERT(XRE_IsGPUProcess());
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(XRE_IsGPUProcess());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   mLayersId = aLayersId;
   mTreeManager = CompositorBridgeParent::GetAPZCTreeManager(aLayersId);
-  MOZ_ASSERT(mTreeManager);
+  MOZ_RELEASE_ASSERT(mTreeManager);
 }
 
 APZBridgeParent::~APZBridgeParent() = default;

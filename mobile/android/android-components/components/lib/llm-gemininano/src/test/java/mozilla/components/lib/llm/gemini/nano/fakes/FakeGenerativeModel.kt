@@ -109,18 +109,26 @@ internal class FakeGenerativeModel(
         TODO("Not yet implemented")
     }
 
+    override suspend fun getAvailableFeatures(): List<Int> {
+        TODO("Not yet implemented")
+    }
+
+    @Suppress("OVERRIDE_DEPRECATION")
     override suspend fun isCachingFeatureAvailable(): Boolean {
         TODO("Not yet implemented")
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override suspend fun isStructuredOutputFeatureAvailable(): Boolean {
         TODO("Not yet implemented")
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override suspend fun isSystemPromptAvailable(): Boolean {
         TODO("Not yet implemented")
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override suspend fun isThinkingModeAvailable(): Boolean {
         TODO("Not yet implemented")
     }

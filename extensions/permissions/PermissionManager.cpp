@@ -255,6 +255,33 @@ bool IsExpirablePermission(const nsACString& aType,
   return false;
 }
 
+static uint32_t GetOriginAttributesStripFlags(bool aForceStrip) {
+  uint32_t flags = 0;
+
+  if (aForceStrip || !StaticPrefs::permissions_isolateBy_privateBrowsing()) {
+    flags |= OriginAttributes::STRIP_PRIVATE_BROWSING_ID;
+  }
+
+  if (aForceStrip || !StaticPrefs::permissions_isolateBy_userContext()) {
+    flags |= OriginAttributes::STRIP_USER_CONTEXT_ID;
+  }
+
+  return flags;
+}
+
+// Reset the pattern fields that permissions are not isolated by, so that the
+// pattern matches stored permission keys.
+static void MaybeStripOriginAttributesPattern(
+    OriginAttributesPattern& aPattern) {
+  uint32_t flags = GetOriginAttributesStripFlags(false);
+  if (flags & OriginAttributes::STRIP_PRIVATE_BROWSING_ID) {
+    aPattern.mPrivateBrowsingId.Reset();
+  }
+  if (flags & OriginAttributes::STRIP_USER_CONTEXT_ID) {
+    aPattern.mUserContextId.Reset();
+  }
+}
+
 // Apply MaybeStripOriginAttributes to a raw origin string (parse OA suffix,
 // strip fields, rebuild).
 static bool StripOriginString(const nsACString& aOrigin, bool aForceStripOA,
@@ -2918,6 +2945,37 @@ NS_IMETHODIMP PermissionManager::GetAllByTypes(
       aResult);
 }
 
+NS_IMETHODIMP PermissionManager::GetAllForOriginAttributesPattern(
+    const nsAString& aPattern, const nsTArray<nsCString>& aTypes,
+    nsTArray<RefPtr<nsIPermission>>& aResult) {
+  OriginAttributesPattern pattern;
+  if (!pattern.Init(aPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  MaybeStripOriginAttributesPattern(pattern);
+
+  {
+    MonitorAutoLock lock{mMonitor};
+    nsresult rv = GetPermissionEntries(
+        [&](const PermissionEntry& aPermEntry) MOZ_REQUIRES(mMonitor) {
+          return aTypes.IsEmpty() ||
+                 aTypes.Contains(mTypeArray[aPermEntry.mType]);
+        },
+        aResult);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  aResult.RemoveElementsBy([&](const RefPtr<nsIPermission>& aPermission) {
+    nsCOMPtr<nsIPrincipal> principal;
+    if (NS_FAILED(aPermission->GetPrincipal(getter_AddRefs(principal)))) {
+      return true;
+    }
+    return !pattern.Matches(principal->OriginAttributesRef());
+  });
+
+  return NS_OK;
+}
+
 nsresult PermissionManager::ShouldHandlePrincipalForPermission(
     nsIPrincipal* aPrincipal, bool& aIsPermissionPrincipalValid) {
   NS_ENSURE_ARG_POINTER(aPrincipal);
@@ -4380,16 +4438,7 @@ nsCOMPtr<nsIAsyncShutdownClient> PermissionManager::GetAsyncShutdownBarrier()
 
 void PermissionManager::MaybeStripOriginAttributes(
     bool aForceStrip, OriginAttributes& aOriginAttributes) {
-  uint32_t flags = 0;
-
-  if (aForceStrip || !StaticPrefs::permissions_isolateBy_privateBrowsing()) {
-    flags |= OriginAttributes::STRIP_PRIVATE_BROWSING_ID;
-  }
-
-  if (aForceStrip || !StaticPrefs::permissions_isolateBy_userContext()) {
-    flags |= OriginAttributes::STRIP_USER_CONTEXT_ID;
-  }
-
+  uint32_t flags = GetOriginAttributesStripFlags(aForceStrip);
   if (flags != 0) {
     aOriginAttributes.StripAttributes(flags);
   }
@@ -4584,7 +4633,7 @@ nsresult PermissionManager::AddBrowserPermissionInternal(
   // Look up or create the map for this BC.
   UniquePtr<BrowserPermissionMap>& mapPtr =
       mBrowserPermissionTable.LookupOrInsert(
-          aBrowserId, MakeUnique<BrowserPermissionMap>());
+          aBrowserId, std::make_unique<BrowserPermissionMap>());
   BrowserPermissionMap* map = mapPtr.get();
 
   // If switching between DENY and non-DENY for the same type, remove old entry
@@ -5348,7 +5397,7 @@ PermissionManager::CopyBrowserPermissions(uint64_t aSrcBrowserId,
 
   UniquePtr<BrowserPermissionMap>& destMapPtr =
       mBrowserPermissionTable.LookupOrInsert(
-          aDestBrowserId, MakeUnique<BrowserPermissionMap>());
+          aDestBrowserId, std::make_unique<BrowserPermissionMap>());
   BrowserPermissionMap* destMap = destMapPtr.get();
 
   // Cancel any existing timers in the destination.

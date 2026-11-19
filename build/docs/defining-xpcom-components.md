@@ -320,7 +320,7 @@ value:
 ```python
 Categories = {
     "@mozilla.org/streamconv;1": {
-        "?from=gzip&to=uncompressed": ("", ProcessSelector.ALLOW_IN_SOCKET_PROCESS),
+        "?from=gzip&to=uncompressed": ("", ProcessSelector.MAIN_PROCESS_ONLY),
     }
 }
 ```

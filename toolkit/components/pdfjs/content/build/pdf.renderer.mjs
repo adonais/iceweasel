@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.5.273
- * pdfjsBuild = 5d143c409
+ * pdfjsVersion = 6.5.447
+ * pdfjsBuild = c7ca8a32e
  */
 
 ;// ./src/shared/util.js
@@ -29,6 +29,8 @@ const isNodeJS = false;
 const BBOX_INIT = [Infinity, Infinity, -Infinity, -Infinity];
 const F32_BBOX_INIT = new Float32Array(BBOX_INIT);
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+const DEFAULT_VERTICAL_ORIGIN_Y = 880;
+const DEFAULT_VERTICAL_ADVANCE = 1000;
 const LINE_FACTOR = 1.35;
 const LINE_DESCENT_FACTOR = 0.35;
 const BASELINE_FACTOR = (/* unused pure expression or super */ null && (LINE_DESCENT_FACTOR / LINE_FACTOR));
@@ -538,6 +540,11 @@ class Util {
   static makeHexColor(r, g, b) {
     return `#${this.hexNums[r]}${this.hexNums[g]}${this.hexNums[b]}`;
   }
+  static get identity0to256Map() {
+    return shadow(this, "identity0to256Map", Uint8Array.from({
+      length: 256
+    }, (_, i) => i));
+  }
   static transform(m1, m2) {
     return [m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1], m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3], m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]];
   }
@@ -604,10 +611,10 @@ class Util {
       b1 += m1r2;
       b2 += m1r2;
     }
-    output[0] = Math.min(output[0], a0, a1, a2, a3);
-    output[1] = Math.min(output[1], b0, b1, b2, b3);
-    output[2] = Math.max(output[2], a0, a1, a2, a3);
-    output[3] = Math.max(output[3], b0, b1, b2, b3);
+    output[0] = Math.min(output[0], a0, a1, Math.min(a2, a3));
+    output[1] = Math.min(output[1], b0, b1, Math.min(b2, b3));
+    output[2] = Math.max(output[2], a0, a1, Math.max(a2, a3));
+    output[3] = Math.max(output[3], b0, b1, Math.max(b2, b3));
   }
   static inverseTransform(m) {
     const d = m[0] * m[3] - m[1] * m[2];
@@ -871,23 +878,6 @@ class OutputScale {
     return this.sx === this.sy;
   }
   limitCanvas(width, height, maxPixels, maxDim, capAreaFactor = -1) {
-    let maxAreaScale = Infinity,
-      maxWidthScale = Infinity,
-      maxHeightScale = Infinity;
-    maxPixels = OutputScale.capPixels(maxPixels, capAreaFactor);
-    if (maxPixels > 0) {
-      maxAreaScale = Math.sqrt(maxPixels / (width * height));
-    }
-    if (maxDim !== -1) {
-      maxWidthScale = maxDim / width;
-      maxHeightScale = maxDim / height;
-    }
-    const maxScale = Math.min(maxAreaScale, maxWidthScale, maxHeightScale);
-    if (this.sx > maxScale || this.sy > maxScale) {
-      this.sx = maxScale;
-      this.sy = maxScale;
-      return true;
-    }
     return false;
   }
   static get pixelRatio() {
@@ -897,7 +887,6 @@ class OutputScale {
     return maxPixels;
   }
 }
-const SupportedImageMimeTypes = new Set(["image/apng", "image/avif", "image/bmp", "image/gif", "image/jpeg", "image/png", "image/svg+xml", "image/webp", "image/x-icon"]);
 function applyOpacity(color, opacity) {
   opacity = MathClamp(opacity ?? 1, 0, 1);
   const white = 255 * (1 - opacity);
@@ -1836,6 +1825,7 @@ function createCanvasTrackers(canvas, operationsCount, {
 /* unused harmony import specifier */ var image_utils_ImageKind;
 /* unused harmony import specifier */ var image_utils_FeatureTest;
 
+
 function convertToRGBA(params) {
   switch (params.kind) {
     case image_utils_ImageKind.GRAYSCALE_1BPP:
@@ -1898,7 +1888,7 @@ function convertRGBToRGBA({
   let i = 0;
   const len = width * height * 3;
   const byteOffset = src.byteOffset + srcPos;
-  const len32 = byteOffset % 4 === 0 ? Math.floor(len / 4) : 0;
+  const len32 = byteOffset % 4 === 0 ? Math.floor(math_clamp_MathClamp(src.length - srcPos, 0, len) / 4) : 0;
   const src32 = len32 > 0 ? new Uint32Array(src.buffer, byteOffset, len32) : null;
   const alphaMask = FeatureTest.isLittleEndian ? 0xff000000 : 0xff;
   if (FeatureTest.isLittleEndian) {
@@ -3047,15 +3037,8 @@ class TransferMapsFallback {
   #maps;
   constructor(maps) {
     const [mapR, mapG = mapR, mapB = mapR] = maps;
-    const {
-      identityMap
-    } = TransferMapsFallback;
+    const identityMap = Util.identity0to256Map.slice();
     this.#maps = [mapR || identityMap, mapG || identityMap, mapB || identityMap];
-  }
-  static get identityMap() {
-    return shadow(this, "identityMap", Uint8Array.from({
-      length: 256
-    }, (_, i) => i));
   }
   applyToColor(color) {
     if (typeof color !== "string" || !color.startsWith("#")) {
@@ -4154,8 +4137,14 @@ class CanvasGraphics {
       const dims = this.current.tilingPatternDims;
       const tileIdx = dims && fillColor.canSkipPatternCanvas(dims);
       if (tileIdx) {
-        fillColor.drawPattern(this, path, this.pendingEOFill, tileIdx, opIdx);
+        const {
+          pendingClip,
+          pendingEOFill
+        } = this;
+        this.pendingClip = null;
         this.pendingEOFill = false;
+        fillColor.drawPattern(this, path, pendingEOFill, tileIdx, opIdx);
+        this.pendingClip = pendingClip;
         if (consumePath) {
           this.consumePath(opIdx, path, intersect);
         }
@@ -4446,6 +4435,14 @@ class CanvasGraphics {
     }
     return shadow(this, "isFontSubpixelAAEnabled", enabled);
   }
+  #getTextPattern(color, pathType, opIdx) {
+    const ctx = this.ctx;
+    ctx.save();
+    const pattern = color.getPattern(ctx, this, getCurrentTransformInverse(ctx), pathType, opIdx);
+    const transform = getCurrentTransform(ctx);
+    ctx.restore();
+    return [pattern, transform];
+  }
   showText(opIdx, glyphs) {
     if (this.dependencyTracker) {
       this.dependencyTracker.recordDependencies(opIdx, Dependencies.showText).resetBBox(opIdx);
@@ -4508,18 +4505,10 @@ class CanvasGraphics {
     }
     ctx.lineWidth = lineWidth;
     if (needsFill && current.patternFill) {
-      ctx.save();
-      const pattern = current.fillColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.FILL, opIdx);
-      patternFillTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.fillStyle = pattern;
+      [ctx.fillStyle, patternFillTransform] = this.#getTextPattern(current.fillColor, PathType.FILL, opIdx);
     }
     if (needsStroke && current.patternStroke) {
-      ctx.save();
-      const pattern = current.strokeColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.STROKE, opIdx);
-      patternStrokeTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.strokeStyle = pattern;
+      [ctx.strokeStyle, patternStrokeTransform] = this.#getTextPattern(current.strokeColor, PathType.STROKE, opIdx);
     }
     if (font.isInvalidPDFjsFont) {
       const chars = [];
@@ -4541,7 +4530,8 @@ class CanvasGraphics {
       return;
     }
     let x = 0,
-      i;
+      i,
+      glyphPatterns = null;
     for (i = 0; i < glyphsLength; ++i) {
       const glyph = glyphs[i];
       if (typeof glyph === "number") {
@@ -4552,7 +4542,7 @@ class CanvasGraphics {
       const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
       const character = glyph.fontChar;
       const accent = glyph.accent;
-      let scaledX, scaledY;
+      let scaledX, scaledY, measure;
       let width = glyph.width;
       if (vertical) {
         const vmetric = glyph.vmetric;
@@ -4561,23 +4551,41 @@ class CanvasGraphics {
         width = -vmetric[0];
         scaledX = vx / fontSizeScale;
         scaledY = (x + vy) / fontSizeScale;
+        if (glyph.isRotated) {
+          measure = ctx.measureText(character);
+          const glyphScale = widthAdvanceScale / fontSizeScale;
+          const halfWidth = glyph.width / 2 * glyphScale;
+          const centerX = scaledX + halfWidth;
+          scaledX = scaledY - ((/* inlined export .DEFAULT_VERTICAL_ORIGIN_Y */880) - (/* inlined export .DEFAULT_VERTICAL_ADVANCE */1000) / 2) * glyphScale - halfWidth;
+          scaledY = (measure.actualBoundingBoxAscent - measure.actualBoundingBoxDescent) / 2 - centerX;
+          restoreNeeded = true;
+          ctx.save();
+          ctx.rotate(Math.PI / 2);
+        }
       } else {
         scaledX = x / fontSizeScale;
         scaledY = 0;
       }
-      let measure;
-      if (font.remeasure && width > 0) {
-        measure = ctx.measureText(character);
+      const glyphWidth = glyph.isRotated ? glyph.width : width;
+      let characterScaleX = 1;
+      if ((font.remeasure || glyph.isRotated) && glyphWidth > 0) {
+        measure ??= ctx.measureText(character);
         const measuredWidth = measure.width * 1000 / fontSize * fontSizeScale;
-        if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
-          const characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
+        if (glyphWidth < measuredWidth && this.isFontSubpixelAAEnabled) {
+          characterScaleX = glyphWidth / measuredWidth;
+          if (!restoreNeeded) {
+            restoreNeeded = true;
+            ctx.save();
+          }
           ctx.scale(characterScaleX, 1);
           scaledX /= characterScaleX;
-        } else if (width !== measuredWidth) {
-          scaledX += (width - measuredWidth) / 2000 * fontSize / fontSizeScale;
+        } else if (glyphWidth !== measuredWidth) {
+          scaledX += (glyphWidth - measuredWidth) / 2000 * fontSize / fontSizeScale;
         }
+      }
+      if (restoreNeeded && font.missingFile && (patternFillTransform || patternStrokeTransform)) {
+        glyphPatterns ||= new Map();
+        [ctx.fillStyle, ctx.strokeStyle] = glyphPatterns.getOrInsertComputed(glyph.isRotated ? -characterScaleX : characterScaleX, () => [patternFillTransform ? this.#getTextPattern(current.fillColor, PathType.FILL, opIdx)[0] : ctx.fillStyle, patternStrokeTransform ? this.#getTextPattern(current.strokeColor, PathType.STROKE, opIdx)[0] : ctx.strokeStyle]);
       }
       if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
         if (simpleFillText && !accent) {
@@ -4622,9 +4630,9 @@ class CanvasGraphics {
     const textHScale = current.textHScale * fontDirection;
     const fontMatrix = current.fontMatrix || FONT_IDENTITY_MATRIX;
     const glyphsLength = glyphs.length;
-    const isTextInvisible = current.textRenderingMode === TextRenderingMode.INVISIBLE;
+    const isTextVisible = current.textRenderingMode !== TextRenderingMode.INVISIBLE;
     let i, glyph, width, spacingLength;
-    if (isTextInvisible || fontSize === 0) {
+    if (fontSize === 0) {
       return;
     }
     this._cachedScaleForStroking[0] = -1;
@@ -4649,20 +4657,14 @@ class CanvasGraphics {
         const operatorList = font.charProcOperatorList.get(glyph.operatorListId);
         if (!operatorList) {
           warn(`Type3 character "${glyph.operatorListId}" is not available.`);
-        } else if (this.contentVisible) {
+        } else if (this.contentVisible && isTextVisible) {
           this.save();
-          if (operatorList.fnArray[0] === OPS.setCharWidth) {
-            this.current.fillAlpha = this.current.strokeAlpha = 1;
-            ctx.globalAlpha = 1;
-          }
           ctx.scale(fontSize, fontSize);
           ctx.transform(...fontMatrix);
           this.executeOperatorList(operatorList);
           this.restore();
         }
-        const p = [glyph.width, 0];
-        Util.applyTransform(p, fontMatrix);
-        width = p[0] * fontSize + spacing;
+        width = glyph.width * fontMatrix[0] * fontSize + spacing * fontDirection;
         ctx.translate(width, 0);
         current.x += width * textHScale;
       }
@@ -7129,6 +7131,7 @@ class RendererMessageHandler {
   static #fontLoader = new FontLoader({
     ownerDocument: globalThis
   });
+  static #hasMeshPattern = false;
   static #objsMap = new Map();
   static #operatorLists = new Map();
   static #renderTaskStates = new Map();
@@ -7326,8 +7329,19 @@ class RendererMessageHandler {
       pageCache: this.#objsMap,
       shouldCreatePageObjs: true
     });
-    handler.on("commonobj", ([id, type, exportedData]) => this.#commonObjs.has(id) ? null : objectHandler.resolveCommonObject(id, type, exportedData));
+    handler.on("commonobj", ([id, type, exportedData]) => {
+      if (this.#commonObjs.has(id)) {
+        return;
+      }
+      objectHandler.resolveCommonObject(id, type, exportedData);
+      if (type === "Pattern" && this.#commonObjs.get(id)[0] === "Mesh") {
+        this.#hasMeshPattern = true;
+      }
+    });
     handler.on("obj", ([id, pageProxyId, type, imageData]) => {
+      if (type === "Pattern" && imageData[0] === "Mesh") {
+        this.#hasMeshPattern = true;
+      }
       objectHandler.resolveObject(id, pageProxyId, type, imageData);
     });
     handler.on("objFailed", ({
@@ -7427,12 +7441,6 @@ class RendererMessageHandler {
       };
       this.#renderTaskStates.set(renderTaskId, renderTaskState);
       try {
-        if (this.#enableWebGPU) {
-          await initGPU();
-          if (renderTaskState.aborted) {
-            return;
-          }
-        }
         const objs = this.#getPageObjs(pageProxyId);
         const optionalContentConfig = OptionalContentConfig.fromSerializable(data.optionalContentConfig);
         const canvasFactory = this.#canvasFactory ??= new OffscreenCanvasFactory({
@@ -7479,6 +7487,15 @@ class RendererMessageHandler {
           operatorListIdx,
           aborted: true
         };
+      }
+      if (this.#hasMeshPattern && this.#enableWebGPU && !isGPUReady()) {
+        await initGPU();
+        if (renderTaskState.aborted) {
+          return {
+            operatorListIdx,
+            aborted: true
+          };
+        }
       }
       renderTaskState.operatorListIdx = operatorListIdx;
       this.#appendFromSharedOperatorList(renderTaskState, operatorListLength, operationsFilterMask, lastChunk);
@@ -7537,6 +7554,7 @@ class RendererMessageHandler {
     }
     this.#objsMap.clear();
     this.#operatorLists.clear();
+    this.#hasMeshPattern = false;
     this.#commonObjs.clear();
     this.#fontLoader.clear();
     this.#commonObjs = new PDFObjects();
@@ -7551,7 +7569,7 @@ class RendererMessageHandler {
     this.#connection = null;
   }
   static #sendReady(handler) {
-    const workerVersion = "6.5.273";
+    const workerVersion = "6.5.447";
     const testObj = new Uint8Array();
     handler.send("ready", {
       testObj,

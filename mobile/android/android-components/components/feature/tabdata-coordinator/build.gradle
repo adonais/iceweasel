@@ -9,10 +9,16 @@ plugins {
 
 android {
     namespace = 'mozilla.components.feature.tabdata.coordinator'
+    testFixtures {
+        enable = true
+    }
 }
 
 dependencies {
     api project(':components:feature-tabgroups-storage')
+
+    implementation project(':components:support-base')
+    implementation project(':components:support-utils')
 
     implementation libs.kotlinx.coroutines
 
@@ -22,7 +28,9 @@ dependencies {
     testRuntimeOnly libs.junit.vintage
     testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
+    testFixturesImplementation libs.kotlinx.coroutines
     testImplementation testFixtures(project(':components:feature-tabgroups-storage'))
+    testImplementation testFixtures(project(':components:support-utils'))
 }
 
 apply from: '../../../common-config.gradle'

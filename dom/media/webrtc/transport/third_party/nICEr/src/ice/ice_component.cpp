@@ -282,7 +282,6 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         r_log(LOG_ICE,LOG_WARNING,"ICE-STREAM(%s): relay only option results in no host candidate for %s",component->stream->label,addrs[i].addr.as_string);
       }
 
-#ifdef USE_TURN
       if ((component->stream->flags & NR_ICE_CTX_FLAGS_RELAY_ONLY) &&
           (component->stream->turn_server_ct == 0)) {
         r_log(LOG_ICE,LOG_ERR,"ICE-STREAM(%s): relay only option is set without any TURN server configured",component->stream->label);
@@ -339,7 +338,6 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
 
         cand=0;
       }
-#endif /* USE_TURN */
     }
 
     _status = 0;
@@ -520,7 +518,6 @@ static int nr_ice_component_initialize_tcp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         }
       }
 
-#ifdef USE_TURN
       /* Create a new relayed candidate for each addr/TURN server pair */
       for(j=0;j<component->stream->turn_server_ct;j++){
         nr_transport_addr addr;
@@ -622,7 +619,6 @@ static int nr_ice_component_initialize_tcp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         component->candidate_ct++;
         cand=0;
       }
-#endif /* USE_TURN */
     }
 
     _status = 0;

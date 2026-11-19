@@ -5,10 +5,13 @@
 
 
 import argparse
+import io
 import os
 import subprocess
 import sys
-import zipfile
+import tarfile
+
+import zstandard
 
 
 class ProcError(Exception):
@@ -32,18 +35,24 @@ def process_file(dump_syms, path):
         stdout = check_output([dump_syms, path])
     except ProcError as e:
         print('Error: running "%s %s": %s' % (dump_syms, path, e.stderr))
-        return None, None, None
+        return None, None, None, None
     bits = stdout.splitlines()[0].split(" ", 4)
     if len(bits) != 5:
-        return None, None, None
+        return None, None, None, None
     _, platform, cpu_arch, debug_id, debug_file = bits
     if debug_file.lower().endswith(".pdb"):
         sym_file = debug_file[:-4] + ".sym"
     else:
         sym_file = debug_file + ".sym"
     filename = os.path.join(debug_file, debug_id, sym_file)
-    debug_filename = os.path.join(debug_file, debug_id, debug_file)
-    return filename, stdout, debug_filename
+    # Binaries must never be packaged, as they must not be redistributed through
+    # the symbol server. On Windows, dump_syms reads the PDB found next to the
+    # binary and reports it as the debug file; that PDB is packaged.
+    pdb_path = pdb_arcname = None
+    if debug_file.lower().endswith(".pdb"):
+        pdb_path = os.path.join(os.path.dirname(path), debug_file)
+        pdb_arcname = os.path.join(debug_file, debug_id, debug_file)
+    return filename, stdout, pdb_path, pdb_arcname
 
 
 def main():
@@ -51,30 +60,31 @@ def main():
     parser.add_argument("dump_syms", help="Path to dump_syms binary")
     parser.add_argument("files", nargs="+", help="Path to files to dump symbols from")
     parser.add_argument(
-        "--symbol-zip",
-        default="symbols.zip",
-        help="Name of zip file to put dumped symbols in",
-    )
-    parser.add_argument(
-        "--no-binaries",
-        action="store_true",
-        default=False,
-        help="Don't store binaries in zip file",
+        "--symbol-archive",
+        default="symbols.tar.zst",
+        help="Name of the .tar.zst archive to put dumped symbols in",
     )
     args = parser.parse_args()
     count = 0
-    with zipfile.ZipFile(args.symbol_zip, "w", zipfile.ZIP_DEFLATED) as zf:
-        for f in args.files:
-            filename, contents, debug_filename = process_file(args.dump_syms, f)
-            if not (filename and contents):
-                print("Error dumping symbols")
-                sys.exit(1)
-            zf.writestr(filename, contents)
-            count += 1
-            if not args.no_binaries:
-                zf.write(f, debug_filename)
+    ctx = zstandard.ZstdCompressor(threads=-1)
+    with open(args.symbol_archive, "wb") as fh, ctx.stream_writer(fh) as zstdwriter:
+        with tarfile.open(mode="w|", fileobj=zstdwriter, bufsize=1024 * 1024) as tar:
+            for f in args.files:
+                filename, contents, pdb_path, pdb_arcname = process_file(
+                    args.dump_syms, f
+                )
+                if not (filename and contents):
+                    print("Error dumping symbols")
+                    sys.exit(1)
+                data = contents.encode("utf-8")
+                info = tarfile.TarInfo(filename)
+                info.size = len(data)
+                tar.addfile(info, io.BytesIO(data))
                 count += 1
-    print("Added %d files to %s" % (count, args.symbol_zip))
+                if pdb_path:
+                    tar.add(pdb_path, pdb_arcname)
+                    count += 1
+    print("Added %d files to %s" % (count, args.symbol_archive))
 
 
 if __name__ == "__main__":

@@ -91,7 +91,8 @@ logic. Note that it may be invoked asynchronously if the consumers are async.
 
 Any errors thrown by consumers are automatically caught and reported via the
 [Browser Console](/devtools-user/browser_console/index.md). They are also
-recorded to the `browser_utils.category_dispatch_error` Glean event. Every
+recorded to the `browser_utils.category_dispatch_error` Glean event, with the
+failing consumer and the file and line the error was created at. Every
 consumer that returns or throws is also counted, per category, in the
 `browser_utils.category_consumer_result` Glean counter: add a new category to
 its `key` labels in `toolkit/modules/gecko_metrics.yaml`, or it is counted as

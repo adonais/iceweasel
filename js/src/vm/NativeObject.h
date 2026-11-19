@@ -374,18 +374,18 @@ class ObjectElements {
 
   uint32_t getInitializedLength() const { return initializedLength; }
 
-  static int offsetOfFlags() {
+  static constexpr int offsetOfFlags() {
     return int(offsetof(ObjectElements, flags)) - int(sizeof(ObjectElements));
   }
-  static int offsetOfInitializedLength() {
+  static constexpr int offsetOfInitializedLength() {
     return int(offsetof(ObjectElements, initializedLength)) -
            int(sizeof(ObjectElements));
   }
-  static int offsetOfCapacity() {
+  static constexpr int offsetOfCapacity() {
     return int(offsetof(ObjectElements, capacity)) -
            int(sizeof(ObjectElements));
   }
-  static int offsetOfLength() {
+  static constexpr int offsetOfLength() {
     return int(offsetof(ObjectElements, length)) - int(sizeof(ObjectElements));
   }
 
@@ -1730,6 +1730,9 @@ class NativeObject : public JSObject {
   void shrinkElements(JSContext* cx, uint32_t cap);
 
  private:
+  // Like growElements, but doesn't call Watchtower::watchFirstDenseElementAdd.
+  bool growElementsNoWatchtowerCheck(JSContext* cx, uint32_t newcap);
+
   // Run a post write barrier that encompasses multiple contiguous elements in a
   // single step.
   inline void elementsRangePostWriteBarrier(uint32_t start, uint32_t count);

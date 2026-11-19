@@ -228,7 +228,8 @@ bool WindowContext::CheckOnlyOwningProcessCanSet(ContentParent* aSource) {
   return false;
 }
 
-void WindowContext::DidSet(FieldIndex<IDX_AllowJavascript>, bool aOldValue) {
+void WindowContext::DidSet(FieldIndex<IDX_AllowJavascript>,
+                           bool /*aOldValue*/) {
   RecomputeCanExecuteScripts();
 }
 
@@ -273,7 +274,7 @@ void WindowContext::RecomputeCanExecuteScripts(bool aApplyChanges) {
 }
 
 void WindowContext::DidSet(FieldIndex<IDX_SHEntryHasUserInteraction>,
-                           bool aOldValue) {
+                           bool /*aOldValue*/) {
   MOZ_ASSERT(
       TopWindowContext() == this,
       "SHEntryHasUserInteraction can only be set on the top window context");

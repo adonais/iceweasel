@@ -149,6 +149,8 @@ export const ADD_MEMORY = "add_memory";
 // in Chat.sys.mjs when the pref is off.
 export const AITAB_PREF = "browser.smartwindow.aitab.enabled";
 export const AITAB_TOOLS = new Set([GENERATE_AITAB]);
+export const INCLUDE_CHAT_TAB_PREF =
+  "browser.smartwindow.manageTabs.includeChatTab";
 export const SEARCH_QUERY_ENDPOINT_PREF =
   "browser.smartwindow.searchQuery.endpointURL";
 export const SEARCH_QUERY_APIKEY_PREF =
@@ -566,6 +568,16 @@ export const toolsConfig = [
             description:
               "List of URL tokens identifying the tabs the action should be taken on.",
           },
+          include_chat_tab: {
+            type: "boolean",
+            description:
+              "Whether to also put the tab this chat is open in into the new " +
+              "tab group. Only used when action is 'group_tabs'. Default to " +
+              "false. Only set to true when the user refers to this " +
+              "conversation (e.g. 'with this chat') or the conversation is " +
+              "about the same topic as the selected tabs. When in doubt, set " +
+              "to false.",
+          },
           label: {
             type: "string",
             description:
@@ -659,6 +671,7 @@ export function getTabList(amount = MAX_TABS) {
             title: sanitizeUntrustedContent(title),
             lastAccessed: tab.lastAccessed,
             windowId,
+            pinned: tab.pinned,
           });
         }
       }
@@ -678,6 +691,7 @@ export function getTabList(amount = MAX_TABS) {
  * @property {string} title - Title of the tab.
  * @property {number} lastAccessed - When the tab was last accessed in milliseconds.
  * @property {string|null} windowId - SessionStore ID of the browser window.
+ * @property {boolean} pinned - Whether the tab is pinned.
  */
 
 /**
@@ -1593,7 +1607,7 @@ async function persistAITabPage(
  * @param {ChatConversation} conversation
  * @param {boolean} isEdit - Whether the call modifies an existing page, which
  *   the tab menus never ask for.
- * @returns {"tab_list"|"tab_group"|"chat"|"chat_followup"}
+ * @returns {"tab_list"|"tab_group"|"fxms"|"chat"|"chat_followup"}
  */
 function getAITabInitiator(conversation, isEdit) {
   if (!isEdit && conversation.aitabSource) {
@@ -1822,6 +1836,7 @@ export async function manageTabs(
   const {
     action,
     ask_confirmation = true,
+    include_chat_tab = false,
     url_tokens = [],
     label = "",
   } = params;
@@ -1896,6 +1911,9 @@ export async function manageTabs(
       action,
       validUrls,
       ask_confirmation,
+      include_chat_tab:
+        include_chat_tab === true &&
+        Services.prefs.getBoolPref(INCLUDE_CHAT_TAB_PREF, false),
       label,
       baseTelemetryInfo,
       toolCallId,

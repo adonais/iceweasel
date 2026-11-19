@@ -27,9 +27,6 @@ class nsDeviceContextSpecX : public nsIDeviceContextSpec {
                            int32_t aEndPage) override;
   RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() override;
 
-  void GetPaperRect(double* aTop, double* aLeft, double* aBottom,
-                    double* aRight);
-
   nsresult BeginPage(const IntSize&) final {
     mCurrentPageCount++;
     return NS_OK;

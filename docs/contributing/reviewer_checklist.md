@@ -14,9 +14,6 @@ will lead to a smoother, more rapid process of review and acceptance.
   strongly recommended for anyone who reviews patches: it displays a
   badge with the number of reviews waiting on you in Phabricator,
   Bugzilla and GitHub, so requests don't sit unnoticed for days.
-- Use the [phab-test-policy
-  add-on](https://addons.mozilla.org/firefox/addon/phab-test-policy/) to
-  help select the right test policy for the patch in Phabricator.
 
 ## Good web citizenship
 

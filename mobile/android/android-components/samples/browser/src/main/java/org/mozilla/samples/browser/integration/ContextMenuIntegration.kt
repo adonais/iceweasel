@@ -68,7 +68,7 @@ class ContextMenuIntegration(
                     appLinksUseCases =
                         AppLinksUseCases(
                             context = context,
-                            launchInApp = { true },
+                            launchInApp = { _ -> true },
                         ),
                 )
             ContextMenuCandidate.defaultCandidates(

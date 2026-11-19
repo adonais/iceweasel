@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 21 insertions(+), 9 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index cd53c0855a..f7eb3516a8 100644
+index 674ba97110..ec28e93549 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -542,6 +542,9 @@ if (!rtc_build_ssl) {
@@ -38,7 +38,7 @@ index cd53c0855a..f7eb3516a8 100644
        ]
        # Added when we removed deps in other places to avoid building
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index ea259194be..cdf01260eb 100644
+index edf3c9d52d..d0b14340af 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -12,9 +12,7 @@ import("../webrtc.gni")
@@ -62,7 +62,7 @@ index ea259194be..cdf01260eb 100644
    }
  }
  
-@@ -252,6 +253,7 @@ rtc_library("codec_list") {
+@@ -253,6 +254,7 @@ rtc_library("codec_list") {
    ]
  }
  
@@ -70,7 +70,7 @@ index ea259194be..cdf01260eb 100644
  rtc_library("rtp_utils") {
  if (!build_with_mozilla) {
    sources = [
-@@ -300,7 +302,6 @@ rtc_library("media_constants") {
+@@ -301,7 +303,6 @@ rtc_library("media_constants") {
  }
  
  rtc_library("turn_utils") {
@@ -78,7 +78,7 @@ index ea259194be..cdf01260eb 100644
    sources = [
      "base/turn_utils.cc",
      "base/turn_utils.h",
-@@ -311,10 +312,8 @@ if (!build_with_mozilla) {
+@@ -312,10 +313,8 @@ if (!build_with_mozilla) {
      "../rtc_base/system:rtc_export",
    ]
  }
@@ -89,7 +89,7 @@ index ea259194be..cdf01260eb 100644
    sources = [
      "base/rid_description.cc",
      "base/rid_description.h",
-@@ -324,7 +323,6 @@ if (!build_with_mozilla) {
+@@ -325,7 +324,6 @@ if (!build_with_mozilla) {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -97,7 +97,7 @@ index ea259194be..cdf01260eb 100644
  
  rtc_library("rtc_simulcast_encoder_adapter") {
    visibility = [ "*" ]
-@@ -553,6 +551,12 @@ rtc_library("rtc_audio_video") {
+@@ -555,6 +553,12 @@ rtc_library("rtc_audio_video") {
      "engine/webrtc_voice_engine.cc",
      "engine/webrtc_voice_engine.h",
    ]
@@ -111,10 +111,10 @@ index ea259194be..cdf01260eb 100644
    public_configs = []
    if (!build_with_chromium) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index e7f507d44e..f4bf717f77 100644
+index d914cf6d8c..53d25a7387 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -1660,6 +1660,7 @@ rtc_source_set("ssl_header") {
+@@ -1659,6 +1659,7 @@ rtc_source_set("ssl_header") {
  }
  
  rtc_library("digest") {
@@ -122,7 +122,7 @@ index e7f507d44e..f4bf717f77 100644
    visibility = [ "*" ]
    sources = [
      "message_digest.cc",
-@@ -1681,8 +1682,10 @@ rtc_library("digest") {
+@@ -1680,8 +1681,10 @@ rtc_library("digest") {
      configs += [ "..:external_ssl_library" ]
    }
  }
@@ -133,7 +133,7 @@ index e7f507d44e..f4bf717f77 100644
    visibility = [ "*" ]
    sources = [
      "crypto_random.cc",
-@@ -1703,6 +1706,7 @@ rtc_library("crypto_random") {
+@@ -1702,6 +1705,7 @@ rtc_library("crypto_random") {
      configs += [ "..:external_ssl_library" ]
    }
  }
@@ -142,7 +142,7 @@ index e7f507d44e..f4bf717f77 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 550971a975..abcc369515 100644
+index c8333f9d02..445fc6b27b 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -116,7 +116,7 @@ declare_args() {
@@ -154,7 +154,7 @@ index 550971a975..abcc369515 100644
  
    # Selects whether debug dumps for the audio processing module
    # should be generated.
-@@ -338,7 +338,7 @@ declare_args() {
+@@ -343,7 +343,7 @@ declare_args() {
  }
  
  # Enable liboam only on non-mozilla builds.

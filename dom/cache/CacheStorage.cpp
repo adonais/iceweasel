@@ -260,7 +260,7 @@ CacheStorage::CacheStorage(Namespace aNamespace, nsIGlobalObject* aGlobal,
                            SafeRefPtr<CacheWorkerRef> aWorkerRef)
     : mNamespace(aNamespace),
       mGlobal(aGlobal),
-      mPrincipalInfo(MakeUnique<PrincipalInfo>(aPrincipalInfo)),
+      mPrincipalInfo(std::make_unique<PrincipalInfo>(aPrincipalInfo)),
       mActor(nullptr),
       mStatus(NS_OK) {
   MOZ_DIAGNOSTIC_ASSERT(mGlobal);
@@ -333,7 +333,7 @@ already_AddRefed<Promise> CacheStorage::Match(
   CacheQueryParams params;
   ToCacheQueryParams(params, aOptions);
 
-  auto entry = MakeUnique<Entry>();
+  auto entry = std::make_unique<Entry>();
   entry->mPromise = promise;
   entry->mArgs = StorageMatchArgs(CacheRequest(), params, GetOpenMode());
   entry->mRequest = std::move(request);
@@ -363,7 +363,7 @@ already_AddRefed<Promise> CacheStorage::Has(const nsAString& aKey,
     return nullptr;
   }
 
-  auto entry = MakeUnique<Entry>();
+  auto entry = std::make_unique<Entry>();
   entry->mPromise = promise;
   entry->mArgs = StorageHasArgs(nsString(aKey));
 
@@ -392,7 +392,7 @@ already_AddRefed<Promise> CacheStorage::Open(const nsAString& aKey,
     return nullptr;
   }
 
-  auto entry = MakeUnique<Entry>();
+  auto entry = std::make_unique<Entry>();
   entry->mPromise = promise;
   entry->mArgs = StorageOpenArgs(nsString(aKey));
 
@@ -421,7 +421,7 @@ already_AddRefed<Promise> CacheStorage::Delete(const nsAString& aKey,
     return nullptr;
   }
 
-  auto entry = MakeUnique<Entry>();
+  auto entry = std::make_unique<Entry>();
   entry->mPromise = promise;
   entry->mArgs = StorageDeleteArgs(nsString(aKey));
 
@@ -449,7 +449,7 @@ already_AddRefed<Promise> CacheStorage::Keys(ErrorResult& aRv) {
     return nullptr;
   }
 
-  auto entry = MakeUnique<Entry>();
+  auto entry = std::make_unique<Entry>();
   entry->mPromise = promise;
   entry->mArgs = StorageKeysArgs();
 

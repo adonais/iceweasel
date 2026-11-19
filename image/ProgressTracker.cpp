@@ -21,7 +21,7 @@ using mozilla::WeakPtr;
 namespace mozilla {
 namespace image {
 
-static void CheckProgressConsistency(Progress aOldProgress,
+static void CheckProgressConsistency(Progress /*aOldProgress*/,
                                      Progress aNewProgress, bool aIsMultipart) {
   // Check preconditions for every progress bit.
 

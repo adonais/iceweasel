@@ -276,7 +276,7 @@ already_AddRefed<Promise> DOMMediaStream::CountUnderlyingStreams(
     MediaTrackGraphImpl* mGraph;
     RefPtr<Promise> mPromise;
   };
-  graphImpl->AppendMessage(MakeUnique<Counter>(graphImpl, p));
+  graphImpl->AppendMessage(std::make_unique<Counter>(graphImpl, p));
 
   return p.forget();
 }

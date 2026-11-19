@@ -252,6 +252,119 @@ add_task(async function toolbar_icon_status_inclusion_mode() {
 });
 
 /**
+ * Tests that a failed connection kept up for the sites that always use the VPN
+ * only shows the error on tabs with an included site, while a failed full
+ * connection shows it everywhere.
+ */
+add_task(async function toolbar_icon_error_inclusion_mode() {
+  const INCLUDED_SITE = "https://example.org";
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ERROR);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_INCLUSION);
+  sandbox
+    .stub(IPPSiteRuleManager, "getRule")
+    .callsFake(principal =>
+      principal?.origin === INCLUDED_SITE
+        ? IPPPrincipalRules.INCLUDED
+        : IPPPrincipalRules.DEFAULT
+    );
+
+  let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  let otherTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com"
+  );
+  Assert.ok(
+    !button.classList.contains("ipprotection-error"),
+    "No error on a site the connection does not carry"
+  );
+
+  let includedTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    INCLUDED_SITE
+  );
+  Assert.ok(
+    button.classList.contains("ipprotection-error"),
+    "Error on an included site"
+  );
+
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
+  await BrowserTestUtils.switchTab(gBrowser, otherTab);
+  Assert.ok(
+    button.classList.contains("ipprotection-error"),
+    "Error on every site in full mode"
+  );
+
+  BrowserTestUtils.removeTab(includedTab);
+  BrowserTestUtils.removeTab(otherTab);
+  sandbox.restore();
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:StateChanged")
+  );
+});
+
+/**
+ * Tests that an included site only shows as included while a connection
+ * carries it, and not in a tab excluded on its own.
+ */
+add_task(async function toolbar_icon_included_only_while_carried() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", true]],
+  });
+  const INCLUDED_SITE = "https://example.org";
+  const excludedTabs = new Set();
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.READY);
+  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_INCLUSION);
+  sandbox.stub(IPPSiteRuleManager, "canManage").returns(true);
+  sandbox
+    .stub(IPPSiteRuleManager, "getRule")
+    .callsFake((principal, browserId) => {
+      if (excludedTabs.has(browserId)) {
+        return IPPPrincipalRules.EXCLUDED;
+      }
+      return principal?.origin === INCLUDED_SITE
+        ? IPPPrincipalRules.INCLUDED
+        : IPPPrincipalRules.DEFAULT;
+    });
+
+  let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    INCLUDED_SITE
+  );
+  Assert.ok(
+    !button.classList.contains("ipprotection-included"),
+    "Not included while no connection carries the site"
+  );
+
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:StateChanged")
+  );
+  Assert.ok(
+    button.classList.contains("ipprotection-included"),
+    "Included while the connection carries the site"
+  );
+
+  excludedTabs.add(tab.linkedBrowser.browserId);
+  IPPSiteRuleManager.dispatchEvent(
+    new CustomEvent("SiteRuleManager:RuleChanged")
+  );
+  Assert.ok(
+    !button.classList.contains("ipprotection-included"),
+    "Not included in a tab excluded on its own"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  sandbox.restore();
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:StateChanged")
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Tests that the toolbar icon in a new window has the previous status.
  */
 add_task(async function toolbar_icon_status_new_window() {

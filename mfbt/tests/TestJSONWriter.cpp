@@ -5,16 +5,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memory>
 #include <string>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/JSONWriter.h"
-#include "mozilla/UniquePtr.h"
 
 using mozilla::JSONWriteFunc;
 using mozilla::JSONWriter;
 using mozilla::MakeStringSpan;
-using mozilla::MakeUnique;
 using mozilla::Span;
 
 // This writes all the output into a big buffer.
@@ -100,7 +99,7 @@ void TestBasicProperties() {
 }\n\
 ";
 
-  JSONWriter w(MakeUnique<StringWriteFunc>());
+  JSONWriter w(std::make_unique<StringWriteFunc>());
 
   w.Start();
   {
@@ -278,7 +277,7 @@ void TestBasicElements() {
 }\n\
 ";
 
-  JSONWriter w(MakeUnique<StringWriteFunc>());
+  JSONWriter w(std::make_unique<StringWriteFunc>());
 
   w.Start();
   w.StartArrayProperty("array");
@@ -406,7 +405,7 @@ void TestOneLineObject() {
 {\"i\": 1, \"array\": [null, [{}], {\"o\": {}}, \"s\"], \"d\": 3.33}\n\
 ";
 
-  JSONWriter w(MakeUnique<StringWriteFunc>());
+  JSONWriter w(std::make_unique<StringWriteFunc>());
 
   w.Start(w.SingleLineStyle);
 
@@ -503,7 +502,7 @@ void TestStringEscaping() {
 }\n\
 ";
 
-  JSONWriter w(MakeUnique<StringWriteFunc>());
+  JSONWriter w(std::make_unique<StringWriteFunc>());
 
   // Test the string escaping behaviour.
   w.Start();
@@ -592,7 +591,7 @@ void TestDeepNesting() {
 }\n\
 ";
 
-  JSONWriter w(MakeUnique<StringWriteFunc>());
+  JSONWriter w(std::make_unique<StringWriteFunc>());
 
   w.Start();
   {
@@ -617,7 +616,7 @@ void TestEscapedPropertyNames() {
 {\"i\\t\": 1, \"array\\t\": [null, [{}], {\"o\\t\": {}}, \"s\"], \"d\": 3.33}\n\
 ";
 
-  JSONWriter w(MakeUnique<StringWriteFunc>());
+  JSONWriter w(std::make_unique<StringWriteFunc>());
 
   w.Start(w.SingleLineStyle);
 

@@ -35,9 +35,12 @@ add_task(async function () {
   const source = findSource(dbg, "doc-debugger-statements.html");
   await assertPausedAtSourceAndLine(dbg, source.id, 16);
 
+  const onResumed = toolbox.once("toolbox-resumed");
   await resume(dbg);
   info("Wait for the paused code to complete after resume");
   await pausedRun;
+  info("Wait for the toolbox to acknowledge the resume");
+  await onResumed;
 
   ok(
     !toolbox.isHighlighted("jsdebugger"),

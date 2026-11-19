@@ -158,37 +158,6 @@ interface nsITelemetry : nsISupports
    */
   readonly attribute uint32_t failedProfileLockCount;
 
-  /*
-   * An object containing information about slow SQL statements.
-   *
-   * {
-   *   mainThread: { "sqlString1": [<hit count>, <total time>], "sqlString2": [...], ... },
-   *   otherThreads: { "sqlString3": [<hit count>, <total time>], "sqlString4": [...], ... }
-   * }
-   *
-   * where:
-   *   mainThread: Slow statements that executed on the main thread
-   *   otherThreads: Slow statements that executed on a non-main thread
-   *   sqlString - String of the offending statement (see note)
-   *   hit count - The number of times this statement required longer than the threshold time to execute
-   *   total time - The sum of all execution times above the threshold time for this statement
-   *
-   * Note that dynamic SQL strings and SQL strings executed against addon DBs could contain private information.
-   * This property represents such SQL as aggregate database-level stats and the sqlString contains the database
-   * filename instead.
-   */
-  [implicit_jscontext]
-  readonly attribute jsval slowSQL;
-
-  /*
-   * See slowSQL above.
-   *
-   * An object containing full strings of every slow SQL statement if toolkit.telemetry.debugSlowSql = true
-   * The returned SQL strings may contain private information and should not be reported to Telemetry.
-   */
-  [implicit_jscontext]
-  readonly attribute jsval debugSlowSQL;
-
   /**
    * Flags for getUntrustedModuleLoadEvents.
    */

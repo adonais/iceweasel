@@ -607,7 +607,7 @@ class TextEditor final : public EditorBase,
       mPasswordMaskData->CancelTimer(PasswordMaskData::ReleaseTimer::Yes);
     }
     if (IsPasswordEditor()) {
-      mPasswordMaskData = MakeUnique<PasswordMaskData>();
+      mPasswordMaskData = std::make_unique<PasswordMaskData>();
     } else {
       mPasswordMaskData = nullptr;
     }

@@ -17,7 +17,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 
-public class ToolbarLayout extends LinearLayout {
+public final class ToolbarLayout extends LinearLayout {
   public interface TabListener {
     void switchToTab(int tabId);
 

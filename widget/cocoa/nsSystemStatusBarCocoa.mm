@@ -24,7 +24,7 @@ nsSystemStatusBarCocoa::AddItem(Element* aElement) {
   auto menu = mozilla::MakeRefPtr<NativeMenuMac>(aElement);
 
   nsCOMPtr<nsISupports> keyPtr = aElement;
-  mItems.InsertOrUpdate(keyPtr, mozilla::MakeUnique<StatusItem>(menu));
+  mItems.InsertOrUpdate(keyPtr, std::make_unique<StatusItem>(menu));
 
   return NS_OK;
 }

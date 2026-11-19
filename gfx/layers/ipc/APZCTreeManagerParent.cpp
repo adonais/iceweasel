@@ -20,18 +20,18 @@ APZCTreeManagerParent::APZCTreeManagerParent(
     : mLayersId(aLayersId),
       mTreeManager(std::move(aAPZCTreeManager)),
       mUpdater(std::move(aAPZUpdater)) {
-  MOZ_ASSERT(mTreeManager != nullptr);
-  MOZ_ASSERT(mUpdater != nullptr);
-  MOZ_ASSERT(mUpdater->HasTreeManager(mTreeManager));
+  MOZ_RELEASE_ASSERT(mTreeManager != nullptr);
+  MOZ_RELEASE_ASSERT(mUpdater != nullptr);
+  MOZ_RELEASE_ASSERT(mUpdater->HasTreeManager(mTreeManager));
 }
 
 APZCTreeManagerParent::~APZCTreeManagerParent() = default;
 
 void APZCTreeManagerParent::ChildAdopted(
     RefPtr<APZCTreeManager> aAPZCTreeManager, RefPtr<APZUpdater> aAPZUpdater) {
-  MOZ_ASSERT(aAPZCTreeManager != nullptr);
-  MOZ_ASSERT(aAPZUpdater != nullptr);
-  MOZ_ASSERT(aAPZUpdater->HasTreeManager(aAPZCTreeManager));
+  MOZ_RELEASE_ASSERT(aAPZCTreeManager != nullptr);
+  MOZ_RELEASE_ASSERT(aAPZUpdater != nullptr);
+  MOZ_RELEASE_ASSERT(aAPZUpdater->HasTreeManager(aAPZCTreeManager));
   mTreeManager = std::move(aAPZCTreeManager);
   mUpdater = std::move(aAPZUpdater);
 }

@@ -114,18 +114,14 @@ typedef struct nr_stun_message_attribute_ {
         char                            username[NR_STUN_MAX_USERNAME_BYTES+1];  /* +1 for \0 */
         nr_stun_attr_xor_mapped_address xor_mapped_address;
 
-#ifdef USE_ICE
         UINT4                           priority;
         UINT8                           ice_controlled;
         UINT8                           ice_controlling;
-#endif /* USE_ICE */
 
-#ifdef USE_TURN
         UINT4                           lifetime_secs;
         nr_transport_addr               remote_address;
         UCHAR                           requested_transport;
         nr_stun_attr_data               data;
-#endif /* USE_TURN */
 
         /* make sure there's enough room here to place any possible
          * attribute */
@@ -180,20 +176,16 @@ int nr_stun_message_add_unknown_attributes_attribute(nr_stun_message *msg, nr_st
 int nr_stun_message_add_username_attribute(nr_stun_message *msg, char *username);
 int nr_stun_message_add_xor_mapped_address_attribute(nr_stun_message *msg, nr_transport_addr *mapped_address);
 
-#ifdef USE_ICE
 int nr_stun_message_add_ice_controlled_attribute(nr_stun_message *msg, UINT8 ice_controlled);
 int nr_stun_message_add_ice_controlling_attribute(nr_stun_message *msg, UINT8 ice_controlling);
 int nr_stun_message_add_priority_attribute(nr_stun_message *msg, UINT4 priority);
 int nr_stun_message_add_use_candidate_attribute(nr_stun_message *msg);
-#endif /* USE_ICE */
 
-#ifdef USE_TURN
 int nr_stun_message_add_data_attribute(nr_stun_message *msg, UCHAR *data, int length);
 int nr_stun_message_add_lifetime_attribute(nr_stun_message *msg, UINT4 lifetime_secs);
 int nr_stun_message_add_requested_transport_attribute(nr_stun_message *msg, UCHAR transport);
 int
 nr_stun_message_add_xor_peer_address_attribute(nr_stun_message *msg, nr_transport_addr *peer_address);
-#endif /* USE_TURN */
 
 #endif
 

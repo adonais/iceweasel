@@ -494,6 +494,54 @@ add_task(async function test_isValidNetwork() {
   );
 });
 
+add_task(function test_getSecurityCodeL10nId() {
+  for (const network of ["visa", "mastercard", "amex"]) {
+    Assert.equal(
+      CreditCard.getSecurityCodeL10nId(network),
+      `credit-card-security-code-name-${network}`,
+      `${network} has its own name for the security code`
+    );
+  }
+  for (const network of [
+    null,
+    undefined,
+    "",
+    "madeupnetwork",
+    "constructor",
+    "discover",
+  ]) {
+    Assert.equal(
+      CreditCard.getSecurityCodeL10nId(network),
+      "credit-card-security-code-name-other",
+      `${network} falls back to the general name`
+    );
+  }
+});
+
+add_task(function test_formatSecurityCodeName() {
+  const testcases = [
+    [{ "cc-type": "visa" }, "CVV"],
+    [{ "cc-type": "mastercard" }, "CVC"],
+    [{ "cc-type": "amex" }, "CID"],
+    [{ "cc-type": "discover" }, "Security code"],
+    // Without a cc-type, the network comes from the number.
+    [{ "cc-number": "4111111111111111" }, "CVV"],
+    [{ "cc-number": "5555 5555 5555 4444" }, "CVC"],
+    [{ "cc-number": "378282246310005" }, "CID"],
+    // cc-type wins over the number.
+    [{ "cc-type": "amex", "cc-number": "4111111111111111" }, "CID"],
+    [{ "cc-number": "1234" }, "Security code"],
+    [{}, "Security code"],
+  ];
+  for (const [creditCard, expected] of testcases) {
+    Assert.equal(
+      CreditCard.formatSecurityCodeName(creditCard),
+      expected,
+      `The security code of ${JSON.stringify(creditCard)}`
+    );
+  }
+});
+
 add_task(async function test_getType() {
   const RECOGNIZED_CARDS = [
     // Edge cases

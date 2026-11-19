@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a4e2ac07bd6f2deb8
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/rtc_base/copy_on_write_buffer.cc b/rtc_base/copy_on_write_buffer.cc
-index 68e98ce729..5877f323f6 100644
+index 143003dade..1cfa027db6 100644
 --- a/rtc_base/copy_on_write_buffer.cc
 +++ b/rtc_base/copy_on_write_buffer.cc
-@@ -28,7 +28,11 @@
+@@ -29,7 +29,11 @@
  namespace webrtc {
  
  CopyOnWriteBuffer::RawBuffer::RawBuffer(size_t size)

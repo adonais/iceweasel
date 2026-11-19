@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding-top: calc(var(--space-xxlarge) + var(--space-large));
+  padding-block-start: calc(var(--space-xxlarge) + var(--space-large));
 }
 
 .page-container {
@@ -47,8 +47,8 @@
 
 .success-message-wrapper {
   position: fixed;
-  top: var(--space-large);
-  right: var(--space-large);
+  inset-block-start: var(--space-large);
+  inset-inline-end: var(--space-large);
   z-index: 999;
   animation: slideInRight 0.3s ease-out;
 }

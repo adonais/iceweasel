@@ -89,10 +89,20 @@ async function testFormdata(migratorKey, subDirs) {
   // Sanity check for the source.
   Assert.ok(await migrator.isSourceAvailable());
 
-  await promiseMigration(migrator, MigrationUtils.resourceTypes.FORMDATA, {
-    id: "Default",
-    name: "Person 1",
-  });
+  let availableQuantity = await promiseMigration(
+    migrator,
+    MigrationUtils.resourceTypes.FORMDATA,
+    {
+      id: "Default",
+      name: "Person 1",
+    }
+  );
+  Assert.equal(availableQuantity, 10, "Available form data reported.");
+  Assert.equal(
+    MigrationUtils.getImportedCount("formdata"),
+    10,
+    "Migrated form data counted."
+  );
 
   for (let i = 0; i < 10; i++) {
     let results = await FormHistory.search(["fieldname", "value"], {

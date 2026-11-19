@@ -161,6 +161,9 @@ class RTC_EXPORT VideoEncoder {
 
     EncoderInfo();
     EncoderInfo(const EncoderInfo&);
+    EncoderInfo(EncoderInfo&&);
+    EncoderInfo& operator=(const EncoderInfo&);
+    EncoderInfo& operator=(EncoderInfo&&);
 
     ~EncoderInfo();
 

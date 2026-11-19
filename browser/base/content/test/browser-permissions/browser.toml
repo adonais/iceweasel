@@ -20,9 +20,6 @@ skip-if = [
 ]
 
 ["browser_canvas_fingerprinting_resistance.js"]
-skip-if = [
-  "debug",
-]
 
 ["browser_canvas_rfp_exclusion.js"]
 

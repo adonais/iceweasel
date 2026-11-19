@@ -61,6 +61,7 @@ import mozilla.components.feature.summarize.R as summarizeR
 import mozilla.components.lib.crash.store.CrashReportOption
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
@@ -92,6 +93,7 @@ import org.mozilla.fenix.helpers.TestHelper.waitForObjects
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
+import org.mozilla.fenix.pdf.PdfToolsTestTag
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags
@@ -275,6 +277,22 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
                 }
             }
         }
+    }
+
+    fun verifyTheTranslationBannerIsDisplayed(translatedFrom: String, translatedTo: String) {
+        Log.i(TAG, "verifyTheTranslationBannerIsDisplayed: Trying to verify the Translations banner is displayed.")
+        composeTestRule
+            .onNodeWithContentDescription(getStringResource(R.string.translation_toolbar_expand_action))
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithContentDescription(getStringResource(R.string.translation_toolbar_close_action))
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(
+                getStringResource(R.string.translation_toolbar_translated_from_and_to, translatedFrom, translatedTo)
+            )
+            .assertIsDisplayed()
+        Log.i(TAG, "verifyTheTranslationBannerIsDisplayed: Trying to verified the Translations banner is displayed.")
     }
 
     fun verifyDRMControlledContentPageContent(expectedText: String) {
@@ -547,7 +565,28 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
     fun longClickPDFImage() =
         longClickPageObject(this@BrowserRobot.composeTestRule, itemWithResId("pdfjs_internal_id_13R"))
 
-    fun verifyPDFReaderToolbarItems() = assertUIObjectExists(itemWithResIdContainingText("download", "Download"))
+    @OptIn(ExperimentalTestApi::class)
+    fun verifyPDFReaderToolbarItems() {
+        // Bug 2081247 to switch to new toolbar for testing
+        if (!Config.channel.isNightlyOrDebug) {
+            assertUIObjectExists(itemWithResIdContainingText("download", "Download"))
+            return
+        }
+
+        Log.i(TAG, "verifyPDFReaderToolbarItems: Waiting for $waitingTime until the PDF tools bar exists")
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(PdfToolsTestTag.BAR), waitingTime)
+        Log.i(TAG, "verifyPDFReaderToolbarItems: Waited for $waitingTime until the PDF tools bar exists")
+        listOf(
+                PdfToolsTestTag.DOWNLOAD_BUTTON,
+                PdfToolsTestTag.PRINT_BUTTON,
+                PdfToolsTestTag.SHARE_BUTTON,
+            )
+            .forEach { testTag ->
+                Log.i(TAG, "verifyPDFReaderToolbarItems: Trying to verify that $testTag is displayed")
+                composeTestRule.onNodeWithTag(testTag).assertIsDisplayed()
+                Log.i(TAG, "verifyPDFReaderToolbarItems: Verified that $testTag is displayed")
+            }
+    }
 
     fun clickSubmitLoginButton() {
         clickPageObject(this@BrowserRobot.composeTestRule, itemWithResId("submit"))
@@ -1922,14 +1961,32 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
             return SettingsRobot.Transition()
         }
 
-        fun clickDownloadPDFButton(interact: DownloadRobot.() -> Unit): DownloadRobot.Transition {
-            Log.i(TAG, "clickDownloadPDFButton: Trying to click the download PDF button")
-            itemWithResIdContainingText(
-                    "download",
-                    "Download",
-                )
-                .click()
-            Log.i(TAG, "clickDownloadPDFButton: Clicked the download PDF button")
+        @OptIn(ExperimentalTestApi::class)
+        fun clickDownloadPDFButton(
+            confirmDownloadPrompt: Boolean = true,
+            interact: DownloadRobot.() -> Unit,
+        ): DownloadRobot.Transition {
+            // Bug 2081247 to switch to new toolbar for testing
+            if (Config.channel.isNightlyOrDebug) {
+                Log.i(TAG, "clickDownloadPDFButton: Waiting for $waitingTime until the download PDF button exists")
+                composeTestRule.waitUntilAtLeastOneExists(hasTestTag(PdfToolsTestTag.DOWNLOAD_BUTTON), waitingTime)
+                Log.i(TAG, "clickDownloadPDFButton: Waited for $waitingTime until the download PDF button exists")
+                Log.i(TAG, "clickDownloadPDFButton: Trying to click the download PDF button")
+                composeTestRule.onNodeWithTag(PdfToolsTestTag.DOWNLOAD_BUTTON).performClick()
+                Log.i(TAG, "clickDownloadPDFButton: Clicked the download PDF button")
+                if (confirmDownloadPrompt) {
+                    DownloadRobot(composeTestRule).verifyDownloadPrompt(composeTestRule)
+                    DownloadRobot.Transition(composeTestRule).clickDownload(composeTestRule) {}
+                }
+            } else {
+                Log.i(TAG, "clickDownloadPDFButton: Trying to click the download PDF button")
+                itemWithResIdContainingText(
+                        "download",
+                        "Download",
+                    )
+                    .click()
+                Log.i(TAG, "clickDownloadPDFButton: Clicked the download PDF button")
+            }
 
             DownloadRobot(composeTestRule).interact()
             return DownloadRobot.Transition(composeTestRule)

@@ -25,7 +25,7 @@ from collections import defaultdict
 
 from slugid import nice as slugid
 from taskgraph.graph import Graph
-from taskgraph.morph import register_morph
+from taskgraph.morph import amend_taskgraph, register_morph
 from taskgraph.task import Task
 from taskgraph.taskgraph import TaskGraph
 
@@ -34,21 +34,6 @@ from .util.workertypes import get_worker_type
 here = os.path.abspath(os.path.dirname(__file__))
 logger = logging.getLogger(__name__)
 MAX_ROUTES = 64
-
-
-def amend_taskgraph(taskgraph, label_to_taskid, to_add):
-    """Add the given tasks to the taskgraph, returning a new taskgraph"""
-    new_tasks = taskgraph.tasks.copy()
-    new_edges = set(taskgraph.graph.edges)
-    for task in to_add:
-        new_tasks[task.task_id] = task
-        assert task.label not in label_to_taskid
-        label_to_taskid[task.label] = task.task_id
-        for depname, dep in task.dependencies.items():
-            new_edges.add((task.task_id, dep, depname))
-
-    taskgraph = TaskGraph(new_tasks, Graph(set(new_tasks), new_edges))
-    return taskgraph, label_to_taskid
 
 
 def derive_misc_task(

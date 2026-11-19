@@ -198,7 +198,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   virtual ~gfxDWriteFontEntry();
 
 #if MOZ_FONTATIONS
-  void InitSkrifaFontFace() override;
+  void InitSkrifaFontFace() override MOZ_REQUIRES(mLock);
 #endif
 
   bool HasVariationsInternal() override;
@@ -208,10 +208,10 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   hb_blob_t* GetFontTableInternal(uint32_t aTableTag) override;
 
-  virtual nsresult CopyFontTable(uint32_t aTableTag,
-                                 nsTArray<uint8_t>& aBuffer) override;
+  nsresult CopyFontTable(uint32_t aTableTag,
+                         nsTArray<uint8_t>& aBuffer) override;
 
-  virtual gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle);
+  gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
   nsresult CreateFontFace(
       IDWriteFontFace** aFontFace, const gfxFontStyle* aFontStyle = nullptr,

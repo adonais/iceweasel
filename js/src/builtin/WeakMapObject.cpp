@@ -182,7 +182,7 @@ static bool GetOrAddWeakMapEntry(JSContext* cx, Handle<WeakMapObject*> mapObj,
     return false;
   }
 
-  WeakCollectionObject::Map* map = mapObj->getMap();
+  RootedBuffer<WeakCollectionObject::Map> map(cx, mapObj->getMap());
   auto addPtr = map->lookupForAdd(key);
   if (!addPtr) {
     PreserveReflectorAndAssertValidEntry(cx, mapObj, key, value);

@@ -153,8 +153,8 @@ void ChannelPosix::Init(Mode mode) {
   is_blocked_on_write_ = false;
   partial_write_.reset();
   input_buf_offset_ = 0;
-  input_buf_ = mozilla::MakeUnique<char[]>(Channel::kReadBufferSize);
-  input_cmsg_buf_ = mozilla::MakeUnique<char[]>(kControlBufferSize);
+  input_buf_ = std::make_unique<char[]>(Channel::kReadBufferSize);
+  input_cmsg_buf_ = std::make_unique<char[]>(kControlBufferSize);
   SetPipe(-1);
   waiting_connect_ = true;
 #if defined(XP_DARWIN)
@@ -164,8 +164,7 @@ void ChannelPosix::Init(Mode mode) {
 }
 
 bool ChannelPosix::EnqueueHelloMessage() {
-  mozilla::UniquePtr<Message> msg =
-      std::make_unique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
+  auto msg = std::make_unique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
   if (!msg->WriteInt(base::GetCurrentProcId())) {
     CloseLocked();
     return false;
@@ -379,7 +378,7 @@ bool ChannelPosix::ProcessIncomingMessages() {
         // How much data from this message is stored in input_buf_?
         uint32_t in_buf = std::min(message_length, uint32_t(end - p));
 
-        incoming_message_ = mozilla::MakeUnique<Message>(p, in_buf);
+        incoming_message_ = std::make_unique<Message>(p, in_buf);
         p += in_buf;
 
         // Are we done reading this message?
@@ -421,8 +420,8 @@ bool ChannelPosix::ProcessIncomingMessages() {
 #if defined(XP_DARWIN)
         // Send a message to the other side, indicating that we are now
         // responsible for closing the descriptor.
-        auto fdAck = mozilla::MakeUnique<Message>(MSG_ROUTING_NONE,
-                                                  RECEIVED_FDS_MESSAGE_TYPE);
+        auto fdAck = std::make_unique<Message>(MSG_ROUTING_NONE,
+                                               RECEIVED_FDS_MESSAGE_TYPE);
         DCHECK(m.fd_cookie() != 0);
         fdAck->set_fd_cookie(m.fd_cookie());
         {

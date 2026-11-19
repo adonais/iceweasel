@@ -23,7 +23,6 @@
 #include "nsIDNSListener.h"
 #include "nsIDNSRecord.h"
 #include "nsINetworkLinkService.h"
-#include "nsIOService.h"
 #include "nsIObliviousHttp.h"
 #include "nsIObserverService.h"
 #include "nsIPrefBranch.h"
@@ -132,12 +131,6 @@ nsDNSRecord::IsTRR(bool* retval) {
   } else {
     *retval = false;
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDNSRecord::ResolvedInSocketProcess(bool* retval) {
-  *retval = false;
   return NS_OK;
 }
 
@@ -681,57 +674,6 @@ class NotifyDNSResolution : public Runnable {
 
 //-----------------------------------------------------------------------------
 
-static StaticRefPtr<DNSServiceWrapper> gDNSServiceWrapper;
-
-NS_IMPL_ISUPPORTS(DNSServiceWrapper, nsIDNSService, nsPIDNSService)
-
-// static
-already_AddRefed<nsIDNSService> DNSServiceWrapper::GetSingleton() {
-  if (!gDNSServiceWrapper) {
-    gDNSServiceWrapper = new DNSServiceWrapper();
-    // Not strictly needed, but simple and avoids bypassing lock-checking
-    MutexAutoLock lock(gDNSServiceWrapper->mLock);
-    gDNSServiceWrapper->mDNSServiceInUse = ChildDNSService::GetSingleton();
-    if (gDNSServiceWrapper->mDNSServiceInUse) {
-      ClearOnShutdown(&gDNSServiceWrapper);
-      nsDNSPrefetch::Initialize(gDNSServiceWrapper);
-    } else {
-      MutexAutoUnlock unlock(
-          gDNSServiceWrapper->mLock);  // don't destroy with held lock
-      gDNSServiceWrapper = nullptr;
-    }
-  }
-
-  return do_AddRef(gDNSServiceWrapper);
-}
-
-// static
-void DNSServiceWrapper::SwitchToBackupDNSService() {
-  if (!gDNSServiceWrapper) {
-    return;
-  }
-
-  gDNSServiceWrapper->mBackupDNSService = nsDNSService::GetSingleton();
-
-  MutexAutoLock lock(gDNSServiceWrapper->mLock);
-  gDNSServiceWrapper->mBackupDNSService.swap(
-      gDNSServiceWrapper->mDNSServiceInUse);
-}
-
-nsIDNSService* DNSServiceWrapper::DNSService() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-
-  MutexAutoLock lock(mLock);
-  return mDNSServiceInUse.get();
-}
-
-nsPIDNSService* DNSServiceWrapper::PIDNSService() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-
-  nsCOMPtr<nsPIDNSService> service = do_QueryInterface(DNSService());
-  return service.get();
-}
-
 //-----------------------------------------------------------------------------
 NS_IMPL_ISUPPORTS_INHERITED(nsDNSService, DNSServiceBase, nsIDNSService,
                             nsPIDNSService, nsIMemoryReporter)
@@ -776,27 +718,11 @@ already_AddRefed<nsIDNSService> GetOrInitDNSService() {
 
 already_AddRefed<nsIDNSService> nsDNSService::GetXPCOMSingleton() {
   auto getDNSHelper = []() -> already_AddRefed<nsIDNSService> {
-    if (nsIOService::UseSocketProcess()) {
-      if (XRE_IsSocketProcess()) {
-        return GetSingleton();
-      }
-
-      if (XRE_IsParentProcess()) {
-        return DNSServiceWrapper::GetSingleton();
-      }
-
-      if (XRE_IsContentProcess()) {
-        return ChildDNSService::GetSingleton();
-      }
-
-      return nullptr;
-    }
-
     if (XRE_IsParentProcess()) {
       return GetSingleton();
     }
 
-    if (XRE_IsContentProcess() || XRE_IsSocketProcess()) {
+    if (XRE_IsContentProcess()) {
       return ChildDNSService::GetSingleton();
     }
 
@@ -815,8 +741,7 @@ already_AddRefed<nsIDNSService> nsDNSService::GetXPCOMSingleton() {
 }
 
 already_AddRefed<nsDNSService> nsDNSService::GetSingleton() {
-  MOZ_ASSERT_IF(nsIOService::UseSocketProcess(), XRE_IsSocketProcess());
-  MOZ_ASSERT_IF(!nsIOService::UseSocketProcess(), XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   if (!gDNSService) {
     if (!NS_IsMainThread()) {

@@ -71,13 +71,6 @@
  * Since: 1.18
  **/
 
-typedef HRESULT (WINAPI*D2D1CreateFactoryFunc)(
-    D2D1_FACTORY_TYPE factoryType,
-    REFIID iid,
-    CONST D2D1_FACTORY_OPTIONS *pFactoryOptions,
-    void **factory
-);
-
 #define CAIRO_INT_STATUS_SUCCESS (cairo_int_status_t)CAIRO_STATUS_SUCCESS
 
 // Forward declarations
@@ -131,68 +124,44 @@ _cairo_dwrite_error (HRESULT hr, const char *context)
 class D2DFactory
 {
 public:
-    static RefPtr<ID2D1Factory> Instance()
+    static ID2D1Factory *
+    Instance()
     {
-	if (!mFactoryInstance) {
+        /* According to MSDN, using independent, single-threaded D2D1 factories
+         * in each thread is the most scalable solution.
+         */
+        cairo_win32_thread_data_t *thread_data = cairo_win32_thread_data_get ();
+
+        if (!thread_data->d2d1_factory) {
+            typedef HRESULT
+            (WINAPI *pD2D1CreateFactory_t) (D2D1_FACTORY_TYPE factoryType,
+                                            REFIID iid,
+                                            CONST D2D1_FACTORY_OPTIONS *pFactoryOptions,
+                                            void **factory);
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
+            /* TODO */
             HMODULE d2d1 = _cairo_win32_load_library_from_system32 (L"d2d1.dll");
-	    D2D1CreateFactoryFunc createD2DFactory = (D2D1CreateFactoryFunc)
-                GetProcAddress(d2d1, "D2D1CreateFactory");
+            pD2D1CreateFactory_t pD2D1CreateFactory = (pD2D1CreateFactory_t)
+                GetProcAddress (d2d1, "D2D1CreateFactory");
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
-	    if (createD2DFactory) {
-		D2D1_FACTORY_OPTIONS options;
-		options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
-		createD2DFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
-				 __uuidof(ID2D1Factory),
-				 &options,
-				 (void**)&mFactoryInstance);
-	    }
-	}
-	return mFactoryInstance;
+            /* D2D1 is based on nano-COM (just like DWrite), so there's no need
+             * to ensure an apartment with CoInitializeEx or the implicit MTA.
+             */
+            D2D1_FACTORY_OPTIONS options { D2D1_DEBUG_LEVEL_NONE };
+            HRESULT hr = pD2D1CreateFactory (D2D1_FACTORY_TYPE_SINGLE_THREADED,
+                                             __uuidof (ID2D1Factory),
+                                             &options,
+                                             (void**) &thread_data->d2d1_factory);
+            assert (SUCCEEDED (hr));
+        }
+
+        return thread_data->d2d1_factory;
     }
-
-    static RefPtr<IDWriteFactory4> Instance4()
-    {
-	if (!mFactoryInstance4) {
-	    if (Instance()) {
-		Instance()->QueryInterface(&mFactoryInstance4);
-	    }
-	}
-	return mFactoryInstance4;
-    }
-
-    static RefPtr<ID2D1DCRenderTarget> RenderTarget()
-    {
-	if (!mRenderTarget) {
-	    if (!Instance()) {
-		return NULL;
-	    }
-	    // Create a DC render target.
-	    D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-		D2D1_RENDER_TARGET_TYPE_DEFAULT,
-		D2D1::PixelFormat(
-		    DXGI_FORMAT_B8G8R8A8_UNORM,
-		    D2D1_ALPHA_MODE_PREMULTIPLIED),
-		0,
-		0,
-		D2D1_RENDER_TARGET_USAGE_NONE,
-		D2D1_FEATURE_LEVEL_DEFAULT
-		);
-
-	    Instance()->CreateDCRenderTarget(&props, &mRenderTarget);
-	}
-	return mRenderTarget;
-    }
-
-private:
-    static RefPtr<ID2D1Factory> mFactoryInstance;
-    static RefPtr<IDWriteFactory4> mFactoryInstance4;
-    static RefPtr<ID2D1DCRenderTarget> mRenderTarget;
 };
 
 class WICImagingFactory
@@ -200,40 +169,61 @@ class WICImagingFactory
 public:
     static RefPtr<IWICImagingFactory> Instance()
     {
-	if (!mFactoryInstance) {
-	    CoInitialize(NULL);
-	    CoCreateInstance(CLSID_WICImagingFactory,
-			     NULL,
-			     CLSCTX_INPROC_SERVER,
-			     IID_PPV_ARGS(&mFactoryInstance));
-	}
-	return mFactoryInstance;
+        HRESULT hr;
+
+        /* WIC is based on true COM, so we need to set this thread
+         * on a COM apartment. Usually one calls CoInitialize and
+         * call it a day, however this is used on threads we don't
+         * own. We can use whatever apartment the user has already
+         * initialized, but if there's no apartment we don't want
+         * to force the thread to a specific apartment type. Turns
+         * out implicit MTA is perfect for this; we have to take
+         * a reference on the MTA however, otherwise it can disappear
+         * at any time in the middle of our operations.
+         *
+         * Note: WICImagingFactory has threading model 'both', so
+         * the object will be accessed directly (no marshaling)
+         * regardless of the apartment type.
+         */
+        cairo_win32_ensure_mta ();
+
+        IWICImagingFactory *wic_factory;
+        hr = CoCreateInstance (CLSID_WICImagingFactory,
+                               NULL,
+                               CLSCTX_INPROC_SERVER,
+                               IID_PPV_ARGS (&wic_factory));
+        if (FAILED (hr)) {
+            assert (0 && "CoCreateInstance (CLSID_WICImagingFactory) failed");
+        }
+
+        return wic_factory;
     }
-private:
-    static RefPtr<IWICImagingFactory> mFactoryInstance;
 };
 
-
-RefPtr<IDWriteFactory> DWriteFactory::mFactoryInstance;
-RefPtr<IDWriteFactory1> DWriteFactory::mFactoryInstance1;
-RefPtr<IDWriteFactory2> DWriteFactory::mFactoryInstance2;
-RefPtr<IDWriteFactory3> DWriteFactory::mFactoryInstance3;
-RefPtr<IDWriteFactory4> DWriteFactory::mFactoryInstance4;
-
-RefPtr<IWICImagingFactory> WICImagingFactory::mFactoryInstance;
-RefPtr<IDWriteFontCollection> DWriteFactory::mSystemCollection;
-RefPtr<IDWriteRenderingParams> DWriteFactory::mDefaultRenderingParams;
-
-RefPtr<ID2D1Factory> D2DFactory::mFactoryInstance;
-RefPtr<ID2D1DCRenderTarget> D2DFactory::mRenderTarget;
+cairo_atomic_once_t DWriteFactory::mOnceFactories = CAIRO_ATOMIC_ONCE_INIT;
+IDWriteFactory *DWriteFactory::mFactoryInstance;
+IDWriteFactory1 *DWriteFactory::mFactoryInstance1;
+IDWriteFactory2 *DWriteFactory::mFactoryInstance2;
+IDWriteFactory3 *DWriteFactory::mFactoryInstance3;
+IDWriteFactory4 *DWriteFactory::mFactoryInstance4;
+IDWriteFactory8 *DWriteFactory::mFactoryInstance8;
+cairo_atomic_once_t DWriteFactory::mOnceSystemCollection = CAIRO_ATOMIC_ONCE_INIT;
+IDWriteFontCollection *DWriteFactory::mSystemCollection;
 
 static RefPtr<IDWriteRenderingParams>
 _create_rendering_params(IDWriteRenderingParams     *params,
 			 const cairo_font_options_t *options,
 			 cairo_antialias_t           antialias)
 {
-    if (!params)
-	params = DWriteFactory::DefaultRenderingParams();
+    RefPtr<IDWriteRenderingParams> default_rendering_params;
+    HRESULT hr;
+
+    if (!params) {
+        hr = DWriteFactory::Instance()->CreateRenderingParams(&default_rendering_params);
+        assert(SUCCEEDED(hr));
+        params = default_rendering_params.get();
+    }
+
     FLOAT gamma = params->GetGamma();
     FLOAT enhanced_contrast = params->GetEnhancedContrast();
     FLOAT clear_type_level = params->GetClearTypeLevel();
@@ -278,7 +268,6 @@ _create_rendering_params(IDWriteRenderingParams     *params,
     if (!modified)
 	return params;
 
-    HRESULT hr;
     RefPtr<IDWriteRenderingParams1> params1;
     hr = params->QueryInterface(&params1);
     if (FAILED(hr)) {
@@ -1140,13 +1129,16 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
     matrix = _cairo_dwrite_matrix_from_matrix(&scaled_font->mat);
 
     /* The list of glyph image formats this renderer is prepared to support. */
-    DWRITE_GLYPH_IMAGE_FORMATS supported_formats = static_cast<DWRITE_GLYPH_IMAGE_FORMATS>(
-        DWRITE_GLYPH_IMAGE_FORMATS_COLR |
-        DWRITE_GLYPH_IMAGE_FORMATS_SVG |
-        DWRITE_GLYPH_IMAGE_FORMATS_PNG |
-        DWRITE_GLYPH_IMAGE_FORMATS_JPEG |
-        DWRITE_GLYPH_IMAGE_FORMATS_TIFF |
-        DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8);
+    const DWRITE_GLYPH_IMAGE_FORMATS_ base_formats = (
+        DWRITE_GLYPH_IMAGE_FORMATS_COLR_ |
+        DWRITE_GLYPH_IMAGE_FORMATS_SVG_ |
+        DWRITE_GLYPH_IMAGE_FORMATS_PNG_ |
+        DWRITE_GLYPH_IMAGE_FORMATS_JPEG_ |
+        DWRITE_GLYPH_IMAGE_FORMATS_TIFF_ |
+        DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8_);
+
+    // Level of support for DWRITE_GLYPH_IMAGE_FORMATS_COLR_PAINT_TREE
+    DWRITE_PAINT_FEATURE_LEVEL dwrite_paint_feature_level = DWRITE_PAINT_FEATURE_LEVEL_COLR_V1;
 
     RefPtr<IDWriteFontFace2> fontFace2;
     UINT32 palette_count = 0;
@@ -1157,15 +1149,35 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
     if (scaled_font->base.options.palette_index < palette_count)
 	palette_index = scaled_font->base.options.palette_index;
 
-    hr = DWriteFactory::Instance4()->TranslateColorGlyphRun(
-	origin,
-	&run,
-	NULL, /* glyphRunDescription */
-	supported_formats,
-	dwrite_font_face->measuring_mode,
-	&matrix,
-	palette_index,
-	&run_enumerator);
+    if (DWriteFactory::Instance8()) {
+        hr = DWriteFactory::Instance8()->TranslateColorGlyphRun(
+            origin,
+            &run,
+            NULL, /* glyphRunDescription */
+            static_cast<DWRITE_GLYPH_IMAGE_FORMATS>
+            (base_formats | DWRITE_GLYPH_IMAGE_FORMATS_COLR_PAINT_TREE_),
+            dwrite_paint_feature_level,
+            dwrite_font_face->measuring_mode,
+            &matrix,
+            palette_index,
+            &run_enumerator);
+    }
+    else if (DWriteFactory::Instance4()) {
+        hr = DWriteFactory::Instance4()->TranslateColorGlyphRun(
+            origin,
+            &run,
+            NULL, /* glyphRunDescription */
+            static_cast<DWRITE_GLYPH_IMAGE_FORMATS>
+            (base_formats),
+            dwrite_font_face->measuring_mode,
+            &matrix,
+            palette_index,
+            &run_enumerator);
+    }
+    else {
+        // TODO
+        return CAIRO_INT_STATUS_UNSUPPORTED;
+    }
 
     if (hr == DWRITE_E_NOCOLOR) {
 	/* No color glyphs */
@@ -1242,11 +1254,12 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
 	if (FAILED(hr))
 	    return _cairo_dwrite_error (hr, "GetCurrentRun failed");
 
-	switch (color_run->glyphImageFormat) {
-	    case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
-	    case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
-	    case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
-	    case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
+        const auto format = static_cast<DWRITE_GLYPH_IMAGE_FORMATS_>(color_run->glyphImageFormat);
+	switch (format) {
+	    case DWRITE_GLYPH_IMAGE_FORMATS_PNG_:
+	    case DWRITE_GLYPH_IMAGE_FORMATS_JPEG_:
+	    case DWRITE_GLYPH_IMAGE_FORMATS_TIFF_:
+	    case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8_:
 		/* Bitmap glyphs */
 		dc4->DrawColorBitmapGlyphRun(color_run->glyphImageFormat,
 					     origin,
@@ -1255,7 +1268,7 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
 					     D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION_DEFAULT);
 		break;
 
-	    case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
+	    case DWRITE_GLYPH_IMAGE_FORMATS_SVG_:
 		/* SVG glyphs */
 		dc4->DrawSvgGlyphRun(origin,
 				     &color_run->glyphRun,
@@ -1265,9 +1278,9 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
 				     dwrite_font_face->measuring_mode);
 		uses_foreground_color = TRUE;
 		break;
-	    case DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE:
-	    case DWRITE_GLYPH_IMAGE_FORMATS_CFF:
-	    case DWRITE_GLYPH_IMAGE_FORMATS_COLR:
+	    case DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE_:
+	    case DWRITE_GLYPH_IMAGE_FORMATS_CFF_:
+	    case DWRITE_GLYPH_IMAGE_FORMATS_COLR_:
 		/* Outline glyphs */
 		if (color_run->paletteIndex == 0xFFFF) {
 		    D2D1_COLOR_F color = foreground_color_brush->GetColor();
@@ -1291,7 +1304,21 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
 				  color_run->glyphRunDescription,
 				  color_brush,
 				  dwrite_font_face->measuring_mode);
-	    case DWRITE_GLYPH_IMAGE_FORMATS_NONE:
+                break;
+            case DWRITE_GLYPH_IMAGE_FORMATS_COLR_PAINT_TREE_:
+            {
+                RefPtr<ID2D1DeviceContext7> dc7;
+                hr = rt->QueryInterface(&dc7);
+                if (FAILED(hr))
+                    return _cairo_dwrite_error (hr, "QueryInterface(&dc7) failed");
+                dc7->DrawPaintGlyphRun (origin,
+                                        &color_run->glyphRun,
+                                        foreground_color_brush,
+                                        palette_index,
+                                        dwrite_font_face->measuring_mode);
+                break;
+            }
+	    case DWRITE_GLYPH_IMAGE_FORMATS_NONE_:
 		break;
 	}
     }
@@ -1306,7 +1333,6 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
         cairo_surface_destroy (image);
         return (cairo_int_status_t) status;
     }
-
     int stride = cairo_image_surface_get_stride (image);
     WICRect rect = { 0, 0, width, height };
     bitmap->CopyPixels(&rect,
@@ -1528,7 +1554,7 @@ _cairo_dwrite_scaled_font_init_glyph_surface (cairo_dwrite_scaled_font_t *scaled
 
     if (subpixel_order_is_vertical) {
         // DirectWrite does not support vertical pixel geometries.
-        // As a workaround, apply a simmetry which swaps x and y
+        // As a workaround, apply a symmetry which swaps x and y
         // coordinates, then re-swap while copying the back into
         // the image surface
 
@@ -2155,52 +2181,6 @@ _dwrite_draw_glyphs_to_gdi_surface_gdi(cairo_win32_surface_t *surface,
     return CAIRO_INT_STATUS_SUCCESS;
 }
 
-cairo_int_status_t
-_dwrite_draw_glyphs_to_gdi_surface_d2d(cairo_win32_surface_t *surface,
-				       DWRITE_MATRIX *transform,
-				       DWRITE_GLYPH_RUN *run,
-				       COLORREF color,
-				       const RECT &area)
-{
-    HRESULT hr;
-
-    RefPtr<ID2D1DCRenderTarget> rt = D2DFactory::RenderTarget();
-
-    // XXX don't we need to set RenderingParams on this RenderTarget?
-
-    hr = rt->BindDC(surface->dc, &area);
-    if (FAILED(hr))
-	return CAIRO_INT_STATUS_UNSUPPORTED;
-
-    // D2D uses 0x00RRGGBB not 0x00BBGGRR like COLORREF.
-    color = (color & 0xFF) << 16 |
-	(color & 0xFF00) |
-	(color & 0xFF0000) >> 16;
-    RefPtr<ID2D1SolidColorBrush> brush;
-    hr = rt->CreateSolidColorBrush(D2D1::ColorF(color, 1.0), &brush);
-    if (FAILED(hr))
-	return CAIRO_INT_STATUS_UNSUPPORTED;
-
-    if (transform) {
-	rt->SetTransform(D2D1::Matrix3x2F(transform->m11,
-					  transform->m12,
-					  transform->m21,
-					  transform->m22,
-					  transform->dx,
-					  transform->dy));
-    }
-    rt->BeginDraw();
-    rt->DrawGlyphRun(D2D1::Point2F(0, 0), run, brush);
-    hr = rt->EndDraw();
-    if (transform) {
-	rt->SetTransform(D2D1::Matrix3x2F::Identity());
-    }
-    if (FAILED(hr))
-	return CAIRO_INT_STATUS_UNSUPPORTED;
-
-    return CAIRO_INT_STATUS_SUCCESS;
-}
-
 /* Surface helper function */
 cairo_int_status_t
 _cairo_dwrite_show_glyphs_on_surface(void			*surface,
@@ -2274,25 +2254,7 @@ _cairo_dwrite_show_glyphs_on_surface(void			*surface,
     RECT copyArea, dstArea = { 0, 0, dst->extents.width, dst->extents.height };
     IntersectRect(&copyArea, &fontArea, &dstArea);
 
-#ifdef CAIRO_TRY_D2D_TO_GDI
-    status = _dwrite_draw_glyphs_to_gdi_surface_d2d(dst,
-						    mat,
-						    &run,
-						    color,
-						    copyArea);
-
-    if (status == (cairo_status_t)CAIRO_INT_STATUS_UNSUPPORTED) {
-#endif
-	status = _dwrite_draw_glyphs_to_gdi_surface_gdi(dst,
-							mat,
-							&run,
-							color,
-							dwritesf,
-							copyArea);
-
-#ifdef CAIRO_TRY_D2D_TO_GDI
-    }
-#endif
+    status = _dwrite_draw_glyphs_to_gdi_surface_gdi(dst, mat, &run, color, dwritesf, copyArea);
 
     return status;
 }
@@ -2487,4 +2449,10 @@ _cairo_dwrite_scaled_font_create_win32_scaled_font (cairo_scaled_font_t *scaled_
 
     *new_font = font;
     return CAIRO_INT_STATUS_SUCCESS;
+}
+
+void
+cairo_win32_dwrite_finalize ()
+{
+    DWriteFactory::Finalize();
 }

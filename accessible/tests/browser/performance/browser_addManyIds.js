@@ -314,10 +314,10 @@ const perfMetadata = {
 addAccessibleTask(``, async function testManyShowEvents(browser) {
   info("Setting up many links");
   let showEvt = waitForEvent(EVENT_SHOW, "container");
-  await invokeContentTask(browser, [], () => {
+  await invokeContentTask(browser, [LARGE_NODE_COUNT], count => {
     content.document.body.innerHTML =
       `<div id="container" role="group">` +
-      Array.from(new Array(10000), () => `<a href="#">link</a>`).join(" ") +
+      Array.from(new Array(count), () => `<a href="#">link</a>`).join(" ") +
       `</div>`;
     content.linkElements = Array.from(
       content.document.querySelectorAll("#container > a")

@@ -313,6 +313,10 @@ async function test_toggle_engine(engineList, doc) {
 
 engine_list_test(test_toggle_engine);
 
+engine_list_test(async function test_engine_list_accessible_name(engineList) {
+  await assertBoxGroupHasListboxAccessibleName(engineList);
+});
+
 engine_list_test(async function test_no_toggle_for_non_config_engines(_, doc) {
   Assert.equal(
     doc.getElementById(`toggleEngine-${userEngine.id}`),

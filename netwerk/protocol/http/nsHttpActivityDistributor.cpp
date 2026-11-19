@@ -7,8 +7,6 @@
 
 #include "HttpLog.h"
 #include "NullHttpChannel.h"
-#include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "nsCOMPtr.h"
 #include "nsHttpHandler.h"
 #include "nsIOService.h"
@@ -76,23 +74,6 @@ nsHttpActivityDistributor::ObserveActivityWithArgs(
     const nsACString& aExtraStringData) {
   HttpActivityArgs args(aArgs);
   nsCString extraStringData(aExtraStringData);
-  if (XRE_IsSocketProcess()) {
-    auto task = [args{std::move(args)}, aActivityType, aActivitySubtype,
-                 aTimestamp, aExtraSizeData,
-                 extraStringData{std::move(extraStringData)}]() {
-      SocketProcessChild::GetSingleton()->SendObserveHttpActivity(
-          args, aActivityType, aActivitySubtype, aTimestamp, aExtraSizeData,
-          extraStringData);
-    };
-
-    if (!NS_IsMainThread()) {
-      return NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "net::nsHttpActivityDistributor::ObserveActivityWithArgs", task));
-    }
-
-    task();
-    return NS_OK;
-  }
 
   MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -101,18 +82,18 @@ nsHttpActivityDistributor::ObserveActivityWithArgs(
                aTimestamp, aExtraSizeData,
                extraStringData{std::move(extraStringData)},
                self{std::move(self)}]() {
-    if (args.type() == HttpActivityArgs::Tuint64_t) {
-      nsWeakPtr weakPtr = gHttpHandler->GetWeakHttpChannel(args.get_uint64_t());
+    if (args.is<uint64_t>()) {
+      nsWeakPtr weakPtr = gHttpHandler->GetWeakHttpChannel(args.as<uint64_t>());
       if (nsCOMPtr<nsIHttpChannel> channel = do_QueryReferent(weakPtr)) {
         (void)self->ObserveActivity(channel, aActivityType, aActivitySubtype,
                                     aTimestamp, aExtraSizeData,
                                     extraStringData);
       }
-    } else if (args.type() == HttpActivityArgs::THttpActivity) {
+    } else if (args.is<HttpActivity>()) {
       nsCOMPtr<nsIURI> uri;
       nsAutoCString portStr(""_ns);
-      int32_t port = args.get_HttpActivity().port();
-      bool endToEndSSL = args.get_HttpActivity().endToEndSSL();
+      int32_t port = args.as<HttpActivity>().port;
+      bool endToEndSSL = args.as<HttpActivity>().endToEndSSL;
       if (port != -1 &&
           ((endToEndSSL && port != 443) || (!endToEndSSL && port != 80))) {
         portStr.AppendInt(port);
@@ -121,7 +102,7 @@ nsHttpActivityDistributor::ObserveActivityWithArgs(
       nsresult rv =
           NS_NewURI(getter_AddRefs(uri),
                     (endToEndSSL ? "https://"_ns : "http://"_ns) +
-                        args.get_HttpActivity().host() + ":"_ns + portStr);
+                        args.as<HttpActivity>().host + ":"_ns + portStr);
       if (NS_FAILED(rv)) {
         return;
       }
@@ -133,13 +114,13 @@ nsHttpActivityDistributor::ObserveActivityWithArgs(
       (void)self->ObserveActivity(static_cast<nsIChannel*>(channel),
                                   aActivityType, aActivitySubtype, aTimestamp,
                                   aExtraSizeData, extraStringData);
-    } else if (args.type() == HttpActivityArgs::THttpConnectionActivity) {
+    } else if (args.is<HttpConnectionActivity>()) {
       const HttpConnectionActivity& activity =
-          args.get_HttpConnectionActivity();
+          args.as<HttpConnectionActivity>();
       (void)self->ObserveConnectionActivity(
-          activity.host(), activity.port(), activity.ssl(), activity.hasECH(),
-          activity.isHttp3(), aActivityType, aActivitySubtype, aTimestamp,
-          activity.connInfoKey());
+          activity.host, activity.port, activity.ssl, activity.hasECH,
+          activity.isHttp3, aActivityType, aActivitySubtype, aTimestamp,
+          activity.connInfoKey);
     }
   };
 
@@ -165,20 +146,8 @@ bool nsHttpActivityDistributor::ObserveConnectionEnabled() {
 NS_IMETHODIMP
 nsHttpActivityDistributor::GetIsActive(bool* isActive) {
   NS_ENSURE_ARG_POINTER(isActive);
-  if (XRE_IsSocketProcess()) {
-    *isActive = mActivated;
-    return NS_OK;
-  }
-
   MutexAutoLock lock(mLock);
   *isActive = mActivated = !!mObservers.Length();
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsHttpActivityDistributor::SetIsActive(bool aActived) {
-  MOZ_RELEASE_ASSERT(XRE_IsSocketProcess());
-
-  mActivated = aActived;
   return NS_OK;
 }
 
@@ -204,16 +173,6 @@ nsHttpActivityDistributor::AddObserver(nsIHttpActivityObserver* aObserver) {
 
   if (wasEmpty) {
     mActivated = true;
-    if (nsIOService::UseSocketProcess()) {
-      auto task = []() {
-        RefPtr<SocketProcessParent> parent =
-            SocketProcessParent::GetSingleton();
-        if (parent && parent->CanSend()) {
-          (void)parent->SendOnHttpActivityDistributorActivated(true);
-        }
-      };
-      gIOService->CallOrWaitForSocketProcess(task);
-    }
   }
   return NS_OK;
 }
@@ -237,15 +196,6 @@ nsHttpActivityDistributor::RemoveObserver(nsIHttpActivityObserver* aObserver) {
     mActivated = !mObservers.IsEmpty();
   }
 
-  if (nsIOService::UseSocketProcess() && !mActivated) {
-    auto task = []() {
-      RefPtr<SocketProcessParent> parent = SocketProcessParent::GetSingleton();
-      if (parent && parent->CanSend()) {
-        (void)parent->SendOnHttpActivityDistributorActivated(false);
-      }
-    };
-    gIOService->CallOrWaitForSocketProcess(task);
-  }
   return NS_OK;
 }
 
@@ -266,16 +216,6 @@ nsHttpActivityDistributor::SetObserveProxyResponse(bool aObserveProxyResponse) {
   }
 
   mObserveProxyResponse = aObserveProxyResponse;
-  if (nsIOService::UseSocketProcess()) {
-    auto task = [aObserveProxyResponse]() {
-      RefPtr<SocketProcessParent> parent = SocketProcessParent::GetSingleton();
-      if (parent && parent->CanSend()) {
-        (void)parent->SendOnHttpActivityDistributorObserveProxyResponse(
-            aObserveProxyResponse);
-      }
-    };
-    gIOService->CallOrWaitForSocketProcess(task);
-  }
   return NS_OK;
 }
 
@@ -295,16 +235,6 @@ nsHttpActivityDistributor::SetObserveConnection(bool aObserveConnection) {
   }
 
   mObserveConnection = aObserveConnection;
-  if (nsIOService::UseSocketProcess()) {
-    auto task = [aObserveConnection]() {
-      RefPtr<SocketProcessParent> parent = SocketProcessParent::GetSingleton();
-      if (parent && parent->CanSend()) {
-        (void)parent->SendOnHttpActivityDistributorObserveConnection(
-            aObserveConnection);
-      }
-    };
-    gIOService->CallOrWaitForSocketProcess(task);
-  }
   return NS_OK;
 }
 

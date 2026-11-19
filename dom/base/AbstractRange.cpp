@@ -520,7 +520,7 @@ void AbstractRange::RegisterClosestCommonInclusiveAncestor(nsINode* aNode) {
   UniquePtr<LinkedList<AbstractRange>>& ranges =
       aNode->GetClosestCommonInclusiveAncestorRangesPtr();
   if (!ranges) {
-    ranges = MakeUnique<LinkedList<AbstractRange>>();
+    ranges = std::make_unique<LinkedList<AbstractRange>>();
   }
 
   MOZ_DIAGNOSTIC_ASSERT(!isInList());

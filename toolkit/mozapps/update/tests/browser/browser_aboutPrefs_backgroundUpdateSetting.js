@@ -50,14 +50,10 @@ WARNING! This test involves background update, but background tasks are
     return;
   }
 
-  let settingsRedesignEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:preferences#about"
   );
-  let prefUrl = settingsRedesignEnabled
-    ? "about:preferences#about"
-    : "about:preferences";
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, prefUrl);
 
   const originalBackgroundUpdateVal = await UpdateUtils.readUpdateConfigSetting(
     BACKGROUND_UPDATE_PREF

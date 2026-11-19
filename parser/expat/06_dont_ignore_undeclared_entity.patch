@@ -1,7 +1,7 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -3476,9 +3476,16 @@ doContentInternal(XML_Parser parser, int startTagLevel, const ENCODING *enc,
+@@ -3440,9 +3440,16 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
            beforeHandler(parser);
            parser->m_skippedEntityHandler(parser->m_handlerArg, name, 0);
            afterHandler(parser);
@@ -18,7 +18,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
        }
        if (entity->open)
          return XML_ERROR_RECURSIVE_ENTITY_REF;
-@@ -6880,7 +6887,13 @@ appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
+@@ -6844,7 +6851,13 @@ appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
          if ((pool == &parser->m_tempPool) && parser->m_defaultHandler)
            reportDefault(parser, enc, ptr, next);
          */

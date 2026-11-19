@@ -184,7 +184,7 @@ private fun SearchItem(
                     contentDescription = stringResource(id = R.string.content_description_menu),
                 ) {
                     Icon(
-                        painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                        painter = painterResource(id = iconsR.drawable.mozac_ic_more_vertical_round_24),
                         contentDescription = null,
                     )
 

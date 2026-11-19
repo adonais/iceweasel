@@ -42,7 +42,7 @@ class CompositorManagerChild : public PCompositorManagerChild {
   CreateSameProcessWidgetCompositorBridge(uint32_t aNamespace);
 
   static CompositorManagerChild* GetInstance() {
-    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
     return sInstance;
   }
 
@@ -51,17 +51,17 @@ class CompositorManagerChild : public PCompositorManagerChild {
   static mozilla::ipc::EndpointProcInfo GetCompositorProcInfo();
 
   bool CanSend() const {
-    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
     return mCanSend;
   }
 
   bool SameProcess() const {
-    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
     return mSameProcess;
   }
 
   uint32_t GetNextResourceId() {
-    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
     return ++mResourceId;
   }
 

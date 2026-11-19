@@ -101,7 +101,7 @@ nsresult nsMenuItemIconX::OnComplete(imgIContainer* aImage) {
   RefPtr<nsPresContext> pc = mPresContext.get();
   UniquePtr<SVGImageContext> svgContext;
   if (pc && mComputedStyle) {
-    svgContext = MakeUnique<SVGImageContext>();
+    svgContext = std::make_unique<SVGImageContext>();
     SVGImageContext::MaybeStoreContextPaint(*svgContext, *pc, *mComputedStyle,
                                             aImage);
   }

@@ -267,7 +267,7 @@ WorkerGlobalScopeBase::WorkerGlobalScopeBase(
     : mWorkerPrivate(aWorkerPrivate),
       mClientSource(std::move(aClientSource)),
       mSerialEventTarget(aWorkerPrivate->HybridEventTarget()) {
-  mTimeoutManager = MakeUnique<dom::TimeoutManager>(
+  mTimeoutManager = std::make_unique<dom::TimeoutManager>(
       *this, /* not used on workers */ 0, mSerialEventTarget,
       mWorkerPrivate->IsChromeWorker());
   LOG(("WorkerGlobalScopeBase::WorkerGlobalScopeBase [%p]", this));
@@ -874,7 +874,7 @@ already_AddRefed<IDBFactory> WorkerGlobalScope::GetIndexedDB(
     auto windowID = mWorkerPrivate->WindowID();
 
     auto principalInfoPtr =
-        allowed ? MakeUnique<PrincipalInfo>(
+        allowed ? std::make_unique<PrincipalInfo>(
                       mWorkerPrivate->GetEffectiveStoragePrincipalInfo())
                 : nullptr;
     auto res = IDBFactory::CreateForWorker(this, std::move(principalInfoPtr),

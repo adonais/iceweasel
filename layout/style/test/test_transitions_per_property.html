@@ -358,6 +358,10 @@ var supported_properties = {
     "scrollbar-color": [ test_scrollbar_color_transition ],
 };
 
+if (IsCSSPropertyPrefEnabled("layout.css.text-autospace-size.enabled")) {
+  supported_properties["text-autospace-size"] = [ test_number_transition ];
+}
+
 if (IsCSSPropertyPrefEnabled("layout.css.backdrop-filter.enabled")) {
   supported_properties["backdrop-filter"] = [ test_filter_transition ];
 }

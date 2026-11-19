@@ -447,6 +447,17 @@ macro_rules! enumerate_dl_interned_types {
     ($macro_name: ident) => {
         $macro_name! {
             rectangles: $crate::interned_prims::RectangleKey,
+            path: $crate::path::Path,
+            box_shadows: $crate::interned_prims::BoxShadowKey,
+            line_decorations: $crate::interned_prims::LineDecorationKey,
+            images: $crate::interned_prims::ImagePrimKey,
+            yuv_images: $crate::interned_prims::YuvImagePrimKey,
+            linear_gradients: $crate::interned_prims::LinearGradientKey,
+            radial_gradients: $crate::interned_prims::RadialGradientKey,
+            conic_gradients: $crate::interned_prims::ConicGradientKey,
+            normal_borders: $crate::interned_prims::NormalBorderKey,
+            image_borders: $crate::interned_prims::ImageBorderKey,
+            text_runs: $crate::interned_prims::TextRunKey,
         }
     }
 }

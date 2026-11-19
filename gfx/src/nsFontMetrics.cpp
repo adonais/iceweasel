@@ -242,8 +242,9 @@ nscoord nsFontMetrics::SubscriptOffset() const {
 }
 
 void nsFontMetrics::GetStrikeout(nscoord& aOffset, nscoord& aSize) const {
-  aOffset = ROUND_TO_TWIPS(GetMetrics(this).strikeoutOffset);
-  aSize = ROUND_TO_TWIPS(GetMetrics(this).strikeoutSize);
+  const auto& m = GetMetrics(this);
+  aOffset = ROUND_TO_TWIPS(m.strikeoutOffset);
+  aSize = ROUND_TO_TWIPS(m.strikeoutSize);
 }
 
 void nsFontMetrics::GetUnderline(nscoord& aOffset, nscoord& aSize) const {
@@ -280,6 +281,20 @@ nscoord nsFontMetrics::EmHeight() const {
   return ROUND_TO_TWIPS(GetMetrics(this).emHeight);
 }
 
+nscoord nsFontMetrics::CalcNormalLineHeight() const {
+  RefPtr font = mFontGroup->GetFirstValidFont();
+  const auto& m = font->GetMetrics(eHorizontal);
+  auto leading =
+      ROUND_TO_TWIPS(m.internalLeading) + ROUND_TO_TWIPS(m.externalLeading);
+  // If there's some leading in the metrics, or if the metrics have been
+  // explicitly overriden, just use them.
+  if (leading > 0.0 || font->HasMetricsOverride()) {
+    return ROUND_TO_TWIPS(m.emHeight) + leading;
+  }
+  // Otherwise, fall back to kNormalLineHeightFactor.
+  return ROUND_TO_TWIPS(m.emHeight * kNormalLineHeightFactor);
+}
+
 nscoord nsFontMetrics::TrimmedAscent() const {
   const auto& m = GetMetrics(this);
   return ROUND_TO_TWIPS(std::max(0.0, m.maxAscent - m.internalLeading / 2));
@@ -291,8 +306,9 @@ nscoord nsFontMetrics::TrimmedDescent() const {
 }
 
 nscoord nsFontMetrics::MaxHeight() const {
-  return CEIL_TO_TWIPS(ComputeMaxAscent(GetMetrics(this))) +
-         CEIL_TO_TWIPS(ComputeMaxDescent(GetMetrics(this), mFontGroup));
+  const auto& m = GetMetrics(this);
+  return CEIL_TO_TWIPS(ComputeMaxAscent(m)) +
+         CEIL_TO_TWIPS(ComputeMaxDescent(m, mFontGroup));
 }
 
 nscoord nsFontMetrics::MaxAscent() const {
@@ -328,17 +344,16 @@ nscoord nsFontMetrics::SpaceWidth() const {
           .spaceWidth);
 }
 
-nscoord nsFontMetrics::InterScriptSpacingWidth() const {
+nscoord nsFontMetrics::InterScriptSpacingWidth(float aAutospaceSize) const {
   const auto& m = GetMetrics(this);
   // If there is no advance measure of the CJK water ideograph, use 1em instead.
   // https://drafts.csswg.org/css-values-4/#ic
   LayoutDeviceDoubleCoord ic =
       m.ideographicWidth >= 0.0 ? m.ideographicWidth : m.emHeight;
 
-  // The inter-script spacing is defined as 1/8 of the CJK advance measure, i.e.
-  // 0.125ic: https://drafts.csswg.org/css-text-4/#inter-script-spacing
-  constexpr double kFraction = 0.125;
-  return LayoutDevicePixel::ToAppUnits(ic * kFraction, AppUnitsPerDevPixel());
+  // The inter-script spacing is text-autospace-size * ic-width.
+  return LayoutDevicePixel::ToAppUnits(ic * aAutospaceSize,
+                                       AppUnitsPerDevPixel());
 }
 
 int32_t nsFontMetrics::GetMaxStringLength() const {

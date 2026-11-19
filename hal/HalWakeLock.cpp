@@ -183,7 +183,7 @@ void ModifyWakeLockWithChildID(const nsAString& aTopic,
   ProcessLockTable* const table =
       sLockTable->WithEntryHandle(aTopic, [&](auto&& entry) {
         if (!entry) {
-          entry.Insert(MakeUnique<ProcessLockTable>());
+          entry.Insert(std::make_unique<ProcessLockTable>());
         } else {
           (void)entry.Data()->Get(aChildID, &processCount);
           CountWakeLocks(entry->get(), &totalCount);

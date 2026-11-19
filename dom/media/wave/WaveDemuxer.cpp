@@ -80,7 +80,7 @@ bool WAVTrackDemuxer::Init() {
   FastSeek(TimeUnit());
 
   if (!mInfo) {
-    mInfo = MakeUnique<AudioInfo>();
+    mInfo = std::make_unique<AudioInfo>();
     mInfo->mCodecSpecificConfig =
         AudioCodecSpecificVariant{WaveCodecSpecificData{}};
   }

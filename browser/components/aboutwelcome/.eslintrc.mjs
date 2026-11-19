@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import importPlugin from "eslint-plugin-import";
+import { importX } from "eslint-plugin-import-x";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import react from "eslint-plugin-react";
 import globals from "globals";
@@ -11,7 +11,7 @@ export default [
   {
     ...jsxA11y.flatConfigs.recommended,
     // When adding items to this file please check for effects on sub-directories.
-    plugins: { import: importPlugin, react, "jsx-a11y": jsxA11y },
+    plugins: { "import-x": importX, react, "jsx-a11y": jsxA11y },
     settings: {
       react: {
         version: "16.2.0",
@@ -145,7 +145,7 @@ export default [
     files: ["content-src/**", "tests/unit/**"],
     rules: {
       // Disallow commonjs in these directories.
-      "import/no-commonjs": 2,
+      "import-x/no-commonjs": 2,
     },
   },
   {

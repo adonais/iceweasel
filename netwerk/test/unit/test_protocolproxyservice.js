@@ -21,7 +21,6 @@
 var ios = Services.io;
 var pps = Cc["@mozilla.org/network/protocol-proxy-service;1"].getService();
 var prefs = Services.prefs;
-var again = true;
 
 /**
  * Test nsIProtocolHandler that allows proxying, but doesn't allow HTTP
@@ -1035,16 +1034,8 @@ function localhost_callback(pi) {
 
   prefs.setIntPref("network.proxy.type", 0);
 
-  if (mozinfo.socketprocess_networking && again) {
-    info("run test again");
-    again = false;
-    cleanUp();
-    prefs.setBoolPref("network.proxy.parse_pac_on_socket_process", true);
-    run_filter_test();
-  } else {
-    cleanUp();
-    do_test_finished();
-  }
+  cleanUp();
+  do_test_finished();
 }
 
 function cleanUp() {
@@ -1056,13 +1047,11 @@ function cleanUp() {
   prefs.clearUserPref("network.proxy.autoconfig_url");
   prefs.clearUserPref("network.proxy.proxy_over_tls");
   prefs.clearUserPref("network.proxy.no_proxies_on");
-  prefs.clearUserPref("network.proxy.parse_pac_on_socket_process");
 }
 
 function run_test() {
   register_test_protocol_handler();
 
-  prefs.setBoolPref("network.proxy.parse_pac_on_socket_process", false);
   // start of asynchronous test chain
   run_filter_test();
   do_test_pending();

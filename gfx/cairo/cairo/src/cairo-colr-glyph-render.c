@@ -1095,8 +1095,6 @@ draw_paint (cairo_colr_glyph_render_t *render,
     FT_Vector orig_delta;
     cairo_status_t status = CAIRO_STATUS_SUCCESS;
 
-    assert (cairo_status (cr) == CAIRO_STATUS_SUCCESS);
-
     if (!FT_Get_Paint (render->face, *paint, &p))
 	return CAIRO_STATUS_NO_MEMORY;
 

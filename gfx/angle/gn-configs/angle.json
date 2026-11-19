@@ -5,6 +5,7 @@
   "mozilla_add_override_dir": "",
   "gn_target": {
     "*": "//:translator",
+    "android": "//:libEGL",
     "mac": "//:libEGL",
     "win": "//:libEGL"
   },
@@ -30,6 +31,11 @@
       "is_component_build": false,
       "use_custom_libcxx": false,
       "use_sysroot": false
+    },
+    "android": {
+      "angle_enable_gl": true,
+      "angle_build_vulkan_system_info": true,
+      "angle_shared_libvulkan": false
     },
     "mac": {
       "angle_enable_metal": true,

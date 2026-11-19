@@ -34,6 +34,8 @@ DIRS += [
     "aggregation",
 ]
 
+TEST_DIRS += ["tests/gtest"]
+
 XPIDL_SOURCES += [
     "nsIHangDetails.idl",
 ]
@@ -42,6 +44,7 @@ XPIDL_MODULE = "backgroundhangmonitor"
 
 EXPORTS.mozilla += [
     "BackgroundHangMonitor.h",
+    "ChromeScriptPath.h",
     "HangAnnotations.h",
     "HangDetails.h",
 ]

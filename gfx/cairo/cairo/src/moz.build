@@ -46,6 +46,7 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
         'win32/cairo-win32-printing-surface.c',
         'win32/cairo-win32-surface.c',
         'win32/cairo-win32-system.c',
+        'win32/cairo-win32-thread-data.c',
     ]
     DEFINES['DISABLE_SOME_FLOATING_POINT'] = True
     DEFINES['CAIRO_WIN32_STATIC_BUILD'] = True

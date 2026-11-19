@@ -5,7 +5,7 @@
 import globals from "globals";
 import react from "eslint-plugin-react";
 import mozilla from "eslint-plugin-mozilla";
-import importPlugin from "eslint-plugin-import";
+import { importX } from "eslint-plugin-import-x";
 import jestPlugin from "eslint-plugin-jest";
 
 export default [
@@ -14,7 +14,7 @@ export default [
     ...jestPlugin.configs["flat/recommended"],
   },
   {
-    plugins: { jest: jestPlugin, react, mozilla, import: importPlugin },
+    plugins: { jest: jestPlugin, react, mozilla, "import-x": importX },
     languageOptions: {
       parserOptions: {
         ecmaVersion: "latest",
@@ -77,9 +77,9 @@ export default [
       ],
 
       // Check for import errors.
-      "import/no-duplicates": "error",
-      "import/named": "error",
-      "import/export": "error",
+      "import-x/no-duplicates": "error",
+      "import-x/named": "error",
+      "import-x/export": "error",
 
       // Adds compatibility with jest-in-case cases. See related GitHub issue
       // https://github.com/jest-community/eslint-plugin-jest/issues/534

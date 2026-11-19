@@ -72,9 +72,6 @@ prefs = ["network.cookie.cookieBehavior=4"]
 ["browser_broadcastChannel.js"]
 
 ["browser_cache.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
-]
 
 ["browser_cacheAPI.js"]
 

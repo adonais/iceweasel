@@ -379,6 +379,10 @@ class LIRGeneratorShared {
     return false;
   }
 
+  // Whether |value| is a constant that can be stored to memory without first
+  // being moved to a register.
+  bool canStoreConstantWithoutRegister(MDefinition* value) { return false; }
+
   bool canSpecializeWasmCompareAndSelect(MCompare::CompareType compTy,
                                          MIRType insTy);
   void lowerWasmCompareAndSelect(MWasmSelect* ins, MDefinition* lhs,

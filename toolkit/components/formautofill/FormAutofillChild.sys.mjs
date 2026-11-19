@@ -61,6 +61,20 @@ export class FormAutofillChild extends JSWindowActorChild {
   #handlerWaitingForFillOnFormChangeComplete = new Set();
 
   /**
+   * Inputs whose dropdown was withheld for an unrecognized autocomplete value
+   * since they were last focused, so that telemetry records it once per focus.
+   */
+  #dropdownSuppressedInputs = new WeakSet();
+
+  /**
+   * Number of times the dropdown was withheld per form handler, recorded as a
+   * total when the form is submitted or the page is left.
+   */
+  #dropdownSuppressedCounts = new Map();
+
+  #isListeningForPageHideToRecordSuppressedTotals = false;
+
+  /**
    * Keep track of handler that are waiting for the parent process
    * to complete the previous form submission action. This is needed
    * to prevent the field update heuristics from changing the detected field
@@ -207,6 +221,27 @@ export class FormAutofillChild extends JSWindowActorChild {
         }
       }
     } finally {
+      fieldsDetectedResolver?.();
+    }
+  }
+
+  onFieldsDetectedNone(fieldDetails) {
+    if (!fieldDetails.length) {
+      return;
+    }
+
+    // Reset the state if no fields ended up being detected.
+
+    const handler = this._fieldDetailsManager.getFormHandlerByRootElementId(
+      fieldDetails[0].rootElementId
+    );
+    if (handler) {
+      handler.setIdentifiedFieldDetails(fieldDetails);
+
+      const fieldsDetectedResolver =
+        this.#handlerWaitingForDetectedComplete.get(handler);
+      this.#handlerWaitingForDetectedComplete.delete(handler);
+
       fieldsDetectedResolver?.();
     }
   }
@@ -529,6 +564,8 @@ export class FormAutofillChild extends JSWindowActorChild {
   }
 
   handleFocus(element) {
+    this.#dropdownSuppressedInputs.delete(element);
+
     const handler = this._fieldDetailsManager.getFormHandler(element);
     // When autofilling and clearing a field, we focus on the element before modifying the value.
     // (See FormAutofillHandler.fillFieldValue and FormAutofillHandler.clearFilledFields).
@@ -659,10 +696,13 @@ export class FormAutofillChild extends JSWindowActorChild {
       if (!anchorElement) {
         // Unable to find an anchor element under the previously tracked fields.
         // So going over the elements that were added/became visible on form change
-        const addedElements = changes[lazy.FORM_CHANGE_REASON.ADDED_NODES];
+        const addedElements = changes[lazy.FORM_CHANGE_REASON.NODES_ADDED];
         const visibleElements =
           changes[lazy.FORM_CHANGE_REASON.ELEMENT_VISIBLE];
-        anchorElement = findAnchorElement([addedElements, visibleElements]);
+        anchorElement = findAnchorElement([
+          ...(addedElements ?? []),
+          ...(visibleElements ?? []),
+        ]);
       }
       if (anchorElement) {
         currentForm = lazy.AutofillFormFactory.createFromField(anchorElement);
@@ -841,6 +881,10 @@ export class FormAutofillChild extends JSWindowActorChild {
         this.onFieldsDetectedComplete(fieldDetails, isUpdate);
         break;
       }
+      case "FormAutofill:onFieldsDetectedNone": {
+        this.onFieldsDetectedNone(message.data.fds);
+        break;
+      }
       case "FormAutofill:onFormSubmissionComplete": {
         const { rootElementId } = message.data;
         this.onFormSubmissionComplete(rootElementId);
@@ -866,6 +910,9 @@ export class FormAutofillChild extends JSWindowActorChild {
 
     lazy.AutofillTelemetry.recordFormSubmissionHeuristicCount(
       formSubmissionReason
+    );
+    this.#recordDropdownSuppressedTotal(
+      handler ?? this._fieldDetailsManager.getFormHandler(formElement)
     );
 
     if (!lazy.FormAutofill.isAutofillEnabled) {
@@ -1129,9 +1176,8 @@ export class FormAutofillChild extends JSWindowActorChild {
    * @returns {boolean} true if we shold search for autocomplete entries
    */
   shouldSearchForAutoComplete(input) {
-    const fieldDetail = this._fieldDetailsManager
-      .getFormHandler(input)
-      ?.getFieldDetailByElement(input);
+    const handler = this._fieldDetailsManager.getFormHandler(input);
+    const fieldDetail = handler?.getFieldDetailByElement(input);
     if (!fieldDetail) {
       return false;
     }
@@ -1148,6 +1194,20 @@ export class FormAutofillChild extends JSWindowActorChild {
         input.getAutocompleteInfo()
       )
     ) {
+      if (!this.#dropdownSuppressedInputs.has(input)) {
+        this.#dropdownSuppressedInputs.add(input);
+        Glean.formautofill.dropdownSuppressed.record({
+          category: lazy.AutofillDataTypes.typeIdForFieldName(
+            fieldDetail.fieldName
+          ),
+          field_name: fieldDetail.fieldName,
+        });
+        this.#dropdownSuppressedCounts.set(
+          handler,
+          (this.#dropdownSuppressedCounts.get(handler) ?? 0) + 1
+        );
+        this.#listenForPageHideToRecordSuppressedTotals();
+      }
       return false;
     }
 
@@ -1169,6 +1229,32 @@ export class FormAutofillChild extends JSWindowActorChild {
     }
 
     return true;
+  }
+
+  #recordDropdownSuppressedTotal(handler) {
+    const count = this.#dropdownSuppressedCounts.get(handler);
+    if (!count) {
+      return;
+    }
+    this.#dropdownSuppressedCounts.delete(handler);
+    Glean.formautofill.dropdownSuppressedTotal.record({ count });
+  }
+
+  #listenForPageHideToRecordSuppressedTotals() {
+    if (this.#isListeningForPageHideToRecordSuppressedTotals) {
+      return;
+    }
+    this.#isListeningForPageHideToRecordSuppressedTotals = true;
+    this.contentWindow.addEventListener(
+      "pagehide",
+      () => {
+        this.#isListeningForPageHideToRecordSuppressedTotals = false;
+        for (const handler of [...this.#dropdownSuppressedCounts.keys()]) {
+          this.#recordDropdownSuppressedTotal(handler);
+        }
+      },
+      { once: true }
+    );
   }
 
   /**

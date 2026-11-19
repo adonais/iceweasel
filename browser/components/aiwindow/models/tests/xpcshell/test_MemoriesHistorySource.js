@@ -966,7 +966,7 @@ add_task(async function test_sensitive_info_filtering() {
     ),
     makeVisit(
       "https://example.com/phone",
-      "Call 555-123-4567 for support",
+      "Call 202-555-0123 for support",
       now,
       -15 * 60 * 1000
     ),
@@ -1005,7 +1005,7 @@ add_task(async function test_sensitive_info_filtering() {
   );
 
   Assert.ok(
-    !titles.some(t => t.includes("555-123-4567")),
+    !titles.some(t => t.includes("202-555-0123")),
     "Title with phone number filtered out"
   );
 

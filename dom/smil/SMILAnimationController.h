@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "mozilla/Maybe.h"
 #include "mozilla/SMILCompositorTable.h"
 #include "mozilla/SMILMilestone.h"
 #include "mozilla/SMILTimeContainer.h"
@@ -132,11 +133,10 @@ class SMILAnimationController final : public SMILTimeContainer {
   // pointers that are owned by their animation elements.
   static bool AddAnimationToCompositorTable(
       mozilla::dom::SVGAnimationElement* aElement,
-      SMILCompositorTable* aCompositorTable);
+      const SMILTargetIdentifier& aKey, SMILCompositorTable* aCompositorTable);
 
-  static bool GetTargetIdentifierForAnimation(
-      mozilla::dom::SVGAnimationElement* aAnimElem,
-      SMILTargetIdentifier& aResult);
+  static Maybe<SMILTargetIdentifier> GetTargetIdentifierForAnimation(
+      mozilla::dom::SVGAnimationElement* aAnimElem);
 
   // Methods for adding/removing time containers
   nsresult AddChild(SMILTimeContainer& aChild) override;

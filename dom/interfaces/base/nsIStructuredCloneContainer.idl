@@ -36,10 +36,9 @@ interface nsIStructuredCloneContainer : nsISupports
 
   /**
    * Initialize this structured clone container from a base-64-encoded byte
-   * stream, stored in aData.  aFormatVersion should be the version of the
-   * structured clone algorithm which was used to generate aData.
+   * stream, stored in aData.
    */
-  void initFromBase64(in AString aData, in unsigned long aFormatVersion);
+  void initFromBase64(in AString aData);
 
   /**
    * Deserializes this structured clone container returning it as a jsval.
@@ -57,10 +56,4 @@ interface nsIStructuredCloneContainer : nsISupports
    * Get the size in bytes of this container's serialized data.
    */
   readonly attribute unsigned long long serializedNBytes;
-
-  /**
-   * Get the version of the structured clone algorithm which was used to
-   * generate this container's serialized buffer.
-   */
-  readonly attribute unsigned long formatVersion;
 };

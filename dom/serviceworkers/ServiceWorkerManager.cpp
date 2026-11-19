@@ -638,8 +638,8 @@ RefPtr<GenericErrorResultPromise> ServiceWorkerManager::StartControllingClient(
 
         aRegistrationInfo->StartControllingClient();
 
-        entry.Insert(
-            MakeUnique<ControlledClientData>(clientHandle, aRegistrationInfo));
+        entry.Insert(std::make_unique<ControlledClientData>(clientHandle,
+                                                            aRegistrationInfo));
 
         clientHandle->OnDetach()->Then(
             GetMainThreadSerialEventTarget(), __func__,
@@ -1278,7 +1278,7 @@ RefPtr<ServiceWorkerRegistrationPromise> ServiceWorkerManager::WhenReady(
 
   RefPtr<ClientHandle> handle =
       ClientManager::CreateHandle(aClientInfo, target);
-  mPendingReadyList.AppendElement(MakeUnique<PendingReadyData>(handle));
+  mPendingReadyList.AppendElement(std::make_unique<PendingReadyData>(handle));
 
   RefPtr<ServiceWorkerManager> self(this);
   handle->OnDetach()->Then(target, __func__,
@@ -1553,7 +1553,8 @@ ServiceWorkerManager::GetOrCreateJobQueue(const nsACString& aKey,
   // that leads to a false positive assertion, see bug 1370674 comment 7.
   if (!mRegistrationInfos.Get(aKey, &data)) {
     data = mRegistrationInfos
-               .InsertOrUpdate(aKey, MakeUnique<RegistrationDataPerPrincipal>())
+               .InsertOrUpdate(aKey,
+                               std::make_unique<RegistrationDataPerPrincipal>())
                .get();
   }
 

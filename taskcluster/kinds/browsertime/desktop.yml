@@ -23,7 +23,7 @@ task-defaults:
     limit-platforms:
         by-app:
             chrome:
-                - (?!macosx1470).*64.*shippable.*
+                - (?!macosx1470|macosx1500).*64.*shippable.*
             safari:
                 - macosx2700.*shippable.*
             safari-tp:
@@ -109,9 +109,7 @@ browsertime-tp6:
         limit-platforms:
             by-app:
                 chrome:
-                    - (?!macosx1470).*shippable.*
-                safari:
-                    - (?!macosx1470).*macos.*shippable.*
+                    - (?!macosx1470|macosx1500).*shippable.*
                 custom-car:
                     - macosx1500.*shippable.*
                     - linux.*shippable.*
@@ -142,6 +140,7 @@ browsertime-tp6:
                                 linux.*shippable.*: [trunk]
                                 windows.*-64.*shippable.*: [trunk]
                                 macosx1470.*shippable.*: [trunk]
+                                macosx1500.*shippable.*: [trunk]
                                 default: []
                         default: []
                 default:
@@ -153,7 +152,7 @@ browsertime-tp6:
                         default: []
         treeherder-symbol: Btime(tp6)
     raptor:
-        apps: [firefox, chrome, custom-car]
+        apps: [firefox]
         test: tp6
         run-visual-metrics: true
         subtests:
@@ -220,15 +219,6 @@ browsertime-responsiveness:
 browsertime-tp6-essential:
     <<: *tp6-defaults
     <<: &tp6-essential-defaults
-        limit-platforms:
-            by-app:
-                chrome:
-                    - linux.*shippable.*
-                    - windows.*shippable.*
-                custom-car:
-                    - linux.*shippable.*
-                    - windows.*-64.*shippable.*
-                default: []
         mozharness:
             extra-options:
                 by-test-platform:
@@ -243,7 +233,7 @@ browsertime-tp6-essential:
                         - --conditioned-profile=settled
                         - --extra-profiler-run
         raptor:
-            apps: [firefox, chrome, custom-car]
+            apps: [firefox]
             test: tp6
             run-visual-metrics: true
             subtests:
@@ -319,9 +309,9 @@ browsertime-tp7:
         limit-platforms:
             by-app:
                 chrome:
-                    - (?!macosx1470).*shippable.*
+                    - (?!macosx1470|macosx1500).*shippable.*
                 safari:
-                    - (?!macosx1470).*macos.*shippable.*
+                    - macosx2700.*shippable.*
                 custom-car:
                     - macosx1500.*shippable.*
                     - linux.*shippable.*
@@ -371,8 +361,16 @@ browsertime-benchmark:
                 by-subtest:
                     media-capabilities:
                         - .*64.*shippable.*
+                    (assorted-dom|matrix-react-bench|stylebench|unity-webgl|webaudio):
+                        - (?!macosx1470|macosx1500).*64.*shippable.*
                     default:
                         - (?!macosx1470).*64.*shippable.*
+            firefox:
+                by-subtest:
+                    # Bug 2087634 - Hangs on macosx1500 in any browser; chrome is excluded above
+                    unity-webgl:
+                        - (?!macosx1500).*
+                    default: []
             safari:
                 - macosx2700.*shippable.*
             safari-tp:
@@ -389,7 +387,7 @@ browsertime-benchmark:
                 default: [firefox, chrome, safari, safari-tp, custom-car]
         subtests:
             by-test-platform:
-                (macosx1500|macosx2700).*shippable.*:
+                macosx2700.*shippable.*:
                     by-app:
                         safari-tp:
                             - [speedometer3, sp3]
@@ -544,24 +542,21 @@ browsertime-benchmark:
                 by-app:
                     firefox:
                         by-test-platform:
-                            (?!macosx1500).*64.*shippable.*/.*: [trunk]
-                            macosx1500.*shippable.*: [mozilla-central]
+                            .*64.*shippable.*/.*: [trunk]
                             default: []
                     default: []
             motionmark-htmlsuite-1-3:
                 by-app:
                     firefox:
                         by-test-platform:
-                            (?!macosx1500).*64.*shippable.*/.*: [trunk]
-                            macosx1500.*shippable.*: [mozilla-central]
+                            .*64.*shippable.*/.*: [trunk]
                             default: []
                     default: []
             default:
                 by-app:
                     firefox:
                         by-test-platform:
-                            (?!macosx1500).*64.*shippable.*/.*: [trunk]
-                            macosx1500.*shippable.*: [mozilla-central]
+                            .*64.*shippable.*/.*: [trunk]
                             default: []
                     default: []
     max-run-time:
@@ -708,6 +703,7 @@ browsertime-youtube-playback:
         by-subtest:
             youtube-playback-av1-sfr:
                 - macosx1470-64-shippable/opt
+                - macosx1500-aarch64-shippable/opt
             default: []
     max-run-time:
         by-subtest:
@@ -755,7 +751,7 @@ browsertime-tp6-live:
             - --live-sites
             - --extra-profiler-run
     raptor:
-        apps: [firefox, chrome, safari]
+        apps: [firefox]
         test: tp6
         run-visual-metrics: true
         lull-schedule:
@@ -763,85 +759,31 @@ browsertime-tp6-live:
                 .*shippable.*: 1w
                 default: ""
         subtests:
-            by-app:
-                safari:
-                    - amazon
-                    - [bing-search, bing]
-                    - ebay
-                    # - [facebook, fb] Perma fails on osx 10.15.7
-                    - fandom
-                    - [google-docs, gdocs]
-                    - [google-mail, gmail]
-                    - [google-search, gsearch]
-                    - [google-slides, gslides]
-                    - imdb
-                    - imgur
-                    # - instagram # (see bug 1736999)
-                    - linkedin
-                    - microsoft
-                    # - netflix # Perma fails on osx 10.15.7 (Bug 1802922)
-                    # - office (site loads blank page if not signed in)
-                    # - outlook Perma fails on osx 10.15.7
-                    - paypal
-                    - pinterest
-                    - reddit
-                    - tumblr
-                    # - twitter Perma fails on osx 10.15.7
-                    - wikipedia
-                    - yahoo-mail
-                    - youtube
-                chrome:
-                    - amazon
-                    - [bing-search, bing]
-                    - ebay
-                    - [facebook, fb]
-                    - fandom
-                    - [google-docs, gdocs]
-                    - [google-mail, gmail]
-                    - [google-search, gsearch]
-                    - [google-slides, gslides]
-                    - imdb
-                    # - imgur (see bugs 1825337 & 1817420)
-                    - instagram
-                    - linkedin
-                    - microsoft
-                    - netflix
-                    # - office (site loads blank page if not signed in)
-                    - outlook
-                    - paypal
-                    - pinterest
-                    - reddit
-                    - tumblr
-                    - twitter
-                    - wikipedia
-                    - yahoo-mail
-                    - youtube
-                default:
-                    - amazon
-                    - [bing-search, bing]
-                    - ebay
-                    - [facebook, fb]
-                    - fandom
-                    - [google-docs, gdocs]
-                    - [google-mail, gmail]
-                    - [google-search, gsearch]
-                    - [google-slides, gslides]
-                    - imdb
-                    - imgur
-                    - instagram
-                    - linkedin
-                    - microsoft
-                    - netflix
-                    # - office (site loads blank page if not signed in)
-                    - outlook
-                    - paypal
-                    - pinterest
-                    - reddit
-                    - tumblr
-                    - twitter
-                    - wikipedia
-                    - yahoo-mail
-                    - youtube
+            - amazon
+            - [bing-search, bing]
+            - ebay
+            - [facebook, fb]
+            - fandom
+            - [google-docs, gdocs]
+            - [google-mail, gmail]
+            - [google-search, gsearch]
+            - [google-slides, gslides]
+            - imdb
+            - imgur
+            - instagram
+            - linkedin
+            - microsoft
+            - netflix
+            # - office (site loads blank page if not signed in)
+            - outlook
+            - paypal
+            - pinterest
+            - reddit
+            - tumblr
+            - twitter
+            - wikipedia
+            - yahoo-mail
+            - youtube
     run-on-projects: []
     treeherder-symbol: Btime-live(tp6)
     tier: 3
@@ -894,6 +836,7 @@ browsertime-tp6-profiling:
             linux.*shippable.*: [mozilla-central]
             windows.*shippable.*: [mozilla-central]
             macosx1470.*shippable.*: [mozilla-central]
+            macosx1500.*shippable.*: [mozilla-central]
             default: []
     tier:
         by-app:
@@ -961,6 +904,7 @@ browsertime-media-seek:
             chrome:
                 - linux.*shippable.*
                 - macosx1470.*shippable.*
+                - macosx1500.*shippable.*
             default: []
     max-run-time: 2700
     run-on-projects:
@@ -1163,7 +1107,10 @@ browsertime-nav-bench:
 browsertime-video-playback-latency:
     <<: *tp6-defaults
     raptor:
-        apps: [firefox, chrome, safari]
+        apps:
+            by-test-platform:
+                macosx2700.*: [safari]
+                default: [firefox, chrome, safari]
         test: video-playback-latency
         run-visual-metrics: true
         subtests:
@@ -1180,7 +1127,7 @@ browsertime-video-playback-latency:
             chrome:
                 - .*shippable.*
             safari:
-                - (?!macosx1470).*macos.*shippable.*
+                - macosx2700.*shippable.*
             default: []
     mozharness:
         extra-options:
@@ -1197,6 +1144,7 @@ browsertime-video-playback-latency:
             firefox:
                 by-test-platform:
                     macosx1470.*shippable.*: [autoland, mozilla-central]
+                    macosx1500.*shippable.*: [autoland, mozilla-central]
                     linux.*shippable.*: [autoland, mozilla-central]
                     default: []
             default: []
@@ -1210,7 +1158,6 @@ browsertime-webcodecs:
             safari:
                 - macosx2700.*shippable.*
             custom-car:
-                - macosx1500.*shippable.*
                 - linux.*-64.*shippable.*
                 - windows.*-64.*shippable.*
             default: []
@@ -1345,15 +1292,18 @@ browsertime-webcodecs:
         extra-options:
             by-app:
                 firefox:
+                    - --conditioned-profile=settled
                     - --extra-profiler-run
                 default:
                     by-test-platform:
                         # Chrome's out-of-process video capture service crashes on Windows when capturing
                         # from the fake camera, so run it in the browser process there.
                         windows.*:
+                            - --conditioned-profile=settled
                             - --extra-profiler-run
                             - --browsertime-arg=chrome.args=--enable-features=RunVideoCaptureServiceInBrowserProcess
                         default:
+                            - --conditioned-profile=settled
                             - --extra-profiler-run
     run-on-projects:
         by-app:
@@ -1362,6 +1312,7 @@ browsertime-webcodecs:
                     linux.*shippable.*: [autoland, mozilla-central]
                     windows.*shippable.*: [autoland, mozilla-central]
                     macosx1470.*shippable.*: [autoland, mozilla-central]
+                    macosx1500.*shippable.*: [autoland, mozilla-central]
                     default: []
             default: []
     tier:
@@ -1482,7 +1433,7 @@ browsertime-indexeddb:
     limit-platforms:
         by-app:
             chrome:
-                - (?!macosx1470).*shippable.*
+                - (?!macosx1470|macosx1500).*shippable.*
             custom-car:
                 - macosx1500.*shippable.*
                 - linux.*shippable.*
@@ -1609,6 +1560,7 @@ browsertime-hev3-connection:
                 by-test-platform:
                     linux2404-64-shippable/opt: [mozilla-central]
                     macosx1470-64-shippable/opt: [mozilla-central]
+                    macosx1500-aarch64-shippable/opt: [mozilla-central]
                     windows11-64-24h2-shippable/opt: [mozilla-central]
                     default: []
             chrome:

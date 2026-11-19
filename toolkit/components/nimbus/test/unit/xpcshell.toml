@@ -9,6 +9,7 @@ run-if = [
 prefs = [
   "app.normandy.run_interval_seconds=0", # This turns off the update interval for fetching recipes from Remote Settings
   "messaging-system.log=all", # Enable all Nimbus logging.
+  "nimbus.persistence.enabled=true", # Enable persistence for the Nimbus ExperimentStore in all tests.
 ]
 
 ["test_bug2054546.js"]

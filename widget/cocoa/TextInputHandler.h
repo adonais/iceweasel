@@ -52,6 +52,14 @@ enum {
 class TISInputSourceWrapper {
  public:
   static TISInputSourceWrapper& CurrentInputSource();
+
+  /**
+   * The character that aKeyCode produces on this input source with the given
+   * native modifier flags, or 0 when it produces none or more than one.
+   */
+  uint32_t CharForKeyCode(UInt32 aKeyCode, UInt32 aModifiers) {
+    return TranslateToChar(aKeyCode, aModifiers, GetKbdType());
+  }
   /**
    * Shutdown() should be called when nobody doesn't need to use this class.
    */

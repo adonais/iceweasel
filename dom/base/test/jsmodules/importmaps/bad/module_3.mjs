@@ -1,4 +1,4 @@
-// eslint-disable-next-line import/no-unassigned-import, import/no-unresolved
+// eslint-disable-next-line import-x/no-unassigned-import, import-x/no-unresolved
 import {} from "../circular_depdendency.mjs";
 
 export function exportedFunction() {

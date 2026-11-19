@@ -62,13 +62,6 @@ nsDeviceContextSpecGTK::~nsDeviceContextSpecGTK() {
 NS_IMPL_ISUPPORTS(nsDeviceContextSpecGTK, nsIDeviceContextSpec)
 
 already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
-  double width, height;
-  mPrintSettings->GetEffectiveSheetSize(&width, &height);
-
-  // convert twips to points
-  width /= TWIPS_PER_POINT_FLOAT;
-  height /= TWIPS_PER_POINT_FLOAT;
-
   // We shouldn't be attempting to get a surface if we've already got a spool
   // file.
   MOZ_ASSERT(!mSpoolFile);
@@ -105,7 +98,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
     return stream;
   }();
 
-  return PrintTargetSkPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+  return PrintTargetSkPDF::CreateOrNull(stream);
 }
 
 #define DECLARE_KNOWN_MONOCHROME_SETTING(key_, value_) {"cups-" key_, value_},

@@ -113,6 +113,9 @@ public class ContentBlocking {
     /** Builder for constructing ContentBlocking Settings instances. */
     @AnyThread
     public static class Builder extends RuntimeSettings.Builder<Settings> {
+      /** Public constructor for Builder. */
+      public Builder() {}
+
       @Override
       protected @NonNull Settings newSettings(final @Nullable Settings settings) {
         return new Settings(settings);
@@ -1987,6 +1990,9 @@ public class ContentBlocking {
 
   /** Possible settings for ETP. */
   public static class EtpLevel {
+    /** Public constructor for EtpLevel. */
+    public EtpLevel() {}
+
     /** Do not enable ETP at all. */
     public static final int NONE = 0;
 
@@ -2006,6 +2012,9 @@ public class ContentBlocking {
 
   /** Possible settings for ETP category. */
   public static class EtpCategory {
+    /** Public constructor for EtpCategory. */
+    public EtpCategory() {}
+
     /** The default ETP category, balancing privacy and web compatibility. */
     public static final int STANDARD = 0;
 

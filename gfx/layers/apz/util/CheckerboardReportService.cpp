@@ -29,9 +29,9 @@ already_AddRefed<CheckerboardEventStorage>
 CheckerboardEventStorage::GetInstance() {
   // The instance in the parent process does all the work, so if this is getting
   // called in the child process something is likely wrong.
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (!sInstance) {
     sInstance = new CheckerboardEventStorage();
     ClearOnShutdown(&sInstance);
@@ -66,7 +66,7 @@ void CheckerboardEventStorage::Report(uint32_t aSeverity,
 
 void CheckerboardEventStorage::ReportCheckerboard(uint32_t aSeverity,
                                                   const std::string& aLog) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (aSeverity == 0) {
     // This code assumes all checkerboard reports have a nonzero severity.
@@ -126,7 +126,7 @@ void CheckerboardEventStorage::ReportCheckerboard(uint32_t aSeverity,
 
 void CheckerboardEventStorage::GetReports(
     nsTArray<dom::CheckerboardReport>& aOutReports) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   for (int i = 0; i < RECENT_MAX_INDEX; i++) {
     CheckerboardReport& r = mCheckerboardReports[i];
@@ -196,7 +196,7 @@ void CheckerboardReportService::SetRecordingEnabled(bool aEnabled) {
 }
 
 void CheckerboardReportService::FlushActiveReports() {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   gfx::GPUProcessManager* gpm = gfx::GPUProcessManager::Get();
   if (gpm && gpm->FlushActiveCheckerboardReports()) {
     return;

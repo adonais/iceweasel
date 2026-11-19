@@ -15,10 +15,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d380a43d59f4f7cbc
  4 files changed, 36 insertions(+)
 
 diff --git a/audio/audio_send_stream.cc b/audio/audio_send_stream.cc
-index 4bc85b2718..2bb1033945 100644
+index 7bf655cbfb..5446aa3fde 100644
 --- a/audio/audio_send_stream.cc
 +++ b/audio/audio_send_stream.cc
-@@ -442,6 +442,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
+@@ -437,6 +437,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
  
    webrtc::ChannelSendStatistics channel_stats =
        channel_send_->GetRTCPStatistics();
@@ -27,7 +27,7 @@ index 4bc85b2718..2bb1033945 100644
    stats.header_and_padding_bytes_sent =
        channel_stats.header_and_padding_bytes_sent;
 diff --git a/audio/channel_send.cc b/audio/channel_send.cc
-index 0539bdcd8c..b6ef4b476f 100644
+index aebef26966..cb95e85f8f 100644
 --- a/audio/channel_send.cc
 +++ b/audio/channel_send.cc
 @@ -80,6 +80,32 @@ namespace {
@@ -63,7 +63,7 @@ index 0539bdcd8c..b6ef4b476f 100644
  class AudioBitrateAccountant {
   public:
    void RegisterPacketOverhead(int packet_byte_overhead) {
-@@ -291,6 +317,8 @@ class ChannelSend : public ChannelSendInterface,
+@@ -293,6 +319,8 @@ class ChannelSend : public ChannelSendInterface,
    bool input_mute_ RTC_GUARDED_BY(volume_settings_mutex_) = false;
    bool previous_frame_muted_ RTC_GUARDED_BY(encoder_queue_checker_) = false;
  
@@ -72,7 +72,7 @@ index 0539bdcd8c..b6ef4b476f 100644
    PacketRouter* packet_router_ RTC_GUARDED_BY(worker_thread_) = nullptr;
    const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_pacer_proxy_;
  
-@@ -517,6 +545,7 @@ ChannelSend::ChannelSend(
+@@ -521,6 +549,7 @@ ChannelSend::ChannelSend(
      : env_(env),
        worker_thread_(TaskQueueBase::Current()),
        ssrc_(ssrc),
@@ -80,7 +80,7 @@ index 0539bdcd8c..b6ef4b476f 100644
        rtp_packet_pacer_proxy_(new RtpPacketSenderProxy()),
        frame_encryptor_(frame_encryptor),
        crypto_options_(crypto_options),
-@@ -538,6 +567,8 @@ ChannelSend::ChannelSend(
+@@ -542,6 +571,8 @@ ChannelSend::ChannelSend(
  
    configuration.paced_sender = rtp_packet_pacer_proxy_.get();
    configuration.rtt_stats = rtcp_rtt_stats;
@@ -89,7 +89,7 @@ index 0539bdcd8c..b6ef4b476f 100644
    configuration.extmap_allow_mixed = extmap_allow_mixed;
    configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
    configuration.rtcp_packet_type_counter_observer = this;
-@@ -811,6 +842,7 @@ ChannelSendStatistics ChannelSend::GetRTCPStatistics() const {
+@@ -817,6 +848,7 @@ ChannelSendStatistics ChannelSend::GetRTCPStatistics() const {
    RTC_DCHECK_RUN_ON(worker_thread_);
    ChannelSendStatistics stats = {
        .round_trip_time = rtp_rtcp_->LastRtt().value_or(TimeDelta::Zero())};
@@ -98,7 +98,7 @@ index 0539bdcd8c..b6ef4b476f 100644
    StreamDataCounters rtp_stats;
    StreamDataCounters rtx_stats;
 diff --git a/audio/channel_send.h b/audio/channel_send.h
-index 750d2a95b2..1ce1612e96 100644
+index 360e1f74dd..26b7cbf82d 100644
 --- a/audio/channel_send.h
 +++ b/audio/channel_send.h
 @@ -53,6 +53,7 @@ struct ChannelSendStatistics {

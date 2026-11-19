@@ -60,13 +60,18 @@ case `uname -s` in
     Linux)
         # Use host gcc on Linux
         export LDFLAGS="${LDFLAGS} -Wl,-rpath,\\\$ORIGIN/../.."
+        # Without pkg-config, Python 3.12+ only finds the ncursesw headers through the include path.
+        export CPPFLAGS="${CPPFLAGS} -I/usr/include/ncursesw"
         ;;
 esac
 
 # Patch Python to honor MOZPYTHONHOME instead of PYTHONHOME. That way we have a
 # relocatable python for free, while not interfering with the system Python that
 # already honors PYTHONHOME.
-find ${python_src} -type f -print0 | xargs -0 perl -i -pe "s,PYTHONHOME,MOZPYTHONHOME,g"
+# Only rewrite the files that need it: touching the others would make the
+# Makefile regenerate sources such as Modules/_blake2/blake2s_impl.c with the
+# host python3, which is too old for Tools/clinic since Python 3.12.
+grep -rlZ PYTHONHOME ${python_src} | xargs -0 perl -i -pe "s,PYTHONHOME,MOZPYTHONHOME,g"
 
 # Actual build
 work_dir=`pwd`
@@ -74,10 +79,15 @@ tardir=python
 
 cd `mktemp -d`
 ${python_src}/configure --prefix=/${tardir} --enable-optimizations --with-lto ${configure_flags_extra} || { exit_status=$? && cat config.log && exit $exit_status ; }
-# make re-adds these to the configure-recorded flags; Linux keeps them so setup.py gets a working $ORIGIN rpath.
+# make re-adds these to the configure-recorded flags.
 case `uname -s` in
     Darwin)
         unset CFLAGS CPPFLAGS LDFLAGS
+        ;;
+    Linux)
+        # Escape $ORIGIN for make, which links the extension modules since Python 3.12.
+        sed -i 's/\\\$ORIGIN/\\$$ORIGIN/g' Makefile
+        unset CPPFLAGS LDFLAGS
         ;;
 esac
 
@@ -100,9 +110,20 @@ build_time_vars = {
 PYCODE
 fi
 
-${work_dir}/python/bin/python3 -m pip install --upgrade pip==23.0
+if ${work_dir}/python/bin/python3 -c "import sys; sys.exit(sys.version_info < (3, 12))"; then
+    pip_version=24.0
+else
+    pip_version=23.0
+fi
+${work_dir}/python/bin/python3 -m pip install --upgrade pip==${pip_version}
 ${work_dir}/python/bin/python3 -m pip install -r ${GECKO_PATH}/build/psutil_requirements.txt -r ${GECKO_PATH}/build/zstandard_requirements.txt -r ${GECKO_PATH}/build/pyyaml_requirements.txt
 ${work_dir}/python/bin/python3 -c "import yaml; assert yaml.__with_libyaml__"
+${work_dir}/python/bin/python3 -c "import curses"
+case `uname -s` in
+    Linux)
+        readelf -d ${work_dir}/python/lib/python3.*/lib-dynload/_curses.*.so | grep -F '[$ORIGIN/../..]'
+        ;;
+esac
 
 case `uname -s` in
     Darwin)

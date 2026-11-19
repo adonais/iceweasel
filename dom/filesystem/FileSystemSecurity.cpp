@@ -94,7 +94,7 @@ void FileSystemSecurity::GrantAccessToContentProcess(
       return;
     }
 
-    entry.OrInsertWith([] { return MakeUnique<nsTArray<nsString>>(); })
+    entry.OrInsertWith([] { return std::make_unique<nsTArray<nsString>>(); })
         ->AppendElement(aDirectoryPath);
   });
 }

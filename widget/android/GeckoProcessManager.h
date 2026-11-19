@@ -58,7 +58,6 @@ class GeckoProcessManager final
 
     static void AttachTo(
         java::GeckoProcessManager::ConnectionManager::Param aInstance);
-    void ObserveNetworkNotifications();
 
    private:
     java::GeckoProcessManager::ConnectionManager::WeakRef mJavaConnMgr;

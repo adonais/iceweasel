@@ -627,7 +627,7 @@ static void prefilter_and_fold(CELTDecoder * OPUS_RESTRICT st, int N)
       comb_filter(etmp, decode_mem[c]+decode_buffer_size-N,
          st->postfilter_period_old, st->postfilter_period, overlap,
          -st->postfilter_gain_old, -st->postfilter_gain,
-         st->postfilter_tapset_old, st->postfilter_tapset, NULL, 0, st->arch);
+         st->postfilter_tapset_old, st->postfilter_tapset, NULL, 0, st->arch ARG_QEXT(qext_scale));
 
       /* Simulate TDAC on the concealed audio so that it blends with the
          MDCT of the next frame. */
@@ -816,11 +816,11 @@ static void celt_decode_lost(CELTDecoder * OPUS_RESTRICT st, int N, int LM
          st->postfilter_period_old=IMAX(st->postfilter_period_old, COMBFILTER_MINPERIOD);
          comb_filter(out_syn[c], out_syn[c], st->postfilter_period_old, st->postfilter_period, mode->shortMdctSize,
                st->postfilter_gain_old, st->postfilter_gain, st->postfilter_tapset_old, st->postfilter_tapset,
-               mode->window, overlap, st->arch);
+               mode->window, overlap, st->arch ARG_QEXT(qext_scale));
          if (LM!=0)
             comb_filter(out_syn[c]+mode->shortMdctSize, out_syn[c]+mode->shortMdctSize, st->postfilter_period, st->postfilter_period, N-mode->shortMdctSize,
                   st->postfilter_gain, st->postfilter_gain, st->postfilter_tapset, st->postfilter_tapset,
-                  mode->window, overlap, st->arch);
+                  mode->window, overlap, st->arch ARG_QEXT(qext_scale));
 
       } while (++c<C);
       st->postfilter_period_old = st->postfilter_period;
@@ -1211,7 +1211,8 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
    backgroundLogE = oldLogE2 + 2*nbEBands;
 
 #ifdef ENABLE_QEXT
-   if (qext_payload) {
+   /* Ignore absurdly large payloads (see QEXT_PAYLOAD_SIZE_CAP). */
+   if (qext_payload && qext_payload_len <= QEXT_PAYLOAD_SIZE_CAP) {
       ec_dec_init(&ext_dec, (unsigned char*)qext_payload, qext_payload_len);
       qext_bytes = qext_payload_len;
    } else {
@@ -1258,7 +1259,7 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
             if (len <= 0 || padding<0) return OPUS_INVALID_PACKET;
 #ifdef ENABLE_QEXT
             qext_bytes = padding;
-            if (data[len] != QEXT_EXTENSION_ID<<1)
+            if (data[len] != QEXT_EXTENSION_ID<<1 || qext_bytes > QEXT_PAYLOAD_SIZE_CAP)
                qext_bytes=0;
             ec_dec_init(&ext_dec, (unsigned char*)data+len+1, qext_bytes);
 #endif
@@ -1564,11 +1565,11 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
       st->postfilter_period_old=IMAX(st->postfilter_period_old, COMBFILTER_MINPERIOD);
       comb_filter(out_syn[c], out_syn[c], st->postfilter_period_old, st->postfilter_period, mode->shortMdctSize,
             st->postfilter_gain_old, st->postfilter_gain, st->postfilter_tapset_old, st->postfilter_tapset,
-            mode->window, overlap, st->arch);
+            mode->window, overlap, st->arch ARG_QEXT(qext_scale));
       if (LM!=0)
          comb_filter(out_syn[c]+mode->shortMdctSize, out_syn[c]+mode->shortMdctSize, st->postfilter_period, postfilter_pitch, N-mode->shortMdctSize,
                st->postfilter_gain, postfilter_gain, st->postfilter_tapset, postfilter_tapset,
-               mode->window, overlap, st->arch);
+               mode->window, overlap, st->arch ARG_QEXT(qext_scale));
 
    } while (++c<CC);
    st->postfilter_period_old = st->postfilter_period;

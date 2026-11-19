@@ -492,6 +492,9 @@ bool WarpCacheIRTranspiler::emitGuardFuse(RealmFuses::FuseIndex fuseIndex) {
     case RealmFuses::FuseIndex::OptimizeArraySpeciesFuse:
     case RealmFuses::FuseIndex::OptimizeTypedArraySpeciesFuse:
     case RealmFuses::FuseIndex::OptimizeRegExpPrototypeFuse:
+    case RealmFuses::FuseIndex::ObjectProtoHasNoIndexedPropsFuse:
+    case RealmFuses::FuseIndex::ArrayProtoHasNoIndexedPropsFuse:
+    case RealmFuses::FuseIndex::StringProtoHasNoIndexedPropsFuse:
       // This is a no-op because WarpOracle has added a compilation dependency.
       MOZ_ASSERT(RealmFuses::isInvalidatingFuse(fuseIndex));
       return true;
@@ -2011,9 +2014,23 @@ bool WarpCacheIRTranspiler::emitLoadFixedSlotResult(ObjOperandId objId,
   return true;
 }
 
-bool WarpCacheIRTranspiler::emitLoadFixedSlotTypedResult(ObjOperandId objId,
-                                                         uint32_t offsetOffset,
-                                                         ValueType type) {
+bool WarpCacheIRTranspiler::emitLoadReservedFixedSlotResult(
+    ObjOperandId objId, uint32_t offsetOffset) {
+  int32_t offset = int32StubField(offsetOffset);
+
+  MDefinition* obj = getOperand(objId);
+  uint32_t slotIndex = NativeObject::getFixedSlotIndexFromOffset(offset);
+
+  auto* load = MLoadFixedSlot::New(alloc(), obj, slotIndex);
+  load->setNotMovable();
+  add(load);
+
+  pushResult(load);
+  return true;
+}
+
+bool WarpCacheIRTranspiler::emitLoadReservedFixedSlotTypedResult(
+    ObjOperandId objId, uint32_t offsetOffset, ValueType type) {
   int32_t offset = int32StubField(offsetOffset);
 
   MDefinition* obj = getOperand(objId);
@@ -7274,9 +7291,9 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
 }
 
 bool WarpCacheIRTranspiler::emitAssertNoAllocationMetadataBuilder(
-    uint32_t builderAddrOffset) {
-  // This is a no-op because we discard all JIT code when we set an allocation
-  // metadata callback.
+    uint32_t hasBuilderAddrOffset) {
+  // This is a no-op because we discard all JIT code when allocation metadata is
+  // enabled for a realm.
   return true;
 }
 

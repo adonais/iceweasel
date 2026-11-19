@@ -543,7 +543,7 @@ class TreeItem {
 
     if (sorted) {
       // Inserting this newly created item at correct position
-      const nextSibling = [...this.items.values()].find(child => {
+      const nextSibling = this.items.values().find(child => {
         return child.label.textContent >= label;
       });
 

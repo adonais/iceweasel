@@ -19,6 +19,22 @@ async function openLanguagesPane() {
   return { win: gBrowser.contentWindow, tab: gBrowser.selectedTab };
 }
 
+add_task(async function test_languages_listbox_accessible_name() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[ACCEPT_LANGUAGES_PREF, FIVE_LOCALES]],
+  });
+
+  let { win, tab } = await openLanguagesPane();
+
+  let boxGroupControl = await settingControlRenders(
+    "websiteLanguageWrapper",
+    win
+  );
+  await assertBoxGroupHasListboxAccessibleName(boxGroupControl.controlEl);
+
+  await BrowserTestUtils.removeTab(tab);
+});
+
 add_task(async function test_reordering_languages_position_before() {
   await SpecialPowers.pushPrefEnv({
     set: [[ACCEPT_LANGUAGES_PREF, FIVE_LOCALES]],

@@ -31,4 +31,11 @@ object SettingsTabsSelectors : SelectorContainer {
             groups = setOf(Group.TAB_SETTINGS),
             readiness = PageReadinessProfiles.READY_CONTENT,
         )
+
+    val ENABLE_PRIVACY_REPORT_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_privacy_report_title),
+            description = "the Enable Privacy Report switch row",
+        )
 }

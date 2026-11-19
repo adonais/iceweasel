@@ -565,11 +565,11 @@ void UniqueStacks::StreamNonJITFrame(const FrameKey& aFrame) {
   }
 }
 
-static void StreamJITFrame(JSContext* aContext, SpliceableJSONWriter& aWriter,
-                           UniqueJSONStrings& aUniqueStrings,
-                           const JS::ProfiledFrameHandle& aJITFrame,
-                           const nsTHashMap<SourceId, IndexIntoSourceTable>*
-                               aSourceIdToIndexMap = nullptr) {
+static void StreamJITFrame(
+    JSContext* /*aContext*/, SpliceableJSONWriter& aWriter,
+    UniqueJSONStrings& aUniqueStrings, const JS::ProfiledFrameHandle& aJITFrame,
+    const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
+        nullptr) {
   enum Schema : uint32_t {
     LOCATION = 0,
     RELEVANT_FOR_JS = 1,
@@ -1340,7 +1340,7 @@ ProfilerThreadId ProfileBuffer::DoStreamSamplesAndMarkersToJSON(
         aGetStreamingParametersForThreadCallback,
     double aSinceTime, ProcessStreamingContext* aStreamingContextForMarkers,
     mozilla::ProgressLogger aProgressLogger) const {
-  UniquePtr<char[]> dynStrBuf = MakeUnique<char[]>(kMaxFrameKeyLength);
+  auto dynStrBuf = std::make_unique<char[]>(kMaxFrameKeyLength);
 
   return mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
     MOZ_ASSERT(aReader,
@@ -1930,9 +1930,9 @@ void ProfileBuffer::AddJITInfoForRange(
 
 void ProfileBuffer::StreamMarkersToJSON(
     SpliceableJSONWriter& aWriter, ProfilerThreadId aThreadId,
-    const TimeStamp& aProcessStartTime, double aSinceTime,
+    const TimeStamp& aProcessStartTime, double /*aSinceTime*/,
     UniqueStacks& aUniqueStacks,
-    mozilla::ProgressLogger aProgressLogger) const {
+    mozilla::ProgressLogger /*aProgressLogger*/) const {
   mEntries.ReadEach([&](ProfileBufferEntryReader& aER) {
     auto type = static_cast<ProfileBufferEntry::Kind>(
         aER.ReadObject<ProfileBufferEntry::KindUnderlyingType>());
@@ -1979,7 +1979,7 @@ void ProfileBuffer::StreamMarkersToJSON(
 }
 
 void ProfileBuffer::StreamProfilerOverheadToJSON(
-    SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime,
+    SpliceableJSONWriter& aWriter, const TimeStamp& /*aProcessStartTime*/,
     double aSinceTime, mozilla::ProgressLogger aProgressLogger) const {
   const char* recordOverheads = getenv("MOZ_PROFILER_RECORD_OVERHEADS");
   if (!recordOverheads || recordOverheads[0] == '\0') {
@@ -2133,7 +2133,7 @@ static auto& LookupOrAdd(HashM& aMap, Key&& aKey) {
 }
 
 void ProfileBuffer::StreamCountersToJSON(
-    SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime,
+    SpliceableJSONWriter& aWriter, const TimeStamp& /*aProcessStartTime*/,
     double aSinceTime, mozilla::ProgressLogger aProgressLogger) const {
   // Because this is a format entirely internal to the Profiler, any parsing
   // error indicates a bug in the ProfileBuffer writing or the parser itself,
@@ -2341,7 +2341,7 @@ static void AddPausedRange(SpliceableJSONWriter& aWriter, const char* aReason,
 }
 
 void ProfileBuffer::StreamPausedRangesToJSON(
-    SpliceableJSONWriter& aWriter, double aSinceTime,
+    SpliceableJSONWriter& aWriter, double /*aSinceTime*/,
     mozilla::ProgressLogger aProgressLogger) const {
   mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
     MOZ_ASSERT(aReader,

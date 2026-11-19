@@ -38,6 +38,7 @@ browser.jar:
    content/browser/preferences/config/aiFeatures.mjs                    (config/aiFeatures.mjs)
    content/browser/preferences/config/firefoxLabs.mjs                   (config/firefoxLabs.mjs)
    content/browser/preferences/config/moreFromMozilla.mjs               (config/moreFromMozilla.mjs)
+   content/browser/preferences/config/default-browser.mjs               (config/default-browser.mjs)
    content/browser/preferences/config/downloads.mjs                     (config/downloads.mjs)
    content/browser/preferences/config/passwords-autofill.mjs            (config/passwords-autofill.mjs)
    content/browser/preferences/config/block-ai-confirmation-dialog.css  (config/block-ai-confirmation-dialog.css)

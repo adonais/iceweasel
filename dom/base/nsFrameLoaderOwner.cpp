@@ -426,7 +426,7 @@ void nsFrameLoaderOwner::SubframeCrashed() {
 }
 
 bool nsFrameLoaderOwner::RestoreFrameLoaderFromBFCache(
-    nsFrameLoader* aNewFrameLoader) {
+    nsFrameLoader* aNewFrameLoader, bool aRetainPaint) {
   MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
           ("nsFrameLoaderOwner::RestoreFrameLoaderFromBFCache: Replace "
            "frameloader"));
@@ -440,7 +440,7 @@ bool nsFrameLoaderOwner::RestoreFrameLoaderFromBFCache(
   }
 
   RefPtr<Element> owner = do_QueryObject(this);
-  ChangeFrameLoaderCommon(owner, /* aRetainPaint = */ false);
+  ChangeFrameLoaderCommon(owner, aRetainPaint && mFrameLoader->IsRemoteFrame());
 
   return TransferLayerState(layerState);
 }

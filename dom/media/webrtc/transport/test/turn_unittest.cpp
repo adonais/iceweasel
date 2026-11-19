@@ -46,8 +46,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gtest/gtest.h"
 #include "gtest_utils.h"
 
-#define USE_TURN
-
 // nICEr includes
 // clang-format off
 #include "nr_api.h"

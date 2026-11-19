@@ -78,17 +78,20 @@ menulist.website-status {
 }
 
 #browserNotificationsPermissionExtensionContent,
+#closedDeliveryDescription,
 #permissionsDisableDescription {
   margin-inline-start: 32px;
 }
 
+#closedDeliveryDescription,
 #permissionsDisableDescription {
   color: var(--text-color-deemphasized);
 }
 
+#closedDeliveryCheckbox,
 #permissionsDisableCheckbox {
   margin-inline-start: 4px;
-  padding-top: 10px;
+  padding-block-start: 10px;
 }
 
 .permissions-input-buttons {

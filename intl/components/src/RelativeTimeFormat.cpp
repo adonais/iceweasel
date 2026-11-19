@@ -64,8 +64,8 @@ RelativeTimeFormat::TryCreate(const char* aLocale,
     return Err(ToICUError(status));
   }
 
-  UniquePtr<RelativeTimeFormat> rtf = MakeUnique<RelativeTimeFormat>(
-      aOptions.numeric, formatter, formattedRelativeDateTime);
+  auto rtf = std::make_unique<RelativeTimeFormat>(aOptions.numeric, formatter,
+                                                  formattedRelativeDateTime);
 
   // Ownership was transferred to rtf.
   closeFormattedRelativeDate.forget();

@@ -63,6 +63,8 @@ Preferences.addAll([
   { id: "browser.urlbar.quicksuggest.enabled", type: "bool" },
   { id: "browser.urlbar.suggest.quicksuggest.all", type: "bool" },
   { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
+  { id: "browser.urlbar.temporal.featureGate", type: "bool" },
+  { id: "browser.urlbar.suggest.temporal.seasonal", type: "bool" },
   { id: "browser.urlbar.quicksuggest.online.enabled", type: "bool" },
 ]);
 
@@ -576,6 +578,28 @@ Preferences.addSetting({
     "nimbusListener",
   ],
   visible: determineSuggestionSettingsVisibility,
+  disabled: deps => {
+    return !deps.firefoxSuggestAll.value;
+  },
+});
+
+Preferences.addSetting({
+  id: "temporalFeatureGate",
+  pref: "browser.urlbar.temporal.featureGate",
+});
+
+Preferences.addSetting({
+  id: "temporalSeasonalSuggestions",
+  pref: "browser.urlbar.suggest.temporal.seasonal",
+  deps: [
+    "firefoxSuggestAll",
+    "temporalFeatureGate",
+    "quickSuggestEnabledPref",
+    "quickSuggestSettingsUiPref",
+    "nimbusListener",
+  ],
+  visible: deps =>
+    deps.temporalFeatureGate.value && determineSuggestionSettingsVisibility(),
   disabled: deps => {
     return !deps.firefoxSuggestAll.value;
   },
@@ -1150,6 +1174,7 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "engineList",
+        l10nId: "search-engine-list",
         control: "moz-box-group",
         controlAttrs: {
           type: "reorderable-list",
@@ -1263,6 +1288,10 @@ SettingGroupManager.registerGroups({
                 l10nId: "addressbar-firefox-suggest-online",
                 supportPage: "firefox-suggest",
                 subcategory: "w_what-is-firefox-suggest",
+              },
+              {
+                id: "temporalSeasonalSuggestions",
+                l10nId: "addressbar-locbar-suggest-temporal-seasonal-option",
               },
             ],
           },

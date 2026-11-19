@@ -317,9 +317,9 @@ addAccessibleTask(
     await timeThis(async () => {
       info("Adding many children");
       let lastShown = waitForEvent(EVENT_SHOW, "last");
-      await invokeContentTask(browser, [], () => {
+      await invokeContentTask(browser, [XXLARGE_NODE_COUNT], count => {
         const container = content.document.getElementById("container");
-        for (let c = 0; c < 100000; ++c) {
+        for (let c = 0; c < count; ++c) {
           const child = content.document.createElement("p");
           child.textContent = c;
           container.append(child);

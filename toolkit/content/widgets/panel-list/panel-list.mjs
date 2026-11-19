@@ -505,6 +505,11 @@ export class PanelList extends HTMLElement {
 
     switch (e.type) {
       case "resize":
+        // Resize events of in-process subframes bubble up to chrome windows.
+        if (e.target == window) {
+          this.hide();
+        }
+        break;
       case "scroll":
         if (!inPanelList) {
           this.hide();
@@ -875,7 +880,7 @@ export class PanelList extends HTMLElement {
     // animation frame.
     let lastAnchorNode = this.lastAnchorNode;
     requestAnimationFrame(() => {
-      this.sendEvent("hidden");
+      this.sendEvent("hidden", { anchorNode: lastAnchorNode });
       lastAnchorNode?.setAttribute("aria-expanded", "false");
     });
     this.removeHideListeners();

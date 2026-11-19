@@ -31,12 +31,12 @@ FrozenImage::GetAnimated(bool* aAnimated) {
 }
 
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
-FrozenImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
+FrozenImage::GetFrame(uint32_t /*aWhichFrame*/, uint32_t aFlags) {
   return InnerImage()->GetFrame(FRAME_FIRST, aFlags);
 }
 
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
-FrozenImage::GetFrameAtSize(const IntSize& aSize, uint32_t aWhichFrame,
+FrozenImage::GetFrameAtSize(const IntSize& aSize, uint32_t /*aWhichFrame*/,
                             uint32_t aFlags) {
   return InnerImage()->GetFrameAtSize(aSize, FRAME_FIRST, aFlags);
 }
@@ -90,12 +90,12 @@ FrozenImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
 }
 
 NS_IMETHODIMP
-FrozenImage::StartDecoding(uint32_t aFlags, uint32_t aWhichFrame) {
+FrozenImage::StartDecoding(uint32_t aFlags, uint32_t /*aWhichFrame*/) {
   return InnerImage()->StartDecoding(aFlags, FRAME_FIRST);
 }
 
 bool FrozenImage::StartDecodingWithResult(uint32_t aFlags,
-                                          uint32_t aWhichFrame) {
+                                          uint32_t /*aWhichFrame*/) {
   return InnerImage()->StartDecodingWithResult(aFlags, FRAME_FIRST);
 }
 
@@ -104,13 +104,13 @@ bool FrozenImage::HasDecodedPixels() {
 }
 
 imgIContainer::DecodeResult FrozenImage::RequestDecodeWithResult(
-    uint32_t aFlags, uint32_t aWhichFrame) {
+    uint32_t aFlags, uint32_t /*aWhichFrame*/) {
   return InnerImage()->RequestDecodeWithResult(aFlags, FRAME_FIRST);
 }
 
 NS_IMETHODIMP
 FrozenImage::RequestDecodeForSize(const nsIntSize& aSize, uint32_t aFlags,
-                                  uint32_t aWhichFrame) {
+                                  uint32_t /*aWhichFrame*/) {
   return InnerImage()->RequestDecodeForSize(aSize, aFlags, FRAME_FIRST);
 }
 
@@ -126,7 +126,7 @@ FrozenImage::GetAnimationMode(uint16_t* aAnimationMode) {
 }
 
 NS_IMETHODIMP
-FrozenImage::SetAnimationMode(uint16_t aAnimationMode) {
+FrozenImage::SetAnimationMode(uint16_t /*aAnimationMode*/) {
   // Do nothing.
   return NS_OK;
 }

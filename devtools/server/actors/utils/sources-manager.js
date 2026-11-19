@@ -414,11 +414,13 @@ class SourcesManager extends EventEmitter {
     // be associated with. We want to always show contents that include that
     // actual text (otherwise it will be very confusing or unusable for users),
     // so replace the contents with the actual text if there is a mismatch.
-    const actors = [...this._sourceActors.values()].filter(
-      // Bug 1907977: some source may not have a valid source text content exposed by spidermonkey
-      // and have their text be "[no source]", so avoid falling back to them and consider
-      // the request fallback.
-      actor => actor.url == url && actor.actualText() != "[no source]"
+    const actors = Array.from(
+      this._sourceActors.values().filter(
+        // Bug 1907977: some source may not have a valid source text content exposed by spidermonkey
+        // and have their text be "[no source]", so avoid falling back to them and consider
+        // the request fallback.
+        actor => actor.url == url && actor.actualText() != "[no source]"
+      )
     );
     if (!actors.every(actor => actor.contentMatches(result))) {
       if (actors.length > 1) {

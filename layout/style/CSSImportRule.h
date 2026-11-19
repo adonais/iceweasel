@@ -34,8 +34,12 @@ class CSSImportRule final : public css::Rule {
   void GetCssText(nsACString& aCssText) const override;
   void GetHref(nsAString& aHref) const;
   dom::MediaList* GetMedia();
-  StyleSheet* GetStyleSheet() const { return mChildSheet; }
+  // CSSImportRule.styleSheet is the imported sheet. Rule::GetStyleSheet() is
+  // the containing sheet.
+  StyleSheet* GetStyleSheet() const = delete;
   StyleSheet* GetStyleSheetForBindings();
+  StyleSheet* GetImportedSheet() const { return mChildSheet; }
+
   void GetLayerName(nsACString&) const;
   void GetSupportsText(nsACString&) const;
 

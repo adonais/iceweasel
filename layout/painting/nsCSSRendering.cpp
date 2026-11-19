@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <ctime>
+#include <limits>
 
 #include "BorderConsts.h"
 #include "ImageContainer.h"
@@ -2924,6 +2925,32 @@ static nsSize ComputeDrawnSizeForBackground(
   return imageSize;
 }
 
+auto nsCSSRendering::ComputeBackgroundImageInfo(
+    const CSSSizeOrRatio& aIntrinsicSize, const nsSize& aPositionAreaSize,
+    const nsStyleImageLayers::Layer& aLayer) -> BackgroundImageInfo {
+  BackgroundImageInfo result;
+
+  // Scale the image as specified for background-size and background-repeat.
+  // Also as required for proper background positioning when background-position
+  // is defined with percentages.
+  result.mSize = ComputeDrawnSizeForBackground(
+      aIntrinsicSize, aPositionAreaSize, aLayer.mSize, aLayer.mRepeat.mXRepeat,
+      aLayer.mRepeat.mYRepeat);
+
+  if (result.mSize.IsEmpty()) {
+    return result;
+  }
+
+  // Compute the anchor point, relative to the positioning area's top left
+  // (which is where the top-left of aForFrame's border-box will be rendered).
+  // Also compute the position of the background now that the background's size
+  // is determined.
+  nsImageRenderer::ComputeObjectAnchorPoint(aLayer.mPosition, aPositionAreaSize,
+                                            result.mSize, &result.mTopLeft,
+                                            &result.mAnchor);
+  return result;
+}
+
 /* ComputeSpacedRepeatSize
  * aImageDimension: the image width/height
  * aAvailableSpace: the background positioning area width/height
@@ -3037,7 +3064,11 @@ nsBackgroundLayerState nsCSSRendering::PrepareImageLayer(
   }
 
   nsBackgroundLayerState state(aForFrame, &aLayer.mImage, irFlags);
-  if (!state.mImageRenderer.PrepareImage()) {
+  if (!state.mImageRenderer.PrepareImage(Some(nsImageRenderer::PositionParams{
+          aLayer,
+          aBorderArea,
+          aBGClipRect,
+      }))) {
     // There's no image or it's not ready to be painted.
     if (aOutIsTransformedFixed &&
         StyleImageLayerAttachment::Fixed == aLayer.mAttachment) {
@@ -3065,7 +3096,7 @@ nsBackgroundLayerState nsCSSRendering::PrepareImageLayer(
   bool transformedFixed = false;
   // Compute background origin area relative to aBorderArea now as we may need
   // it to compute the effective image size for a CSS gradient.
-  nsRect positionArea = ComputeImageLayerPositioningArea(
+  const auto positionArea = ComputeImageLayerPositioningArea(
       aPresContext, aForFrame, aBorderArea, aLayer, &attachedToFrame,
       &transformedFixed);
   if (aOutIsTransformedFixed) {
@@ -3081,41 +3112,27 @@ nsBackgroundLayerState nsCSSRendering::PrepareImageLayer(
     bgClipRect = positionArea + aBorderArea.TopLeft();
   }
 
-  StyleImageLayerRepeat repeatX = aLayer.mRepeat.mXRepeat;
-  StyleImageLayerRepeat repeatY = aLayer.mRepeat.mYRepeat;
+  auto repeatX = aLayer.mRepeat.mXRepeat;
+  auto repeatY = aLayer.mRepeat.mYRepeat;
 
-  // Scale the image as specified for background-size and background-repeat.
-  // Also as required for proper background positioning when background-position
-  // is defined with percentages.
-  CSSSizeOrRatio intrinsicSize = state.mImageRenderer.ComputeIntrinsicSize();
-  nsSize bgPositionSize = positionArea.Size();
-  nsSize imageSize = ComputeDrawnSizeForBackground(
-      intrinsicSize, bgPositionSize, aLayer.mSize, repeatX, repeatY);
-
-  if (imageSize.width <= 0 || imageSize.height <= 0) {
+  const auto intrinsicSize = state.mImageRenderer.ComputeIntrinsicSize();
+  const auto bgPositionSize = positionArea.Size();
+  auto imageInfo =
+      ComputeBackgroundImageInfo(intrinsicSize, bgPositionSize, aLayer);
+  if (imageInfo.IsEmpty()) {
     return state;
   }
 
-  state.mImageRenderer.SetPreferredSize(intrinsicSize, imageSize);
+  state.mAnchor = imageInfo.mAnchor;
+  state.mImageRenderer.SetPreferredSize(intrinsicSize, imageInfo.mSize);
 
-  // Compute the anchor point.
-  //
-  // relative to aBorderArea.TopLeft() (which is where the top-left
-  // of aForFrame's border-box will be rendered)
-  nsPoint imageTopLeft;
-
-  // Compute the position of the background now that the background's size is
-  // determined.
-  nsImageRenderer::ComputeObjectAnchorPoint(aLayer.mPosition, bgPositionSize,
-                                            imageSize, &imageTopLeft,
-                                            &state.mAnchor);
-  state.mRepeatSize = imageSize;
+  state.mRepeatSize = imageInfo.mSize;
   if (repeatX == StyleImageLayerRepeat::Space) {
     bool isRepeat;
     state.mRepeatSize.width = ComputeSpacedRepeatSize(
-        imageSize.width, bgPositionSize.width, isRepeat);
+        imageInfo.mSize.width, bgPositionSize.width, isRepeat);
     if (isRepeat) {
-      imageTopLeft.x = 0;
+      imageInfo.mTopLeft.x = 0;
       state.mAnchor.x = 0;
     } else {
       repeatX = StyleImageLayerRepeat::NoRepeat;
@@ -3125,18 +3142,19 @@ nsBackgroundLayerState nsCSSRendering::PrepareImageLayer(
   if (repeatY == StyleImageLayerRepeat::Space) {
     bool isRepeat;
     state.mRepeatSize.height = ComputeSpacedRepeatSize(
-        imageSize.height, bgPositionSize.height, isRepeat);
+        imageInfo.mSize.height, bgPositionSize.height, isRepeat);
     if (isRepeat) {
-      imageTopLeft.y = 0;
+      imageInfo.mTopLeft.y = 0;
       state.mAnchor.y = 0;
     } else {
       repeatY = StyleImageLayerRepeat::NoRepeat;
     }
   }
 
-  imageTopLeft += positionArea.TopLeft();
+  imageInfo.mTopLeft += positionArea.TopLeft();
   state.mAnchor += positionArea.TopLeft();
-  state.mDestArea = nsRect(imageTopLeft + aBorderArea.TopLeft(), imageSize);
+  state.mDestArea =
+      nsRect(imageInfo.mTopLeft + aBorderArea.TopLeft(), imageInfo.mSize);
   state.mFillArea = state.mDestArea;
 
   ExtendMode repeatMode = ExtendMode::CLAMP;
@@ -3926,22 +3944,39 @@ static sk_sp<const SkTextBlob> CreateTextBlob(
 static void GetTextIntercepts(const sk_sp<const SkTextBlob>& aBlob,
                               const SkScalar aBounds[],
                               nsTArray<SkScalar>& aIntercepts) {
+  uint32_t numGlyphs = 0;
+  SkTextBlob::Iter::Run run;
+  for (SkTextBlob::Iter iter(*aBlob); iter.next(&run);) {
+    numGlyphs += run.fGlyphCount;
+    if (numGlyphs >= std::numeric_limits<uint32_t>::max() / 2) {
+      // Bail out if there are potentially too many intercepts; skia returns a
+      // maximum of two per glyph.
+      return;
+    }
+  }
+  if (!numGlyphs) {
+    return;
+  }
+
+  const auto oldLength = aIntercepts.Length();
+  auto* newElements = aIntercepts.AppendElements(numGlyphs * 2, fallible);
+  if (!newElements) {
+    return;
+  }
+
   // It's possible that we'll encounter a Windows exception deep inside
   // Skia's DirectWrite code while trying to get the intercepts. To avoid
   // crashing in this case, catch any such exception here and discard the
   // newly-added (and incompletely filled in) elements.
-  int count = 0;
   MOZ_SEH_TRY {
-    // https://skia.org/user/api/SkTextBlob_Reference#Text_Blob_Text_Intercepts
-    count = aBlob->getIntercepts(aBounds, nullptr);
-    if (count < 2) {
-      return;
-    }
-    aBlob->getIntercepts(aBounds, aIntercepts.AppendElements(count));
+    int count = aBlob->getIntercepts(aBounds, newElements);
+    MOZ_DIAGNOSTIC_ASSERT(uint32_t(count) <= numGlyphs * 2,
+                          "skia returned > 2 intercepts per glyph?");
+    aIntercepts.TruncateLength(oldLength + count);
   }
   MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
     gfxCriticalNote << "Exception occurred getting text intercepts";
-    aIntercepts.TruncateLength(aIntercepts.Length() - count);
+    aIntercepts.TruncateLength(oldLength);
   }
 }
 

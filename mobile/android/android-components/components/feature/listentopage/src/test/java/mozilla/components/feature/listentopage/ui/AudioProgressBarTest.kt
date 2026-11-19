@@ -4,7 +4,11 @@
 
 package mozilla.components.feature.listentopage.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -23,14 +27,22 @@ class AudioProgressBarTest {
 
     private val seeks = mutableListOf<Float>()
 
+    // Held here as a player would hold it, since the bar only shows the scrub it is given.
+    private var scrubFraction by mutableStateOf<Float?>(null)
+
     private fun setContent(progress: Float, isEnabled: Boolean = true) {
         composeTestRule.setContent {
             AcornTheme {
                 AudioProgressBar(
                     progress = { progress },
-                    onSeek = { seeks.add(it) },
+                    onSeek = {
+                        scrubFraction = null
+                        seeks.add(it)
+                    },
                     type = AudioProgressBarType.Full,
                     isEnabled = isEnabled,
+                    scrubFraction = { scrubFraction },
+                    onSliderDrag = { scrubFraction = it },
                 )
             }
         }
@@ -86,5 +98,16 @@ class AudioProgressBarTest {
 
         assertEquals("the drag never reached the slider", 1, seeks.size)
         assertEquals(0.1f, shownFraction(), 0.01f)
+    }
+
+    @Test
+    fun `WHEN the track is tapped THEN one seek is asked for, to where it was tapped`() {
+        setContent(progress = 0.1f)
+
+        // A tap changes the value and finishes in one go, without a recomposition in between.
+        composeTestRule.onNodeWithTag(AUDIO_PROGRESS_BAR_TEST_TAG_EXPANDED).performTouchInput { click(center) }
+
+        assertEquals(1, seeks.size)
+        assertEquals(0.5f, seeks.single(), 0.05f)
     }
 }

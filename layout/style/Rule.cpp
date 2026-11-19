@@ -130,7 +130,8 @@ bool Rule::IsIncompleteImportRule() const {
   if (Type() != StyleCssRuleType::Import) {
     return false;
   }
-  auto* sheet = static_cast<const dom::CSSImportRule*>(this)->GetStyleSheet();
+  auto* sheet =
+      static_cast<const dom::CSSImportRule*>(this)->GetImportedSheet();
   return !sheet || !sheet->IsComplete();
 }
 

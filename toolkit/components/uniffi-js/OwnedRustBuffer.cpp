@@ -68,7 +68,7 @@ void OwnedRustBuffer::IntoArrayBuffer(JSContext* aCx,
                                       ErrorResult& aError) {
   auto len = mBuf.len;
   void* data = mBuf.data;
-  auto userData = MakeUnique<OwnedRustBuffer>(std::move(*this));
+  auto userData = std::make_unique<OwnedRustBuffer>(std::move(*this));
   UniquePtr<void, JS::BufferContentsDeleter> dataPtr{
       data, {&ArrayBufferFreeFunc, userData.release()}};
 

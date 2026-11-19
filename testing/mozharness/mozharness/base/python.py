@@ -11,7 +11,9 @@ import shutil
 import site
 import socket
 import sys
+import time
 import traceback
+from contextlib import contextmanager
 from pathlib import Path
 
 try:
@@ -27,6 +29,7 @@ from mozharness.base.script import (
     PostScriptAction,
     PostScriptRun,
     PreScriptAction,
+    PreScriptRun,
     ScriptMixin,
 )
 
@@ -73,6 +76,25 @@ def pip_command(*, python_executable, subcommand=None, args=None, non_uv_args=No
         full_command = command + (non_uv_args or []) + (args or [])
 
     return full_command
+
+
+@contextmanager
+def resource_marker(script, name, text):
+    """Record the time the block takes as a marker, if the script's resource
+    monitor is running."""
+    start = time.monotonic()
+    try:
+        yield
+    finally:
+        if monitor := getattr(script, "_resource_monitor", None):
+            monitor.record_marker(
+                name, start, time.monotonic(), {"type": "Text", "text": text}
+            )
+
+
+def pip_install_marker(script, args):
+    name = "uv pip install" if get_uv_executable() else "pip install"
+    return resource_marker(script, name, " ".join(args))
 
 
 def get_tlsv1_post():
@@ -432,24 +454,25 @@ class VirtualenvMixin:
 
         # Allow for errors while building modules, but require a
         # return status of 0.
-        self.retry(
-            self.run_command,
-            # None will cause default value to be used
-            attempts=1 if optional else None,
-            good_statuses=(0,),
-            error_level=WARNING if optional else FATAL,
-            error_message="Could not install python package: failed all attempts.",
-            args=pip_install_command,
-            kwargs={
-                "error_list": VirtualenvErrorList,
-                "cwd": cwd,
-                "env": env,
-                # WARNING only since retry will raise final FATAL if all
-                # retry attempts are unsuccessful - and we only want
-                # an ERROR of FATAL if *no* retry attempt works
-                "error_level": WARNING,
-            },
-        )
+        with pip_install_marker(self, pip_command_args):
+            self.retry(
+                self.run_command,
+                # None will cause default value to be used
+                attempts=1 if optional else None,
+                good_statuses=(0,),
+                error_level=WARNING if optional else FATAL,
+                error_message="Could not install python package: failed all attempts.",
+                args=pip_install_command,
+                kwargs={
+                    "error_list": VirtualenvErrorList,
+                    "cwd": cwd,
+                    "env": env,
+                    # WARNING only since retry will raise final FATAL if all
+                    # retry attempts are unsuccessful - and we only want
+                    # an ERROR of FATAL if *no* retry attempt works
+                    "error_level": WARNING,
+                },
+            )
 
     def create_virtualenv(self, modules=(), requirements=()):
         """
@@ -564,78 +587,81 @@ class VirtualenvMixin:
                 "skipping virtualenv creation." % self.query_python_path()
             )
         else:
-            self.run_command(
-                [sys.executable, "--version"],
-            )
-
-            if uv_executable := get_uv_executable():
-                self.run_command([uv_executable, "--version"])
-
-                uv_venv_creation_command = ["uv", "venv", venv_path]
-                # `uv venv --relocatable` rewrites console-script shebangs into
-                # a /bin/sh trampoline that shells out to `realpath` to locate
-                # the venv. macOS workers (10.15) don't ship `realpath`, so
-                # those scripts fail to run there. Their task paths are short
-                # enough that plain absolute-path shebangs stay well under the
-                # length limit, whereas the long device-pool paths on other
-                # platforms overflow it and genuinely need a relative shebang.
-                if not self._is_darwin():
-                    uv_venv_creation_command.append("--relocatable")
-                uv_venv_creation_command += [
-                    f"--python={sys.executable}",
-                    "--no-project",
-                ]
+            with resource_marker(self, "virtualenv", f"create {venv_path}"):
                 self.run_command(
-                    uv_venv_creation_command,
-                    cwd=dirs["abs_work_dir"],
-                    error_list=VirtualenvErrorList,
-                    halt_on_failure=True,
-                )
-            else:
-                venv_creation_flags = ["-m", "venv", venv_path]
-
-                if self._is_windows():
-                    # To workaround an issue on Windows10 jobs in CI we have to
-                    # explicitly install the default pip separately. Ideally we
-                    # could just remove the "--without-pip" above and get the same
-                    # result, but that's apparently not always the case.
-                    venv_creation_flags = venv_creation_flags + ["--without-pip"]
-
-                self.run_command(
-                    [sys.executable] + venv_creation_flags,
-                    cwd=dirs["abs_work_dir"],
-                    error_list=VirtualenvErrorList,
-                    halt_on_failure=True,
+                    [sys.executable, "--version"],
                 )
 
-                if self._is_windows():
+                if uv_executable := get_uv_executable():
+                    self.run_command([uv_executable, "--version"])
+
+                    uv_venv_creation_command = ["uv", "venv", venv_path]
+                    # `uv venv --relocatable` rewrites console-script shebangs into
+                    # a /bin/sh trampoline that shells out to `realpath` to locate
+                    # the venv. macOS workers (10.15) don't ship `realpath`, so
+                    # those scripts fail to run there. Their task paths are short
+                    # enough that plain absolute-path shebangs stay well under the
+                    # length limit, whereas the long device-pool paths on other
+                    # platforms overflow it and genuinely need a relative shebang.
+                    if not self._is_darwin():
+                        uv_venv_creation_command.append("--relocatable")
+                    uv_venv_creation_command += [
+                        f"--python={sys.executable}",
+                        "--no-project",
+                    ]
                     self.run_command(
-                        [str(venv_python_bin), "-m", "ensurepip", "--default-pip"],
+                        uv_venv_creation_command,
                         cwd=dirs["abs_work_dir"],
+                        error_list=VirtualenvErrorList,
+                        halt_on_failure=True,
+                    )
+                else:
+                    venv_creation_flags = ["-m", "venv", venv_path]
+
+                    if self._is_windows():
+                        # To workaround an issue on Windows10 jobs in CI we have to
+                        # explicitly install the default pip separately. Ideally we
+                        # could just remove the "--without-pip" above and get the same
+                        # result, but that's apparently not always the case.
+                        venv_creation_flags = venv_creation_flags + ["--without-pip"]
+
+                    self.run_command(
+                        [sys.executable] + venv_creation_flags,
+                        cwd=dirs["abs_work_dir"],
+                        error_list=VirtualenvErrorList,
                         halt_on_failure=True,
                     )
 
-            self._ensure_python_exe(venv_python_bin.parent)
+                    if self._is_windows():
+                        self.run_command(
+                            [str(venv_python_bin), "-m", "ensurepip", "--default-pip"],
+                            cwd=dirs["abs_work_dir"],
+                            halt_on_failure=True,
+                        )
 
-            pip_install_command = pip_command(
-                python_executable=str(venv_python_bin),
-                subcommand="install",
-                args=[
+                self._ensure_python_exe(venv_python_bin.parent)
+
+                wheel_args = [
                     "--only-binary",
                     ":all:",
                     "--disable-pip-version-check",
                     str(wheels["pip"]),
                     str(wheels["setuptools"]),
                     str(wheels["wheel"]),
-                ],
-            )
+                ]
+                pip_install_command = pip_command(
+                    python_executable=str(venv_python_bin),
+                    subcommand="install",
+                    args=wheel_args,
+                )
 
-            self.run_command(
-                pip_install_command,
-                cwd=dirs["abs_work_dir"],
-                error_list=VirtualenvErrorList,
-                halt_on_failure=True,
-            )
+                with pip_install_marker(self, wheel_args):
+                    self.run_command(
+                        pip_install_command,
+                        cwd=dirs["abs_work_dir"],
+                        error_list=VirtualenvErrorList,
+                        halt_on_failure=True,
+                    )
 
         if not modules:
             modules = c.get("virtualenv_modules", [])
@@ -801,7 +827,8 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
     While we would like to record resource usage for the entirety of a script,
     since we require an external package, we can only record resource usage
     after that package is installed (as part of creating the virtualenv).
-    That's just the way things have to be.
+    When forwarding to a monitor in a parent process, psutil isn't needed, so
+    recording starts before the first action if mozsystemmonitor is available.
     """
 
     def __init__(self, *args, **kwargs):
@@ -816,9 +843,29 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
         # Perfherder metrics to be reported.
         self.resource_monitor_perfherder_id = None
 
+    @PreScriptRun
+    def _start_forwarding_resource_monitor(self):
+        try:
+            from mozsystemmonitor.resourcemonitor import (
+                FORWARD_ENV,
+                SystemResourceMonitor,
+            )
+        except ImportError:
+            return
+
+        if FORWARD_ENV not in os.environ:
+            return
+
+        self.info("Starting resource monitoring, forwarding to parent monitor.")
+        self._resource_monitor = SystemResourceMonitor()
+        self._resource_monitor.start()
+
     @PostScriptAction("create-virtualenv")
     def _start_resource_monitoring(self, action, success=None):
         self.activate_virtualenv()
+
+        if self._resource_monitor:
+            return
 
         try:
             from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
@@ -832,10 +879,10 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
                     json.loads(os.environ["MOZHARNESS_TEST_PATHS"]).keys()
                 )
             if "MOZ_SOURCE_CHANGESET" in os.environ and "MOZ_SOURCE_REPO" in os.environ:
+                repo = os.environ["MOZ_SOURCE_REPO"]
+                rev_path = "/rev/" if "hg.mozilla.org" in repo else "/commit/"
                 metadata["sourceURL"] = (
-                    os.environ["MOZ_SOURCE_REPO"]
-                    + "/rev/"
-                    + os.environ["MOZ_SOURCE_CHANGESET"]
+                    repo + rev_path + os.environ["MOZ_SOURCE_CHANGESET"]
                 )
             if "TASK_ID" in os.environ:
                 metadata["appBuildID"] = os.environ["TASK_ID"]
@@ -878,6 +925,20 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
 
         # Get upload directory to pass to stop() for artifact markers
         upload_dir = self.query_abs_dirs()["abs_blob_upload_dir"]
+
+        if self._resource_monitor.forwarding:
+            # The parent monitor records resource usage and reports it.
+            if self.resource_monitor_perfherder_id:
+                perfherder_name, perfherder_options = (
+                    self.resource_monitor_perfherder_id
+                )
+                self._resource_monitor.forward_perfherder(
+                    perfherder_name,
+                    perfherder_options + self.perfherder_resource_options(),
+                    upload_dir if "MOZ_AUTOMATION" in os.environ else None,
+                )
+            self._resource_monitor.stop(upload_dir=upload_dir)
+            return
 
         self._resource_monitor.stop(upload_dir=upload_dir)
         self._log_resource_usage()
@@ -959,56 +1020,10 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
         # Write out Perfherder data if configured.
         if self.resource_monitor_perfherder_id:
             perfherder_name, perfherder_options = self.resource_monitor_perfherder_id
-
-            suites = []
-            overall = []
-
-            if cpu_percent:
-                overall.append({
-                    "name": "cpu_percent",
-                    "value": cpu_percent,
-                })
-
-            overall.extend([
-                {"name": "io_write_bytes", "value": io.write_bytes},
-                {"name": "io.read_bytes", "value": io.read_bytes},
-                {"name": "io_write_time", "value": io.write_time},
-                {"name": "io_read_time", "value": io.read_time},
-            ])
-
-            suites.append({
-                "name": "%s.overall" % perfherder_name,
-                "extraOptions": perfherder_options + self.perfherder_resource_options(),
-                "subtests": overall,
-            })
-
-            for phase in rm.phases.keys():
-                phase_duration = rm.phases[phase][1] - rm.phases[phase][0]
-                subtests = [
-                    {
-                        "name": "time",
-                        "value": phase_duration,
-                    }
-                ]
-                cpu_percent = rm.aggregate_cpu_percent(phase=phase, per_cpu=False)
-                if cpu_percent is not None:
-                    subtests.append({
-                        "name": "cpu_percent",
-                        "value": rm.aggregate_cpu_percent(phase=phase, per_cpu=False),
-                    })
-
-                # We don't report I/O during each step because measured I/O
-                # is system I/O and that I/O can be delayed (e.g. writes will
-                # buffer before being flushed and recorded in our metrics).
-                suites.append({
-                    "name": "%s.%s" % (perfherder_name, phase),
-                    "subtests": subtests,
-                })
-
-            data = {
-                "framework": {"name": "job_resource_usage"},
-                "suites": suites,
-            }
+            data = rm.perfherder_data(
+                perfherder_name,
+                perfherder_options + self.perfherder_resource_options(),
+            )
 
             schema_path = perfherder_schema_path()
             with open(schema_path, "rb") as fh:

@@ -74,6 +74,12 @@ def test_lint_ruff(lint, paths):
     assert "`distutils` imported but unused" in results[0].message
 
 
+def test_lint_ruff_exclude(lint, paths, config):
+    path = paths("bad.py")[0]
+    exclude = [f"{path}.missing{i}" for i in range(1000)] + [path]
+    assert lint([path], config={**config, "exclude": exclude}) == []
+
+
 @pytest.mark.parametrize("section", ["lint", "format"])
 def test_pyproject_section_exclude_uses_directory_globs(section):
     """`exclude` prunes directories while walking the tree, but `lint.exclude` and

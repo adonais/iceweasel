@@ -240,7 +240,7 @@ DtlsTransportInternalImpl::DtlsTransportInternalImpl(
     const CryptoOptions& crypto_options,
     SSLProtocolVersion max_version,
     SslStreamFactory ssl_stream_factory)
-    : ssl_stream_factory_(ssl_stream_factory),
+    : ssl_stream_factory_(std::move(ssl_stream_factory)),
       env_(env),
       component_(ice_transport->internal()->component()),
       ice_transport_(std::move(ice_transport)),
@@ -262,12 +262,13 @@ DtlsTransportInternalImpl::DtlsTransportInternalImpl(
   RTC_DCHECK(ice_transport_);
   ConnectToIceTransport();
   if (SSLStreamAdapter::IsBoringSsl()) {
-    dtls_in_stun_ = ice_transport_->internal()->config().dtls_handshake_in_stun;
+    dtls_in_stun_configured_ =
+        ice_transport_->internal()->config().dtls_handshake_in_stun;
   }
 }
 
 DtlsTransportInternalImpl::~DtlsTransportInternalImpl() {
-  if (dtls_in_stun_) {
+  if (dtls_in_stun_configured_) {
     CompleteDtlsInStun(/*success=*/false);
   }
   ice_transport()->ResetDtlsStunPiggybackCallbacks();
@@ -509,14 +510,14 @@ bool DtlsTransportInternalImpl::SetupDtls() {
   RTC_DCHECK(dtls_role_);
 
   if (SSLStreamAdapter::IsBoringSsl()) {
-    dtls_in_stun_ = ice_transport()->config().dtls_handshake_in_stun;
+    dtls_in_stun_configured_ = ice_transport()->config().dtls_handshake_in_stun;
   }
 
   {
     auto downward = std::make_unique<StreamInterfaceChannel>(ice_transport());
     StreamInterfaceChannel* downward_ptr = downward.get();
 
-    if (dtls_in_stun_ && !dtls_in_stun_complete_) {
+    if (dtls_in_stun_configured_ && !dtls_in_stun_complete_) {
       downward_ptr->SetDtlsStunPiggybackController(
           &dtls_stun_piggyback_controller_);
 
@@ -545,7 +546,7 @@ bool DtlsTransportInternalImpl::SetupDtls() {
 
   // TODO(jonaso,webrtc:367395350): Add more clever handling of MTU
   // (such as automatic packetization smoothing).
-  if (dtls_in_stun_) {
+  if (dtls_in_stun_configured_) {
     // - This is only needed when using PQC but we don't know that here.
     // - 900 is sufficiently small so that dtls pqc handshake packets
     // can get put into STUN attributes and still fit into two packets.
@@ -589,7 +590,8 @@ bool DtlsTransportInternalImpl::SetupDtls() {
   }
 
   RTC_LOG(LS_INFO) << ToString()
-                   << ": DTLS setup complete, dtls_in_stun: " << dtls_in_stun_;
+                   << ": DTLS setup complete, dtls_in_stun_configured: "
+                   << dtls_in_stun_configured_;
 
   // If the underlying ice_transport is already writable at this point, we may
   // be able to start DTLS right away.
@@ -693,6 +695,19 @@ int DtlsTransportInternalImpl::SendPacket(
   }
 }
 
+void DtlsTransportInternalImpl::MaybeStartDtlsInStun() {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  if (dtls_in_stun_negotiated_) {
+    return;
+  }
+  dtls_in_stun_negotiated_ = true;
+  // The remote description may arrive after ICE became writable and DTLS
+  // already started.
+  if (dtls_state() == DtlsTransportState::kNew) {
+    MaybeStartDtls();
+  }
+}
+
 IceTransportInternal* DtlsTransportInternalImpl::ice_transport() {
   return ice_transport_->internal();
 }
@@ -759,20 +774,21 @@ void DtlsTransportInternalImpl::ConnectToIceTransport() {
       [&](auto stun_message_type) {
         std::optional<absl::string_view> data;
         std::optional<std::vector<uint32_t>> ack;
-        if (dtls_in_stun_) {
+        if (dtls_in_stun_configured_) {
           data = dtls_stun_piggyback_controller_.GetDataToPiggyback(
               stun_message_type);
           ack = dtls_stun_piggyback_controller_.GetAckToPiggyback(
               stun_message_type);
         }
-        return std::make_pair(data, ack);
+        return std::make_pair(data, std::move(ack));
       },
       [&](std::optional<std::span<uint8_t>> data,
           std::optional<std::vector<uint32_t>> acks) {
-        if (!dtls_in_stun_) {
+        if (!dtls_in_stun_configured_) {
           return;
         }
-        dtls_stun_piggyback_controller_.ReportDataPiggybacked(data, acks);
+        dtls_stun_piggyback_controller_.ReportDataPiggybacked(data,
+                                                              std::move(acks));
       }));
   SetPiggybackDtlsDataCallback([this](PacketTransportInternal* transport,
                                       const ReceivedIpPacket& packet) {
@@ -828,14 +844,14 @@ void DtlsTransportInternalImpl::OnWritableState(
       break;
     case DtlsTransportState::kConnected:
       // Note: SignalWritableState fired by set_writable.
-      if (dtls_in_stun_ && dtls_ && first_ice_writable) {
+      if (dtls_in_stun_configured_ && dtls_ && first_ice_writable) {
         UpdateHandshakeTimeout();
         FlushPendingDtlsPacket();
       }
       set_writable(ice_transport()->writable());
       break;
     case DtlsTransportState::kConnecting:
-      if (dtls_in_stun_ && dtls_) {
+      if (dtls_in_stun_configured_ && dtls_) {
         UpdateHandshakeTimeout();
         FlushPendingDtlsPacket();
       }
@@ -906,6 +922,11 @@ void DtlsTransportInternalImpl::OnReadPacket(PacketTransportInternal* transport,
         // the peer has chosen the client role, and proceed with the handshake.
         // The fingerprint will be verified when it's set.
         if (!dtls_ && local_certificate_) {
+          if (piggybacked) {
+            // A ClientHello arriving before the answer has been applied changes
+            // the state here, the ice-option has set it in all other cases.
+            dtls_in_stun_negotiated_ = true;
+          }
           SetDtlsRole(SSL_SERVER);
           SetupDtls();
         }
@@ -1048,7 +1069,8 @@ void DtlsTransportInternalImpl::OnNetworkRouteChanged(
 void DtlsTransportInternalImpl::MaybeStartDtls() {
   //  When adding the DTLS handshake in STUN we want to call StartSSL even
   //  before the ICE transport is ready.
-  if (dtls_ && (ice_transport()->writable() || dtls_in_stun_)) {
+  if (dtls_ && (ice_transport()->writable() ||
+                (dtls_in_stun_configured_ && dtls_in_stun_negotiated_))) {
     ConfigureHandshakeTimeout();
 
     RTC_LOG(LS_INFO)
@@ -1116,7 +1138,7 @@ void DtlsTransportInternalImpl::set_writable(bool writable) {
   if (writable && !ice_has_been_writable_) {
     // Wait with reporting writable until ICE has become writable once,
     // so as to not confuse other part of stack (such as sctp).
-    RTC_DCHECK(dtls_in_stun_);
+    RTC_DCHECK(dtls_in_stun_configured_);
     RTC_LOG(LS_INFO)
         << ToString()
         << ": defer set_writable(true) until ICE has become writable once";
@@ -1204,7 +1226,7 @@ void DtlsTransportInternalImpl::ConfigureHandshakeTimeout() {
     RTC_LOG(LS_INFO) << ToString() << ": configuring DTLS handshake timeout "
                      << initial_timeout_ms << "ms based on ICE RTT " << *rtt_ms;
     dtls_->SetInitialRetransmissionTimeout(initial_timeout_ms);
-  } else if (dtls_in_stun_) {
+  } else if (dtls_in_stun_configured_ && dtls_in_stun_negotiated_) {
     // Configure a very high timeout to effectively disable the DTLS timeout
     // and avoid fragmented resends. This is ok since DTLS-in-STUN caches
     // the handshake pacets and resends them using the pacing of ICE.
@@ -1249,16 +1271,17 @@ void DtlsTransportInternalImpl::SetPiggybackDtlsDataCallback(
 
 bool DtlsTransportInternalImpl::IsDtlsPiggybackSupportedByPeer() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  return dtls_in_stun_ && (dtls_stun_piggyback_controller_.state() !=
-                           DtlsStunPiggybackController::State::OFF);
+  return dtls_in_stun_configured_ && (dtls_stun_piggyback_controller_.state() !=
+                                      DtlsStunPiggybackController::State::OFF);
 }
 
 bool DtlsTransportInternalImpl::WasDtlsCompletedByPiggybacking() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  return dtls_in_stun_ && (dtls_stun_piggyback_controller_.state() ==
-                               DtlsStunPiggybackController::State::COMPLETE ||
-                           dtls_stun_piggyback_controller_.state() ==
-                               DtlsStunPiggybackController::State::PENDING);
+  return dtls_in_stun_configured_ &&
+         (dtls_stun_piggyback_controller_.state() ==
+              DtlsStunPiggybackController::State::COMPLETE ||
+          dtls_stun_piggyback_controller_.state() ==
+              DtlsStunPiggybackController::State::PENDING);
 }
 
 void DtlsTransportInternalImpl::FlushPendingDtlsPacket() {
@@ -1270,7 +1293,7 @@ void DtlsTransportInternalImpl::FlushPendingDtlsPacket() {
     return;
   }
 
-  if (ice_transport()->writable() && dtls_in_stun_) {
+  if (ice_transport()->writable() && dtls_in_stun_configured_) {
     auto data_to_send = dtls_stun_piggyback_controller_.GetPending();
     if (data_to_send.empty()) {
       // No data to send, we're done.
@@ -1293,7 +1316,7 @@ int DtlsTransportInternalImpl::GetRetransmissionCount() const {
 }
 
 int DtlsTransportInternalImpl::GetStunDataCount() const {
-  if (!dtls_in_stun_) {
+  if (!dtls_in_stun_configured_) {
     return 0;
   }
   return dtls_stun_piggyback_controller_.GetCountOfReceivedData();

@@ -99,7 +99,7 @@ class BufferStorage {
 // auto buffer = MakeUniqueFallible<float[]>(samples)
 // becomes: AlignedFloatBuffer buffer(samples)
 //
-// auto buffer = MakeUnique<float[]>(samples)
+// auto buffer = std::make_unique<float[]>(samples)
 // becomes:
 // AlignedFloatBuffer buffer(samples);
 // if (!buffer) { return NS_ERROR_OUT_OF_MEMORY; }

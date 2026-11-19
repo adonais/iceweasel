@@ -83,7 +83,7 @@ class nsMozIconURI final : public nsIMozIconURI,
     NS_FORWARD_SAFE_NSIURISETTERS_RET(mURI)
 
     NS_IMETHOD
-    Write(nsIObjectOutputStream* aOutputStream) override {
+    Write(nsIObjectOutputStream* /*aOutputStream*/) override {
       return NS_ERROR_NOT_IMPLEMENTED;
     }
 

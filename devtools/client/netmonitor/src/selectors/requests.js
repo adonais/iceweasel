@@ -156,9 +156,7 @@ function getRequestById(state, id) {
 }
 
 function getRequestByChannelId(state, channelId) {
-  return [...state.requests.requests.values()].find(
-    r => r.resourceId == channelId
-  );
+  return state.requests.requests.values().find(r => r.resourceId == channelId);
 }
 
 function getDisplayedRequestById(state, id) {

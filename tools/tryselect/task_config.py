@@ -11,6 +11,7 @@ import calendar
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import time
@@ -544,9 +545,10 @@ class ExistingTasks(ParameterConfig):
                     Use existing tasks from a previous push. Without args this
                 uses your most recent try push. You may also specify
                 `rev=<revision>` where <revision> is the head revision of the
-                try push or `task-id=<task id>` where <task id> is the Decision
-                task id of the push. This last method even works for non-try
-                branches.
+                try push, `project=<project>` to use the latest push to
+                <project> (e.g. mozilla-central), or `task-id=<task id>` where
+                <task id> is the Decision task id of the push. These last two
+                methods even work for non-try branches.
                 """,
             },
         ],
@@ -563,6 +565,33 @@ class ExistingTasks(ParameterConfig):
                 are indexed. Unlike --use-existing-tasks, which reuses every
                 task of a push, this only replaces LABEL. Can be specified
                 multiple times.
+                """,
+            },
+        ],
+        [
+            ["--existing-tasks-include"],
+            {
+                "action": "append",
+                "dest": "existing_tasks_include",
+                "default": [],
+                "metavar": "REGEX",
+                "help": """
+                    Only reuse tasks from --use-existing-tasks whose label
+                matches REGEX, e.g. '^(docker-image|fetch|toolchain)-'. Can be
+                specified multiple times.
+                """,
+            },
+        ],
+        [
+            ["--existing-tasks-exclude"],
+            {
+                "action": "append",
+                "dest": "existing_tasks_exclude",
+                "default": [],
+                "metavar": "REGEX",
+                "help": """
+                    Don't reuse tasks from --use-existing-tasks whose label
+                matches REGEX. Can be specified multiple times.
                 """,
             },
         ],
@@ -588,15 +617,42 @@ class ExistingTasks(ParameterConfig):
         elif use_existing_tasks.startswith("rev="):
             revision = use_existing_tasks[len("rev=") :]
 
+        elif use_existing_tasks.startswith("project="):
+            project = use_existing_tasks[len("project=") :]
+            index_path = f"gecko.v2.{project}.latest.taskgraph.decision"
+            task_id = taskcluster.find_task_id(index_path)
+            print(
+                f"Using existing tasks from the latest {project} push "
+                f"(decision task {task_id})"
+            )
+            return task_id
+
         else:
-            raise Exception("Unable to parse '{use_existing_tasks}'!")
+            raise Exception(f"Unable to parse '{use_existing_tasks}'!")
 
         url = self.TREEHERDER_PUSH_URL.format(branch=branch, revision=revision)
         print(f"Using existing tasks from: {url}")
         index_path = f"gecko.v2.{branch}.revision.{revision}.taskgraph.decision"
         return taskcluster.find_task_id(index_path)
 
-    def get_parameters(self, use_existing_tasks, use_indexed_tasks, **kwargs):
+    def get_parameters(
+        self,
+        use_existing_tasks,
+        use_indexed_tasks,
+        existing_tasks_include=(),
+        existing_tasks_exclude=(),
+        **kwargs,
+    ):
+        if (existing_tasks_include or existing_tasks_exclude) and not (
+            use_existing_tasks
+        ):
+            print(
+                "error: --existing-tasks-include and --existing-tasks-exclude "
+                "require --use-existing-tasks",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
         if not use_existing_tasks and not use_indexed_tasks:
             return
 
@@ -614,6 +670,14 @@ class ExistingTasks(ParameterConfig):
             existing_tasks = taskcluster.get_artifact(
                 decision_task_id, "public/label-to-taskid.json"
             )
+            include = [re.compile(r) for r in existing_tasks_include]
+            exclude = [re.compile(r) for r in existing_tasks_exclude]
+            existing_tasks = {
+                label: task_id
+                for label, task_id in existing_tasks.items()
+                if (not include or any(r.search(label) for r in include))
+                and not any(r.search(label) for r in exclude)
+            }
 
         for label_and_index in use_indexed_tasks:
             label, sep, index_path = label_and_index.partition("=")

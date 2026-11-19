@@ -1127,9 +1127,9 @@ void imgRequest::SetProperties(const nsACString& aContentType,
   }
 }
 
-static nsresult sniff_mimetype_callback(nsIInputStream* in, void* data,
+static nsresult sniff_mimetype_callback(nsIInputStream* /*in*/, void* data,
                                         const char* fromRawSegment,
-                                        uint32_t toOffset, uint32_t count,
+                                        uint32_t /*toOffset*/, uint32_t count,
                                         uint32_t* writeCount) {
   mimetype_closure* closure = static_cast<mimetype_closure*>(data);
 

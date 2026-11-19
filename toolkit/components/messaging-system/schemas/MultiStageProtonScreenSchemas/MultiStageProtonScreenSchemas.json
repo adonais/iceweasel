@@ -72,6 +72,29 @@
             }
           }
         },
+        "card_stack_image": {
+          "type": "object",
+          "description": "The image to insert into the secondary section background if the screen is a card stack.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "The style of the image, which determines how it will fill the container and behave at breakpoints. Defaults to float.",
+              "enum": ["float", "bleed", "banner"]
+            },
+            "background_uncropped": {
+              "type": "string",
+              "description": "The static CSS background to use with the 'bleed' image type"
+            },
+            "background_medium": {
+              "type": "string",
+              "description": "The static CSS background to use at the middle breakpoint with the banner image type"
+            },
+            "background_small": {
+              "type": "string",
+              "description": "The static CSS background to use at the smallest breakpoint with the banner image type"
+            }
+          }
+        },
         "checkbox": {
           "type": "object",
           "description": "A single checkbox action.",

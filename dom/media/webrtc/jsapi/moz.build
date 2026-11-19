@@ -22,8 +22,6 @@ LOCAL_INCLUDES += [
 UNIFIED_SOURCES += [
     "DefaultCodecPreferences.cpp",
     "MediaTransportHandler.cpp",
-    "MediaTransportHandlerIPC.cpp",
-    "MediaTransportParent.cpp",
     "PacketDumper.cpp",
     "PeerConnectionCtx.cpp",
     "PeerConnectionImpl.cpp",
@@ -77,7 +75,6 @@ FINAL_LIBRARY = "xul"
 SOURCE_HEADERS += [
     "DefaultCodecPreferences.h",
     "MediaTransportHandler.h",
-    "MediaTransportHandlerIPC.h",
     "PacketDumper.h",
     "PeerConnectionCtx.h",
     "PeerConnectionImpl.h",

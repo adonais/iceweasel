@@ -218,6 +218,7 @@ if(NOT BUILD_SHARED_LIBS)
               "${AOM_ROOT}/test/blend_a64_mask_test.cc"
               "${AOM_ROOT}/test/comp_mask_pred_test.cc"
               "${AOM_ROOT}/test/disflow_test.cc"
+              "${AOM_ROOT}/test/encode_internal_test.cc"
               "${AOM_ROOT}/test/encodemb_test.cc"
               "${AOM_ROOT}/test/encodetxb_test.cc"
               "${AOM_ROOT}/test/end_to_end_qmpsnr_test.cc"

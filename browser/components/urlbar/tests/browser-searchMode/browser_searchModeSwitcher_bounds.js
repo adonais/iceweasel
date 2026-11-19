@@ -41,11 +41,12 @@ add_task(async function buttonFillsItsHost() {
     source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "searchbutton",
   });
-  Assert.ok(
+  Assert.equal(
     BrowserTestUtils.isVisible(
       gURLBar.querySelector(".searchmode-switcher-title")
     ),
-    "The switcher shows its label"
+    !UrlbarPrefs.get("unifiedSearchButton.always"),
+    "he switcher label is hidden only when unifiedSearchButton.always is enabled"
   );
 
   for (let density of UI_DENSITIES) {

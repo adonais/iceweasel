@@ -152,6 +152,8 @@ export class IPProtectionPanel {
    *  An object containing the current and max usage
    * @property {boolean} isActivating
    *  True if the VPN service is in the process of connecting, else false.
+   * @property {boolean} isActive
+   *  True if the VPN proxy is active, else false.
    * @property {boolean} isPremium
    * True if the current device has Firefox set as the default browser or the user has a Mozilla VPN subscription
    * Initially false; recomputed asynchronously before the panel is shown.
@@ -384,15 +386,21 @@ export class IPProtectionPanel {
     );
   }
 
-  async isDefaultBrowser() {
-    return lazy.ShellService.isDefaultBrowserAsync();
+  /**
+   * Whether the user may use locked egress locations. Doesn't depend on any
+   * window, so it is shared with IPPAutoActivation.
+   *
+   * @returns {Promise<boolean>}
+   */
+  static async isPremium() {
+    let isPremium =
+      lazy.IPProtectionService.authProvider.hasUpgraded ||
+      (await lazy.ShellService.isDefaultBrowserAsync());
+    return isPremium;
   }
 
   async isPremium() {
-    let isPremium =
-      lazy.IPProtectionService.authProvider.hasUpgraded ||
-      (await this.isDefaultBrowser());
-    return isPremium;
+    return IPProtectionPanel.isPremium();
   }
 
   /**
@@ -428,6 +436,7 @@ export class IPProtectionPanel {
       bandwidthUsage: this.#getBandwidthUsage(),
       isActivating:
         lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING,
+      isActive: lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
       isEnrolling: lazy.IPProtectionService.authProvider.isEnrolling,
       isPremium: false,
       showSiteInclusionPrompt: false,
@@ -454,6 +463,7 @@ export class IPProtectionPanel {
 
         if (this.active && aLocationURI) {
           this.#updateSiteData();
+          this.#updateProxyError();
         }
       },
     };
@@ -530,13 +540,9 @@ export class IPProtectionPanel {
     const inPrivateBrowsing =
       !!win && lazy.PrivateBrowsingUtils.isWindowPrivate(win);
 
-    let country = this.state.location;
-    if (!(await this.isPremium()) && country) {
-      const location = lazy.IPProtectionServerlist.getLocation(country);
-      if (location?.country.locked) {
-        country = undefined;
-      }
-    }
+    const country = await lazy.IPProtectionServerlist.resolveEgressCountry(() =>
+      this.isPremium()
+    );
 
     // A connection kept up for the always-on sites is widened, not restarted.
     if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE) {
@@ -632,6 +638,7 @@ export class IPProtectionPanel {
     }
 
     this.#updateSiteData();
+    this.#updateProxyError();
     lazy.IPProtectionServerlist.maybeFetchList();
 
     if (this.state.paused) {
@@ -1083,12 +1090,20 @@ export class IPProtectionPanel {
   #addProgressListener() {
     if (this.gBrowser) {
       this.gBrowser.addTabsProgressListener(this.progressListener);
+      this.gBrowser.tabContainer.addEventListener(
+        "TabSelect",
+        this.handleEvent
+      );
     }
   }
 
   #removeProgressListener() {
     if (this.gBrowser) {
       this.gBrowser.removeTabsProgressListener(this.progressListener);
+      this.gBrowser.tabContainer.removeEventListener(
+        "TabSelect",
+        this.handleEvent
+      );
     }
   }
 
@@ -1154,7 +1169,10 @@ export class IPProtectionPanel {
     if (!principal || !lazy.IPPSiteRuleManager.canManage(principal)) {
       return null;
     }
-    const rule = lazy.IPPSiteRuleManager.getRule(principal);
+    const rule = lazy.IPPSiteRuleManager.getRule(
+      principal,
+      this.gBrowser.selectedBrowser.browserId
+    );
     const isExclusion = rule === lazy.IPPPrincipalRules.EXCLUDED;
     const isInclusion = rule === lazy.IPPPrincipalRules.INCLUDED;
     const hasSiteRule = rule !== lazy.IPPPrincipalRules.DEFAULT;
@@ -1221,6 +1239,38 @@ export class IPProtectionPanel {
     this.setState({ siteData });
   }
 
+  /**
+   * The error to show for the proxy state. A failed connection that only
+   * carries included sites is not shown on a tab it does not carry.
+   *
+   * @returns {string}
+   */
+  #getProxyErrorType() {
+    if (lazy.IPPProxyManager.state !== lazy.IPPProxyStates.ERROR) {
+      return "";
+    }
+    if (
+      lazy.IPPProxyManager.mode === lazy.IPPMode.MODE_INCLUSION &&
+      lazy.IPPSiteRuleManager.getRule(
+        getSitePrincipal(this.gBrowser),
+        this.gBrowser?.selectedBrowser.browserId
+      ) !== lazy.IPPPrincipalRules.INCLUDED
+    ) {
+      return "";
+    }
+    return this.#errorMessage(lazy.IPPProxyManager.errorType);
+  }
+
+  /**
+   * Re-evaluates a proxy state error for the selected tab. Errors from a
+   * failed start in this panel are left alone.
+   */
+  #updateProxyError() {
+    if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR) {
+      this.setState({ error: this.#getProxyErrorType() });
+    }
+  }
+
   #handleEvent(event) {
     if (event.type == "IPProtection:Init") {
       this.updateComponentState(event.target);
@@ -1261,10 +1311,7 @@ export class IPProtectionPanel {
       event.type == "IPProtectionService:StateChanged" ||
       event.type === "IPPAuthProvider:StateChanged"
     ) {
-      let errorType = "";
-      if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR) {
-        errorType = lazy.ERRORS.GENERIC;
-      }
+      const errorType = this.#getProxyErrorType();
       const paused = lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED;
 
       this.setState({
@@ -1276,6 +1323,7 @@ export class IPProtectionPanel {
         error: errorType,
         isActivating:
           lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVATING,
+        isActive: lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
         isEnrolling: lazy.IPProtectionService.authProvider.isEnrolling,
         bandwidthUsage: this.#getBandwidthUsage(),
         bandwidthWarning:
@@ -1286,8 +1334,12 @@ export class IPProtectionPanel {
         showSiteInclusionPrompt:
           this.state.showSiteInclusionPrompt && !errorType && !paused,
       });
-    } else if (event.type == "SiteRuleManager:RuleChanged") {
+    } else if (
+      event.type == "SiteRuleManager:RuleChanged" ||
+      event.type == "TabSelect"
+    ) {
       this.#updateSiteData();
+      this.#updateProxyError();
     } else if (event.type == "IPProtectionServerlist:ListChanged") {
       this.setState({
         locationsList: lazy.IPProtectionServerlist.countries,

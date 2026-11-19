@@ -36,9 +36,6 @@ skip-if = [
 
 ["browser_contextmenu_badiframe.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_contextmenu_blocked_image_protocols.js"]
 support-files = ["file_blocked_image_protocols.html"]
@@ -55,10 +52,6 @@ support-files = ["file_blocked_image_protocols.html"]
 
 ["browser_contextmenu_iframe.js"]
 support-files = ["test_contextmenu_iframe.html"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_contextmenu_input.js"]
 skip-if = [
@@ -66,31 +59,15 @@ skip-if = [
 ]
 
 ["browser_contextmenu_inspect.js"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_contextmenu_linkopen.js"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_contextmenu_loadblobinnewtab.js"]
 support-files = ["browser_contextmenu_loadblobinnewtab.html"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_contextmenu_plaintextlinks.js"]
 
 ["browser_contextmenu_save_blocked.js"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_contextmenu_share_linux.js"]
 support-files = ["browser_contextmenu_shareurl.html"]
@@ -116,7 +93,6 @@ run-if = [
 ["browser_contextmenu_spellcheck.js"]
 https_first_disabled = true
 skip-if = [
-  "debug", # bug 1798233 - this trips assertions that seem harmless in opt and unlikely to occur in practical use.
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
 ]
 
@@ -133,10 +109,6 @@ support-files = [
   "firebird.png",
   "firebird.png^headers^",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_copy_link_to_highlight.js"]
 
@@ -152,10 +124,6 @@ skip-if = [
 
 ["browser_utilityOverlay.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
-]
 
 ["browser_utilityOverlayPrincipal.js"]
 https_first_disabled = true
@@ -164,8 +132,4 @@ https_first_disabled = true
 support-files = [
   "test_view_image_revoked_cached_blob.html",
   "test_view_image_inline_svg.html",
-]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && socketprocess_networking",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking",
 ]

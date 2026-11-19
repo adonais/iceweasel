@@ -119,8 +119,21 @@ class SimpleContentList : public BaseContentList {
 class HTMLCollection : public BaseContentList {
  public:
   Element* Item(uint32_t aIndex) override = 0;
+  // Non-virtual getter for populated mElements, otherwise falls back to Item()
+  Element* FastItem(uint32_t aIndex) {
+    if (aIndex < mElements.Length()) {
+      nsIContent* content = mElements[aIndex];
+      MOZ_ASSERT(content->IsElement(),
+                 "HTMLCollection can only contain elements");
+      MOZ_ASSERT(Item(aIndex) == content,
+                 "Subclasses should keep mElements consistent");
+      return content->AsElement();
+    } else {
+      return Item(aIndex);
+    }
+  }
   Element* IndexedGetter(uint32_t aIndex, bool& aFound) {
-    Element* item = Item(aIndex);
+    Element* item = FastItem(aIndex);
     aFound = !!item;
     return item;
   }

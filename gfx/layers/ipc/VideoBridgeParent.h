@@ -41,7 +41,6 @@ class VideoBridgeParent final : public PVideoBridgeParent,
       const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
       const dom::ContentParentId& aContentId, const uint64_t& aSerial);
   mozilla::ipc::IPCResult RecvGetTextureFactoryIdentifier(
-      const dom::ContentParentId& aContentId,
       GetTextureFactoryIdentifierResolver&& aResolver);
 
   // HostIPCAllocator
@@ -65,12 +64,13 @@ class VideoBridgeParent final : public PVideoBridgeParent,
  private:
   ~VideoBridgeParent();
 
-  explicit VideoBridgeParent(VideoBridgeSource aSource);
+  VideoBridgeParent();
   void Bind(Endpoint<PVideoBridgeParent>&& aEndpoint);
   static void ShutdownInternal();
 
   void DoUnregisterExternalImages();
 
+  void RegisterSingleton(VideoBridgeSource aSource);
   void UnregisterSingleton();
 
   struct TextureHolder {

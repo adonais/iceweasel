@@ -58,6 +58,7 @@ events:
       - https://github.com/mozilla-mobile/fenix/pull/18143
       - https://github.com/mozilla-mobile/fenix/pull/19924#issuecomment-861423789
       - https://github.com/mozilla-mobile/fenix/pull/21038#issuecomment-906757301
+      - https://phabricator.services.mozilla.com/D338354
     data_sensitivity:
       - interaction
     notification_emails:
@@ -3335,9 +3336,10 @@ metrics:
       https://github.com/mozilla-mobile/fenix/issues/1607) the value will be
       `custom`.
 
-      `source` will be: `action`, `suggestion`, `widget`, `shortcut`, `topsite`
-      (depending on the source from which the search started). Also added the
-      `other` option for the source but it should never enter on this case.
+      `source` will be: `action`, `suggestion`, `widget`, `shortcut`, `topsite`,
+      `context` (depending on the source from which the search started). Also
+      added the `other` option for the source but it should never enter on this
+      case.
     send_in_pings:
       - metrics
       - baseline
@@ -4048,8 +4050,9 @@ customize_home:
           toggled.
 
           We currently track: most_visited_sites, jump_back_in,
-          recently_visited, bookmarks, pocket, contile, privacy_report, and
-          weather. We previously tracked bookmarks as recently_saved.
+          recently_visited, bookmarks, pocket, contile, privacy_report,
+          weather, and wrexham_widget. We previously tracked bookmarks as
+          recently_saved.
       enabled:
         type: boolean
         description: "Whether or not the preference is *now* enabled"
@@ -4059,6 +4062,7 @@ customize_home:
       - https://github.com/mozilla-mobile/fenix/pull/1896
       - https://github.com/mozilla-mobile/fenix/pull/26123#issuecomment-1190794469
       - https://github.com/mozilla-mobile/firefox-android/pull/2597
+      - https://phabricator.services.mozilla.com/D337007
     data_sensitivity:
       - technical
       - interaction
@@ -8346,13 +8350,42 @@ collections_migration:
         - Collections
 
 search_widget:
+  widget_added:
+    type: event
+    description: |
+      A user added one of the search widget variants to their home screen.
+    extra_keys:
+      widget_type:
+        description: |
+          The search widget variant the user added. Possible values are:
+          `search_bar`, `search_bar_actions`, `bar_compact` or `legacy`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080937
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D333901
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Search
   new_tab_button:
     type: event
     description: |
       A user pressed anywhere from the Firefox logo until the start of the
       microphone icon, opening a new tab search screen.
+    extra_keys:
+      widget_type:
+        description: |
+          The search widget variant the user tapped. Possible values are:
+          `search_bar`, `search_bar_actions`, `bar_compact` or `legacy`.
+        type: string
     bugs:
       - https://github.com/mozilla-mobile/fenix/issues/4457
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080937
     data_reviews:
       - https://github.com/mozilla-mobile/fenix/pull/4714
       - https://github.com/mozilla-mobile/fenix/pull/15713#issuecomment-703972068
@@ -8361,6 +8394,7 @@ search_widget:
       - https://github.com/mozilla-mobile/fenix/pull/23453#issuecomment-1024694220
       - https://github.com/mozilla-mobile/fenix/pull/28502
       - https://github.com/mozilla-mobile/firefox-android/pull/4039
+      - https://phabricator.services.mozilla.com/D333901
     data_sensitivity:
       - interaction
     notification_emails:
@@ -8373,8 +8407,15 @@ search_widget:
     type: event
     description: |
       A user pressed the microphone icon, opening a new voice search screen.
+    extra_keys:
+      widget_type:
+        description: |
+          The search widget variant the user tapped. Possible values are:
+          `search_bar`, `search_bar_actions`, `bar_compact` or `legacy`.
+        type: string
     bugs:
       - https://github.com/mozilla-mobile/fenix/issues/4457
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080937
     data_reviews:
       - https://github.com/mozilla-mobile/fenix/pull/4714
       - https://github.com/mozilla-mobile/fenix/pull/15713#issuecomment-703972068
@@ -8383,6 +8424,7 @@ search_widget:
       - https://github.com/mozilla-mobile/fenix/pull/23453#issuecomment-1024694220
       - https://github.com/mozilla-mobile/fenix/pull/28502
       - https://github.com/mozilla-mobile/firefox-android/pull/4039
+      - https://phabricator.services.mozilla.com/D333901
     data_sensitivity:
       - interaction
     notification_emails:
@@ -8395,10 +8437,18 @@ search_widget:
     type: event
     description: |
       A user pressed the Google Lens icon, opening the Google Lens image search flow.
+    extra_keys:
+      widget_type:
+        description: |
+          The search widget variant the user tapped. Possible values are:
+          `search_bar`, `search_bar_actions`, `bar_compact` or `legacy`.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2048722
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2080937
     data_reviews:
       - https://phabricator.services.mozilla.com/D308320
+      - https://phabricator.services.mozilla.com/D333901
     data_sensitivity:
       - interaction
     notification_emails:
@@ -9290,6 +9340,11 @@ listen_to_page:
         description: |
           The BCP 47 language the page is read in.
         type: string
+      language_source:
+        description: |
+          Where the language came from: `page` when the page declares a usable language,
+          or `device` when it declares none and the device language is used instead.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064878
     data_reviews:
@@ -9332,8 +9387,13 @@ listen_to_page:
     extra_keys:
       source:
         description: |
-          Session ended due to either the `close_button` or `tab_closed`
-          (the listened tab was closed or user navigated elsewhere).
+          Session ended due to either the `close_button`, `tab_closed`
+          (the listened tab was closed or user navigated elsewhere),
+          `reader_mode_closed` when the user left reader mode on the listened tab,
+          `media_session_ended_outside_app` when the media session ended
+          outside the app, such as when the app was removed from the recent apps
+          or the notification was dismissed, or `feature_disabled` when the user
+          turned the feature off in AI Controls.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2064878
@@ -10334,12 +10394,13 @@ top_sites:
       type:
         type: string
         description: |
-          The type of top site. Options are: "FRECENCY", "DEFAULT",
-          "PINNED", or "PROVIDED"
+          The type of top site. Options are: "FRECENT", "DEFAULT",
+          "DEFAULT_PINNED", "PINNED", or "PROVIDED"
       source: *top_sites_source
     bugs:
       - https://github.com/mozilla-mobile/fenix/issues/14565
       - https://github.com/mozilla-mobile/fenix/issues/23526
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2075027
     data_reviews:
       - https://github.com/mozilla-mobile/fenix/pull/15136
       - https://github.com/mozilla-mobile/fenix/pull/15713#issuecomment-703972068
@@ -10347,6 +10408,7 @@ top_sites:
       - https://github.com/mozilla-mobile/fenix/pull/20517#pullrequestreview-718069041
       - https://github.com/mozilla-mobile/fenix/pull/21038#issuecomment-906757301
       - https://github.com/mozilla-mobile/fenix/pull/23541
+      - https://phabricator.services.mozilla.com/D328679
     data_sensitivity:
       - interaction
     notification_emails:
@@ -11067,6 +11129,43 @@ stories_library:
     metadata:
       tags:
         - PocketIntegration
+installation:
+  install_counter:
+    type: quantity
+    unit: integer
+    description: |
+      The number of times the app has been installed on this device,
+      including the current install, across reinstalls. Recorded per install.
+    send_in_pings:
+      - installation
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2084346
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2084346
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  last_seen_date:
+    type: datetime
+    time_unit: day
+    description: |
+      The date (YYYY-MM-DD, local time) the app was last opened before the
+      current install. The stored date is updated on the first app open of each
+      app process. Not set on the first install. Recorded once per
+      install.
+    send_in_pings:
+      - installation
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2084346
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2084346
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
 first_session:
   distribution_id:
     type: string
@@ -18020,12 +18119,14 @@ pdf_viewer:
       reason:
         description: |
           Why the signature could not be handed to the PDF viewer. Possible values
-          are: `no_engine_session` and `engine_error`.
+          are: `no_engine_session`, `engine_error` and `timeout`.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2069504
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2086088
     data_reviews:
       - https://phabricator.services.mozilla.com/D325530
+      - https://phabricator.services.mozilla.com/D338066
     notification_emails:
       - android-probes@mozilla.com
     data_sensitivity:

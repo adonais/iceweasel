@@ -47,20 +47,20 @@ class DOMMatrixReadOnly : public nsWrapperCache {
   DOMMatrixReadOnly(nsISupports* aParent, const DOMMatrixReadOnly& other)
       : mParent(aParent) {
     if (other.mMatrix2D) {
-      mMatrix2D = MakeUnique<gfx::MatrixDouble>(*other.mMatrix2D);
+      mMatrix2D = std::make_unique<gfx::MatrixDouble>(*other.mMatrix2D);
     } else {
-      mMatrix3D = MakeUnique<gfx::Matrix4x4Double>(*other.mMatrix3D);
+      mMatrix3D = std::make_unique<gfx::Matrix4x4Double>(*other.mMatrix3D);
     }
   }
 
   DOMMatrixReadOnly(nsISupports* aParent, const gfx::Matrix4x4& aMatrix)
       : mParent(aParent) {
-    mMatrix3D = MakeUnique<gfx::Matrix4x4Double>(aMatrix);
+    mMatrix3D = std::make_unique<gfx::Matrix4x4Double>(aMatrix);
   }
 
   DOMMatrixReadOnly(nsISupports* aParent, const gfx::Matrix& aMatrix)
       : mParent(aParent) {
-    mMatrix2D = MakeUnique<gfx::MatrixDouble>(aMatrix);
+    mMatrix2D = std::make_unique<gfx::MatrixDouble>(aMatrix);
   }
 
   DOMMatrixReadOnly() = delete;
@@ -265,9 +265,9 @@ class DOMMatrixReadOnly : public nsWrapperCache {
   DOMMatrixReadOnly(already_AddRefed<nsISupports> aParent, bool is2D)
       : mParent(std::move(aParent)) {
     if (is2D) {
-      mMatrix2D = MakeUnique<gfx::MatrixDouble>();
+      mMatrix2D = std::make_unique<gfx::MatrixDouble>();
     } else {
-      mMatrix3D = MakeUnique<gfx::Matrix4x4Double>();
+      mMatrix3D = std::make_unique<gfx::Matrix4x4Double>();
     }
   }
 

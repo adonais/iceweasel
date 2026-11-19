@@ -69,8 +69,6 @@ class NeckoParent : public PNeckoParent {
  protected:
   virtual ~NeckoParent() = default;
 
-  bool mSocketProcessBridgeInited;
-
   already_AddRefed<PHttpChannelParent> AllocPHttpChannelParent(
       PBrowserParent*, const SerializedLoadContext&,
       const HttpChannelCreationArgs& aOpenArgs);
@@ -211,10 +209,6 @@ class NeckoParent : public PNeckoParent {
       nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
       GetMailMessageStreamResolver&& aResolve);
 #endif
-
-  mozilla::ipc::IPCResult RecvInitSocketProcessBridge(
-      InitSocketProcessBridgeResolver&& aResolver);
-  mozilla::ipc::IPCResult RecvResetSocketProcessBridge();
 
   mozilla::ipc::IPCResult RecvEnsureHSTSData(
       EnsureHSTSDataResolver&& aResolver);

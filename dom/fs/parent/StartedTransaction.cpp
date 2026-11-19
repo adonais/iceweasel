@@ -13,7 +13,7 @@ namespace mozilla::dom::fs {
 /* static */
 Result<StartedTransaction, QMResult> StartedTransaction::Create(
     const ResultConnection& aConn) {
-  auto transaction = MakeUnique<mozStorageTransaction>(
+  auto transaction = std::make_unique<mozStorageTransaction>(
       aConn.get(), /* aCommitOnComplete */ false,
       mozIStorageConnection::TRANSACTION_IMMEDIATE);
 

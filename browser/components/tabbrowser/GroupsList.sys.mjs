@@ -113,6 +113,7 @@ export class GroupsPanel {
     let totalItemCount = savedGroups.length + openGroups.length;
     if (totalItemCount && !this.#showAll) {
       let header = this.doc.createElement("h2");
+      header.setAttribute("id", "allTabsMenu-groupsView-header");
       header.setAttribute("class", "subview-subheader");
       this.doc.l10n.setAttributes(
         header,
@@ -216,6 +217,8 @@ export class GroupsPanel {
 
     if (group.name) {
       setName(group.name);
+    } else if (isOpen) {
+      setName(/** @type {MozTabbrowserTabGroup} */ (group).defaultGroupName);
     } else {
       doc.l10n
         .formatValues([{ id: "tab-group-name-default" }])

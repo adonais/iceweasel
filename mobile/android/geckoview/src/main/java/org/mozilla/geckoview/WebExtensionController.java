@@ -447,7 +447,8 @@ public class WebExtensionController {
   }
 
   /**
-   * @return the current {@link PromptDelegate} instance.
+   * {@return the current {@link PromptDelegate} instance}
+   *
    * @see PromptDelegate
    */
   @UiThread
@@ -681,9 +682,9 @@ public class WebExtensionController {
    *
    * <p>When calling this method, the GeckoView library will download the extension, validate its
    * manifest and signature, and give you an opportunity to verify its permissions through {@link
-   * PromptDelegate#installPromptRequest(GeckoBundle, EventCallback)}, you can use this method to
-   * prompt the user if appropriate. If you are looking to provide an {@link InstallationMethod},
-   * please use {@link WebExtensionController#install(String, String)}
+   * PromptDelegate#onInstallPromptRequest}, you can use this method to prompt the user if
+   * appropriate. If you are looking to provide an {@link InstallationMethod}, please use {@link
+   * WebExtensionController#install(String, String)}
    *
    * @param uri URI to the extension's <code>.xpi</code> package. This can be a remote <code>https:
    *     </code> URI or a local <code>file:</code> or <code>resource:</code> URI. Note: the app
@@ -696,7 +697,7 @@ public class WebExtensionController {
    *     exceptionally with a {@link WebExtension.InstallException InstallException} that will
    *     contain the relevant error code in {@link WebExtension.InstallException#code
    *     InstallException#code}.
-   * @see PromptDelegate#installPromptRequest
+   * @see PromptDelegate#onInstallPromptRequest
    * @see WebExtension.InstallException.ErrorCodes
    * @see WebExtension#metaData
    */
@@ -916,6 +917,9 @@ public class WebExtensionController {
    * {@link #disable}.
    */
   public static class EnableSource {
+    /** Public constructor for EnableSource. */
+    public EnableSource() {}
+
     /** Action has been requested by the user. */
     public static final int USER = 1;
 
@@ -1020,7 +1024,7 @@ public class WebExtensionController {
    * the web extension's manifest property <a
    * href="https://extensionworkshop.com/documentation/manage/updating-your-extension/">browser_specific_settings.gecko.update_url</a>.
    * If an update is found it will be downloaded and installed. If the extension needs any new
-   * permissions the {@link PromptDelegate#updatePrompt} will be triggered.
+   * permissions the {@link PromptDelegate#onUpdatePrompt} will be triggered.
    *
    * <p>More information about the update manifest format is available <a
    * href="https://extensionworkshop.com/documentation/manage/updating-your-extension/#manifest-structure">here</a>.
@@ -1029,8 +1033,8 @@ public class WebExtensionController {
    * @return A {@link GeckoResult} that will complete when the update process finishes. If an update
    *     is found and installed successfully, the GeckoResult will return the updated {@link
    *     WebExtension}. If no update is available, null will be returned. If the updated extension
-   *     requires new permissions, the {@link PromptDelegate#installPromptRequest} will be called.
-   * @see PromptDelegate#updatePrompt
+   *     requires new permissions, the {@link PromptDelegate#onUpdatePrompt} will be called.
+   * @see PromptDelegate#onUpdatePrompt
    */
   @HandlerThread
   @NonNull

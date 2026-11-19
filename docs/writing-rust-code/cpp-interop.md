@@ -203,32 +203,19 @@ pub unsafe extern "C" fn unic_langid_as_string(
 }
 ```
 
-Next, in a C++ header define a destructor via `DefaultDelete`.
+Next, in a C++ header add a few includes and the appropriate namespace:
 
 ```cpp
 #include "mozilla/intl/unic_langid_ffi_generated.h"
-#include "mozilla/UniquePtr.h"
-
-namespace mozilla {
-
-template <>
-class DefaultDelete<intl::ffi::LanguageIdentifier> {
- public:
-  void operator()(intl::ffi::LanguageIdentifier* aPtr) const {
-    unic_langid_destroy(aPtr);
-  }
-};
-
-}  // namespace mozilla
+#include <memory>
 ```
 
-(This definition must be visible any place where
-`UniquePtr<intl::ffi::LanguageIdentifier>` is used, otherwise C++ will try to
-free the code, which might lead to strange behaviour!)
-
-Finally, implement the class.
+Then, implement the class, delegating memory handling to `std::unique_ptr` with
+a custom deleter.
 
 ```cpp
+namespace mozilla {
+
 class Locale {
 public:
   explicit Locale(const nsACString& aLocale)
@@ -241,8 +228,16 @@ public:
   }
 
 private:
-  UniquePtr<ffi::LanguageIdentifier> mRaw;
-}
+  struct Deleter {
+    void operator()(ffi::LanguageIdentifier* aPtr) {
+      unic_langid_destroy(aPtr);
+    }
+  };
+
+  std::unique_ptr<ffi::LanguageIdentifier, Deleter> mRaw;
+};
+
+}  // namespace mozilla
 ```
 
 This makes it possible to instantiate a `Locale` object and call `AsString()`,

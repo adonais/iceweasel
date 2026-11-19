@@ -11083,16 +11083,16 @@ function runPaddingLineBreakTest() {
   });
   is(
     // If the new normalizer is enabled, it's fine to keep the last white-space
-    // before composition stirng is an NBSP because it'll be normalized at end.
+    // before composition string is an NBSP because it'll be normalized at end.
     contenteditable.innerHTML.replaceAll("&nbsp;", " "),
-    "<p>abc d</p>",
-    `The padding <br> should be deleted when the composition string, "d", is inserted`
+    "<p>abc d<br></p>",
+    `The padding <br> shouldn't be deleted when the composition string, "d", is inserted`
   );
   synthesizeComposition({ type: "compositioncommit", data: "" });
   is(
     contenteditable.innerHTML,
-    "<p>abc&nbsp;</p>",
-    "A padding <br> should be inserted if the composition string becomes empty and the previous character is a collapsible ASCII white-space"
+    "<p>abc&nbsp;<br></p>",
+    "The padding <br> shouldn't be deleted when the composition is canceled"
   );
   synthesizeKey("z", {accelKey: true});
   is(

@@ -7,11 +7,11 @@ openh264-source:
     attributes:
         # Must match FULL_VERSION in the OpenH264 Makefile at the revision below,
         # as it is used to construct artifact paths in signing and symbol-upload tasks.
-        openh264_version: '2.6.0'
+        openh264_version: '2.7.0'
     fetch:
         type: git
         repo: https://github.com/cisco/openh264
-        revision: 652bdb7719f30b52b08e506645a7322ff1b2cc6f
+        revision: 1bca62311e447fd9c39fc93de2c4b96cd5ce971c
         path-prefix: openh264
 
 gmp-api:

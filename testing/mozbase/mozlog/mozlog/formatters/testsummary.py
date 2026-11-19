@@ -27,8 +27,8 @@ class TestSummaryFormatter(BaseFormatter):
     All other actions are dropped.
 
     In addition, the fields `thread`, `pid`, `source`, `extra`, `tests`,
-    `js_source`, `minidump_path`, `crashing_thread_stack` and any field whose
-    name starts with `stackwalk_` are stripped from every emitted record
+    `js_source`, `crashing_thread_stack` and any field whose name starts with
+    `stackwalk_` are stripped from every emitted record
     """
 
     _ALLOWED_ACTIONS = frozenset({
@@ -50,7 +50,6 @@ class TestSummaryFormatter(BaseFormatter):
         "crashing_thread_stack",
         "extra",
         "js_source",
-        "minidump_path",
         "pid",
         "source",
         "tests",

@@ -13,6 +13,8 @@ subsuite = "taskgraph"
 
 ["test_files_changed.py"]
 
+["test_kind.py"]
+
 ["test_main.py"]
 
 ["test_morph.py"]
@@ -28,6 +30,8 @@ subsuite = "taskgraph"
 ["test_transforms_build_schedules.py"]
 
 ["test_transforms_duplicate.py"]
+
+["test_transforms_fetch.py"]
 
 ["test_transforms_job.py"]
 

@@ -301,6 +301,11 @@ declare_args() {
   # Disabled when building with Chromium or Mozilla.
   rtc_include_tests = !build_with_chromium && !build_with_mozilla
 
+  # Set this to false to skip generating standalone <target>_bin executables for
+  # each rtc_cc_test target in addition to linking them into their
+  # rtc_test_suite.
+  rtc_build_cc_test_bins = true
+
   # Set this to false to skip building code that also requires X11 extensions
   # such as Xdamage, Xfixes.
   rtc_use_x11_extensions = rtc_use_x11
@@ -551,6 +556,7 @@ template("rtc_test") {
         "//chromium/build/android/gtest_apk:native_test_instrumentation_test_runner_java",
         webrtc_root + "sdk/android:native_test_jni_onload",
         webrtc_root + "sdk/android:base_java",
+        webrtc_root + "sdk/android:native_unittests_java",
         webrtc_root + "test:native_test_java",
         webrtc_root + "test:native_test_support",
         "//third_party/jni_zero:jni_zero_java",
@@ -1399,9 +1405,10 @@ if (is_android && !build_with_mozilla) {
 #
 # This template generates:
 # 1. A static library containing the test sources.
-# 2. An executable to run the test locally.
-# 3. A verification step to ensure the test is included in at least one
-#    `rtc_test_suite` (when not building with Chromium).
+# 2. Optionally (when `rtc_build_cc_test_bins = true`), an executable to run
+#    the test locally.
+# 3. Metadata to ensure the test is included in at least one `rtc_test_suite`
+#    (when not building with Chromium).
 #
 # Arguments:
 #   sources: List of source files.
@@ -1438,22 +1445,24 @@ template("rtc_cc_test") {
     }
   }
 
-  _path_from_webrtc_root = rebase_path(".", webrtc_root)
-  if (_path_from_webrtc_root == ".") {
-    _binary_name = "${target_name}_bin"
-  } else {
-    _binary_name = string_replace(_path_from_webrtc_root, "/", "_") + "_" +
-                   target_name + "_bin"
-  }
+  if (rtc_build_cc_test_bins) {
+    _path_from_webrtc_root = rebase_path(".", webrtc_root)
+    if (_path_from_webrtc_root == ".") {
+      _binary_name = "${target_name}_bin"
+    } else {
+      _binary_name = string_replace(_path_from_webrtc_root, "/", "_") + "_" +
+                     target_name + "_bin"
+    }
 
-  rtc_test("${target_name}_bin") {
-    testonly = true
+    rtc_test("${target_name}_bin") {
+      testonly = true
 
-    # Output into the target's directory.
-    output_name = _binary_name
-    deps = [ ":${_lib_target_name}" ]
-    if (defined(invoker.data_deps)) {
-      data_deps = invoker.data_deps
+      # Output into the target's directory.
+      output_name = _binary_name
+      deps = [ ":${_lib_target_name}" ]
+      if (defined(invoker.data_deps)) {
+        data_deps = invoker.data_deps
+      }
     }
   }
 }

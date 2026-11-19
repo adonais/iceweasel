@@ -4,6 +4,7 @@
 
 #include "AudioGenerator.h"
 #include "AudioSegment.h"
+#include "MediaTrackGraph.h"
 #include "gtest/gtest.h"
 
 using namespace mozilla;
@@ -464,6 +465,47 @@ TEST(AudioSegment, ConvertFromAndToInterleaved)
 
   EXPECT_EQ(sampleCount, bufferSize);
   EXPECT_EQ(interleaved, buffer);
+}
+
+TEST(AudioSegment, ResampleChunksRejectsUnrepresentableOutputSize)
+{
+  // The smallest conversion whose output frame count no longer fits uint32_t.
+  AudioChunk c;
+  fillChunk<float, 2>(&c, 16384);
+  AudioSegment s;
+  s.AppendAndConsumeChunk(std::move(c));
+
+  nsAutoRef<SpeexResamplerState> resampler;
+  uint32_t resamplerChannelCount = 0;
+  EXPECT_EQ(s.ResampleChunks(resampler, &resamplerChannelCount, 1, 262144),
+            NS_ERROR_DOM_MEDIA_OVERFLOW_ERR);
+  // Rejection clears the segment.
+  EXPECT_TRUE(s.IsEmpty());
+  EXPECT_EQ(s.GetDuration(), 0);
+}
+
+TEST(AudioSegment, ResampleChunksAcceptsRepresentableSize)
+{
+  const uint32_t inRate = 44100;
+  const uint32_t outRate = 48000;
+  const TrackTime duration = 4800;
+
+  AudioChunk c;
+  fillChunk<float, 2>(&c, duration);
+  AudioSegment s;
+  s.AppendAndConsumeChunk(std::move(c));
+
+  nsAutoRef<SpeexResamplerState> resampler;
+  uint32_t resamplerChannelCount = 0;
+  EXPECT_EQ(
+      s.ResampleChunks(resampler, &resamplerChannelCount, inRate, outRate),
+      NS_OK);
+
+  // Speex can keep input for its filter, so assert the rounded-up upper bound.
+  const TrackTime maxOutputFrames =
+      (duration * outRate + (inRate - 1)) / inRate;
+  EXPECT_GT(s.GetDuration(), 0);
+  EXPECT_LE(s.GetDuration(), maxOutputFrames);
 }
 
 }  // namespace audio_segment

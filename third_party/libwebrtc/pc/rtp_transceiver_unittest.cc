@@ -174,7 +174,6 @@ class RtpTransceiverTest : public testing::Test {
   static PeerConnectionFactoryDependencies MakeDependencies() {
     PeerConnectionFactoryDependencies d;
     d.network_thread = Thread::Current();
-    d.worker_thread = Thread::Current();
     d.signaling_thread = Thread::Current();
     EnableFakeMedia(d, std::make_unique<FakeMediaEngine>());
     return d;

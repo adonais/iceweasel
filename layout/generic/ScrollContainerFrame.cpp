@@ -219,8 +219,8 @@ static StaticAutoPtr<ScrollFrameActivityTracker> gScrollFrameActivityTracker;
 ScrollContainerFrame* NS_NewScrollContainerFrame(mozilla::PresShell* aPresShell,
                                                  ComputedStyle* aStyle,
                                                  bool aIsRoot) {
-  return new (aPresShell)
-      ScrollContainerFrame(aStyle, aPresShell->GetPresContext(), aIsRoot);
+  return new ScrollContainerFrame(aStyle, aPresShell->GetPresContext(),
+                                  aIsRoot);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(ScrollContainerFrame)
@@ -342,7 +342,8 @@ void ScrollContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 void ScrollContainerFrame::Destroy(DestroyContext& aContext) {
   if (Maybe<ScrollState> state = SaveState();
       state && !PresShell()->IsDestroying()) {
-    mContent->AsElement()->SetSavedScrollState(MakeUnique<ScrollState>(*state));
+    mContent->AsElement()->SetSavedScrollState(
+        std::make_unique<ScrollState>(*state));
   }
 
   DestroyAbsoluteFrames(aContext);
@@ -2258,14 +2259,14 @@ void ScrollContainerFrame::AsyncScroll::InitSmoothScroll(
   if (!mAnimationPhysics || aOrigin != mOrigin) {
     mOrigin = aOrigin;
     if (StaticPrefs::general_smoothScroll_msdPhysics_enabled()) {
-      mAnimationPhysics = MakeUnique<ScrollAnimationMSDPhysics>(
+      mAnimationPhysics = std::make_unique<ScrollAnimationMSDPhysics>(
           apz::ScrollAnimationKind::Smooth, aInitialPosition,
           /*smallestVisibleIncrement=*/1.0);
     } else {
       ScrollAnimationBezierPhysicsSettings settings =
           layers::apz::ComputeBezierAnimationSettingsForOrigin(mOrigin);
-      mAnimationPhysics =
-          MakeUnique<ScrollAnimationBezierPhysics>(aInitialPosition, settings);
+      mAnimationPhysics = std::make_unique<ScrollAnimationBezierPhysics>(
+          aInitialPosition, settings);
     }
   }
 
@@ -2558,11 +2559,11 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
 
   UniquePtr<ScrollSnapTargetIds> snapTargetIds;
   if (snapDestination) {
-    snapTargetIds =
-        MakeUnique<ScrollSnapTargetIds>(std::move(snapDestination->mTargetIds));
+    snapTargetIds = std::make_unique<ScrollSnapTargetIds>(
+        std::move(snapDestination->mTargetIds));
   } else {
     snapTargetIds =
-        MakeUnique<ScrollSnapTargetIds>(std::move(aParams.mTargetIds));
+        std::make_unique<ScrollSnapTargetIds>(std::move(aParams.mTargetIds));
   }
   if (aParams.IsInstant()) {
     // Asynchronous scrolling is not allowed, so we'll kill any existing
@@ -5273,7 +5274,7 @@ static void AddToListIfHeaderFooter(nsIFrame* aFrame,
 
 StickyScrollContainer& ScrollContainerFrame::EnsureStickyContainer() {
   if (!mStickyContainer) {
-    mStickyContainer = MakeUnique<StickyScrollContainer>(this);
+    mStickyContainer = std::make_unique<StickyScrollContainer>(this);
   }
   return *mStickyContainer;
 }

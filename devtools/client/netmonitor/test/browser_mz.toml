@@ -300,9 +300,6 @@ skip-if = [
 
 ["browser_net_truncate-post-data.js"]
 https_first_disabled = true # Intermittent crashes on macos when using HTTPS, Bug 1732865
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1772211
-]
 
 ["browser_net_truncate.js"]
 

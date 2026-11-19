@@ -61,13 +61,6 @@ struct ParamTraits<mozilla::net::HttpVersion>
                             mozilla::net::HttpVersionValidator> {};
 
 template <>
-struct ParamTraits<mozilla::net::nsHttpRequestHead::ParsedMethodType>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::net::nsHttpRequestHead::ParsedMethodType,
-          mozilla::net::nsHttpRequestHead::kMethod_Custom,
-          mozilla::net::nsHttpRequestHead::kMethod_Trace> {};
-
-template <>
 struct ParamTraits<mozilla::net::nsHttpAtom> {
   typedef mozilla::net::nsHttpAtom paramType;
 
@@ -204,43 +197,6 @@ struct ParamTraits<mozilla::net::nsHttpHeaderArray> {
   static bool Read(MessageReader* aReader, paramType* aResult) {
     if (!ReadParam(aReader, &aResult->mHeaders)) return false;
 
-    return true;
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::net::nsHttpRequestHead> {
-  typedef mozilla::net::nsHttpRequestHead paramType;
-
-  static void Write(MessageWriter* aWriter,
-                    const paramType& aParam) MOZ_NO_THREAD_SAFETY_ANALYSIS {
-    aParam.Enter();
-    WriteParam(aWriter, aParam.mHeaders);
-    WriteParam(aWriter, aParam.mMethod);
-    WriteParam(aWriter, aParam.mVersion);
-    WriteParam(aWriter, aParam.mRequestURI);
-    WriteParam(aWriter, aParam.mPath);
-    WriteParam(aWriter, aParam.mOrigin);
-    WriteParam(aWriter, aParam.mParsedMethod);
-    WriteParam(aWriter, aParam.mHTTPS);
-    aParam.Exit();
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    aResult->Enter();
-    if (!ReadParam(aReader, &aResult->mHeaders) ||
-        !ReadParam(aReader, &aResult->mMethod) ||
-        !ReadParam(aReader, &aResult->mVersion) ||
-        !ReadParam(aReader, &aResult->mRequestURI) ||
-        !ReadParam(aReader, &aResult->mPath) ||
-        !ReadParam(aReader, &aResult->mOrigin) ||
-        !ReadParam(aReader, &aResult->mParsedMethod) ||
-        !ReadParam(aReader, &aResult->mHTTPS)) {
-      aResult->Exit();
-      return false;
-    }
-
-    aResult->Exit();
     return true;
   }
 };

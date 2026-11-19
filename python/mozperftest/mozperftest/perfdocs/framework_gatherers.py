@@ -550,8 +550,11 @@ class MozperftestGatherer(FrameworkGatherer):
                 },
             }
         """
+        claude_dir = pathlib.Path(self.workspace_dir, ".claude")
         for path in list(pathlib.Path(self.workspace_dir).rglob("perftest.toml")):
             if "obj-" in str(path) or "objdir-" in str(path):
+                continue
+            if claude_dir in path.parents:
                 continue
             suite_name = str(path.parent).replace(str(self.workspace_dir), "")
 
@@ -759,7 +762,7 @@ class AwsyGatherer(FrameworkGatherer):
                 self._task_list.setdefault(platform, []).append(item)
 
     def get_suite_list(self):
-        self._suite_list = {"Awsy tests": ["tp6", "base", "dmd", "tp5"]}
+        self._suite_list = {"Awsy tests": ["tp6", "base", "dmd"]}
         return self._suite_list
 
     def get_test_list(self):
@@ -769,7 +772,6 @@ class AwsyGatherer(FrameworkGatherer):
                 "tp6": {},
                 "base": {},
                 "dmd": {},
-                "tp5": {},
             }
         }
 
@@ -794,9 +796,6 @@ class AwsyGatherer(FrameworkGatherer):
             result += f"**Owner**: {awsy_data['owner']}\n\n"
         result += "* **Test Task**:\n"
 
-        # tp5 tests are represented by awsy-e10s test names
-        # while the others have their title in test names
-        search_tag = "awsy-e10s" if title == "tp5" else title
         for platform in sorted(self._task_list.keys()):
             platform_title = self.get_platform_title(
                 platform, self._task_list[platform]
@@ -805,7 +804,7 @@ class AwsyGatherer(FrameworkGatherer):
             for test_dict in sorted(
                 self._task_list[platform], key=lambda d: d["test_name"]
             ):
-                if search_tag in test_dict["test_name"]:
+                if title in test_dict["test_name"]:
                     run_on_project = ": " + (
                         ", ".join(test_dict["run_on_projects"])
                         if test_dict["run_on_projects"]

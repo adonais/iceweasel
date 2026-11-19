@@ -27,7 +27,7 @@ know what you are doing.
 
 : Feature flag enabling the site exceptions capability.
 
-`browser.ipProtection.features.siteInclusions` (boolean, default: `false`)
+`browser.ipProtection.features.siteInclusions` (boolean, default: `true`)
 
 : Feature flag enabling the site inclusions capability.
 

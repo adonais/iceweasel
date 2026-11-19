@@ -10,7 +10,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
-    run-on-repo-type: [hg]
     run-on-projects: ['mozilla-central-only']
     task-context:
         from-parameters:

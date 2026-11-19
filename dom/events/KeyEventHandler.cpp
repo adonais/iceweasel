@@ -90,9 +90,6 @@ KeyEventHandler::~KeyEventHandler() {
   } else if (mCommand) {
     free(mCommand);
   }
-
-  // We own the next handler in the chain, so delete it now.
-  NS_CONTENT_DELETE_LIST_MEMBER(KeyEventHandler, this, mNextHandler);
 }
 
 bool KeyEventHandler::IsCommand(const char* aCommandStr) const {

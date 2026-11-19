@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import copy
 import os
 import unittest
 from collections import defaultdict
@@ -29,6 +30,13 @@ CONFIGS = defaultdict(
         "substs": {"OS_TARGET": "WINNT"},
     },
     {
+        "pp-defines": {
+            "defines": {
+                "A_CONFIGURED_NUMBER": "1",
+                "A_CONFIGURED_STRING": "a value",
+            },
+            "substs": {"OS_TARGET": "WINNT"},
+        },
         "binary-components": {
             "defines": {},
             "substs": {
@@ -44,6 +52,18 @@ CONFIGS = defaultdict(
                 "CXX": ["clang++"],
                 "LIB_PREFIX": "lib",
                 "LIB_SUFFIX": "a",
+            },
+        },
+        "database-objc": {
+            "defines": {},
+            "substs": {
+                "CC": ["clang"],
+                "CXX": ["clang++"],
+                "COMPILE_ENVIRONMENT": "1",
+                "LIB_PREFIX": "lib",
+                "LIB_SUFFIX": "a",
+                "OS_COMPILE_CMFLAGS": ["-fobjc-exceptions"],
+                "OS_COMPILE_CMMFLAGS": ["-fobjc-call-cxx-cdtors"],
             },
         },
         "objdir-local-includes": {
@@ -420,7 +440,7 @@ class BackendTester(unittest.TestCase):
         os.environ.clear()
         os.environ.update(self._old_env)
 
-    def _get_environment(self, name, srcdir_name=None):
+    def _get_environment(self, name, srcdir_name=None, substs=None):
         """Obtain a new instance of a ConfigEnvironment for a known profile.
 
         A new temporary object directory is created for the environment. The
@@ -429,9 +449,13 @@ class BackendTester(unittest.TestCase):
         `srcdir_name` selects the test data directory, defaulting to `name`. It
         can differ from `name` to run a different config profile against an
         existing data directory.
+
+        `substs` overrides individual configuration values.
         """
-        config = CONFIGS[name]
+        config = copy.deepcopy(CONFIGS[name])
         config["substs"]["MOZ_UI_LOCALE"] = "en-US"
+        if substs:
+            config["substs"].update(substs)
 
         srcdir = mozpath.join(test_data_path, srcdir_name or name)
         config["substs"]["top_srcdir"] = srcdir

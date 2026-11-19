@@ -577,7 +577,7 @@ class MediaPipelineTest : public ::testing::Test {
       // Leaving refinedFilter not set implies we want to just update with
       // the other side's SSRC
       if (!refinedFilter) {
-        refinedFilter = MakeUnique<MediaPipelineFilter>();
+        refinedFilter = std::make_unique<MediaPipelineFilter>();
         // Might not be safe, strictly speaking.
         refinedFilter->AddRemoteSSRC(p1_.GetLocalSSRC());
       }
@@ -754,7 +754,7 @@ TEST_F(MediaPipelineTest, TestAudioSendMux) {
 }
 
 TEST_F(MediaPipelineTest, TestAudioSendBundle) {
-  auto filter = MakeUnique<MediaPipelineFilter>();
+  auto filter = std::make_unique<MediaPipelineFilter>();
   // These durations have to be _extremely_ long to have any assurance that
   // some RTCP will be sent at all. This is because the first RTCP packet
   // is sometimes sent before the transports are ready, which causes it to
@@ -773,15 +773,15 @@ TEST_F(MediaPipelineTest, TestAudioSendBundle) {
 }
 
 TEST_F(MediaPipelineTest, TestAudioSendEmptyBundleFilter) {
-  auto filter = MakeUnique<MediaPipelineFilter>();
-  auto bad_answer_filter = MakeUnique<MediaPipelineFilter>();
+  auto filter = std::make_unique<MediaPipelineFilter>();
+  auto bad_answer_filter = std::make_unique<MediaPipelineFilter>();
   TestAudioReceiverBundle(std::move(filter), std::move(bad_answer_filter));
   // Filter is empty, so should drop everything.
   ASSERT_EQ(0, p2_.GetAudioRtpCountReceived());
 }
 
 TEST_F(MediaPipelineTest, TestAudioInactiveNoRecv) {
-  auto filter = MakeUnique<MediaPipelineFilter>();
+  auto filter = std::make_unique<MediaPipelineFilter>();
   TestAudioReceiverBundle(std::move(filter), nullptr,
                           {.activate_receive = false,
                            .ms_until_filter_update = 200,

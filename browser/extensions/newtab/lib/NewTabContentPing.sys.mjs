@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -107,7 +106,7 @@ export class NewTabContentPing {
   recordEvent(name, data, dwellToken = null) {
     this.#eventBuffer.push([
       name,
-      this.sanitizeEventData(name, data),
+      this.sanitizeEventData(data),
       dwellToken === null ? null : { token: dwellToken, readDwellTime: null },
     ]);
   }
@@ -370,21 +369,13 @@ export class NewTabContentPing {
    * ensure we don't accidentally send these if copying information between
    * the newtab ping and the newtab-content ping.
    *
-   * @param {string} eventName
-   *   The name of the event being recorded.
    * @param {object} eventDataDict
    *   The Glean event data that would be passed to a `record` method.
    * @returns {object}
    *   The sanitized event data.
    */
-  sanitizeEventData(eventName, eventDataDict) {
+  sanitizeEventData(eventDataDict) {
     const {
-      // @backward-compat { version 159 }
-      // We can remove tile_id from this list once 159 hits release, since at that point,
-      // tile_id will have been removed from the newtab-content ping within metrics.yaml, and
-      // there will no longer be a chance of it accidentally slipping through extra_keys.
-      // eslint-disable-next-line no-unused-vars
-      tile_id,
       // eslint-disable-next-line no-unused-vars
       newtab_visit_id,
       // eslint-disable-next-line no-unused-vars
@@ -405,24 +396,7 @@ export class NewTabContentPing {
       dwell_id,
       ...result
     } = eventDataDict;
-    // @backward-compat { version 158 } variant_id and source_section_id were
-    // added as extra_keys to the newtab_content impression/click events in 158.
-    // A train-hopped XPI can run on older platform builds whose schema lacks
-    // them, which would throw a Glean error, so drop them below 158.
-    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "158.0a1") < 0) {
-      delete result.variant_id;
-      delete result.source_section_id;
-    }
-    // @backward-compat { version 158 } Bug 2067937: section_position was
-    // removed from the newtab_content impression/click extra_keys in 157 and
-    // restored in 159. Drop it on 157 and 158 builds to avoid a Glean error.
-    if (
-      (eventName === "impression" || eventName === "click") &&
-      Services.vc.compare(AppConstants.MOZ_APP_VERSION, "157.0a1") >= 0 &&
-      Services.vc.compare(AppConstants.MOZ_APP_VERSION, "159.0a1") < 0
-    ) {
-      delete result.section_position;
-    }
+
     return result;
   }
 

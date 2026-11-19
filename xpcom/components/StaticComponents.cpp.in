@@ -323,7 +323,7 @@ const StaticProtocolHandler* StaticProtocolHandler::Lookup(const nsACString& aSc
 
 /* static */ already_AddRefed<nsIUTF8StringEnumerator>
 StaticComponents::GetComponentESModules() {
-  auto esModules = MakeUnique<nsTArray<nsCString>>(std::size(gComponentESModules));
+  auto esModules = std::make_unique<nsTArray<nsCString>>(std::size(gComponentESModules));
 
   for (const auto& entry : gComponentESModules) {
     esModules->AppendElement(GetString(entry));

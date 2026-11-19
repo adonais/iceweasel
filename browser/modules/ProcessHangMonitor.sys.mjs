@@ -100,27 +100,6 @@ export var ProcessHangMonitor = {
   },
 
   /**
-   * Start devtools debugger for JavaScript associated with the hang
-   * being reported for the selected browser in |win|.
-   */
-  debugScript(win) {
-    this.handleUserInput(win, report => {
-      function callback() {
-        report.endStartingDebugger();
-      }
-
-      this._recordTelemetryForReport(report, "debugging");
-      report.beginStartingDebugger();
-
-      let svc = Cc["@mozilla.org/dom/slow-script-debug;1"].getService(
-        Ci.nsISlowScriptDebug
-      );
-      let handler = svc.remoteActivationHandler;
-      handler.handleSlowScriptDebug(report.scriptBrowser, callback);
-    });
-  },
-
-  /**
    * Dismiss the browser notification and invoke an appropriate action based on
    * the hang type.
    */
@@ -471,12 +450,9 @@ export var ProcessHangMonitor = {
    * Show the notification for a hang.
    */
   async showNotification(win, report) {
-    let bundle = win.gNavigatorBundle;
-
     let buttons = [
       {
-        label: bundle.getString("processHang.button_stop2.label"),
-        accessKey: bundle.getString("processHang.button_stop2.accessKey"),
+        "l10n-id": "process-hang-stop-button",
         callback() {
           ProcessHangMonitor.stopIt(win);
         },
@@ -484,10 +460,6 @@ export var ProcessHangMonitor = {
     ];
 
     let message;
-    let doc = win.document;
-    let brandShortName = doc
-      .getElementById("bundle_brand")
-      .getString("brandShortName");
     let notificationTag;
     if (report.addonId) {
       notificationTag = report.addonId;
@@ -495,24 +467,28 @@ export var ProcessHangMonitor = {
         Ci.nsIAddonPolicyService
       );
 
-      let addonName = aps.getExtensionName(report.addonId);
+      let addonName;
+      try {
+        addonName = aps.getExtensionName(report.addonId);
+      } catch (e) {
+        // The extension may have been unloaded while its script is hung.
+        addonName = report.addonId;
+      }
 
-      message = bundle.getFormattedString("processHang.add-on.label2", [
-        addonName,
-        brandShortName,
-      ]);
+      message = {
+        "l10n-id": "process-hang-addon-message",
+        "l10n-args": { addonName },
+      };
 
       buttons.unshift({
-        label: bundle.getString("processHang.add-on.learn-more.text"),
+        "l10n-id": "process-hang-addon-learn-more",
         link: "https://support.mozilla.org/kb/warning-unresponsive-script#w_other-causes",
       });
     } else {
       let scriptBrowser = report.scriptBrowser;
       if (scriptBrowser == win.gBrowser?.selectedBrowser) {
         notificationTag = "selected-tab";
-        message = bundle.getFormattedString("processHang.selected_tab.label", [
-          brandShortName,
-        ]);
+        message = { "l10n-id": "process-hang-selected-tab-message" };
       } else {
         let tab =
           scriptBrowser?.documentGlobal.gBrowser?.getTabForBrowser(
@@ -520,18 +496,15 @@ export var ProcessHangMonitor = {
           );
         if (!tab) {
           notificationTag = "nonspecific_tab";
-          message = bundle.getFormattedString(
-            "processHang.nonspecific_tab.label",
-            [brandShortName]
-          );
+          message = { "l10n-id": "process-hang-nonspecific-tab-message" };
         } else {
           notificationTag = scriptBrowser.browserId.toString();
           let title = tab.getAttribute("label");
           title = elideMiddleOfString(title, 60);
-          message = bundle.getFormattedString(
-            "processHang.specific_tab.label",
-            [title, brandShortName]
-          );
+          message = {
+            "l10n-id": "process-hang-specific-tab-message",
+            "l10n-args": { title },
+          };
         }
       }
     }
@@ -546,21 +519,6 @@ export var ProcessHangMonitor = {
       notification.label = message;
       notification.setAttribute("notification-tag", notificationTag);
       return;
-    }
-
-    // Show the "debug script" button only if DevTools are opened on the slow tab.
-    // Never offer it when DevTools are disabled by policy, as debugging would be refused anyway.
-    if (
-      !Services.prefs.getBoolPref("devtools.policy.disabled", false) &&
-      report.scriptBrowser.browsingContext.watchedByDevTools
-    ) {
-      buttons.push({
-        label: bundle.getString("processHang.button_debug.label"),
-        accessKey: bundle.getString("processHang.button_debug.accessKey"),
-        callback() {
-          ProcessHangMonitor.debugScript(win);
-        },
-      });
     }
 
     // Sometimes the window may have closed already, in which case we won't

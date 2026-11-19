@@ -36,14 +36,6 @@ task-defaults:
     test-manifest-loader: null  # don't load tests in the taskgraph
 
 
-awsy:
-    description: Are we slim yet - tp5 pageset
-    treeherder-symbol: SY(sy)
-    run-on-projects: []
-    mozharness:
-        extra-options:
-            - --tp5
-
 awsy-tp6:
     description: Are we slim yet - tp6 pageset
     treeherder-symbol: SY(sy-tp6)

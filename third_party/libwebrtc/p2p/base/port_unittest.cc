@@ -688,9 +688,9 @@ class PortTest : public ::testing::Test {
     // Shorten the timeout period.
     const TimeDelta kTcpReconnectTimeout = kDefaultTimeout;
     static_cast<TCPConnection*>(ch1.conn())
-        ->set_reconnection_timeout(kTcpReconnectTimeout.ms());
+        ->SetReconnectionTimeoutForTesting(kTcpReconnectTimeout);
     static_cast<TCPConnection*>(ch2.conn())
-        ->set_reconnection_timeout(kTcpReconnectTimeout.ms());
+        ->SetReconnectionTimeoutForTesting(kTcpReconnectTimeout);
 
     EXPECT_FALSE(ch1.connection_ready_to_send());
     EXPECT_FALSE(ch2.connection_ready_to_send());

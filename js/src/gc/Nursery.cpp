@@ -974,12 +974,12 @@ void* js::Nursery::reallocateBuffer(Zone* zone, Cell* cell, void* oldBuffer,
                                     size_t oldBytes, size_t newBytes,
                                     size_t maxNurserySize) {
   if (!IsInsideNursery(cell)) {
-    MOZ_ASSERT(IsBufferAlloc(oldBuffer));
+    AssertIsBufferAlloc(oldBuffer);
     MOZ_ASSERT(!IsNurseryOwned(zone, oldBuffer));
     return ReallocBuffer(zone, oldBuffer, newBytes, false);
   }
 
-  if (IsBufferAlloc(oldBuffer)) {
+  if (IsGCPointerBufferAlloc(oldBuffer)) {
     MOZ_ASSERT(IsNurseryOwned(zone, oldBuffer));
     return ReallocBuffer(zone, oldBuffer, newBytes, true);
   }
@@ -998,11 +998,11 @@ void* js::Nursery::reallocateBuffer(Zone* zone, Cell* cell, void* oldBuffer,
 
 void Nursery::freeBuffer(JS::Zone* zone, gc::Cell* cell, void* buffer,
                          size_t bytes) {
-  MOZ_ASSERT(IsBufferAlloc(buffer) || isInside(buffer));
-  MOZ_ASSERT_IF(!IsInsideNursery(cell), IsBufferAlloc(buffer));
+  MOZ_ASSERT_IF(!isInside(buffer), IsGCPointerBufferAlloc(buffer));
+  MOZ_ASSERT_IF(!IsInsideNursery(cell), IsGCPointerBufferAlloc(buffer));
   MOZ_ASSERT_IF(!IsInsideNursery(cell), !IsNurseryOwned(zone, buffer));
 
-  if (!IsBufferAlloc(buffer)) {
+  if (!IsGCPointerBufferAlloc(buffer)) {
     // The nursery cannot make use of the returned space.
     return;
   }
@@ -1941,7 +1941,7 @@ Nursery::WasBufferMoved js::Nursery::maybeMoveRawBufferOnPromotion(
   bool nurseryOwned = IsInsideNursery(owner);
 
   void* buffer = *bufferp;
-  if (IsBufferAlloc(buffer)) {
+  if (IsGCPointerBufferAlloc(buffer)) {
     // This is an external buffer allocation owned by a nursery GC thing.
     Zone* zone = owner->zone();
     MOZ_ASSERT(IsNurseryOwned(zone, buffer));

@@ -77,8 +77,7 @@ class RemoteMediaManagerChild final
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateVideoDecoder(
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
-  static RefPtr<RemoteCDMProxy> CreateCDM(RemoteMediaIn aLocation,
-                                          dom::MediaKeys* aKeys,
+  static RefPtr<RemoteCDMProxy> CreateCDM(dom::MediaKeys* aKeys,
                                           const nsAString& aKeySystem,
                                           bool aDistinctiveIdentifierRequired,
                                           bool aPersistentStateRequired);
@@ -128,6 +127,16 @@ class RemoteMediaManagerChild final
   // internally and will be ignored if the IPDL actor has been destroyed.
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
+  // Whether or not the GPU process may be used for decoding. This remains true
+  // while it is recovering from a crash, and on Windows after media in it is
+  // disabled because of crashes, in which case creating decoders is rejected.
+  static bool IsGpuProcessDecodingAvailable();
+
+  // Whether or not the GPU process may be used for encoding. This remains true
+  // while it is recovering from a crash, and on Windows after media in it is
+  // disabled because of crashes, in which case creating encoders is rejected.
+  static bool IsGpuProcessEncodingAvailable();
+
   // Main thread only
   static void InitForGPUProcess(
       Endpoint<PRemoteMediaManagerChild>&& aVideoManager);
@@ -156,6 +165,9 @@ class RemoteMediaManagerChild final
   static RefPtr<GenericNonExclusivePromise> LaunchUtilityProcessIfNeeded(
       RemoteMediaIn aLocation);
 
+  // A thread-safe method to launch the RDD process if it hasn't launched yet.
+  static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
+
  protected:
   void HandleFatalError(const char* aMsg) override;
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -170,8 +182,11 @@ class RemoteMediaManagerChild final
   static void OpenRemoteMediaManagerChildForProcess(
       Endpoint<PRemoteMediaManagerChild>&& aEndpoint, RemoteMediaIn aLocation);
 
-  // A thread-safe method to launch the RDD process if it hasn't launched yet.
-  static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
+  // A thread-safe method to wait for the GPU process manager to be available.
+  // If the GPU process is recovering from a crash, this waits until it is
+  // recreated. It is rejected if the GPU process, or decoding in it, is
+  // disabled.
+  static RefPtr<GenericNonExclusivePromise> EnsureGPUProcessReady();
 
   // The location for decoding, Rdd or Gpu process.
   const RemoteMediaIn mLocation;

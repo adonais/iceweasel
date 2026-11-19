@@ -11,6 +11,7 @@ import android.widget.EditText
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.R as appcompatR
 import androidx.appcompat.app.AlertDialog
+import androidx.core.net.toUri
 import androidx.core.widget.addTextChangedListener
 import androidx.navigation.NavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -19,7 +20,9 @@ import com.google.android.material.textfield.TextInputLayout
 import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.search.SearchAccessPoint
 import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.browser.state.search.accessPoint
 import mozilla.components.browser.state.state.availableSearchEngines
 import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
@@ -217,19 +220,31 @@ class DefaultTopSiteController(
 
     @VisibleForTesting
     internal suspend fun updateTopSite(topSite: TopSite, title: String, url: String) {
-        if (topSite is TopSite.Frecent) {
-            topSitesUseCases.addPinnedSites(
-                title = title,
-                url = url,
-            )
+        when (topSite) {
+            is TopSite.Frecent -> {
+                topSitesUseCases.addPinnedSites(
+                    title = title,
+                    url = url,
+                )
 
-            appStore.dispatch(ShortcutAction.FrecencyTopSitePromoted)
-        } else {
-            topSitesUseCases.updateTopSites(
-                topSite = topSite,
-                title = title,
-                url = url,
-            )
+                appStore.dispatch(ShortcutAction.FrecencyTopSitePromoted(url = url))
+            }
+
+            is TopSite.Default -> {
+                topSitesUseCases.addPinnedSites(
+                    title = title,
+                    url = url,
+                )
+
+                appStore.dispatch(ShortcutAction.DefaultTopSitePromoted(url = url))
+            }
+
+            else ->
+                topSitesUseCases.updateTopSites(
+                    topSite = topSite,
+                    title = title,
+                    url = url,
+                )
         }
     }
 
@@ -254,7 +269,9 @@ class DefaultTopSiteController(
 
     override fun handleSelectTopSite(topSite: TopSite, position: Int) {
         when (topSite) {
-            is TopSite.Default -> TopSites.openDefault.record(TopSites.OpenDefaultExtra(source = source.sourceName))
+            is TopSite.Default,
+            is TopSite.DefaultPinned ->
+                TopSites.openDefault.record(TopSites.OpenDefaultExtra(source = source.sourceName))
             is TopSite.Frecent -> TopSites.openFrecency.record(TopSites.OpenFrecencyExtra(source = source.sourceName))
             is TopSite.Pinned -> TopSites.openPinned.record(TopSites.OpenPinnedExtra(source = source.sourceName))
             is TopSite.Provided -> {
@@ -289,6 +306,8 @@ class DefaultTopSiteController(
                 )
             }
 
+        // The top site is navigated to rather than searched for, and appendSearchAttributionToUrlIfNeeded has already
+        // put the access point's partner code in the URL, so no access point is passed here.
         if (settings.enableHomepageAsNewTab) {
             fenixBrowserUseCases.loadUrlOrSearch(
                 searchTermOrURL = appendSearchAttributionToUrlIfNeeded(topSite.url),
@@ -419,7 +438,7 @@ class DefaultTopSiteController(
         source: AddShortcutSource,
         entryPoint: AddShortcutEntryPoint,
     ) {
-        appStore.dispatch(ShortcutAction.ShortcutAdded(source = source, entryPoint = entryPoint))
+        appStore.dispatch(ShortcutAction.ShortcutAdded(url = url, source = source, entryPoint = entryPoint))
 
         viewLifecycleScope.launch {
             topSitesUseCases.addPinnedSites(
@@ -429,22 +448,52 @@ class DefaultTopSiteController(
         }
     }
 
-    /** Append a search attribution query to any provided search engine URL based on the user's current region. */
+    /**
+     * Returns the URL to open for [url], carrying the search attribution the Google top site needs.
+     *
+     * The partner code comes from the `topsite` access point of the matching engine when the configuration defines one.
+     * Otherwise the hardcoded per-region URLs are used, which is the case for every engine from search-config-v2.
+     */
     private fun appendSearchAttributionToUrlIfNeeded(url: String): String {
-        if (url == SupportUtils.GOOGLE_URL) {
-            store.state.search.region?.let { region ->
-                return when (region.current) {
-                    "US" -> SupportUtils.GOOGLE_US_URL
-                    else -> SupportUtils.GOOGLE_XX_URL
-                }
+        if (url != SupportUtils.GOOGLE_URL) {
+            return url
+        }
+
+        getAvailableSearchEngines()
+            .firstOrNull { engine -> engine.resultUrls.any { it.startsWith(SupportUtils.GOOGLE_URL) } }
+            ?.accessPoint(SearchAccessPoint.TOPSITE)
+            ?.partnerCode
+            ?.let {
+                return googleTopSiteUrl(partnerCode = it)
+            }
+
+        store.state.search.region?.let { region ->
+            return when (region.current) {
+                "US" -> SupportUtils.GOOGLE_US_URL
+                else -> SupportUtils.GOOGLE_XX_URL
             }
         }
 
         return url
     }
 
+    private fun googleTopSiteUrl(partnerCode: String): String =
+        GOOGLE_TOP_SITE_BASE_URL.toUri()
+            .buildUpon()
+            .appendQueryParameter(GOOGLE_TOP_SITE_PARTNER_CODE_PARAM, partnerCode)
+            .appendQueryParameter(TOP_SITE_CHANNEL_PARAM, TOP_SITE_CHANNEL_VALUE)
+            .build()
+            .toString()
+
     @VisibleForTesting
     internal fun getAvailableSearchEngines() =
         activity.components.core.store.state.search.searchEngines +
             activity.components.core.store.state.search.availableSearchEngines
 }
+
+// The Google top site is a homepage URL rather than a search URL, so it is assembled here. Only the partner code comes
+// from the search configuration; the channel has no equivalent there.
+private const val GOOGLE_TOP_SITE_BASE_URL = "https://www.google.com/webhp"
+private const val GOOGLE_TOP_SITE_PARTNER_CODE_PARAM = "client"
+private const val TOP_SITE_CHANNEL_PARAM = "channel"
+private const val TOP_SITE_CHANNEL_VALUE = "ts"

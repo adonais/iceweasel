@@ -62,6 +62,12 @@ scheme = "https"
 ["test_track_getNativeSizes.html"]
 scheme = "https"
 
+["test_videoEncoder_oddWidth.html"]
+scheme = "https"
+skip-if = [
+  "os == 'android'", # WebCodecs isn't enabled yet on Android
+]
+
 ["test_videoFrame_croppedVideo.html"]
 skip-if = [
   "os == 'android'", # platform decoders hand back opaque textures without a picture rect

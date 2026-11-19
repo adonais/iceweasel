@@ -21,7 +21,6 @@ task-defaults:
               path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/security-module-helper.xml
               type: file
     run:
-        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         secrets: true
@@ -547,6 +546,8 @@ macosx64-devedition/opt:
               dest: x64/updater-dep
             - artifact: target.crashreporter-symbols.zip
               dest: x64/crashreporter-symbols
+            - artifact: target.crashreporter-symbols-gtest.zip
+              dest: x64/crashreporter-symbols-gtest
             - artifact: target.jsshell.zip
               dest: x64/jsshell
             - artifact: target.update_framework_artifacts.zip
@@ -603,6 +604,8 @@ macosx64-devedition/opt:
               dest: aarch64/updater-dep
             - artifact: target.crashreporter-symbols.zip
               dest: aarch64/crashreporter-symbols
+            - artifact: target.crashreporter-symbols-gtest.zip
+              dest: aarch64/crashreporter-symbols-gtest
             - artifact: target.jsshell.zip
               dest: aarch64/jsshell
             - artifact: target.update_framework_artifacts.zip
@@ -776,6 +779,8 @@ macosx64-add-on-devel/opt:
               dest: ../artifacts
             - artifact: target.crashreporter-symbols.zip
               dest: x64/crashreporter-symbols
+            - artifact: target.crashreporter-symbols-gtest.zip
+              dest: x64/crashreporter-symbols-gtest
             - artifact: target.jsshell.zip
               dest: x64/jsshell
             - artifact: target.generated-files.tar.gz
@@ -793,44 +798,12 @@ macosx64-add-on-devel/opt:
               dest: aarch64
             - artifact: target.crashreporter-symbols.zip
               dest: aarch64/crashreporter-symbols
+            - artifact: target.crashreporter-symbols-gtest.zip
+              dest: aarch64/crashreporter-symbols-gtest
             - artifact: target.jsshell.zip
               dest: aarch64/jsshell
         toolchain:
             - linux64-cctools-port
-            - onnxruntime-x86_64-apple-darwin
-
-macosx64-nightlyasrelease/opt:
-    description: "MacOS X Nightly-As-Release"
-    use-pgo: macosx64-shippable/opt
-    attributes:
-        enable-full-crashsymbols: true
-        skip-verify-test-packaging: true
-        upload-generated-sources: true
-    index:
-        job-name: macosx64-nightlyasrelease-opt
-    treeherder:
-        platform: osx-nightlyasrelease/opt
-        symbol: Bpgo(Bnar)
-        tier: 1
-    run-on-projects: [trunk-only]
-    worker:
-        max-run-time: 7200
-        env:
-            MOZ_AUTOMATION_PACKAGE_TESTS: "1"
-            PERFHERDER_EXTRA_OPTIONS: nightly-as-release
-    mozconfig:
-        variant: nightly-as-release
-    run:
-        config:
-            - builds/releng_base_firefox.py
-            - builds/releng_base_mac_64_cross_builds.py
-            - taskcluster_nightly.py
-    fetches:
-        toolchain:
-            - linux64-cctools-port
-            - linux64-clang
-            - macosx64-sdk
-            - sysroot-wasm32-wasi
             - onnxruntime-x86_64-apple-darwin
 
 macosx64-aarch64-nightlyasrelease/opt:
@@ -904,6 +877,37 @@ macosx64-x64-shippable/opt:
             - sysroot-wasm32-wasi
             - onnxruntime-x86_64-apple-darwin
 
+macosx64-reproduced/opt:
+    description: "MacOS X x64 Reproduced"
+    use-pgo: macosx64-shippable/opt
+    shipping-phase: build
+    shipping-product: firefox
+    index:
+        job-name: macosx64-reproduced-opt
+    treeherder:
+        platform: osx-shippable/opt
+        symbol: Bpgo(repr)
+        tier: 1
+    run-on-projects: ['mozilla-central', 'comm-central']
+    worker:
+        max-run-time: 7200
+        env:
+            PERFHERDER_EXTRA_OPTIONS: repr
+            MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
+    run:
+        config:
+            - builds/releng_base_firefox.py
+            - builds/releng_base_mac_64_cross_builds.py
+            - taskcluster_nightly.py
+    fetches:
+        toolchain:
+            - linux64-cctools-port
+            - linux64-clang
+            - macosx64-sdk
+            - sysroot-wasm32-wasi
+            - onnxruntime-x86_64-apple-darwin
+
 macosx64-aarch64-shippable/opt:
     description: "MacOS X aarch64 Cross-compile"
     use-pgo: macosx64-aarch64-shippable/opt
@@ -928,6 +932,39 @@ macosx64-aarch64-shippable/opt:
             MOZ_GENERATE_SBOM: "1"
             SOURCE_DATE_EPOCH: "{build_date}"
             PERFHERDER_EXTRA_OPTIONS: aarch64
+    mozconfig:
+        platform: macosx64-aarch64
+    run:
+        config:
+            - builds/releng_base_firefox.py
+            - builds/releng_base_mac_64_cross_builds.py
+            - taskcluster_nightly.py
+    fetches:
+        toolchain:
+            - linux64-cctools-port
+            - linux64-clang
+            - macosx64-sdk
+            - sysroot-wasm32-wasi
+            - onnxruntime-aarch64-apple-darwin
+
+macosx64-aarch64-reproduced/opt:
+    description: "MacOS X aarch64 Reproduced"
+    use-pgo: macosx64-aarch64-shippable/opt
+    shipping-phase: build
+    shipping-product: firefox
+    index:
+        job-name: macosx64-aarch64-reproduced-opt
+    treeherder:
+        platform: osx-aarch64-shippable/opt
+        symbol: Bpgo(repr)
+        tier: 1
+    run-on-projects: ['mozilla-central', 'comm-central']
+    worker:
+        max-run-time: 7200
+        env:
+            PERFHERDER_EXTRA_OPTIONS: repr
+            MOZ_GENERATE_SBOM: "1"
+            SOURCE_DATE_EPOCH: "{build_date}"
     mozconfig:
         platform: macosx64-aarch64
     run:
@@ -1045,6 +1082,8 @@ macosx64-shippable/opt:
               dest: x64/updater-dep
             - artifact: target.crashreporter-symbols.zip
               dest: x64/crashreporter-symbols
+            - artifact: target.crashreporter-symbols-gtest.zip
+              dest: x64/crashreporter-symbols-gtest
             - artifact: target.jsshell.zip
               dest: x64/jsshell
             - artifact: target.update_framework_artifacts.zip
@@ -1101,6 +1140,8 @@ macosx64-shippable/opt:
               dest: aarch64/updater-dep
             - artifact: target.crashreporter-symbols.zip
               dest: aarch64/crashreporter-symbols
+            - artifact: target.crashreporter-symbols-gtest.zip
+              dest: aarch64/crashreporter-symbols-gtest
             - artifact: target.jsshell.zip
               dest: aarch64/jsshell
             - artifact: target.update_framework_artifacts.zip

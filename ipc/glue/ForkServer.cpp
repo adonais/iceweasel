@@ -56,8 +56,8 @@ ForkServer::ForkServer(int* aArgc, char*** aArgv) : mArgc(aArgc), mArgv(aArgv) {
 
   // Hold our IPC FD while our MiniTransceiver is alive.
   mIpcFd = ipcHandle.extract();
-  mTcver = MakeUnique<MiniTransceiver>(mIpcFd.get(),
-                                       DataBufferClear::AfterReceiving);
+  mTcver = std::make_unique<MiniTransceiver>(mIpcFd.get(),
+                                             DataBufferClear::AfterReceiving);
 
   auto signalPipe = geckoargs::sSignalPipe.Get(*aArgc, *aArgv);
   if (signalPipe) {

@@ -13,4 +13,7 @@
 // Empty event, just used for prodding the event loop into responding.
 const short kEventSubtypeNone = 0;
 
+// Posted by nsICocoaAppShellTestUtils::postNativeTestEvent().
+const short kEventSubtypeNativeTest = 1;
+
 #endif /* WIDGET_COCOA_CUSTOMCOCOAEVENTS_H_ */

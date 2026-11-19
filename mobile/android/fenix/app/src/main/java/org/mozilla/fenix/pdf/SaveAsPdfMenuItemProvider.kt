@@ -35,14 +35,12 @@ class SaveAsPdfMenuItemProvider(
     private val target: MenuTarget,
     private val saveToPdf: SessionUseCases.SaveToPdfUseCase,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        MutableStateFlow(
-            StandardMenuItem(
-                title = MenuItemTitle(Text.Resource(R.string.browser_menu_save_as_pdf_2)),
-                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_save_file_24),
-                onClickEvent = MenuAction.SaveAsPdfRequested,
-            )
-        )
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.SaveAsPdfRequested)))
+        }
 
     override fun handles(event: MenuEvent) = event == MenuAction.SaveAsPdfRequested
 
@@ -51,5 +49,13 @@ class SaveAsPdfMenuItemProvider(
 
         menu.dismiss()
         saveToPdf(tabId = tabId)
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_save_as_pdf_2)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_save_file_24),
+            )
     }
 }

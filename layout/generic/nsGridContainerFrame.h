@@ -123,7 +123,16 @@ class nsGridContainerFrame final : public nsContainerFrame,
         HasAnyStateBits(NS_STATE_GRID_SYNTHESIZE_BASELINE)) {
       return Nothing{};
     }
-    return mozilla::Some(GetBBaseline(aBaselineGroup));
+    const nscoord baseline = GetBBaseline(aBaselineGroup);
+    if (baseline == NS_INTRINSIC_ISIZE_UNKNOWN) [[unlikely]] {
+      // NOTE: If we get here, it means reflow is needed in order to get a real
+      // baseline (and bug 2085086 or something like it prevented us from being
+      // reflowed). For lack of anything better to do, we return Nothing{},
+      // which means "synthesize a baseline", which is at least better than
+      // doing arithmetic with the NS_INTRINSIC_ISIZE_UNKNOWN sentinel...
+      return Nothing{};
+    }
+    return mozilla::Some(baseline);
   }
 
 #ifdef DEBUG_FRAME_DUMP

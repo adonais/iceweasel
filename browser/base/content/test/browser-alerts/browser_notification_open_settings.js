@@ -5,12 +5,7 @@ var notificationURL =
 // BrowserGlue passes "privacy-permissions" to openPreferences when the
 // notifications-open-settings observer fires; the Settings Redesign
 // LegacyPaneMappings shim routes that to the permissionsData pane.
-var expectedURL = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-)
-  ? "about:preferences#permissionsData"
-  : "about:preferences#privacy";
+var expectedURL = "about:preferences#permissionsData";
 
 add_task(async function test_settingsOpen_observer() {
   info(

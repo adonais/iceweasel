@@ -13,14 +13,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,16 +33,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -53,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.pdf.PdfToolsTestTag
@@ -62,6 +69,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * The signature dialog is used for adding a signature to a PDF.
  *
  * @param state The [TextFieldState] holding the signature being typed.
+ * @param isAddingSignature The signature is being sent to the PDF.
  * @param onCloseClick Invoked when the user dismisses the dialog without adding a signature.
  * @param onClearClick Invoked when the user erases the signature they typed.
  * @param onAddClick Invoked when the user adds the signature they typed to the PDF.
@@ -70,6 +78,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @Composable
 fun SignatureDialog(
     state: TextFieldState,
+    isAddingSignature: Boolean,
     onCloseClick: () -> Unit,
     onClearClick: () -> Unit,
     onAddClick: () -> Unit,
@@ -103,8 +112,9 @@ fun SignatureDialog(
 
             SignatureButtons(
                 // Whitespace alone cannot be added, but it still should be clearable
-                isClearEnabled = state.text.isNotEmpty(),
+                isClearEnabled = state.text.isNotEmpty() && !isAddingSignature,
                 isAddEnabled = state.text.isNotBlank(),
+                isAddingSignature = isAddingSignature,
                 onClearClick = onClearClick,
                 onAddClick = onAddClick,
             )
@@ -222,6 +232,8 @@ private fun SignatureField(state: TextFieldState) {
  *
  * @param isClearEnabled Whether anything has been typed for the clear button to erase.
  * @param isAddEnabled Whether enough has been typed for the signature to be added.
+ * @param isAddingSignature Whether the signature is in the process of being added to the PDF, which shows progress on
+ *   the add button.
  * @param onClearClick Invoked when the user activates the clear button.
  * @param onAddClick Invoked when the user activates the add button.
  */
@@ -229,6 +241,7 @@ private fun SignatureField(state: TextFieldState) {
 private fun SignatureButtons(
     isClearEnabled: Boolean,
     isAddEnabled: Boolean,
+    isAddingSignature: Boolean,
     onClearClick: () -> Unit,
     onAddClick: () -> Unit,
 ) {
@@ -244,12 +257,60 @@ private fun SignatureButtons(
             enabled = isClearEnabled,
         )
 
-        FilledButton(
-            text = stringResource(id = R.string.pdf_tools_signature_add_button),
-            modifier = Modifier.testTag(PdfToolsTestTag.SIGNATURE_ADD_BUTTON),
-            enabled = isAddEnabled,
+        AddSignatureButton(
+            isEnabled = isAddEnabled,
+            isAddingSignature = isAddingSignature,
             onClick = onAddClick,
         )
+    }
+}
+
+/**
+ * The button for adding a signature to the PDF. While [isAddingSignature] is true, a loading indicator will be shown.
+ *
+ * @param isEnabled The button is ready for submission.
+ * @param isAddingSignature The signature is in the process of being added to the PDF. A loading indication will be
+ *   shown.
+ * @param onClick Invoked when the user activates the button.
+ */
+@Composable
+private fun AddSignatureButton(
+    isEnabled: Boolean,
+    isAddingSignature: Boolean,
+    onClick: () -> Unit,
+) {
+    val addingDescription = stringResource(id = R.string.pdf_tools_signature_adding_content_description)
+
+    FilledButton(
+        onClick = { if (!isAddingSignature) onClick() },
+        modifier =
+            Modifier.testTag(PdfToolsTestTag.SIGNATURE_ADD_BUTTON).thenConditional(
+                Modifier.clearAndSetSemantics {
+                    role = Role.Button
+                    contentDescription = addingDescription
+                }
+            ) {
+                isAddingSignature
+            },
+        enabled = isEnabled,
+        containerColor = MaterialTheme.colorScheme.tertiary,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            // The label is hidden to retain same button width.
+            Text(
+                text = stringResource(id = R.string.pdf_tools_signature_add_button),
+                modifier = Modifier.alpha(if (isAddingSignature) 0f else 1f),
+                style = FirefoxTheme.typography.button,
+            )
+
+            if (isAddingSignature) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = FirefoxTheme.layout.border.heavy,
+                )
+            }
+        }
     }
 }
 
@@ -260,6 +321,21 @@ private fun SignatureDialogPhonePreview() {
     FirefoxTheme {
         SignatureDialog(
             state = rememberTextFieldState(),
+            isAddingSignature = false,
+            onCloseClick = {},
+            onClearClick = {},
+            onAddClick = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SignatureDialogAddingPreview() {
+    FirefoxTheme {
+        SignatureDialog(
+            state = rememberTextFieldState(initialText = "Test"),
+            isAddingSignature = true,
             onCloseClick = {},
             onClearClick = {},
             onAddClick = {},

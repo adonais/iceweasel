@@ -170,6 +170,11 @@ class Http3SessionBase {
                                                  uint64_t aGroupId) = 0;
   virtual nsresult GetWebTransportSessionProtocol(uint64_t aSessionId,
                                                   nsACString& aProtocol) = 0;
+  virtual void
+  SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) = 0;
+  virtual void SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) = 0;
   virtual nsresult TryActivatingWebTransportStream(
       uint64_t* aStreamId, Http3StreamBase* aStream) = 0;
   virtual void ResetWebTransportStream(Http3WebTransportStream* aStream,
@@ -330,6 +335,11 @@ class Http3Session final : public Http3SessionBase,
   void SetDatagramMaxAge(uint64_t aSessionId, double aMaxAge) override;
   nsresult GetWebTransportSessionProtocol(uint64_t aSessionId,
                                           nsACString& aProtocol) override;
+  void SetWebTransportAnticipatedConcurrentIncomingUnidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) override;
+  void SetWebTransportAnticipatedConcurrentIncomingBidirectionalStreams(
+      uint64_t aSessionId, uint16_t aValue) override;
+
   void SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) override;
   void SetSendGroup(Http3StreamBase* aStream, uint64_t aSendGroupId) override;
 
@@ -379,6 +389,8 @@ class Http3Session final : public Http3SessionBase,
   void QueueStream(Http3StreamBase* stream);
   void RemoveStreamFromQueues(Http3StreamBase*);
   void ProcessPending();
+  void ApplyAnticipatedWebTransportStreams(Http3StreamBase* aStream,
+                                           uint64_t aSessionId);
 
   void CallCertVerification(Maybe<nsCString> aEchPublicName);
   void SetSecInfo();

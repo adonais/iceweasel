@@ -34,10 +34,10 @@ ProfiledThreadData::~ProfiledThreadData() {
   MOZ_COUNT_DTOR(ProfiledThreadData);
 }
 
-static void StreamTables(UniqueStacks&& aUniqueStacks, JSContext* aCx,
+static void StreamTables(UniqueStacks&& aUniqueStacks, JSContext* /*aCx*/,
                          SpliceableJSONWriter& aWriter,
                          SpliceableChunkedJSONWriter* aShapesWriter,
-                         const mozilla::TimeStamp& aProcessStartTime,
+                         const mozilla::TimeStamp& /*aProcessStartTime*/,
                          mozilla::ProgressLogger aProgressLogger) {
   aWriter.StartObjectProperty("stackTable");
   {
@@ -174,7 +174,7 @@ void ProfiledThreadData::StreamJSON(
     ThreadStreamingContext&& aThreadStreamingContext,
     SpliceableJSONWriter& aWriter, const nsACString& aProcessName,
     const nsACString& aETLDplus1, const mozilla::TimeStamp& aProcessStartTime,
-    ProfilerCodeAddressService* aService,
+    ProfilerCodeAddressService* /*aService*/,
     mozilla::ProgressLogger aProgressLogger) {
   aWriter.Start();
   {
@@ -350,19 +350,19 @@ void StreamSamplesAndMarkers(const char* aName,
   (void)DoStreamSamplesAndMarkers(
       aName, aWriter, aProcessName, aETLDplus1, aProcessStartTime,
       aRegisterTime, aUnregisterTime, std::move(aProgressLogger),
-      [&](mozilla::ProgressLogger aSubProgressLogger) {
+      [&](mozilla::ProgressLogger /*aSubProgressLogger*/) {
         aWriter.TakeAndSplice(
             aThreadData.mSamplesDataWriter.TakeChunkedWriteFunc());
         return aThreadData.mProfiledThreadData.Info().ThreadId();
       },
-      [&](mozilla::ProgressLogger aSubProgressLogger) {
+      [&](mozilla::ProgressLogger /*aSubProgressLogger*/) {
         aWriter.TakeAndSplice(
             aThreadData.mMarkersDataWriter.TakeChunkedWriteFunc());
       });
 }
 
 void ProfiledThreadData::NotifyAboutToLoseJSContext(
-    JSContext* aContext, const mozilla::TimeStamp& aProcessStartTime,
+    JSContext* aContext, const mozilla::TimeStamp& /*aProcessStartTime*/,
     ProfileBuffer& aBuffer) {
   if (!mBufferPositionWhenReceivedJSContext) {
     return;
@@ -379,7 +379,7 @@ void ProfiledThreadData::NotifyAboutToLoseJSContext(
   mozilla::UniquePtr<JITFrameInfo> jitFrameInfo =
       mJITFrameInfoForPreviousJSContexts
           ? std::move(mJITFrameInfoForPreviousJSContexts)
-          : mozilla::MakeUnique<JITFrameInfo>();
+          : std::make_unique<JITFrameInfo>();
 
   aBuffer.AddJITInfoForRange(*mBufferPositionWhenReceivedJSContext,
                              mThreadInfo.ThreadId(), aContext, *jitFrameInfo,

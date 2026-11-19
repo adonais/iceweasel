@@ -1288,7 +1288,7 @@ NS_IMETHODIMP nsDocLoader::OnStatus(nsIRequest* aRequest, nsresult aStatus,
     // already done.
     if (info) {
       if (!info->mLastStatus) {
-        info->mLastStatus = MakeUnique<nsStatusInfo>(aRequest);
+        info->mLastStatus = std::make_unique<nsStatusInfo>(aRequest);
       } else {
         // We're going to move it to the front of the list, so remove
         // it from wherever it is now.

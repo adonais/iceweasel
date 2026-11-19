@@ -233,15 +233,11 @@
 
   function checkSpecialReport(aName, aAmounts, aCanBeUnreasonable)
   {
-    let socketProcessRunning = 0;
-    if (SpecialPowers.Services.io.socketProcessLaunched) {
-      socketProcessRunning = 1;
-    }
     let rddProcessRunning = 0;
     if (window.windowUtils.rddProcessPid != -1) {
       rddProcessRunning = 1;
     }
-    is(aAmounts.length, 1 + socketProcessRunning + rddProcessRunning,
+    is(aAmounts.length, 1 + rddProcessRunning,
        aName + " has " + aAmounts.length + " report");
     let n = aAmounts[0];
     if (!aCanBeUnreasonable) {

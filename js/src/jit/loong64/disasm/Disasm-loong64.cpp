@@ -1659,6 +1659,16 @@ bool Decoder::decodeOp22(const Instruction* instruction) const {
       return formatSimdVdVj("vmskgez.b", word);
     case op_vmsknz_b:
       return formatSimdVdVj("vmsknz.b", word);
+    case op_vsetnez_v:
+      return formatSimdCdVj("vsetnez.v", word);
+    case op_vsetallnez_b:
+      return formatSimdCdVj("vsetallnez.b", word);
+    case op_vsetallnez_h:
+      return formatSimdCdVj("vsetallnez.h", word);
+    case op_vsetallnez_w:
+      return formatSimdCdVj("vsetallnez.w", word);
+    case op_vsetallnez_d:
+      return formatSimdCdVj("vsetallnez.d", word);
     case op_vfsqrt_s:
       return formatSimdVdVj("vfsqrt.s", word);
     case op_vfsqrt_d:

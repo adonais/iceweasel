@@ -6,6 +6,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   MonitorAgent:
     "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs",
+  MONITOR_BLOCKED_STATE_CHANGED_TOPIC:
+    "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
   MonitorUIUtils:
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorUIUtils.sys.mjs",
   TOTAL_NUM_MONITORS:
@@ -30,6 +32,26 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
     ["SmartWindowTasks:GetConstants", this.#handleGetConstants.bind(this)],
     ["SmartWindowTasks:OpenUrl", this.#handleOpenUrl.bind(this)],
   ]);
+
+  #observer = {
+    observe: () => {
+      this.sendAsyncMessage("SmartWindowTasks:BlockedStateChanged");
+    },
+  };
+
+  actorCreated() {
+    Services.obs.addObserver(
+      this.#observer,
+      lazy.MONITOR_BLOCKED_STATE_CHANGED_TOPIC
+    );
+  }
+
+  didDestroy() {
+    Services.obs.removeObserver(
+      this.#observer,
+      lazy.MONITOR_BLOCKED_STATE_CHANGED_TOPIC
+    );
+  }
 
   async receiveMessage({ data, name }) {
     const handler = this.#messageHandlers.get(name);
@@ -128,6 +150,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
         SCHEDULE_TYPES: lazy.SCHEDULE_TYPES,
         isMonitorRegionSupported:
           lazy.MonitorUIUtils.isMonitorRegionSupported(),
+        isBlocked: lazy.MonitorAgent.isBlocked,
         smartWindowSupportUrl:
           Services.urlFormatter.formatURLPref("app.support.baseURL") +
           "smart-window",

@@ -50,8 +50,8 @@ const UserMessage::TypeInfo TestMessage::kUserMessageTypeInfo = {};
 
 ScopedMessage NewUserMessageEvent(const std::string& payload,
                                   size_t num_ports) {
-  auto event = mozilla::MakeUnique<UserMessageEvent>(num_ports);
-  event->AttachMessage(mozilla::MakeUnique<TestMessage>(payload));
+  auto event = std::make_unique<UserMessageEvent>(num_ports);
+  event->AttachMessage(std::make_unique<TestMessage>(payload));
   return event;
 }
 
@@ -428,7 +428,7 @@ class PortsTest : public testing::Test, public MessageRouter {
       UserMessageEvent* message_copy =
           static_cast<UserMessageEvent*>(copy.get());
 
-      message_copy->AttachMessage(mozilla::MakeUnique<TestMessage>(
+      message_copy->AttachMessage(std::make_unique<TestMessage>(
           message_event->GetMessage<TestMessage>()->payload()));
     }
 

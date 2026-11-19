@@ -110,7 +110,7 @@ UniquePtr<SurfaceFactory> SurfaceFactory::Create(
 
     case layers::TextureType::MacIOSurface:
 #ifdef XP_MACOSX
-      return MakeUnique<SurfaceFactory_IOSurface>(gl);
+      return std::make_unique<SurfaceFactory_IOSurface>(gl);
 #else
       break;
 #endif

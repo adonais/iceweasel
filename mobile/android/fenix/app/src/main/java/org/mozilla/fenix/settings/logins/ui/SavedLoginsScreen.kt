@@ -336,7 +336,7 @@ private fun LoginsListTopBar(
                         contentDescription = stringResource(R.string.passwords_import_menu_button),
                     ) {
                         Icon(
-                            painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                            painter = painterResource(iconsR.drawable.mozac_ic_more_vertical_round_24),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface,
                         )

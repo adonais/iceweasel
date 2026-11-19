@@ -4,10 +4,11 @@
 
 #include "ScreenshotGrabber.h"
 
+#include <memory>
+
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/ProfilerScreenshots.h"
@@ -67,7 +68,7 @@ void ScreenshotGrabber::MaybeGrabScreenshot(
     profiler_screenshots::Window& aWindow, const IntSize& aWindowSize) {
   if (ProfilerScreenshots::IsEnabled()) {
     if (!mImpl) {
-      mImpl = MakeUnique<profiler_screenshots::ScreenshotGrabberImpl>(
+      mImpl = std::make_unique<profiler_screenshots::ScreenshotGrabberImpl>(
           ProfilerScreenshots::ScreenshotSize());
     }
     mImpl->GrabScreenshot(aWindow, aWindowSize);
@@ -79,7 +80,7 @@ void ScreenshotGrabber::MaybeGrabScreenshot(
 void ScreenshotGrabber::MaybeProcessQueue() {
   if (ProfilerScreenshots::IsEnabled()) {
     if (!mImpl) {
-      mImpl = MakeUnique<profiler_screenshots::ScreenshotGrabberImpl>(
+      mImpl = std::make_unique<profiler_screenshots::ScreenshotGrabberImpl>(
           ProfilerScreenshots::ScreenshotSize());
     }
     mImpl->ProcessQueue();

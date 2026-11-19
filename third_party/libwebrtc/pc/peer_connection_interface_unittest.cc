@@ -2460,6 +2460,12 @@ TEST_P(PeerConnectionInterfaceTest,
       PeerConnectionInterface::GATHER_CONTINUALLY;
   error = pc_->SetConfiguration(modified_config);
   EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
+
+  modified_config = pc_->GetConfiguration();
+  modified_config.crypto_options.srtp.cryptex_policy =
+      CryptoOptions::Srtp::CryptexPolicy::kRequire;
+  error = pc_->SetConfiguration(modified_config);
+  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
 }
 
 // Test that SetConfiguration returns a range error if the candidate pool size

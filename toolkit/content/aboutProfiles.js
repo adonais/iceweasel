@@ -11,6 +11,9 @@ const { canDeleteProfile, deleteSharedProfilesStore } =
   ChromeUtils.importESModule(
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs"
   );
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -332,6 +335,14 @@ async function removeProfile(profile) {
   }
 
   let { storeID } = profile;
+
+  if (AppConstants.MOZ_PUSH_NOTIFICATION_HELPER) {
+    // The helper has to be stopped before the profile directory is removed
+    const { PushNotificationHelper } = ChromeUtils.importESModule(
+      "resource://gre/modules/PushNotificationHelper.sys.mjs"
+    );
+    await PushNotificationHelper.stopForProfile(profile.rootDir.path);
+  }
 
   try {
     profile.removeInBackground(deleteFiles);

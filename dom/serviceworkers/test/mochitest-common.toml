@@ -257,12 +257,14 @@ skip-if = [
 
 ["test_fetch_event.html"]
 skip-if = [
-  "debug", # Bug 1262224
+  "debug && http2", # Bug 1262224
+  "debug && http3", # Bug 1262224
 ]
 
 ["test_fetch_event_with_thirdpartypref.html"]
 skip-if = [
-  "debug", # Bug 1262224
+  "debug && http2", # Bug 1262224
+  "debug && http3", # Bug 1262224
 ]
 
 ["test_fetch_integrity.html"]

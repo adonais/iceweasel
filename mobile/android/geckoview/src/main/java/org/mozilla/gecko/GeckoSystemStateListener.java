@@ -158,12 +158,12 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
     mBroadcastReceiver = null;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   /**
    * For prefers-reduced-motion media queries feature.
    *
    * <p>Uses `Settings.Global` which was introduced in API version 17.
    */
+  @WrapForJNI(calledFrom = "gecko")
   private static boolean prefersReducedMotion() {
     final ContentResolver contentResolver = sApplicationContext.getContentResolver();
 
@@ -171,13 +171,13 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
         == 0.0f;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   /**
    * For inverted-colors queries feature.
    *
    * <p>Uses `Settings.Secure.ACCESSIBILITY_DISPLAY_INVERSION_ENABLED` which was introduced in API
    * version 21.
    */
+  @WrapForJNI(calledFrom = "gecko")
   private static boolean isInvertedColors() {
     final ContentResolver contentResolver = sApplicationContext.getContentResolver();
 
@@ -186,13 +186,13 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
         == 1;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   /**
    * For prefers-contrast queries feature.
    *
    * <p>Uses `Settings.Secure.ACCESSIBILITY_HIGH_TEXT_CONTRAST_ENABLED` which was introduced in API
    * version 21. Also uses `UiModeManager.getContrast()` which was introduced in API version 34.
    */
+  @WrapForJNI(calledFrom = "gecko")
   private static boolean prefersContrast() {
     final ContentResolver contentResolver = sApplicationContext.getContentResolver();
 

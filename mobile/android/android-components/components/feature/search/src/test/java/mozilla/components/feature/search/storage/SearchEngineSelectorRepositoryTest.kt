@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.search.storage
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -12,7 +13,16 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.remotesettings.RemoteSettingsClient
 import mozilla.appservices.search.RefinedSearchConfig
+import mozilla.appservices.search.RefinedSearchConfigV3
+import mozilla.appservices.search.SearchApplicationNameV3
+import mozilla.appservices.search.SearchDeviceTypeV3
+import mozilla.appservices.search.SearchEngineClassificationV3
+import mozilla.appservices.search.SearchEngineDefinitionV3
 import mozilla.appservices.search.SearchEngineSelector
+import mozilla.appservices.search.SearchEngineUrl
+import mozilla.appservices.search.SearchEngineUrls
+import mozilla.appservices.search.SearchUpdateChannelV3
+import mozilla.appservices.search.SearchUserEnvironmentV3
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.feature.search.SearchApplicationName
 import mozilla.components.feature.search.SearchDeviceType
@@ -23,15 +33,20 @@ import mozilla.components.feature.search.middleware.SearchMiddleware
 import mozilla.components.support.remotesettings.RemoteSettingsService
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 
+@RunWith(AndroidJUnit4::class)
 class SearchEngineSelectorRepositoryTest {
 
     private lateinit var mockSelector: SearchEngineSelector
@@ -65,11 +80,12 @@ class SearchEngineSelectorRepositoryTest {
         // Instantiate the repository with the mocked config
         repository =
             SearchEngineSelectorRepository(
-                context = mock(),
+                context = testContext,
                 searchEngineSelectorConfig = mockConfig,
                 defaultSearchEngineIcon = mock(),
                 selector = mockSelector,
                 client = mockClient,
+                searchConfigIconsUpdateService = searchConfigIconsUpdateService,
             )
     }
 
@@ -114,6 +130,9 @@ class SearchEngineSelectorRepositoryTest {
 
         // Verify that filterEngineConfiguration was called once
         verify(mockSelector, times(1)).filterEngineConfiguration(any())
+
+        // Verify that the search engine icons were fetched
+        verify(searchConfigIconsUpdateService, times(1)).fetchIconsRecords(mockService)
 
         // Assert that the returned configuration matches the expected one
         assertEquals(expectedBundle, result)
@@ -191,4 +210,201 @@ class SearchEngineSelectorRepositoryTest {
             dispatcher.close()
         }
     }
+
+    @Test
+    fun `GIVEN search-config-v3 is enabled WHEN the repository is created THEN useRemoteSettingsServerV3 is called`() {
+        val selector = mock<SearchEngineSelector>()
+
+        buildV3Repository(selector)
+
+        verify(selector, times(1)).useRemoteSettingsServerV3(service = mockService.remoteSettingsService)
+        verify(selector, never()).useRemoteSettingsServer(service = any(), applyEngineOverrides = anyBoolean())
+    }
+
+    @Test
+    fun `GIVEN search-config-v3 is enabled WHEN load is called THEN filterEngineConfigurationV3 is called`() = runTest {
+        val selector = mock<SearchEngineSelector>()
+        val v3Repository = buildV3Repository(selector)
+
+        `when`(selector.filterEngineConfigurationV3(any()))
+            .thenReturn(
+                RefinedSearchConfigV3(
+                    emptyList(),
+                    appDefaultEngineId = null,
+                    appPrivateDefaultEngineId = null,
+                )
+            )
+
+        val result = v3Repository.load(RegionState("US", "US"), Locale.US, null, null, coroutineContext)
+
+        verify(selector, times(1)).filterEngineConfigurationV3(any())
+        verify(selector, never()).filterEngineConfiguration(any())
+        verify(searchConfigIconsUpdateService, times(1)).fetchIconsRecords(mockService)
+        assertEquals(
+            SearchMiddleware.BundleStorage.Bundle(
+                emptyList(),
+                defaultSearchEngineId = "",
+                searchEnvironmentId = null,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `GIVEN search-config-v3 is enabled THEN the environment id is computed from the v3 environment`() {
+        val selector = mock<SearchEngineSelector>()
+        val v3Repository = buildV3Repository(selector)
+
+        val expected =
+            SearchUserEnvironmentV3(
+                locale = "en-US",
+                region = "US",
+                experiment = "test_experiment",
+                version = "1.0.0",
+                updateChannel = SearchUpdateChannelV3.RELEASE,
+                distributionId = "test_distribution",
+                appName = SearchApplicationNameV3.FIREFOX_ANDROID,
+                deviceType = SearchDeviceTypeV3.SMARTPHONE,
+            )
+
+        assertEquals(
+            expected.hashCode(),
+            v3Repository.computeNewSearchEnvironmentId(RegionState("US", "US"), Locale.US, "test_distribution"),
+        )
+    }
+
+    @Test
+    fun `GIVEN an engine is deprecated WHEN load is called THEN it is left out of the engine list`() = runTest {
+        val selector = mock<SearchEngineSelector>()
+        val v3Repository = buildV3Repository(selector)
+
+        `when`(searchConfigIconsUpdateService.fetchIconsRecords(any())).thenReturn(emptyList())
+        `when`(selector.filterEngineConfigurationV3(any()))
+            .thenReturn(
+                RefinedSearchConfigV3(
+                    engines = listOf(v3Engine("deprecated-engine", deprecated = true), v3Engine("live-engine")),
+                    appDefaultEngineId = "live-engine",
+                    appPrivateDefaultEngineId = null,
+                )
+            )
+
+        val result = v3Repository.load(RegionState("US", "US"), Locale.US, null, null, coroutineContext)
+
+        assertEquals(listOf("live-engine"), result.list.map { it.id })
+        assertEquals("live-engine", result.defaultSearchEngineId)
+    }
+
+    @Test
+    fun `GIVEN the configuration default engine is deprecated WHEN load is called THEN the first non deprecated engine is the default`() =
+        runTest {
+            val selector = mock<SearchEngineSelector>()
+            val v3Repository = buildV3Repository(selector)
+
+            `when`(searchConfigIconsUpdateService.fetchIconsRecords(any())).thenReturn(emptyList())
+            `when`(selector.filterEngineConfigurationV3(any()))
+                .thenReturn(
+                    RefinedSearchConfigV3(
+                        engines =
+                            listOf(
+                                v3Engine("deprecated-engine", deprecated = true),
+                                v3Engine("live-engine"),
+                                v3Engine("another-live-engine"),
+                            ),
+                        appDefaultEngineId = "deprecated-engine",
+                        appPrivateDefaultEngineId = null,
+                    )
+                )
+
+            val result = v3Repository.load(RegionState("US", "US"), Locale.US, null, null, coroutineContext)
+
+            assertEquals("live-engine", result.defaultSearchEngineId)
+            assertEquals(listOf("live-engine", "another-live-engine"), result.list.map { it.id })
+        }
+
+    @Test
+    fun `GIVEN every engine is deprecated WHEN load is called THEN no engines are returned`() = runTest {
+        val selector = mock<SearchEngineSelector>()
+        val v3Repository = buildV3Repository(selector)
+
+        `when`(searchConfigIconsUpdateService.fetchIconsRecords(any())).thenReturn(emptyList())
+        `when`(selector.filterEngineConfigurationV3(any()))
+            .thenReturn(
+                RefinedSearchConfigV3(
+                    engines = listOf(v3Engine("one", deprecated = true), v3Engine("two", deprecated = true)),
+                    appDefaultEngineId = "one",
+                    appPrivateDefaultEngineId = null,
+                )
+            )
+
+        val result = v3Repository.load(RegionState("US", "US"), Locale.US, null, null, coroutineContext)
+
+        assertEquals(
+            SearchMiddleware.BundleStorage.Bundle(
+                emptyList(),
+                defaultSearchEngineId = "",
+                searchEnvironmentId = null,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `GIVEN an engine is deprecated WHEN load is called THEN an icon is only looked up for the engines kept`() =
+        runTest {
+            val selector = mock<SearchEngineSelector>()
+            val v3Repository = buildV3Repository(selector)
+
+            `when`(searchConfigIconsUpdateService.fetchIconsRecords(any())).thenReturn(emptyList())
+            `when`(selector.filterEngineConfigurationV3(any()))
+                .thenReturn(
+                    RefinedSearchConfigV3(
+                        engines = listOf(v3Engine("deprecated-engine", deprecated = true), v3Engine("live-engine")),
+                        appDefaultEngineId = "live-engine",
+                        appPrivateDefaultEngineId = null,
+                    )
+                )
+
+            v3Repository.load(RegionState("US", "US"), Locale.US, null, null, coroutineContext)
+
+            verify(searchConfigIconsUpdateService, times(1)).fetchIconAttachment(any())
+        }
+
+    private fun v3Engine(identifier: String, deprecated: Boolean = false) =
+        SearchEngineDefinitionV3(
+            aliases = emptyList(),
+            charset = "UTF-8",
+            classification = SearchEngineClassificationV3.GENERAL,
+            identifier = identifier,
+            isNewUntil = null,
+            name = identifier,
+            optional = false,
+            partner = null,
+            urls =
+                SearchEngineUrls(
+                    search =
+                        SearchEngineUrl(
+                            base = "https://example.com/search",
+                            method = "GET",
+                            params = emptyList(),
+                            searchTermParamName = "q",
+                            displayName = null,
+                        ),
+                    suggestions = null,
+                    trending = null,
+                    searchForm = null,
+                    visualSearch = null,
+                ),
+            orderHint = null,
+            deprecated = deprecated,
+        )
+
+    private fun buildV3Repository(selector: SearchEngineSelector): SearchEngineSelectorRepository =
+        SearchEngineSelectorRepository(
+            context = testContext,
+            searchEngineSelectorConfig = mockConfig.copy(useSearchConfigV3 = true),
+            defaultSearchEngineIcon = mock(),
+            selector = selector,
+            client = mockClient,
+            searchConfigIconsUpdateService = searchConfigIconsUpdateService,
+        )
 }

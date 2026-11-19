@@ -7,7 +7,6 @@ import os
 
 import pytest
 from gecko_taskgraph.util.bugbug import BUGBUG_BASE_URL
-from gecko_taskgraph.util.hg import PUSHLOG_PUSHES_TMPL
 from responses import RequestsMock
 from responses import logger as rsps_logger
 from taskgraph.generator import TaskGraphGenerator
@@ -44,19 +43,6 @@ def create_tgg(responses, datadir):
             **tgg.parameters
         )
         mock_requests[url] = "bugbug-push-schedules.json"
-
-        # files changed
-        url = "{head_repository}/json-pushfileschanged/{head_rev}".format(
-            **tgg.parameters
-        )
-        mock_requests[url] = "pushfileschanged.json"
-
-        url = PUSHLOG_PUSHES_TMPL.format(
-            repository=tgg.parameters["head_repository"],
-            push_id_start=int(tgg.parameters["pushlog_id"]) - 2,
-            push_id_end=int(tgg.parameters["pushlog_id"]) - 1,
-        )
-        mock_requests[url] = "pushes.json"
 
         for url, filename in mock_requests.items():
             with open(os.path.join(datadir, filename)) as fh:

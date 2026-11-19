@@ -205,6 +205,29 @@ class AppLinksInterceptorTest {
     }
 
     @Test
+    fun `WHEN launchInApp returns true for one url and false for another THEN only the app url is intercepted`() {
+        val appUrl = webUrlWithAppLink
+        val browserUrl = "https://vimeo.com"
+        whenever(mockGetRedirect.invoke(browserUrl))
+            .thenReturn(AppLinkRedirect(Intent.parseUri(browserUrl, 0), "", null, null))
+
+        appLinksInterceptor =
+            AppLinksInterceptor(
+                context = mockContext,
+                launchInApp = { url -> url == appUrl },
+                useCases = mockUseCases,
+            )
+
+        val appResponse =
+            appLinksInterceptor.onLoadRequest(mockEngineSession, appUrl, null, true, false, false, false, false)
+        val browserResponse =
+            appLinksInterceptor.onLoadRequest(mockEngineSession, browserUrl, null, true, false, false, false, false)
+
+        assert(appResponse is RequestInterceptor.InterceptionResponse.AppIntent)
+        assertEquals(null, browserResponse)
+    }
+
+    @Test
     fun `request is not intercepted when not user clicking on a link`() {
         val response =
             appLinksInterceptor.onLoadRequest(

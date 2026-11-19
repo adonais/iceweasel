@@ -18,7 +18,6 @@
 #include "mozilla/net/DNSRequestChild.h"
 #include "mozilla/net/HttpChannelChild.h"
 #include "mozilla/net/IPCTransportProvider.h"
-#include "mozilla/net/SocketProcessBridgeChild.h"
 #include "mozilla/net/WebSocketChannelChild.h"
 #include "mozilla/net/WebSocketEventListenerChild.h"
 #include "nsGlobalWindowInner.h"

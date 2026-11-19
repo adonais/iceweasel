@@ -475,6 +475,21 @@ RTCError JsepTransport::NegotiateAndSetDtlsParameters(
     }
   }
 
+  // Negotiating either option lets DTLS start before ICE is writable without
+  // waiting for a piggybacked packet, since an answer only echoes an option
+  // that the peer supports.
+  bool dtls_in_stun_negotiated =
+      (local_description_->transport_desc.HasOption(ICE_OPTION_SPED) &&
+       remote_description_->transport_desc.HasOption(ICE_OPTION_SPED)) ||
+      (local_description_->transport_desc.HasOption(ICE_OPTION_GOOG_SPED_V1) &&
+       remote_description_->transport_desc.HasOption(ICE_OPTION_GOOG_SPED_V1));
+  if (dtls_in_stun_negotiated) {
+    rtp_dtls_transport()->MaybeStartDtlsInStun();
+    if (rtcp_dtls_transport()) {
+      rtcp_dtls_transport()->MaybeStartDtlsInStun();
+    }
+  }
+
   RTCError error = SetNegotiatedDtlsParameters(
       rtp_dtls_transport(), negotiated_dtls_role, remote_fingerprint.get());
   if (!error.ok()) {

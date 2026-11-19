@@ -474,8 +474,8 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
                               SsrcGenerator& ssrcGenerator, bool rtxEnabled,
                               SdpMediaSection* msection) {
   if (aRids.size() > 1) {
-    auto simulcast = MakeUnique<SdpSimulcastAttribute>();
-    auto ridAttrs = MakeUnique<SdpRidAttributeList>();
+    auto simulcast = std::make_unique<SdpSimulcastAttribute>();
+    auto ridAttrs = std::make_unique<SdpRidAttributeList>();
     for (const std::string& rid : aRids) {
       SdpRidAttributeList::Rid ridAttr;
       ridAttr.id = rid;
@@ -497,7 +497,8 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
 
   bool requireRtxSsrcs = rtxEnabled && msection->IsSending();
 
-  if (mType.type != SdpMediaSection::kApplication && mDirection == sdp::kSend) {
+  // Only update SSRCs for RTP tracks.
+  if (mType.IsRtp() && mDirection == sdp::kSend) {
     UpdateSsrcs(ssrcGenerator, aRids.size());
 
     if (requireRtxSsrcs) {
@@ -508,7 +509,7 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
         return;
       }
       std::vector<uint32_t> allSsrcs;
-      auto group = MakeUnique<SdpSsrcGroupAttributeList>();
+      auto group = std::make_unique<SdpSsrcGroupAttributeList>();
       for (const auto& ssrc : mSsrcs) {
         const auto rtxSsrc = mSsrcToRtxSsrc[ssrc];
         allSsrcs.push_back(ssrc);
@@ -597,7 +598,7 @@ void JsepTrack::CreateEncodings(
   // For each stream make sure we have an encoding, and configure
   // that encoding appropriately.
   for (size_t i = 0; i < numEncodings; ++i) {
-    auto encoding = MakeUnique<JsepTrackEncoding>();
+    auto encoding = std::make_unique<JsepTrackEncoding>();
     if (mRids.size() > i) {
       encoding->mRid = mRids[i];
     }
@@ -857,8 +858,7 @@ nsresult JsepTrack::Negotiate(const SdpMediaSection& answer,
     return NS_ERROR_FAILURE;
   }
 
-  UniquePtr<JsepTrackNegotiatedDetails> negotiatedDetails =
-      MakeUnique<JsepTrackNegotiatedDetails>();
+  auto negotiatedDetails = std::make_unique<JsepTrackNegotiatedDetails>();
 
   CreateEncodings(remote, negotiatedCodecs, negotiatedDetails.get());
 

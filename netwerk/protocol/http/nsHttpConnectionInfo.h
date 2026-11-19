@@ -35,7 +35,6 @@ namespace mozilla {
 namespace net {
 
 extern LazyLogModule gHttpLog;
-class HttpConnectionInfoCloneArgs;
 class nsHttpTransaction;
 class nsHttpConnectionInfoMutator;
 
@@ -82,12 +81,6 @@ class nsHttpConnectionInfo final : public ARefBase {
                        const OriginAttributes& originAttributes,
                        const nsACString& routedHost, int32_t routedPort,
                        bool aIsHttp3, bool aWebTransport = false);
-
-  static void SerializeHttpConnectionInfo(nsHttpConnectionInfo* aInfo,
-                                          HttpConnectionInfoCloneArgs& aArgs);
-  static already_AddRefed<nsHttpConnectionInfo>
-  DeserializeHttpConnectionInfoCloneArgs(
-      const HttpConnectionInfoCloneArgs& aInfoArgs);
 
   static CoalescingKey BuildOriginFrameHashKey(nsHttpConnectionInfo* ci,
                                                const nsACString& host,

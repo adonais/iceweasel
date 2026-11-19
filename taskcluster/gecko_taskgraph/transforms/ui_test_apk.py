@@ -4,7 +4,7 @@
 """
 UI-test-apk-specific transforms. Build the Slack notification payload from
 the task's app-name, and build the test-lab.py invocation from the
-task's flank-config / artifact-type / no-test-apk fields.
+task's flank-config / artifact-type / no-test-apk / mapping fields.
 """
 
 import json
@@ -26,6 +26,7 @@ SLACK_TEXT = (
 
 APK_APP = "/builds/worker/fetches/target.arm64-v8a.apk"
 APK_TEST = "/builds/worker/fetches/target.noarch.apk"
+MAPPING = "/builds/worker/fetches/mapping.txt"
 TEST_LAB_SCRIPT = "taskcluster/scripts/tests/test-lab.py"
 
 
@@ -120,12 +121,15 @@ def build_test_lab_command(config, tasks):
         flank_config = task.pop("flank-config")
         artifact_type = task.pop("artifact-type", None)
         no_test_apk = task.pop("no-test-apk", False)
+        mapping = task.pop("mapping", False)
 
         command = ["python3", TEST_LAB_SCRIPT, flank_config, APK_APP]
         if not no_test_apk:
             command.extend(["--apk_test", APK_TEST])
         if artifact_type:
             command.extend(["--artifact_type", artifact_type])
+        if mapping:
+            command.extend(["--mapping", MAPPING])
 
         run = task.setdefault("run", {})
         run.setdefault("commands", []).append(command)

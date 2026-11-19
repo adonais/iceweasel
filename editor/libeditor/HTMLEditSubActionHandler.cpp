@@ -1086,6 +1086,36 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     return EditActionResult::HandledResult();
   }
 
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return Err(NS_ERROR_FAILURE);
+  }
+
+  // For the compatibility with the other browsers, we shouldn't delete extant
+  // unnecessary line break at inserting text because it may be used as a marker
+  // by the web app. Especially when IME started composition, modifying the
+  // editable content which is caused by that the web app restores the
+  // unnecessary line break may lead committing the composition.
+  const Maybe<EditorLineBreak> preservingUnnecessaryLineBreak =
+      [&]() MOZ_NEVER_INLINE_DEBUG -> Maybe<EditorLineBreak> {
+    const auto selectionRangeEnd =
+        EditorBase::GetFirstSelectionEndPoint<EditorRawDOMPoint>();
+    if (!selectionRangeEnd.IsSet()) [[unlikely]] {
+      return Nothing{};
+    }
+    const WSScanResult nextThing =
+        HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+            selectionRangeEnd,
+            // For the compatibility with the other browsers, we should delete
+            // unecessary line break if and only if it's a padding line break
+            // for empty block or it makes an empty line before a child block
+            // boundary. Therefore, we should treat a padding line break for an
+            // empty block is significant here.
+            TreatAsUnnecessaryLineBreak{}, *editingHost);
+    return nextThing.MaybeIgnoredLineBreak();
+  }();
+
   // If the selection isn't collapsed, delete it.  Don't delete existing inline
   // tags, because we're hopefully going to insert text (bug 787432).
   if (!SelectionRef().IsCollapsed() &&
@@ -1098,12 +1128,9 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
           "nsIEditor::eNoStrip) failed");
       return Err(rv);
     }
-  }
-
-  const RefPtr<Element> editingHost =
-      ComputeEditingHost(LimitInBodyElement::No);
-  if (NS_WARN_IF(!editingHost)) {
-    return Err(NS_ERROR_FAILURE);
+    if (NS_WARN_IF(editingHost != ComputeEditingHost(LimitInBodyElement::No))) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
   }
 
   nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
@@ -1200,17 +1227,21 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       // called for IME composition. However, for the safety, let's ignore the
       // caret position explicitly.
       insertEmptyTextResult.IgnoreCaretPointSuggestion();
-      nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          insertEmptyTextResult.EndOfInsertedTextRef(),
-          // When user inserting text, the web app may expect that nothing
-          // extant content will be deleted. Therefore, we should preserve
-          // preformatted linefeed at least.
-          PreservePreformattedLineBreak::Yes, PaddingForEmptyBlock::Unnecessary,
-          *editingHost);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
-        return Err(rv);
+      // Don't delete extant unnecessary line break because it may be inserted
+      // by the web app as a private marker.
+      if (preservingUnnecessaryLineBreak.isNothing()) [[likely]] {
+        nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
+            insertEmptyTextResult.EndOfInsertedTextRef(),
+            // When user inserting text, the web app may expect that nothing
+            // extant content will be deleted. Therefore, we should preserve
+            // preformatted linefeed at least.
+            PreservePreformattedLineBreak::Yes,
+            PaddingForEmptyBlock::Unnecessary, *editingHost);
+        if (NS_FAILED(rv)) {
+          NS_WARNING(
+              "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
+          return Err(rv);
+        }
       }
       const EditorDOMPoint& endOfInsertedText =
           insertEmptyTextResult.EndOfInsertedTextRef();
@@ -1269,7 +1300,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
               compositionEndPoint.IsSet()
                   ? EditorDOMRange(pointToInsert, compositionEndPoint)
                   : EditorDOMRange(pointToInsert),
-              aPurpose, *editingHost);
+              preservingUnnecessaryLineBreak, aPurpose, *editingHost);
       if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
         NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
         return replaceTextResult.propagateErr();
@@ -1393,40 +1424,39 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         // expects that character data change will be notified at last.
         const WSScanResult nextThing = HTMLEditUtils::
             ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-                currentPoint, PaddingForEmptyBlock::Unnecessary, *editingHost);
+                currentPoint,
+                TreatAsUnnecessaryLineBreak{
+                    LineBreakFor::PaddingForEmptyBlock,
+                    LineBreakFor::EmptyLineBeforeBlockBoundary},
+                *editingHost);
         if (nextThing.MaybeIgnoredLineBreak().isSome() &&
+            // Don't delete extant unnecessary line break because it may be
+            // inserted by the web app as a private marker.
+            nextThing.MaybeIgnoredLineBreak() !=
+                preservingUnnecessaryLineBreak &&
             !(IsPlaintextMailComposer() &&
               nextThing.IgnoredLineBreakIsRequiredInPlaintextMailComposer())) {
           const EditorLineBreak& lineBreak =
               nextThing.MaybeIgnoredLineBreak().ref();
-          // When user inserting content, the web app may expect that nothing
-          // extant content will be deleted. Therefore, we should preserve
-          // preformatted linefeed at least. However, we should delete it if
-          // it's a padding for empty block for the compatibility with the other
-          // browsers.
-          if (lineBreak.IsHTMLBRElement() ||
-              lineBreak.IsPaddingForEmptyBlock()) {
-            const RefPtr<Element> ancestorLimiterToDeleteEmptyInlines =
-                lineBreak.ContentRef().IsInclusiveDescendantOf(
-                    currentPoint.GetContainer())
-                    ? currentPoint.GetContainerOrContainerParentElement()
-                    : editingHost.get();
-            {
-              AutoTrackDOMPoint trackCurrentPoint(RangeUpdaterRef(),
-                                                  &currentPoint);
-              Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
-                  DeleteLineBreakWithTransaction(
-                      lineBreak, nsIEditor::eStrip,
-                      *ancestorLimiterToDeleteEmptyInlines);
-              if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
-                NS_WARNING(
-                    "HTMLEditor::DeleteLineBreakWithTransaction() failed");
-                return deleteLineBreakResultOrError.propagateErr();
-              }
+          const RefPtr<Element> ancestorLimiterToDeleteEmptyInlines =
+              lineBreak.ContentRef().IsInclusiveDescendantOf(
+                  currentPoint.GetContainer())
+                  ? currentPoint.GetContainerOrContainerParentElement()
+                  : editingHost.get();
+          {
+            AutoTrackDOMPoint trackCurrentPoint(RangeUpdaterRef(),
+                                                &currentPoint);
+            Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
+                DeleteLineBreakWithTransaction(
+                    lineBreak, nsIEditor::eStrip,
+                    *ancestorLimiterToDeleteEmptyInlines);
+            if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
+              NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
+              return deleteLineBreakResultOrError.propagateErr();
             }
-            if (NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
-              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-            }
+          }
+          if (NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
           }
         }
       }
@@ -1545,7 +1575,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
                                                 lineStartOffset, lineLength);
             if (!lineText.Contains(u'\t')) {
               return WhiteSpaceVisibilityKeeper::InsertText(
-                  *this, lineText, currentPoint,
+                  *this, lineText, currentPoint, preservingUnnecessaryLineBreak,
                   GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
                   *editingHost);
             }
@@ -1553,6 +1583,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
             formattedLineText.ReplaceSubstring(u"\t"_ns, u"    "_ns);
             return WhiteSpaceVisibilityKeeper::InsertText(
                 *this, formattedLineText, currentPoint,
+                preservingUnnecessaryLineBreak,
                 GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
                 *editingHost);
           }();
@@ -1640,19 +1671,6 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       }
       if (insertPaddingLineBreakResult.inspect().HasCaretPointSuggestion()) {
         currentPoint = insertPaddingLineBreakResult.unwrap().UnwrapCaretPoint();
-      }
-    } else {
-      nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          currentPoint,
-          // When user inserting text, the web app may expect that nothing
-          // extant content will be deleted. Therefore, we should preserve
-          // preformatted linefeed at least.
-          PreservePreformattedLineBreak::Yes, PaddingForEmptyBlock::Unnecessary,
-          *editingHost);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
-        return Err(rv);
       }
     }
     currentPoint.SetInterlinePosition(InterlinePosition::EndOfLine);

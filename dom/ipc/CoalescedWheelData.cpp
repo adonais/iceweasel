@@ -12,7 +12,7 @@ void CoalescedWheelData::Coalesce(const WidgetWheelEvent& aEvent,
                                   const ScrollableLayerGuid& aGuid,
                                   const uint64_t& aInputBlockId) {
   if (IsEmpty()) {
-    mCoalescedInputEvent = MakeUnique<WidgetWheelEvent>(aEvent);
+    mCoalescedInputEvent = std::make_unique<WidgetWheelEvent>(aEvent);
     mGuid = aGuid;
     mInputBlockId = aInputBlockId;
   } else {

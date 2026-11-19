@@ -2793,6 +2793,11 @@ _cairo_pdf_surface_finish (void *abstract_surface)
 	if (status == CAIRO_STATUS_SUCCESS)
 	    status = status2;
     }
+    if (surface->object_stream.stream != NULL) {
+	status2 = _cairo_output_stream_destroy (surface->object_stream.stream);
+	if (status == CAIRO_STATUS_SUCCESS)
+	    status = status2;
+    }
     if (surface->pdf_stream.active)
 	surface->output = surface->pdf_stream.old_output;
     if (surface->group_stream.active)

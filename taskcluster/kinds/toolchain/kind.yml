@@ -22,13 +22,13 @@ task-defaults:
         tier: 1
     run-on-projects: []
     run:
-        clone-with: hg
         using: toolchain-script
 
 tasks-from:
     - 7zz.yml
     - android.yml
     - android-macos.yml
+    - cargo-audit.yml
     - cargo-vet.yml
     - cabextract.yml
     - cbindgen.yml

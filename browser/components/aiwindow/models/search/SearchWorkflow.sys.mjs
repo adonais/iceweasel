@@ -579,12 +579,19 @@ function shouldCallSearchHandoff(conversation) {
  * @param {ChatConversation} conversation - Originating conversation.
  * @param {AbortSignal} [signal] - Cancels the in-flight answer generation.
  * @param {string} [mode] - Surface the tool ran on, for telemetry.
+ * @param {boolean} [shouldHandoff] - Whether a search ran before this batch.
  * @returns {Promise<SearchWorkflowResult|FastSearchWorkflowResult|AnswersSearchWorkflowResult>}
  */
-export async function runSearchTheWeb(toolParams, conversation, signal, mode) {
+export async function runSearchTheWeb(
+  toolParams,
+  conversation,
+  signal,
+  mode,
+  shouldHandoff = shouldCallSearchHandoff(conversation)
+) {
   // The handoff retrieves nothing of its own and is covered by search_handoff,
   // so it returns before any path runs and before the flags below are set.
-  if (shouldCallSearchHandoff(conversation)) {
+  if (shouldHandoff) {
     return {
       requiresSearchHandoff: true,
     };

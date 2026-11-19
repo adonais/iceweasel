@@ -2703,6 +2703,12 @@ void SdpOfferAnswerHandler::ApplyRemoteDescription(
   // Consider the operation complete at this point.
   operation->SignalCompletion();
 
+  // The observer may have closed the PeerConnection. If so, the transport
+  // controller and the port allocator are gone and there is nothing left to do.
+  if (pc_->IsClosed()) {
+    return;
+  }
+
   SetRemoteDescriptionPostProcess(operation->type() == SdpType::kAnswer);
 }
 
@@ -3193,6 +3199,11 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
 
   TraceSetLocalDescriptionComplete(RTCError::OK());
   observer->OnSetLocalDescriptionComplete(RTCError::OK());
+  // The observer may have closed the PeerConnection. If so, the transport
+  // controller is gone and there is nothing left to do.
+  if (pc_->IsClosed()) {
+    return;
+  }
   pc_->NoteUsageEvent(UsageEvent::SET_LOCAL_DESCRIPTION_SUCCEEDED);
 
   // Check if negotiation is needed. We must do this after informing the

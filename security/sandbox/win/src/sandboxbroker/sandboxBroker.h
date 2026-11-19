@@ -53,7 +53,6 @@ class SandboxBroker {
 
   void SetSecurityLevelForGPUProcess(int32_t aSandboxLevel);
   bool SetSecurityLevelForRDDProcess();
-  bool SetSecurityLevelForSocketProcess();
 
   bool SetSecurityLevelForGMPlugin(GMPSandboxKind aGMPSandboxKind);
   bool SetSecurityLevelForUtilityProcess(mozilla::ipc::SandboxingKind aSandbox);

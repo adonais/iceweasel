@@ -455,9 +455,11 @@ class remoteGtestOptions(argparse.ArgumentParser):
         self.add_argument(
             "--symbols-path",
             dest="symbols_path",
+            action="append",
             default=None,
             help="absolute path to directory containing breakpad "
-            "symbols, or the URL of a zip file containing symbols",
+            "symbols, or the URL of a zip file containing symbols; "
+            "can be given multiple times",
         )
         self.add_argument(
             "--shuffle",

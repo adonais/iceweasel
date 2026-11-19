@@ -48,9 +48,6 @@ run-sequentially = ["true"] # Reusing same server on different specific ports.
 ["test_response_write.js"]
 
 ["test_seizepower.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && socketprocess_networking",
-]
 
 ["test_setindexhandler.js"]
 

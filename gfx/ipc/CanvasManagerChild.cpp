@@ -220,7 +220,7 @@ RefPtr<webgpu::WebGPUChild> CanvasManagerChild::GetWebGPUChild() {
 
 layers::ActiveResourceTracker* CanvasManagerChild::GetActiveResourceTracker() {
   if (!mActiveResourceTracker) {
-    mActiveResourceTracker = MakeUnique<ActiveResourceTracker>(
+    mActiveResourceTracker = std::make_unique<ActiveResourceTracker>(
         1000, "CanvasManagerChild"_ns, GetCurrentSerialEventTarget());
   }
   return mActiveResourceTracker.get();
@@ -241,11 +241,14 @@ already_AddRefed<DataSourceSurface> CanvasManagerChild::GetSnapshot(
     return nullptr;
   }
 
-  if (!res.shmem || !res.shmem->IsReadable()) {
+  if (!res.shmem) {
     return nullptr;
   }
 
-  auto guard = MakeScopeExit([&] { DeallocShmem(res.shmem.ref()); });
+  auto shmemMapping = res.shmem.Map();
+  if (!shmemMapping) {
+    return nullptr;
+  }
 
   if (!res.surfSize.x || !res.surfSize.y || res.surfSize.x > INT32_MAX ||
       res.surfSize.y > INT32_MAX) {
@@ -259,8 +262,7 @@ already_AddRefed<DataSourceSurface> CanvasManagerChild::GetSnapshot(
   }
 
   CheckedInt32 length = stride * size.height;
-  if (!length.isValid() ||
-      size_t(length.value()) != res.shmem->Size<uint8_t>()) {
+  if (!length.isValid() || size_t(length.value()) != shmemMapping.Size()) {
     return nullptr;
   }
 
@@ -286,24 +288,26 @@ already_AddRefed<DataSourceSurface> CanvasManagerChild::GetSnapshot(
   // that's the representation we need.
   if (aYFlip) {
     if (aPremultiply) {
-      if (!PremultiplyYFlipData(res.shmem->get<uint8_t>(), stride.value(),
+      if (!PremultiplyYFlipData(shmemMapping.DataAs<uint8_t>(), stride.value(),
                                 aFormat, map.GetData(), map.GetStride(), format,
                                 size)) {
         return nullptr;
       }
     } else {
-      if (!SwizzleYFlipData(res.shmem->get<uint8_t>(), stride.value(), aFormat,
-                            map.GetData(), map.GetStride(), format, size)) {
+      if (!SwizzleYFlipData(shmemMapping.DataAs<uint8_t>(), stride.value(),
+                            aFormat, map.GetData(), map.GetStride(), format,
+                            size)) {
         return nullptr;
       }
     }
   } else if (aPremultiply) {
-    if (!PremultiplyData(res.shmem->get<uint8_t>(), stride.value(), aFormat,
-                         map.GetData(), map.GetStride(), format, size)) {
+    if (!PremultiplyData(shmemMapping.DataAs<uint8_t>(), stride.value(),
+                         aFormat, map.GetData(), map.GetStride(), format,
+                         size)) {
       return nullptr;
     }
   } else {
-    if (!SwizzleData(res.shmem->get<uint8_t>(), stride.value(), aFormat,
+    if (!SwizzleData(shmemMapping.DataAs<uint8_t>(), stride.value(), aFormat,
                      map.GetData(), map.GetStride(), format, size)) {
       return nullptr;
     }

@@ -151,7 +151,7 @@ UniquePtr<StyleNumericType> ComputeNumericType(
     numericTypes.AppendElement(&value->GetNumericType());
   }
 
-  auto numericType = MakeUnique<StyleNumericType>();
+  auto numericType = std::make_unique<StyleNumericType>();
   if (!aOperation(&numericTypes, numericType.get())) {
     aRv.ThrowTypeError("Incompatible types");
     return nullptr;
@@ -165,7 +165,7 @@ UniquePtr<StyleNumericType> ComputeNumericType(
 CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                                  NumericValueType aNumericValueType)
     : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
-      mNumericType(WrapMovingNotNull(MakeUnique<StyleNumericType>())),
+      mNumericType(WrapMovingNotNull(std::make_unique<StyleNumericType>())),
       mNumericValueType(aNumericValueType) {}
 
 CSSNumericValue::CSSNumericValue(
@@ -305,16 +305,84 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Div(
   return Mul(std::move(values), aRv);
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-min
 already_AddRefed<CSSNumericValue> CSSNumericValue::Min(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  // Step 1.
+  for (const OwningCSSNumberish& numberish : aValues) {
+    values.AppendElement(CSSNumericValue::Create(mParent, numberish));
+  }
+
+  // Step 2.
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathMin()) {
+    values.InsertElementsAt(
+        0, GetAsCSSMathValue().GetAsCSSMathMin().Values()->GetValues());
+  } else {
+    values.InsertElementAt(0, this);
+  }
+
+  SameUnitValueComputation computation(
+      values, [](double a, double b) { return std::min(a, b); });
+
+  // Step 3.
+  if (computation.AllHaveSameUnit()) {
+    return MakeCSSUnitValue(mParent, computation.CommonNumericType(),
+                            computation.ComputedValue(),
+                            computation.CommonUnit());
+  }
+
+  // Step 4.
+  auto numericType = AddTypes(values, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  // Step 5.
+  RefPtr<CSSMathMin> mathMin =
+      CSSMathMin::Create(mParent, std::move(numericType), std::move(values));
+  return mathMin.forget();
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-max
 already_AddRefed<CSSNumericValue> CSSNumericValue::Max(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  // Step 1.
+  for (const OwningCSSNumberish& numberish : aValues) {
+    values.AppendElement(CSSNumericValue::Create(mParent, numberish));
+  }
+
+  // Step 2.
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathMax()) {
+    values.InsertElementsAt(
+        0, GetAsCSSMathValue().GetAsCSSMathMax().Values()->GetValues());
+  } else {
+    values.InsertElementAt(0, this);
+  }
+
+  SameUnitValueComputation computation(
+      values, [](double a, double b) { return std::max(a, b); });
+
+  // Step 3.
+  if (computation.AllHaveSameUnit()) {
+    return MakeCSSUnitValue(mParent, computation.CommonNumericType(),
+                            computation.ComputedValue(),
+                            computation.CommonUnit());
+  }
+
+  // Step 4.
+  auto numericType = AddTypes(values, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  // Step 5.
+  RefPtr<CSSMathMax> mathMax =
+      CSSMathMax::Create(mParent, std::move(numericType), std::move(values));
+  return mathMax.forget();
 }
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-equals
@@ -546,7 +614,7 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Negate() {
   }
 
   // Step 3.
-  auto numericType = MakeUnique<StyleNumericType>(GetNumericType());
+  auto numericType = std::make_unique<StyleNumericType>(GetNumericType());
 
   RefPtr<CSSMathNegate> mathNegate =
       CSSMathNegate::Create(mParent, std::move(numericType), this);
@@ -615,7 +683,7 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Invert(ErrorResult& aRv) {
   }
 
   // Step 3.
-  auto numericType = MakeUnique<StyleNumericType>(GetNumericType());
+  auto numericType = std::make_unique<StyleNumericType>(GetNumericType());
   Servo_NumericType_Invert(numericType.get());
 
   RefPtr<CSSMathInvert> mathInvert =

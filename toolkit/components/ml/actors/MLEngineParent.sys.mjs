@@ -1074,6 +1074,9 @@ export class MLEngine {
    */
   #requests = new Map();
 
+  /** @type {Set<number>} */
+  #canceledRequests = new Set();
+
   /**
    * @type {"uninitialized" | "ready" | "error" | "closed" | "crashed"}
    */
@@ -1197,6 +1200,7 @@ export class MLEngine {
         `The inference process was shutdown (pid=${pid}), childId=${childID}`
       );
       this.setEngineStatus("crashed");
+      this.#rejectRequests(err);
       throw err;
     }
   }
@@ -1351,13 +1355,28 @@ export class MLEngine {
         if (this.#port && this.#port.onmessage) {
           this.#port.removeEventListener("message", this.#port.onmessage);
         }
-      } catch {}
+      } catch (e) {
+        lazy.console.warn("Failed to remove port message listener", e);
+      }
       try {
-        this.#port?.close?.();
-      } catch {}
+        this.#port?.postMessage({
+          type: "EnginePort:Terminate",
+          shutdown: true,
+          replacement: false,
+        });
+      } catch (e) {
+        lazy.console.warn("Failed to send terminate message to port", e);
+      }
+      try {
+        this.discardPort();
+      } catch (e) {
+        lazy.console.warn("Failed to discard port", e);
+      }
       try {
         childPort.close();
-      } catch {}
+      } catch (e) {
+        lazy.console.warn("Failed to close child port", e);
+      }
       this.#port = null;
 
       // Make sure the awaiting code is released
@@ -1429,6 +1448,9 @@ export class MLEngine {
           resourcesBefore,
           resourcesAfter,
         } = data;
+        if (this.#canceledRequests.delete(requestId)) {
+          break;
+        }
         const request = this.#requests.get(requestId);
         if (request) {
           if (error) {
@@ -1463,6 +1485,9 @@ export class MLEngine {
         this.setEngineStatus("closed");
         newPortResolvers?.reject(
           new Error("Engine was terminated before initialization completed.")
+        );
+        this.#rejectRequests(
+          new Error("Engine was terminated before the request completed.")
         );
 
         this.discardPort();
@@ -1502,9 +1527,22 @@ export class MLEngine {
   };
 
   /**
+   * Rejects every request still waiting for a response.
+   *
+   * @param {Error} error
+   */
+  #rejectRequests(error) {
+    for (const request of this.#requests.values()) {
+      request.reject(error);
+    }
+    this.#requests.clear();
+  }
+
+  /**
    * Discards the current port and closes the connection.
    */
   discardPort() {
+    this.#canceledRequests.clear();
     if (this.#port !== null) {
       this.#port.postMessage({ type: "EnginePort:Discard" });
       this.#port.close();
@@ -1527,7 +1565,14 @@ export class MLEngine {
         shutdown,
         replacement,
       });
-      await this.#waitForStatus("closed");
+      try {
+        await this.#waitForStatus("closed");
+      } catch (error) {
+        this.#rejectRequests(
+          new Error("Engine was terminated before the request completed.")
+        );
+        throw error;
+      }
     }
   }
 
@@ -1572,9 +1617,17 @@ export class MLEngine {
    * Run the inference request
    *
    * @param {EngineRequests[FeatureID]} request
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
    * @returns {Promise<EngineResponses[FeatureID]>}
    */
-  async run(request) {
+  async run(request, { signal } = {}) {
+    signal?.throwIfAborted();
+    // If the port is null maybe the inference process has shut down
+    if (this.#port === null) {
+      throw new Error("Port does not exist");
+    }
+
     /** @type {PromiseWithResolvers<EngineResponses[FeatureID]>} */
     const resolvers = Promise.withResolvers();
     const requestId = this.#nextRequestId++;
@@ -1589,11 +1642,6 @@ export class MLEngine {
       transferables.push(request.data);
     }
 
-    // If the port is null maybe the inference process has shut down
-    if (this.#port === null) {
-      throw new Error("Port does not exist");
-    }
-
     const beforeRun = ChromeUtils.now();
 
     this.#port.postMessage(
@@ -1606,7 +1654,23 @@ export class MLEngine {
       transferables
     );
 
-    const result = await resolvers.promise;
+    const onAbort = () => {
+      if (this.#requests.get(requestId) !== resolvers) {
+        return;
+      }
+      this.#canceledRequests.add(requestId);
+      this.#requests.delete(requestId);
+      resolvers.reject(signal.reason);
+      this.#port?.postMessage({ type: "EnginePort:Cancel", requestId });
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+
+    let result;
+    try {
+      result = await resolvers.promise;
+    } finally {
+      signal?.removeEventListener("abort", onAbort);
+    }
 
     this.telemetry.recordEngineRun({
       beforeRun,
@@ -1631,6 +1695,11 @@ export class MLEngine {
   async *runWithGenerator(request) {
     lazy.console.debug(`runWithGenerator called for request ${request}`);
     const startTime = ChromeUtils.now();
+
+    // If the port is null maybe the inference process has shut down
+    if (this.#port === null) {
+      throw new Error("The port is null");
+    }
 
     // Create a promise to track when the engine has fully completed all runs
     const responseChunkResolvers = new ResponseOrChunkResolvers();
@@ -1661,11 +1730,6 @@ export class MLEngine {
       request.data instanceof ArrayBuffer
     ) {
       transferables.push(request.data);
-    }
-
-    // If the port is null maybe the inference process has shut down
-    if (this.#port === null) {
-      throw new Error("The port is null");
     }
 
     // Send the request to the engine via postMessage with optional transferables

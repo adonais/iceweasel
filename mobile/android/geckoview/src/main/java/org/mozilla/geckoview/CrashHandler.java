@@ -236,8 +236,8 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
   }
 
   /**
-   * @return the application package name. if context is not null; if context is null,
-   *     CrashHandler's package name will be returned.
+   * {@return the application package name if context is not null; if context is null,
+   * CrashHandler's package name will be returned}
    */
   @Nullable
   @AnyThread
@@ -258,9 +258,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     return getJavaPackageName();
   }
 
-  /**
-   * @return application context.
-   */
+  /** {@return the application context} */
   @AnyThread
   @Nullable
   public Context getAppContext() {

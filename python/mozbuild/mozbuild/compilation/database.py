@@ -15,7 +15,6 @@ from mozbuild.frontend.data import (
     DirectoryTraversal,
     PerSourceFlag,
     Sources,
-    VariablePassthru,
 )
 from mozbuild.util import expand_variables
 
@@ -67,10 +66,6 @@ class CompileDBBackend(CommonBackend):
                 self._build_db_line(
                     obj.objdir, obj.relsrcdir, obj.config, f, obj.canonical_suffix
                 )
-        elif isinstance(obj, VariablePassthru):
-            for var in ("MOZBUILD_CMFLAGS", "MOZBUILD_CMMFLAGS"):
-                if var in obj.variables:
-                    self._local_flags[obj.objdir][var] = obj.variables[var]
 
         elif isinstance(obj, PerSourceFlag):
             self._per_source_flags[obj.file_name].extend(obj.flags)
@@ -234,19 +229,9 @@ class CompileDBBackend(CommonBackend):
         )
         reldir = reldir or mozpath.relpath(objdir, cenv.topobjdir)
 
-        def append_var(name):
-            value = cenv.substs.get(name)
-            if not value:
-                return
-            if isinstance(value, str):
-                value = value.split()
-            db.extend(value)
-
         db.append("$(COMPUTED_%s)" % self.CFLAGS[canonical_suffix])
         if canonical_suffix == ".m":
-            append_var("OS_COMPILE_CMFLAGS")
-            db.append("$(MOZBUILD_CMFLAGS)")
+            db.append("$(COMPUTED_CMFLAGS)")
         elif canonical_suffix == ".mm":
-            append_var("OS_COMPILE_CMMFLAGS")
-            db.append("$(MOZBUILD_CMMFLAGS)")
+            db.append("$(COMPUTED_CMMFLAGS)")
         return db

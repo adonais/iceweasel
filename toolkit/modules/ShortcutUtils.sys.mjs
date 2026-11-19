@@ -49,7 +49,7 @@ export var ShortcutUtils = {
    *   // example1 (other): <key modifiers="ctrl" key="T"/>
    *   prettifyShortcut(example1) => "Ctrl+T"
    *   // example2 (macOS): <key modifiers="ctrl,shift" key="i"/>
-   *   prettifyShortcut(example2) => "⇧⌃I"
+   *   prettifyShortcut(example2) => "⌃⇧I"
    *   // example2 (other): <key modifiers="ctrl,shift" key="i"/>
    *   prettifyShortcut(example2) => "Shift+Ctrl+I"
    *   // example3: <key/>
@@ -84,7 +84,7 @@ export var ShortcutUtils = {
    *   Pretty string representation of the set of modifiers that must be used
    *   with another key in order to invoke a keyboard shortcut.
    * @example getModifierString("shift,meta") => "⇧⌘"
-   * @example getModifierString("ctrl,alt") => "⌥⌃"
+   * @example getModifierString("ctrl,alt") => "⌃⌥" (macOS)
    * @see KeyEventHandler
    */
   getModifierString(elemMod) {
@@ -119,21 +119,30 @@ export var ShortcutUtils = {
         lazy.PlatformKeys.GetStringFromName("VK_COMMAND_OR_WIN") +
         lazy.PlatformKeys.GetStringFromName("MODIFIER_SEPARATOR");
     }
+    let modifierStrings = [];
     if (elemMod.match("shift")) {
-      elemString +=
+      modifierStrings.push(
         lazy.PlatformKeys.GetStringFromName("VK_SHIFT") +
-        lazy.PlatformKeys.GetStringFromName("MODIFIER_SEPARATOR");
+          lazy.PlatformKeys.GetStringFromName("MODIFIER_SEPARATOR")
+      );
     }
     if (elemMod.match("alt")) {
-      elemString +=
+      modifierStrings.push(
         lazy.PlatformKeys.GetStringFromName("VK_ALT") +
-        lazy.PlatformKeys.GetStringFromName("MODIFIER_SEPARATOR");
+          lazy.PlatformKeys.GetStringFromName("MODIFIER_SEPARATOR")
+      );
     }
     if (elemMod.match("ctrl") || elemMod.match("control")) {
-      elemString +=
+      modifierStrings.push(
         lazy.PlatformKeys.GetStringFromName("VK_CONTROL") +
-        lazy.PlatformKeys.GetStringFromName("MODIFIER_SEPARATOR");
+          lazy.PlatformKeys.GetStringFromName("MODIFIER_SEPARATOR")
+      );
     }
+    // macOS menus list modifiers as Control, Option, Shift, Command.
+    if (Services.appinfo.OS == "Darwin") {
+      modifierStrings.reverse();
+    }
+    elemString += modifierStrings.join("");
     if (elemMod.match("meta") && this.metaKeyIsCommandKey()) {
       elemString +=
         lazy.PlatformKeys.GetStringFromName("VK_COMMAND_OR_WIN") +

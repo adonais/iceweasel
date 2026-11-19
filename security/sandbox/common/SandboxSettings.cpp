@@ -6,9 +6,7 @@
 
 #include "mozISandboxSettings.h"
 #include "mozilla/Components.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "nsAppRunner.h"
 #include "nsServiceManagerUtils.h"
@@ -154,15 +152,7 @@ int GetEffectiveContentSandboxLevel() {
 #if defined(XP_WIN)
   // Sandbox level 8, which uses a USER_RESTRICTED access token level, breaks if
   // prefs moving processing out of the content process are not the default.
-  if (level >= 8 &&
-      (!PDMFactory::AllDecodersAreRemote()
-#  if defined(MOZ_WEBRTC) && !defined(MOZ_THUNDERBIRD)
-       // These are only relevant if webrtc is present. Thunderbird currently
-       // compiles with webrtc, but doesn't use it.
-       || !StaticPrefs::network_process_enabled() ||
-       !Preferences::GetBool("media.peerconnection.mtransport_process")
-#  endif
-           )) {
+  if (level >= 8 && !PDMFactory::AllDecodersAreRemote()) {
     level = 7;
   }
 #endif
@@ -173,24 +163,6 @@ int GetEffectiveContentSandboxLevel() {
 bool IsContentSandboxEnabled() { return GetEffectiveContentSandboxLevel() > 0; }
 
 bool IsGPUSandboxEnabled() { return GetEffectiveGpuSandboxLevel() > 0; }
-
-int GetEffectiveSocketProcessSandboxLevel() {
-  if (PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS_SANDBOX")) {
-    return 0;
-  }
-
-  int level =
-      StaticPrefs::security_sandbox_socket_process_level_DoNotUseDirectly();
-
-#ifdef XP_LINUX
-  // Turn off ioctl lockdown in safe mode, until it's gotten more testing.
-  if (level > 1 && gSafeMode) {
-    level = 1;
-  }
-#endif
-
-  return level;
-}
 
 int GetEffectiveGpuSandboxLevel() {
   if (PR_GetEnv("MOZ_DISABLE_GPU_SANDBOX")) {

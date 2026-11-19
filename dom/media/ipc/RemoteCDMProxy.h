@@ -104,6 +104,7 @@ class RemoteCDMProxy final : public PRemoteCDMActor, public CDMProxy {
   virtual ~RemoteCDMProxy();
 
   void InitInternal(PromiseId aPromiseId, const nsCString& aOriginID);
+  void FallbackToRDD(PromiseId aPromiseId, const nsCString& aOriginID);
   void RejectPromise(PromiseId aId, const MediaResult& aResult);
   void ResolveOrRejectPromise(PromiseId aId, const MediaResult& aResult);
   void Destroy();
@@ -111,7 +112,9 @@ class RemoteCDMProxy final : public PRemoteCDMActor, public CDMProxy {
   const RefPtr<RemoteCDMChild> mChild;
   const nsCOMPtr<nsISerialEventTarget> mThread;
   RefPtr<GenericNonExclusivePromise> mIPDLPromise;
-  const RemoteMediaIn mLocation;
+  // Only changes before the PRemoteCDM actor is constructed, if we need to
+  // fallback from the GPU process to the RDD process.
+  Atomic<RemoteMediaIn> mLocation;
   Atomic<bool> mNeedsShutdown{true};
 };
 

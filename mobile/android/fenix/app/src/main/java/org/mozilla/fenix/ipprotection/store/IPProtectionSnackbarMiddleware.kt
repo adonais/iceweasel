@@ -41,10 +41,10 @@ class IPProtectionSnackbarMiddleware(
     ) {
         next(action)
         when (action) {
-            is IPProtectionAction.ToggleFailed ->
+            is IPProtectionAction.ActivationAction.ToggleFailed ->
                 lazyAppStore.value.dispatch(IPProtectionSnackbarAction.ShowSnackbar(title = messages.connectionError))
 
-            is IPProtectionAction.LocationReset ->
+            is IPProtectionAction.LocationAction.LocationReset ->
                 lazyAppStore.value.dispatch(
                     IPProtectionSnackbarAction.ShowActionSettingsSnackbar(title = messages.locationSelectionReset)
                 )

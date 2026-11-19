@@ -573,7 +573,7 @@ UniquePtr<sqlite3_vfs> ConstructVFS(const char* aBaseVFSName) {
     return nullptr;
   }
 
-  auto qvfs = MakeUnique<sqlite3_vfs>();
+  auto qvfs = std::make_unique<sqlite3_vfs>();
   memset(qvfs.get(), 0, sizeof(::sqlite3_vfs));
   // If the VFS version is higher than the last known one, you should update
   // this VFS adding appropriate methods for any methods added in the version

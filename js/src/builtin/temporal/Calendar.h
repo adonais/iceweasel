@@ -24,7 +24,7 @@ struct ClassSpec;
 
 namespace js::temporal {
 
-enum class CalendarId : int32_t {
+enum class CalendarId : int8_t {
   ISO8601,
 
   // Thai Buddhist solar calendar.

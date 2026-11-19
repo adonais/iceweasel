@@ -20,7 +20,7 @@ void TestShellParent::ActorDestroy(ActorDestroyReason aWhy) {
 }
 
 PTestShellCommandParent* TestShellParent::AllocPTestShellCommandParent(
-    const nsAString& aCommand) {
+    const nsAString& /*aCommand*/) {
   return new TestShellCommandParent();
 }
 

@@ -52,7 +52,7 @@ UniquePtr<SwapChainPresenter> SwapChain::Acquire(
     }
   }
 
-  auto ret = MakeUnique<SwapChainPresenter>(*this);
+  auto ret = std::make_unique<SwapChainPresenter>(*this);
   const auto old = ret->SwapBackBuffer(std::move(surf));
   MOZ_ALWAYS_TRUE(!old);
   return ret;

@@ -117,7 +117,7 @@ class ChunkedJSONWriteFunc final : public JSONWriteFunc, public FailureLatch {
   [[nodiscard]] UniquePtr<char[]> CopyData() const {
     UniquePtr<char[]> c;
     if (!CopyDataIntoLazilyAllocatedBuffer([&](size_t allocationSize) {
-          c = MakeUnique<char[]>(allocationSize);
+          c = std::make_unique<char[]>(allocationSize);
           return c.get();
         })) {
       // Something went wrong, make sure the returned pointer is null even if
@@ -450,8 +450,9 @@ class SpliceableJSONWriter : public JSONWriter, public FailureLatch {
 class SpliceableChunkedJSONWriter final : public SpliceableJSONWriter {
  public:
   explicit SpliceableChunkedJSONWriter(FailureLatch& aFailureLatch)
-      : SpliceableJSONWriter(MakeUnique<ChunkedJSONWriteFunc>(aFailureLatch),
-                             aFailureLatch) {}
+      : SpliceableJSONWriter(
+            std::make_unique<ChunkedJSONWriteFunc>(aFailureLatch),
+            aFailureLatch) {}
 
   // Access the ChunkedJSONWriteFunc as reference-to-const, usually to copy data
   // out.

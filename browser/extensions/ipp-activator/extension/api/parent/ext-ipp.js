@@ -7,6 +7,8 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
+  IPPMode:
+    "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
   IPPPrincipalRules:
     "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPSiteRuleManager:
@@ -46,24 +48,24 @@ this.ippActivator = class extends ExtensionAPI {
   getAPI(context) {
     return {
       ippActivator: {
-        onIPPActivated: new ExtensionCommon.EventManager({
+        onIPPProxyChanged: new ExtensionCommon.EventManager({
           context,
-          name: "ippActivator.onIPPActivated",
+          name: "ippActivator.onIPPProxyChanged",
           register: fire => {
-            const topics = ["IPPProxyManager:StateChanged"];
-            const observer = _event => {
-              fire.async(
-                lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE
-              );
-            };
+            const targets = [
+              [lazy.IPPProxyManager, "IPPProxyManager:StateChanged"],
+              [lazy.IPPProxyManager, "IPPProxyManager:ModeChanged"],
+              [lazy.IPPSiteRuleManager, "SiteRuleManager:RuleChanged"],
+            ];
+            const observer = () => fire.async();
 
-            topics.forEach(topic =>
-              lazy.IPPProxyManager.addEventListener(topic, observer)
+            targets.forEach(([target, topic]) =>
+              target.addEventListener(topic, observer)
             );
 
             return () => {
-              topics.forEach(topic =>
-                lazy.IPPProxyManager.removeEventListener(topic, observer)
+              targets.forEach(([target, topic]) =>
+                target.removeEventListener(topic, observer)
               );
             };
           },
@@ -89,8 +91,36 @@ this.ippActivator = class extends ExtensionAPI {
             console.warn("Unable to hide the message", e);
           }
         },
-        isIPPActive() {
-          return lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
+        isIPPActiveForTab(tabId) {
+          if (lazy.IPPProxyManager.state !== lazy.IPPProxyStates.ACTIVE) {
+            return false;
+          }
+
+          const browser = lazy.tabTracker.getTab(tabId, null)?.linkedBrowser;
+          const principal = browser?.contentPrincipal;
+          if (!principal) {
+            return false;
+          }
+
+          const rule = lazy.IPPSiteRuleManager.getRule(
+            principal,
+            browser.browserId
+          );
+          if (rule === lazy.IPPPrincipalRules.INCLUDED) {
+            return true;
+          }
+          if (rule === lazy.IPPPrincipalRules.EXCLUDED) {
+            return false;
+          }
+
+          switch (lazy.IPPProxyManager.mode) {
+            case lazy.IPPMode.MODE_FULL:
+              return true;
+            case lazy.IPPMode.MODE_PB:
+              return !!principal.originAttributes.privateBrowsingId;
+            default:
+              return false;
+          }
         },
         getRegion() {
           return lazy.Region.home;

@@ -11,8 +11,8 @@ origin:
 
   url: https://www.cairographics.org
 
-  release: 1.18.4 (2025-03-08T13:23:25Z).
-  revision: 1.18.4
+  release: 1.18.6 (2026-09-20T17:42:13+01:00).
+  revision: 1.18.6
 
   license: 'MPL-1.1'
   license-file: 'COPYING-MPL-1.1'
@@ -30,6 +30,16 @@ vendoring:
   # it's just unreachable history that a clone would otherwise refuse
   # to transfer.
   tolerate-git-fsck-errors: true
+
+  # Our own versions of files that upstream's Meson build generates or that
+  # upstream no longer ships. We build cairo with moz.build files instead of
+  # Meson, so we need them in the tree.
+  keep:
+    - src/cairo-features.h
+    - src/cairo-platform.h
+    - src/cairo-rename.h
+    - src/config.h
+    - src/pixman-rename.h
 
   exclude:
     - boilerplate
@@ -61,41 +71,29 @@ vendoring:
     - patches/0015-Guard-FT_COLOR_H-and-related-FreeType-fontconfig-sym.patch
     - patches/0016-Adapt-cairo-quartz-for-iOS-builds.patch
     - patches/0017-Don-t-prematurely-clear-cairo_quartz_image_surface_t.patch
-    - patches/0018-Add-ifdef-guards-around-mingw-specific-__CRT_UUID_DE.patch
-    - patches/0019-Add-cairo_win32_surface-APIs-wanted-for-gecko.patch
-    - patches/0020-Handle-CAIRO_FORMAT_A8-in-_cairo_surface_to_cgimage-.patch
-    - patches/0021-Fix-cairo-build-bustage-with-Windows-SDK-26100.patch
-    - patches/0022-Invert-sign-of-delta-y-when-computing-glyph-advances.patch
-    - patches/0023-Catch-potential-failure-during-add_polygon.patch
-    - patches/0024-Check-subroutine-offset-in-private-dict.patch
-    - patches/0025-Range-check-FDSelect-value-during-CFF-subsetting.patch
-    - patches/0026-Revert-cairo-quartz-.-ch-to-the-pre-1.18.0-Mozilla-m.patch
-    - patches/0027-Bug-2029325-Reject-negative-sub_num-during-CFF-subse.patch
-    - patches/0028-Bug-2029463-Range-check-string-id-during-subsetting..patch
-    - patches/0029-Add-configuration-files-needed-for-Firefox-s-mozbuil.patch
-    - patches/0030-Bug-2027883-Fix-integer-overflow-in-cairo-PDF-surfac.patch
-    - patches/0031-Bug-2029910-Cairo-avoid-overflow-rendering-FreeType-.patch
-    - patches/0032-Bug-2033610-Check-cairo-image-surface-for-error.patch
-    - patches/0033-Bug-2036587-No-component-alpha-for-dwrite-glyph-surfaces.patch
-    - patches/0034-Bug-2037290-cff-subset-offset-checks.patch
-    - patches/0035-cff-dict-validation.patch
-    - patches/0036-cff-operator-bounds.patch
-    - patches/0037-type1-decode-integer.patch
-    - patches/0038-pcf-row_bytes.patch
-    - patches/0039-cff-fdselect-bounds.patch
-    - patches/0040-Bug-2048799-flip-polarity-of-a-bounds-check.patch
-    - patches/0041-fdselect-checks.patch
-    - patches/0042-gid-range-check.patch
-    - patches/0043-type1-stack-check.patch
-    - patches/0044-win32-printing-linear-pattern.patch
-    - patches/0045-Bug-2045711-records-size-check.patch
-    - patches/0046-Bug-2053599-glyph-index-bounds.patch
-    - patches/0047-Bug-2050228-win32-print-tiny-dash.patch
-    - patches/0048-Bug-2054626-type2-decode-integer.patch
-    - patches/0049-Bug-2054627-skip-token-check.patch
-    - patches/0050-Bug-2068367-bitmap-surface-tmp-buffer.patch
-    - patches/0051-Bug-2068420-skip-head-sentinel.patch
-    - patches/0052-Bug-2082006-lock-sharedftface.patch
+    - patches/0018-Add-cairo_win32_surface-APIs-wanted-for-gecko.patch
+    - patches/0019-Handle-CAIRO_FORMAT_A8-in-_cairo_surface_to_cgimage-.patch
+    - patches/0020-Revert-cairo-quartz-.-ch-to-the-pre-1.18.0-Mozilla-m.patch
+    - patches/0021-Bug-2029325-Reject-negative-sub_num-during-CFF-subse.patch
+    - patches/0022-Bug-2029463-Range-check-string-id-during-subsetting..patch
+    - patches/0023-Stop-ignoring-cairo-features.h.patch
+    - patches/0024-Bug-2027883-Fix-integer-overflow-in-cairo-PDF-surfac.patch
+    - patches/0025-Bug-2036587-No-component-alpha-for-dwrite-glyph-surfaces.patch
+    - patches/0026-pcf-row_bytes.patch
+    - patches/0027-Bug-2048799-flip-polarity-of-a-bounds-check.patch
+    - patches/0028-fdselect-checks.patch
+    - patches/0029-gid-range-check.patch
+    - patches/0030-type1-stack-check.patch
+    - patches/0031-win32-printing-linear-pattern.patch
+    - patches/0032-Bug-2045711-records-size-check.patch
+    - patches/0033-Bug-2053599-glyph-index-bounds.patch
+    - patches/0034-Bug-2050228-win32-print-tiny-dash.patch
+    - patches/0035-Bug-2054626-type2-decode-integer.patch
+    - patches/0036-Bug-2054627-skip-token-check.patch
+    - patches/0037-Bug-2068367-bitmap-surface-tmp-buffer.patch
+    - patches/0038-Bug-2068420-skip-head-sentinel.patch
+    - patches/0039-Bug-2082006-lock-sharedftface.patch
+    - patches/0040-Detect-IDWriteFactory8-from-the-SDK-headers.patch
 
 updatebot:
   maintainer-phab: "#gfx-reviewers"

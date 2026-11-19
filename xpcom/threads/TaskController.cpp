@@ -390,7 +390,7 @@ void TaskController::InitializeThreadPool() {
 
   int32_t poolSize = GetPoolThreadCount();
   for (int32_t i = 0; i < poolSize; i++) {
-    auto thread = MakeUnique<PoolThread>(i, mGraphMutex);
+    auto thread = std::make_unique<PoolThread>(i, mGraphMutex);
     thread->mThread =
         PR_CreateThread(PR_USER_THREAD, ThreadFuncPoolThread, thread.get(),
                         PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,

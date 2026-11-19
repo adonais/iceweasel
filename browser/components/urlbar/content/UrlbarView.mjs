@@ -1570,7 +1570,8 @@ export class UrlbarView {
           includeHiddenExposures: true,
         });
       let canBeVisible =
-        newSpanCount <= this.#queryContext.maxResults && !seenMisplacedResult;
+        newSpanCount <= this.#queryContext.maxResultsActual &&
+        !seenMisplacedResult;
       if (result.isHiddenExposure) {
         if (canBeVisible) {
           this.controller.engagementEvent.addExposure(
@@ -2518,7 +2519,11 @@ export class UrlbarView {
 
     item._content.id = item.id + "-inner";
 
-    item.toggleAttribute("is-top-pick", !!result.isBestMatch);
+    if (result.bestMatchType) {
+      item.setAttribute("top-pick-type", result.bestMatchType);
+    } else {
+      item.removeAttribute("top-pick-type");
+    }
 
     if (result.isBottomUrlSuggestion) {
       this.#updateRowContentForBottomUrl(item, result);
@@ -2551,7 +2556,8 @@ export class UrlbarView {
       result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       !result.payload.providesSearchMode &&
       !result.payload.inPrivateWindow &&
-      result.providerName != "UrlbarProviderQuickSuggest"
+      (result.providerName != "UrlbarProviderQuickSuggest" ||
+        result.payload.suggestionObject?.suggestionType == "temporal")
     ) {
       item.setAttribute(
         "type",
@@ -3199,9 +3205,11 @@ export class UrlbarView {
       isItemVisible &&
       // Show the search suggestions label only if there are other visible
       // results before this one that aren't the heuristic or suggestions.
+      // Also show the label for atypical search results that define their own.
       !(
         item.result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
         item.result.payload.suggestion &&
+        !item.result.rowLabel &&
         seenOnlyHeuristicOrSearchSuggestions
       )
     ) {
@@ -4358,6 +4366,9 @@ export class UrlbarView {
   /**
    * @param {UrlbarResult} result
    *   The result to get menu commands for.
+   * @param {object} [options]
+   * @param {boolean} [options.showSkipMenuWithTabItem]
+   *   If true, the "Skip this menu when using the tab key" checkbox is shown.
    * @returns {?UrlbarResultCommand[]}
    *   Everything the result's menu shows, null if it has nothing to show. The
    *   three-dot button and a right-click both open this menu, so it combines
@@ -4365,7 +4376,7 @@ export class UrlbarView {
    *   window, and closes with the checkbox that skips the menu button when
    *   tabbing through the results.
    */
-  #getMenuCommands(result) {
+  #getMenuCommands(result, { showSkipMenuWithTabItem = false } = {}) {
     let commands = this.#getResultMenuCommands(result);
     if (this.#canOpenInNewTarget(result)) {
       let openInCommands = this.#openInCommands;
@@ -4373,8 +4384,8 @@ export class UrlbarView {
         ? [...openInCommands, { name: "separator" }, ...commands]
         : openInCommands;
     }
-    if (!commands) {
-      return null;
+    if (!commands || !showSkipMenuWithTabItem) {
+      return commands;
     }
     return [
       ...commands,
@@ -4885,7 +4896,12 @@ export class UrlbarView {
           b => b.name == buttonName
         ).menu;
       } else {
-        commands = this.#getMenuCommands(this.#resultMenuResult);
+        commands = this.#getMenuCommands(this.#resultMenuResult, {
+          showSkipMenuWithTabItem:
+            triggeringEvent.type == "ResultMenuTriggered" &&
+            (!UrlbarPrefs.get("resultMenu.keyboardAccessible") ||
+              triggeringEvent.detail.target == this.selectedElement),
+        });
       }
 
       this.#populateResultMenu({ commands });
@@ -4896,11 +4912,18 @@ export class UrlbarView {
 
   on_hidden(event) {
     if (event.target != event.currentTarget) {
+      // Ignore submenus.
       return;
     }
-    event.currentTarget.lastAnchorNode
-      ?.closest(".urlbarView-row")
-      ?.toggleAttribute("menu-trigger", false);
+
+    let row = event.detail.anchorNode?.closest(".urlbarView-row");
+    // If the row isn't still the menu trigger, remove the attribute.
+    if (
+      !this.resultMenu.open ||
+      row != this.resultMenu.lastAnchorNode?.closest(".urlbarView-row")
+    ) {
+      row?.toggleAttribute("menu-trigger", false);
+    }
   }
 
   on_contextmenu(event) {

@@ -154,6 +154,11 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   void OnOutgoingDatagramOutCome(
       uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome);
 
+  void SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+      uint16_t aValue) override;
+  void SetAnticipatedConcurrentIncomingBidirectionalStreams(
+      uint16_t aValue) override;
+
   void OnStreamStopSending(uint64_t aId, uint64_t aErrorCode);
   void OnStreamReset(uint64_t aId, uint64_t aErrorCode);
 

@@ -5,6 +5,7 @@
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_H
 
+#include "GLContextTypes.h"
 #include "GLTypes.h"
 #include "Units.h"
 #include "mozilla/RefPtr.h"
@@ -16,7 +17,10 @@ namespace mozilla {
 
 namespace gl {
 class GLContext;
-}
+#ifdef MOZ_WIDGET_ANDROID
+class GLContextEGL;
+#endif
+}  // namespace gl
 
 namespace layers {
 class AndroidHardwareBuffer;
@@ -156,9 +160,15 @@ class RenderCompositor {
                                       bool aNeedsSyncDcompCommit) {}
   virtual void ResizeSwapChainSurface(wr::NativeSurfaceId aId,
                                       wr::DeviceIntSize aSize) {}
+  // Without OS layers, the only swapchain is the window and the dirty rects
+  // are the region WebRender is about to render to.
   virtual void BindSwapChain(wr::NativeSurfaceId aId,
                              const wr::DeviceIntRect* aDirtyRects,
-                             size_t aNumDirtyRects) {}
+                             size_t aNumDirtyRects) {
+    if (aNumDirtyRects > 0) {
+      SetBufferDamageRegion(aDirtyRects, aNumDirtyRects);
+    }
+  }
   virtual void PresentSwapChain(wr::NativeSurfaceId aId,
                                 const wr::DeviceIntRect* aDirtyRects,
                                 size_t aNumDirtyRects) {}
@@ -202,14 +212,18 @@ class RenderCompositor {
   virtual void GetWindowProperties(WindowProperties* aProperties);
 
   // Interface for partial present
-  virtual bool UsePartialPresent() { return false; }
-  virtual bool RequestFullRender() { return false; }
+  // The maximum number of dirty rects WebRender may pass when presenting a
+  // swapchain, whether it is the window or an OS layer. Zero disables partial
+  // present.
   virtual uint32_t GetMaxPartialPresentRects() { return 0; }
-  virtual bool ShouldDrawPreviousPartialPresentRegions() { return false; }
-  // Returns the age of the current backbuffer., This should be used, if
-  // ShouldDrawPreviousPartialPresentRegions() returns true, to determine the
-  // region which must be rendered in addition to the current frame's dirty
-  // rect.
+  // Whether the window's own swapchain is partially presented.
+  virtual bool UseWindowPartialPresent() { return false; }
+  virtual bool RequestFullRender() { return false; }
+  // Returns the number of frames since the window's current back buffer was
+  // last presented. WebRender uses it to determine the region which must be
+  // rendered in addition to the current frame's dirty rect. 1 means that the
+  // back buffer holds the previous frame. 0 means that its content is unknown,
+  // which forces a full render.
   virtual size_t GetBufferAge() const { return 0; }
   // Allows webrender to specify the total region that will be rendered to this
   // frame, ie the frame's dirty region and some previous frames' dirty regions,
@@ -238,7 +252,10 @@ class RenderCompositor {
   }
   virtual bool MaybeProcessScreenshotQueue() { return false; }
 #ifdef MOZ_WIDGET_ANDROID
-  virtual bool MaybeCaptureScreenPixels(
+  // Copies aSourceRect of the most recently rendered frame into
+  // aHardwareBuffer, flipping and scaling as required. Returns whether the
+  // capture succeeded.
+  virtual bool CaptureScreenPixels(
       const gfx::IntRect& aSourceRect,
       layers::AndroidHardwareBuffer* aHardwareBuffer) {
     return false;
@@ -258,6 +275,16 @@ class RenderCompositor {
     mLatestRenderFrameId = mLatestRenderFrameId.Next();
     return mLatestRenderFrameId;
   }
+
+#ifdef MOZ_WIDGET_ANDROID
+  // Copies aSourceRect from aGL's default framebuffer into aHardwareBuffer,
+  // flipping and scaling as required. Returns whether the capture succeeded.
+  static bool CaptureScreenPixelsFromGL(
+      gl::GLContextEGL* aGL, const gfx::IntRect& aSourceRect,
+      const LayoutDeviceIntSize& aFramebufferSize,
+      gl::OriginPos aFramebufferOrigin,
+      layers::AndroidHardwareBuffer* aHardwareBuffer);
+#endif
 
   RefPtr<widget::CompositorWidget> mWidget;
   RefPtr<layers::SyncObjectHost> mSyncObject;

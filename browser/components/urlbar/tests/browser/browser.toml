@@ -41,9 +41,6 @@ support-files = [
 
 ["browser_canonizeURL.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2081032
-]
 support-files = [
   "searchSuggestionEngine.xml",
   "searchSuggestionEngine.sjs",

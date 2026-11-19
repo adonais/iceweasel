@@ -4,8 +4,8 @@
 
 import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
+// eslint-disable-next-line import-x/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/smartwindow-chip.mjs";
 
 /** @typedef {{ favicon?: string, title?: string, href: string }} SourceLink */
 
@@ -37,15 +37,14 @@ export class AITextBlock extends MozLitElement {
     return html` <div class="aitab-text-block-references">
       ${this.references.map(
         chip =>
-          html`<ai-website-chip
+          html`<smartwindow-chip
             class="aitab-text-block-chip"
             .href=${chip.href}
             .label=${chip.title || chip.href}
             .iconSrc=${chip.favicon ?? ""}
-            type="context-chip"
-            size="small"
+            type="source"
             openLinkEvent="AITab:OpenLink"
-          ></ai-website-chip>`
+          ></smartwindow-chip>`
       )}
     </div>`;
   }
@@ -61,9 +60,11 @@ export class AITextBlock extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/aitab-text-block.css"
       />
       <section class="aitab-text-block">
-        <h2 class="aitab-text-block-heading aitab-heading-3">
-          ${this.heading}
-        </h2>
+        ${this.heading
+          ? html`<h2 class="aitab-text-block-heading aitab-heading-3">
+              ${this.heading}
+            </h2>`
+          : nothing}
         <div class="aitab-text-block-content">
           ${this.paragraphs.map(
             p => html`<p class="aitab-text-block-p">${p}</p>`

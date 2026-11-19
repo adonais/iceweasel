@@ -68,6 +68,7 @@ import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.content.DownloadState
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
@@ -178,6 +179,7 @@ import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
 import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
 import org.mozilla.fenix.browser.applinks.AppLinksPromptFragment
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeObserver
 import org.mozilla.fenix.browser.permissions.FenixSitePermissionLearnMoreUrlProvider
 import org.mozilla.fenix.browser.readermode.DefaultReaderModeController
 import org.mozilla.fenix.browser.readermode.ReaderModeController
@@ -196,6 +198,8 @@ import org.mozilla.fenix.components.FindInPageIntegration
 import org.mozilla.fenix.components.accounts.FxaWebChannelIntegration
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MicrosurveyAction
+import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.metrics.toSearchAccessPoint
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerIntegration
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
@@ -236,6 +240,7 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.pbmlock.BlackScreenOverlay
 import org.mozilla.fenix.pbmlock.NavigationOrigin
 import org.mozilla.fenix.pbmlock.observePrivateModeLock
+import org.mozilla.fenix.pdf.PdfToolsIntegration
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
 import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
 import org.mozilla.fenix.settings.biometric.BiometricPromptFeature
@@ -321,6 +326,7 @@ abstract class BaseBrowserFragment :
 
     @VisibleForTesting internal val findInPageIntegration = ViewBoundFeatureWrapper<FindInPageIntegration>()
     private val toolbarsIntegration = ViewBoundFeatureWrapper<ToolbarsIntegration>()
+    private val pdfToolsIntegration = ViewBoundFeatureWrapper<PdfToolsIntegration>()
     private val bottomToolbarContainerIntegration = ViewBoundFeatureWrapper<BottomToolbarContainerIntegration>()
     private val sitePermissionsFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
     private val fullScreenFeature = ViewBoundFeatureWrapper<FullScreenFeature>()
@@ -342,6 +348,7 @@ abstract class BaseBrowserFragment :
     private val snackbarBinding = ViewBoundFeatureWrapper<SnackbarBinding>()
     private val standardSnackbarErrorBinding = ViewBoundFeatureWrapper<StandardSnackbarErrorBinding>()
     private val ipProtectionWarningBinding = ViewBoundFeatureWrapper<IPProtectionWarningBinding>()
+    private val browsingModeObserver = ViewBoundFeatureWrapper<BrowsingModeObserver>()
 
     protected val summarizeToolbarCfrBinding = ViewBoundFeatureWrapper<SummarizeToolbarCFRBinding>()
 
@@ -448,9 +455,9 @@ abstract class BaseBrowserFragment :
                     fragmentManager = parentFragmentManager,
                     sessionId = customTabSessionId,
                     dialog = appLinksPromptDialog(),
-                    launchInApp = { requireComponents.settings.shouldOpenLinksInApp(customTabSessionId != null) },
+                    launchInApp = { _ -> requireComponents.settings.shouldOpenLinksInApp(customTabSessionId != null) },
                     loadUrlUseCase = requireComponents.useCases.sessionUseCases.loadUrl,
-                    shouldPrompt = { requireComponents.settings.shouldPromptOpenLinksInApp() },
+                    shouldPrompt = { _ -> requireComponents.settings.shouldPromptOpenLinksInApp() },
                     alwaysOpenCheckboxAction = {
                         requireComponents.settings.openLinksInExternalApp =
                             requireContext().getString(R.string.pref_key_open_links_in_apps_always)
@@ -475,10 +482,20 @@ abstract class BaseBrowserFragment :
             observeRestoreComplete(requireComponents.core.store, findNavController())
         }
 
-        observeTabSelection(
-            requireComponents.core.store,
-            isCustomTabSession = customTabSessionId != null,
+        browsingModeObserver.set(
+            feature =
+                BrowsingModeObserver(
+                    store = requireComponents.core.store,
+                    customTabSessionId = customTabSessionId,
+                    onSelectedTabChanged = { tab ->
+                        activity?.runOnUiThread { updateThemeForSession(tab) }
+                    },
+                ),
+            owner = viewLifecycleOwner,
+            view = view,
         )
+
+        observeTabSelection(requireComponents.core.store)
 
         if (customTabSessionId == null) {
             tabGroupsStripStore.dispatch(TabGroupsStripAction.InitializeDataObservation)
@@ -1321,11 +1338,32 @@ abstract class BaseBrowserFragment :
                             requireComponents.useCases.searchUseCases.newTabSearch
                         }
 
+                    store.state.search.selectedOrDefaultSearchEngine(request.isPrivate)?.let { searchEngine ->
+                        MetricsUtils.recordSearchMetrics(
+                            engine = searchEngine,
+                            // The context menu offers no engine to choose, so this is always the default for the
+                            // current browsing mode.
+                            isDefault = true,
+                            searchAccessPoint = MetricsUtils.Source.CONTEXT,
+                            nimbusEventStore = requireComponents.nimbus.events,
+                        )
+                    }
+
+                    val accessPoint = MetricsUtils.Source.CONTEXT.toSearchAccessPoint()
                     if (parentSession is CustomTabSessionState) {
-                        useCase.invoke(request.query)
+                        useCase.invoke(
+                            searchTerms = request.query,
+                            source = SessionState.Source.Internal.None,
+                            accessPoint = accessPoint,
+                        )
                         requireActivity().startActivity(openInFenixIntent)
                     } else {
-                        useCase.invoke(request.query, parentSessionId = parentSession?.id)
+                        useCase.invoke(
+                            searchTerms = request.query,
+                            source = SessionState.Source.Internal.None,
+                            parentSessionId = parentSession?.id,
+                            accessPoint = accessPoint,
+                        )
                     }
                 },
             owner = this,
@@ -1444,7 +1482,7 @@ abstract class BaseBrowserFragment :
                 .collect { tab -> pipModeChanged(tab) }
         }
 
-        binding.swipeRefresh.isEnabled = shouldPullToRefreshBeEnabled(false)
+        binding.swipeRefresh.isEnabled = shouldPullToRefreshBeEnabled()
 
         if (binding.swipeRefresh.isEnabled) {
             val primaryTextColor = ThemeManager.resolveAttribute(materialR.attr.colorOnSurface, context)
@@ -1488,7 +1526,27 @@ abstract class BaseBrowserFragment :
             bottomToolbarHeight = bottomToolbarHeight,
         )
 
+        initPdfTools(context = context, rootView = view)
         initializeMicrosurveyFeature(context)
+    }
+
+    private fun initPdfTools(context: Context, rootView: View) {
+        val settings = context.components.settings
+        if (!settings.enablePdfTools) {
+            return
+        }
+
+        pdfToolsIntegration.set(
+            feature =
+                PdfToolsIntegration(
+                    container = binding.browserLayout,
+                    browserStore = context.components.core.store,
+                    isAddressBarAtBottom = settings.toolbarPosition == ToolbarPosition.BOTTOM,
+                    customTabSessionId = customTabSessionId,
+                ),
+            owner = this,
+            view = rootView,
+        )
     }
 
     private fun initializeBrowserToolbar(
@@ -1591,6 +1649,17 @@ abstract class BaseBrowserFragment :
         appStore: AppStore,
         settings: org.mozilla.fenix.utils.Settings,
     ): @Composable () -> Unit = {
+        val isSearchActive = appStore.observeAsComposableState { it.searchState.isSearchActive }.value
+        if (!isSearchActive) {
+            BrowserTabStripContent(appStore, settings)
+        }
+    }
+
+    @Composable
+    private fun BrowserTabStripContent(
+        appStore: AppStore,
+        settings: org.mozilla.fenix.utils.Settings,
+    ) {
         FirefoxTheme {
             TabStrip(
                 showTabCounterButton = false,
@@ -1814,10 +1883,8 @@ abstract class BaseBrowserFragment :
     }
 
     @VisibleForTesting
-    internal fun shouldPullToRefreshBeEnabled(inFullScreen: Boolean): Boolean {
-        return FeatureFlags.PULL_TO_REFRESH_ENABLED &&
-            requireComponents.settings.isPullToRefreshEnabledInBrowser &&
-            !inFullScreen
+    internal fun shouldPullToRefreshBeEnabled(): Boolean {
+        return FeatureFlags.PULL_TO_REFRESH_ENABLED && requireComponents.settings.isPullToRefreshEnabledInBrowser
     }
 
     /**
@@ -1887,7 +1954,7 @@ abstract class BaseBrowserFragment :
             val messagingFeature =
                 MessagingFeature(
                     appStore = requireComponents.appStore,
-                    surface = FenixMessageSurfaceId.MICROSURVEY,
+                    surfaces = listOf(FenixMessageSurfaceId.MICROSURVEY),
                 )
             messagingFeatureMicrosurvey.set(
                 feature = messagingFeature,
@@ -2040,7 +2107,6 @@ abstract class BaseBrowserFragment :
     @VisibleForTesting
     internal fun observeTabSelection(
         store: BrowserStore,
-        isCustomTabSession: Boolean,
         mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     ) {
         consumeFlow(store, mainDispatcher = mainDispatcher) { flow ->
@@ -2054,7 +2120,7 @@ abstract class BaseBrowserFragment :
                 .collect {
                     dismissDownloadDialogs()
                     dismissRenameDialog()
-                    handleTabSelected(it, isCustomTabSession)
+                    handleTabSelected(it)
                 }
         }
     }
@@ -2071,11 +2137,7 @@ abstract class BaseBrowserFragment :
         downloadDialog?.dismiss()
     }
 
-    private fun handleTabSelected(selectedTab: TabSessionState, isCustomTabSession: Boolean) {
-        if (!this.isRemoving && !isCustomTabSession) {
-            updateThemeForSession(selectedTab)
-        }
-
+    private fun handleTabSelected(selectedTab: TabSessionState) {
         if (browserInitialized) {
             view?.let {
                 fullScreenChanged(false)
@@ -2283,7 +2345,7 @@ abstract class BaseBrowserFragment :
     @VisibleForTesting
     internal fun updateThemeForSession(session: SessionState) {
         val sessionMode = BrowsingMode.fromBoolean(session.content.private)
-        (activity as HomeActivity).browsingModeManager.mode = sessionMode
+        (activity as HomeActivity?)?.browsingModeManager?.mode = sessionMode
     }
 
     /** A safe version of [getCurrentTab] that safely checks for context nullability. */
@@ -2359,8 +2421,6 @@ abstract class BaseBrowserFragment :
             }
             collapseBrowserView()
         }
-
-        binding.swipeRefresh.isEnabled = shouldPullToRefreshBeEnabled(inFullScreen)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)

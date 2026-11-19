@@ -37,8 +37,7 @@ class SframeEncryptorDecryptorTest : public ::testing::Test {
  protected:
   SframeEncryptorDecryptorTest()
       : encryptor_(
-            SframeEncryptor::Create(SframeMode::kPerFrame,
-                                    SframeCipherSuite::kAes128GcmSha256_128)),
+            SframeEncryptor::Create(SframeCipherSuite::kAes128GcmSha256_128)),
         decryptor_(
             SframeDecryptor::Create(SframeCipherSuite::kAes128GcmSha256_128)) {}
 

@@ -1542,6 +1542,43 @@ class ADBDevice(ADBCommand):
         return self._run_as_package is not None and path.startswith(self.package_dir)
 
     @property
+    def _host_gcov_prefix(self):
+        return os.getenv("GCOV_PREFIX")
+
+    @property
+    def _target_gcov_prefix_strip(self):
+        return os.getenv("GCOV_PREFIX_STRIP")
+
+    @property
+    def _host_jscov_prefix(self):
+        return os.getenv("JS_CODE_COVERAGE_OUTPUT_DIR")
+
+    @property
+    def _target_gcov_prefix(self):
+        if self._host_gcov_prefix is None or self._test_root is None:
+            return None
+        return posixpath.join(self._test_root, os.path.basename(self._host_gcov_prefix))
+
+    @property
+    def _target_jscov_prefix(self):
+        if self._host_jscov_prefix is None or self._test_root is None:
+            return None
+        return posixpath.join(
+            self._test_root, os.path.basename(self._host_jscov_prefix)
+        )
+
+    @property
+    def target_ccov_env(self):
+        env = {}
+        if self._target_gcov_prefix is not None:
+            env["GCOV_PREFIX"] = self._target_gcov_prefix
+        if self._target_gcov_prefix_strip is not None:
+            env["GCOV_PREFIX_STRIP"] = self._target_gcov_prefix_strip
+        if self._target_jscov_prefix is not None:
+            env["JS_CODE_COVERAGE_OUTPUT_DIR"] = self._target_jscov_prefix
+        return env
+
+    @property
     def test_root(self):
         """
         The test_root property returns the directory on the device where
@@ -2041,6 +2078,10 @@ class ADBDevice(ADBCommand):
             cmd = f"run-as {self._run_as_package} {cmd}"
         else:
             pass
+
+        if env is None:
+            env = {}
+        env.update(self.target_ccov_env)
 
         # prepend cwd and env to command if necessary
         if cwd:
@@ -4304,6 +4345,10 @@ class ADBDevice(ADBCommand):
         """
         extras = {}
 
+        if moz_env is None:
+            moz_env = {}
+        moz_env.update(self.target_ccov_env)
+
         if moz_env:
             # moz_env is expected to be a dictionary of environment variables:
             # Fennec itself will set them when launched
@@ -4368,6 +4413,10 @@ class ADBDevice(ADBCommand):
                  :exc:`ADBError`
         """
         extras = {}
+
+        if moz_env is None:
+            moz_env = {}
+        moz_env.update(self.target_ccov_env)
 
         if moz_env:
             # moz_env is expected to be a dictionary of environment variables:
@@ -4435,6 +4484,10 @@ class ADBDevice(ADBCommand):
                  :exc:`ADBError`
         """
         extras = {}
+
+        if moz_env is None:
+            moz_env = {}
+        moz_env.update(self.target_ccov_env)
 
         if moz_env:
             # moz_env is expected to be a dictionary of environment variables:

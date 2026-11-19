@@ -102,13 +102,6 @@ async function heuristicIsNotRestyled(expectedType, resultDetails) {
 
   // URL
   let isUrlVisible = BrowserTestUtils.isVisible(resultDetails.element.url);
-  if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
-    // In Proton, the element remains visible, it's just empty.
-    isUrlVisible =
-      isUrlVisible &&
-      (!!resultDetails.displayed.url ||
-        !!document.l10n.getAttributes(resultDetails.element.url)?.id);
-  }
   Assert.equal(
     isUrlVisible,
     !!data.hasUrl,
@@ -122,13 +115,6 @@ async function heuristicIsNotRestyled(expectedType, resultDetails) {
   let isActionVisible = BrowserTestUtils.isVisible(
     resultDetails.element.action
   );
-  if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
-    // In Proton, the element remains visible, it's just empty.
-    isActionVisible =
-      isActionVisible &&
-      (!!resultDetails.displayed.action ||
-        !!document.l10n.getAttributes(resultDetails.element.action)?.id);
-  }
   Assert.equal(
     isActionVisible,
     !!data.hasAction,

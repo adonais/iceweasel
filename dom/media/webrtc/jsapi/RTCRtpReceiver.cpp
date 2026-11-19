@@ -265,7 +265,7 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
     promises.AppendElement(InvokeAsync(
         mCallThread, __func__,
         [conduit = mPipeline->mConduit, recvTrackId]() mutable {
-          auto report = MakeUnique<dom::RTCStatsCollection>();
+          auto report = std::make_unique<dom::RTCStatsCollection>();
           const Maybe<webrtc::Call::Stats> stats = conduit->GetCallStats();
           stats.apply([&](const auto& aStats) {
             dom::RTCBandwidthEstimationInternal bw;
@@ -291,7 +291,7 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
           mCallThread, __func__,
           [pipeline = mPipeline, recvTrackId = std::move(recvTrackId),
            mid = std::move(mid), transportId = std::move(transportId)] {
-            auto report = MakeUnique<dom::RTCStatsCollection>();
+            auto report = std::make_unique<dom::RTCStatsCollection>();
             auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
             auto asVideo = pipeline->mConduit->AsVideoSessionConduit();
 
@@ -786,7 +786,7 @@ void RTCRtpReceiver::UpdateTransport() {
       extmaps.push_back(extmap);
     }
 
-    filter = MakeUnique<MediaPipelineFilter>(extmaps);
+    filter = std::make_unique<MediaPipelineFilter>(extmaps);
 
     // Add remote SSRCs so we can distinguish which RTP packets actually
     // belong to this pipeline (also RTCP sender reports).

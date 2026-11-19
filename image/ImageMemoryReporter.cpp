@@ -24,7 +24,7 @@ class ImageMemoryReporter::WebRenderReporter final : public nsIMemoryReporter {
   WebRenderReporter() = default;
 
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                            nsISupports* aData, bool aAnonymize) override {
+                            nsISupports* aData, bool /*aAnonymize*/) override {
     layers::SharedSurfacesMemoryReport report;
     layers::SharedSurfacesParent::AccumulateMemoryReport(report);
     ReportSharedSurfaces(aHandleReport, aData, /* aIsForCompositor */ true,

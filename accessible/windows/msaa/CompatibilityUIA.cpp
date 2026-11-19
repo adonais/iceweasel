@@ -253,7 +253,7 @@ void GetUiaClientPidsWin11::Run(nsTArray<DWORD>& aPids) {
     if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
       continue;
     }
-    auto objNameBuf = MakeUnique<std::byte[]>(objNameBufLen);
+    auto objNameBuf = std::make_unique<std::byte[]>(objNameBufLen);
     ntStatus = ::NtQueryObject(entry.mHandle,
                                (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
                                objNameBuf.get(), objNameBufLen, &objNameBufLen);
@@ -341,7 +341,7 @@ static DWORD GetUiaClientPidWin10() {
       if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
         return true;
       }
-      auto objTypeBuf = MakeUnique<std::byte[]>(objTypeBufLen);
+      auto objTypeBuf = std::make_unique<std::byte[]>(objTypeBufLen);
       ntStatus =
           ::NtQueryObject(aHandle, ObjectTypeInformation, objTypeBuf.get(),
                           objTypeBufLen, &objTypeBufLen);

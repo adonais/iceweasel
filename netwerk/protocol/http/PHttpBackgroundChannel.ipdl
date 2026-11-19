@@ -33,7 +33,6 @@ child:
                            nsresult  transportStatus,
                            uint64_t  offset,
                            nsCString data,
-                           bool dataFromSocketProcess,
                            TimeStamp onDataAvailableStart);
 
 
@@ -42,10 +41,7 @@ child:
                       TimeStamp lastActiveTabOptimization,
                       nsHttpHeaderArray responseTrailers,
                       ConsoleReportCollected[] consoleReport,
-                      bool fromSocketProcess,
                       TimeStamp onStopRequestStart);
-
-  async OnConsoleReport(ConsoleReportCollected[] consoleReport);
 
   async OnProgress(int64_t progress, int64_t progressMax);
 

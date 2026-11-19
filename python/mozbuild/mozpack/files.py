@@ -1049,7 +1049,23 @@ class FileFinder(BaseFinder):
         self.find_dotfiles = find_dotfiles
         self.find_executables = find_executables
         self.ignore = tuple(mozpath.normsep(path) for path in ignore)
+        # Matching a path against hundreds of patterns dominates a walk of the
+        # tree, so the ones without a glob are looked up instead.
+        self._ignore_paths = frozenset(p for p in self.ignore if p and "*" not in p)
+        self._ignore_globs = tuple(p for p in self.ignore if not p or "*" in p)
         self.ignore_broken_symlinks = ignore_broken_symlinks
+
+    def _ignored(self, path):
+        """Whether `path` matches one of the ``ignore`` patterns, the way
+        ``mozpath.match()`` would."""
+        if path in self._ignore_paths:
+            return True
+        slash = path.find("/")
+        while slash != -1:
+            if path[:slash] in self._ignore_paths:
+                return True
+            slash = path.find("/", slash + 1)
+        return any(mozpath.match(path, p) for p in self._ignore_globs)
 
     def _find(self, pattern):
         """
@@ -1073,9 +1089,8 @@ class FileFinder(BaseFinder):
         Ignores file names starting with a '.' under the given path. If the
         path itself has leafs starting with a '.', they are not ignored.
         """
-        for p in self.ignore:
-            if mozpath.match(path, p):
-                return
+        if self._ignored(path):
+            return
 
         entries = []
         with os.scandir(os.path.join(self.base, path)) as scan:
@@ -1103,9 +1118,8 @@ class FileFinder(BaseFinder):
         if self.ignore_broken_symlinks and not os.path.exists(srcpath):
             return None
 
-        for p in self.ignore:
-            if mozpath.match(path, p):
-                return None
+        if self._ignored(path):
+            return None
 
         if self.find_executables and is_executable(srcpath):
             return ExecutableFile(srcpath)
@@ -1135,9 +1149,8 @@ class FileFinder(BaseFinder):
             if not os.path.exists(os.path.join(self.base, base)):
                 return
 
-            for p in self.ignore:
-                if mozpath.match(base, p):
-                    return
+            if self._ignored(base):
+                return
 
             # See above comment w.r.t. sorted() and idempotent behavior.
             for p in sorted(os.listdir(os.path.join(self.base, base))):

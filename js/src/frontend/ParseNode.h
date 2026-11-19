@@ -694,9 +694,9 @@ static inline bool IsMethodDefinitionKind(FunctionSyntaxKind kind) {
 }
 
 // To help diagnose sporadic crashes in the frontend, a few assertions are
-// enabled in early beta builds. (Most are not; those still use MOZ_ASSERT.)
+// enabled in Nightly builds. (Most are not; those still use MOZ_ASSERT.)
 // See bug 1547561.
-#if defined(EARLY_BETA_OR_EARLIER)
+#if defined(NIGHTLY_BUILD)
 #  define JS_PARSE_NODE_ASSERT MOZ_RELEASE_ASSERT
 #else
 #  define JS_PARSE_NODE_ASSERT MOZ_ASSERT

@@ -301,20 +301,20 @@ Maybe<uint32_t> SentenceBreakIteratorUtf16::Next() {
 
 Result<UniquePtr<Segmenter>, ICUError> Segmenter::TryCreate(
     Span<const char> aLocale, const SegmenterOptions& aOptions) {
-  return MakeUnique<Segmenter>(aLocale, aOptions);
+  return std::make_unique<Segmenter>(aLocale, aOptions);
 }
 
 UniquePtr<SegmentIteratorUtf16> Segmenter::Segment(
     Span<const char16_t> aText) const {
   switch (mOptions.mGranularity) {
     case SegmenterGranularity::Grapheme:
-      return MakeUnique<GraphemeClusterBreakIteratorUtf16>(aText);
+      return std::make_unique<GraphemeClusterBreakIteratorUtf16>(aText);
     case SegmenterGranularity::Sentence:
-      return MakeUnique<SentenceBreakIteratorUtf16>(aText);
+      return std::make_unique<SentenceBreakIteratorUtf16>(aText);
     case SegmenterGranularity::Word:
-      return MakeUnique<WordBreakIteratorUtf16>(aText);
+      return std::make_unique<WordBreakIteratorUtf16>(aText);
     case SegmenterGranularity::Line:
-      return MakeUnique<LineBreakIteratorUtf16>(aText);
+      return std::make_unique<LineBreakIteratorUtf16>(aText);
   }
   MOZ_ASSERT_UNREACHABLE("All granularities must be handled!");
   return nullptr;

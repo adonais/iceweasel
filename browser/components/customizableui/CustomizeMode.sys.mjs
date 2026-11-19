@@ -111,19 +111,8 @@ export class CustomizeMode {
     this.#translationObserver = new aWindow.MutationObserver(mutations =>
       this.#onTranslations(mutations)
     );
+    this.#window.MozXULElement.insertFTLIfNeeded("browser/customizeMode.ftl");
     this.#ensureCustomizationPanels();
-
-    let content = this.$("customization-content-container");
-    if (!content) {
-      this.#window.MozXULElement.insertFTLIfNeeded("browser/customizeMode.ftl");
-      let container = this.$("customization-container");
-      container.replaceChild(
-        this.#window.MozXULElement.parseXULToFragment(
-          container.firstChild.data
-        ),
-        container.lastChild
-      );
-    }
 
     this.#attachEventListeners();
 

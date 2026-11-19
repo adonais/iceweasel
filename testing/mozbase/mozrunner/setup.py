@@ -5,7 +5,7 @@
 from setuptools import find_packages, setup
 
 PACKAGE_NAME = "mozrunner"
-PACKAGE_VERSION = "8.4.0"
+PACKAGE_VERSION = "8.5.0"
 
 desc = """Reliable start/stop/configuration of Mozilla Applications (Firefox, Thunderbird, etc.)"""
 
@@ -18,7 +18,7 @@ deps = [
     "mozprofile~=3.0",
 ]
 
-EXTRAS_REQUIRE = {"crash": ["mozcrash >= 2.0"]}
+EXTRAS_REQUIRE = {"crash": ["mozcrash >= 2.3.0"]}
 
 setup(
     name=PACKAGE_NAME,

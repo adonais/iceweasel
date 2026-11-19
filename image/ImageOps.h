@@ -130,6 +130,11 @@ class ImageOps {
                                  const nsACString& aMimeType,
                                  ImageMetadata& aMetadata);
 
+  /* Same as above but with a SourceBuffer + DecoderType */
+  static nsresult DecodeMetadata(SourceBuffer* aSourceBuffer,
+                                 image::DecoderType aDecoderType,
+                                 ImageMetadata& aMetadata);
+
   /**
    * Decodes an image from an nsIInputStream directly into a SourceSurface,
    * without ever creating an Image or imgIContainer (which are mostly

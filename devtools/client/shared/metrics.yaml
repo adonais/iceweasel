@@ -1208,7 +1208,7 @@ devtools.main:
         type: string
       entrypoint:
         description: >
-          How was the toolbox opened? CommandLine, ContextMenu, HamburgerMenu, KeyShortcut, SessionRestore, SystemMenu or SlowScript
+          How was the toolbox opened? CommandLine, ContextMenu, HamburgerMenu, KeyShortcut, SessionRestore or SystemMenu
         type: string
       first_panel:
         description: >
@@ -2996,7 +2996,6 @@ devtools:
       - ContextMenu
       - CommandLine
       - SessionRestore
-      - SlowScript
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1378863
     data_reviews:

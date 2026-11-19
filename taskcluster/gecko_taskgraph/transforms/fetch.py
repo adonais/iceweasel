@@ -296,7 +296,13 @@ class GitFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     include_dot_git: Optional[bool] = None
     artifact_name: Optional[str] = None
     path_prefix: Optional[str] = None
+    # How to populate the checkout. "clone" (the default) clones the repo,
+    # "fetch" fetches only `revision` and leaves no branches or tags,
+    # for git servers that cannot serve a full clone. See
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=2047876
+    fetch_mode: Optional[Literal["clone", "fetch"]] = None
     # ssh-key is a taskcluster secret path (e.g. project/civet/github-deploy-key)
+    # The path may contain `{level}`, which is replaced by the SCM level.
     # In the secret dictionary, the key should be specified as
     #  "ssh_privkey": "-----BEGIN OPENSSH PRIVATE KEY-----\nkfksnb3jc..."
     # n.b. The OpenSSH private key file format requires a newline at the end of the file.
@@ -337,6 +343,7 @@ def create_git_fetch_task(config, name, fetch):
 
     ssh_key = fetch.get("ssh-key")
     if ssh_key:
+        ssh_key = ssh_key.format(level=config.params["level"])
         args.append("--ssh-key-secret")
         args.append(ssh_key)
 
@@ -344,6 +351,10 @@ def create_git_fetch_task(config, name, fetch):
     if fetch.get("include-dot-git", False):
         args.append("--include-dot-git")
         digest_data.append(".git")
+
+    fetch_mode = fetch.get("fetch-mode")
+    if fetch_mode:
+        args.extend(["--fetch-mode", fetch_mode])
 
     return {
         "command": args,

@@ -9,7 +9,7 @@ import {
 } from "../../common/Actions.mjs";
 // We disable import checking here as redux is installed via the npm packages
 // at the newtab level, rather than in the top-level package.json.
-// eslint-disable-next-line import/no-unresolved
+// eslint-disable-next-line import-x/no-unresolved
 import { applyMiddleware, combineReducers, createStore } from "redux";
 
 export const MERGE_STORE_ACTION = "NEW_TAB_INITIAL_STATE";

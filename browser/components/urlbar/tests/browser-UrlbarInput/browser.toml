@@ -7,8 +7,6 @@ support-files = [
 
 ["browser_a11y.js"]
 
-["browser_popover_state.js"]
-
 ["browser_formatValue.js"]
 
 ["browser_formatValue_detachedTab.js"]
@@ -20,9 +18,14 @@ support-files = ["mixed_active.html"]
 
 ["browser_inputmode.js"]
 
+["browser_macFullscreen.js"]
+skip-if = ["os != 'mac'"]
+
 ["browser_overflow.js"]
 
 ["browser_overflow_resize.js"]
+
+["browser_popover_state.js"]
 
 ["browser_privateFeature.js"]
 

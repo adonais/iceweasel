@@ -14,10 +14,7 @@
 
 namespace mozilla {
 
-template <typename T>
-using DefaultDelete = std::default_delete<T>;
-
-template <typename T, class D = DefaultDelete<T>>
+template <typename T, class D = std::default_delete<T>>
 using UniquePtr = std::unique_ptr<T, D>;
 
 }  // namespace mozilla
@@ -44,65 +41,6 @@ struct UniqueSelector<T[N]> {
 }  // namespace detail
 
 /**
- * MakeUnique is a helper function for allocating new'd objects and arrays,
- * returning a UniquePtr containing the resulting pointer.  The semantics of
- * MakeUnique<Type>(...) are as follows.
- *
- *   If Type is an array T[n]:
- *     Disallowed, deleted, no overload for you!
- *   If Type is an array T[]:
- *     MakeUnique<T[]>(size_t) is the only valid overload.  The pointer returned
- *     is as if by |new T[n]()|, which value-initializes each element.  (If T
- *     isn't a class type, this will zero each element.  If T is a class type,
- *     then roughly speaking, each element will be constructed using its default
- *     constructor.  See C++11 [dcl.init]p7 for the full gory details.)
- *   If Type is non-array T:
- *     The arguments passed to MakeUnique<T>(...) are forwarded into a
- *     |new T(...)| call, initializing the T as would happen if executing
- *     |T(...)|.
- *
- * There are various benefits to using MakeUnique instead of |new| expressions.
- *
- * First, MakeUnique eliminates use of |new| from code entirely.  If objects are
- * only created through UniquePtr, then (assuming all explicit release() calls
- * are safe, including transitively, and no type-safety casting funniness)
- * correctly maintained ownership of the UniquePtr guarantees no leaks are
- * possible.  (This pays off best if a class is only ever created through a
- * factory method on the class, using a private constructor.)
- *
- * Second, initializing a UniquePtr using a |new| expression requires repeating
- * the name of the new'd type, whereas MakeUnique in concert with the |auto|
- * keyword names it only once:
- *
- *   UniquePtr<char> ptr1(new char()); // repetitive
- *   auto ptr2 = MakeUnique<char>();   // shorter
- *
- * Of course this assumes the reader understands the operation MakeUnique
- * performs.  In the long run this is probably a reasonable assumption.  In the
- * short run you'll have to use your judgment about what readers can be expected
- * to know, or to quickly look up.
- *
- * Third, a call to MakeUnique can be assigned directly to a UniquePtr.  In
- * contrast you can't assign a pointer into a UniquePtr without using the
- * cumbersome reset().
- *
- *   UniquePtr<char> p;
- *   p = new char;           // ERROR
- *   p.reset(new char);      // works, but fugly
- *   p = MakeUnique<char>(); // preferred
- *
- * (And third, although not relevant to Mozilla: MakeUnique is exception-safe.
- * An exception thrown after |new T| succeeds will leak that memory, unless the
- * pointer is assigned to an object that will manage its ownership.  UniquePtr
- * ably serves this function.)
- */
-
-template <typename T, typename... Args>
-auto MakeUnique(Args&&... aArgs) {
-  return std::make_unique<T>(std::forward<Args>(aArgs)...);
-}
-
-/**
  * WrapUnique is a helper function to transfer ownership from a raw pointer
  * into a UniquePtr<T>. It can only be used with a single non-array type.
  *
@@ -110,7 +48,7 @@ auto MakeUnique(Args&&... aArgs) {
  *
  *   auto p = WrapUnique(new char);
  *
- * It can be used when MakeUnique is not usable, for example, when the
+ * It can be used when std::make_unique is not usable, for example, when the
  * constructor you are using is private, or you want to use aggregate
  * initialization.
  */

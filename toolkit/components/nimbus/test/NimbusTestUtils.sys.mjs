@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** @import { NimbusEnrollments } from "../lib/Enrollments.sys.mjs" */
+/** @import { EnrollmentStatusEntry, NimbusEnrollments } from "../lib/Enrollments.sys.mjs" */
 /** @import { _ExperimentFeature } from "../ExperimentAPI.sys.mjs" */
 /** @import { Phase } from "../lib/Migrations.sys.mjs" */
 
@@ -23,12 +23,10 @@ const lazy = XPCOMUtils.declareLazy({
   NimbusMigrations: "resource://nimbus/lib/Migrations.sys.mjs",
   NimbusTelemetry: "resource://nimbus/lib/Telemetry.sys.mjs",
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
-  ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   ProfilesDatastoreService:
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
   RemoteSettingsExperimentLoader:
     "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
-  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
@@ -177,15 +175,18 @@ export const NimbusTestUtils = {
      *
      * This function will also clean up the isEarlyStartup cache.
      *
-     * @param {object} store
-     *        The `ExperimentStore`.
+     * @param {object | undefined} store
+     * The `ExperimentStore` to assert is empty. If not provided, the global
+     * experiment store (`ExperimentAPI.manager.store`) will be used.
      *
      * @param {object} options
      * @param {boolean} options.allProfiles Whether to assert that no enrollments exist in any profiles in the group.
      */
     async storeIsEmpty(store, { allProfiles = false } = {}) {
+      const experimentStore = store ?? ExperimentAPI.manager.store;
+
       NimbusTestUtils.Assert.deepEqual(
-        store
+        experimentStore
           .getAll()
           .filter(e => e.active)
           .map(e => e.slug),
@@ -195,15 +196,17 @@ export const NimbusTestUtils = {
 
       // Do *not* queue a removal from the store yet -- we'll handle that in
       // cleanupEnrollmentDatabase.
-      store
+      experimentStore
         .getAll()
         .filter(e => !e.active)
         .forEach(e =>
-          store._deleteForTests(e.slug, { removeFromNimbusEnrollments: false })
+          experimentStore._deleteForTests(e.slug, {
+            removeFromNimbusEnrollments: false,
+          })
         );
 
       NimbusTestUtils.Assert.deepEqual(
-        store
+        experimentStore
           .getAll()
           .filter(e => !e.active)
           .map(e => e.slug),
@@ -213,21 +216,28 @@ export const NimbusTestUtils = {
 
       NimbusTestUtils.cleanupStorePrefCache();
 
-      await NimbusTestUtils.cleanupEnrollmentDatabase(store?._db);
-      if (lazy.NimbusEnrollments.databaseEnabled) {
-        // TODO(bug 1967779): require the ProfilesDatastoreService to be initialized
-        // and remove this check.
-
+      if (lazy.NimbusEnrollments.persistenceEnabled) {
+        await NimbusTestUtils.cleanupEnrollmentDatabase(experimentStore?._db);
         if (allProfiles) {
           const conn = await lazy.ProfilesDatastoreService.getConnection();
-          const count = await conn
+          const enrollmentsCount = await conn
             .execute("SELECT COUNT(*) AS count FROM NimbusEnrollments;")
             .then(([row]) => row.getResultByName("count"));
 
           NimbusTestUtils.Assert.equal(
-            count,
+            enrollmentsCount,
             0,
             "There should be zero enrollments in the NimbusEnrollments table"
+          );
+
+          const statusesCount = await conn
+            .execute("SELECT COUNT(*) AS count from NimbusEnrollmentStatuses;")
+            .then(([row]) => row.getResultByName("count"));
+
+          NimbusTestUtils.Assert.equal(
+            statusesCount,
+            0,
+            "There should be no entries in the NimbusEnrollmentStatusesTable"
           );
         }
       }
@@ -603,10 +613,8 @@ export const NimbusTestUtils = {
   },
 
   stubs: {
-    store(path) {
-      return new ExperimentStore("ExperimentStoreData", {
-        path: path ?? FileTestUtils.getTempFile("test-experiment-store").path,
-      });
+    store() {
+      return new ExperimentStore("ExperimentStoreData");
     },
 
     manager(store) {
@@ -740,13 +748,24 @@ export const NimbusTestUtils = {
       });
     },
 
+    get LEGACY_STORE_REMOVED() {
+      const { Phase } = lazy.NimbusMigrations;
+
+      return NimbusTestUtils.makeMigrationState({
+        [Phase.INIT_STARTED]: "remove-normandy-databases",
+        [Phase.AFTER_STORE_INITIALIZED]:
+          "graduate-firefox-labs-jpeg-xl-all-channels",
+        [Phase.AFTER_REMOTE_SETTINGS_UPDATE]: "firefox-labs-enrollments",
+      });
+    },
+
     /**
      * A migration state that represents all migrations applied.
      *
      * @type {Record<Phase, number>}
      */
     get LATEST() {
-      return NimbusTestUtils.migrationState.REMOVED_NORMANDY_DATABASES;
+      return NimbusTestUtils.migrationState.LEGACY_STORE_REMOVED;
     },
   },
 
@@ -899,12 +918,7 @@ export const NimbusTestUtils = {
    * @param {NimbusEnrollments} db The NimbusEnrollments object.
    */
   async cleanupEnrollmentDatabase(db) {
-    if (!lazy.NimbusEnrollments.databaseEnabled) {
-      // We are in an xpcshell test that has not initialized the
-      // ProfilesDatastoreService.
-      //
-      // TODO(bug 1967779): require the ProfilesDatastoreService to be initialized
-      // and remove this check.
+    if (!lazy.NimbusEnrollments.persistenceEnabled) {
       return;
     }
 
@@ -954,6 +968,15 @@ export const NimbusTestUtils = {
       `,
       { profileId }
     );
+
+    await conn.execute(
+      `
+        DELETE FROM NimbusEnrollmentStatuses
+        WHERE
+          profileId = :profileId;
+      `,
+      { profileId }
+    );
   },
 
   /**
@@ -971,19 +994,43 @@ export const NimbusTestUtils = {
   },
 
   /**
-   * Create a Nimbus store and return its path on disk.
+   * Create a legacy Nimbus store.
    *
-   * @param {function(store: ExperimentStore): void} A function that will be
-   * called with the store.
+   * @param {object[]} enrollments
+   * The enrollments to write to the store.
    *
-   * @returns {string} The path to the Nimbus store, which can be passed to
-   * {@link NimbusTestUtils.setupTest}.
+   * @returns {string}
+   * The path to the created store.
    */
-  async createStoreWith(fn) {
+  async createLegacyStore(enrollments) {
+    const path = FileTestUtils.getTempFile("test-experiment-store").path;
+
+    await IOUtils.writeJSON(
+      path,
+      Object.fromEntries(enrollments.map(e => [e.slug, e]))
+    );
+
+    return path;
+  },
+
+  /**
+   * @typedef {function(ExperimentStore): (Promise<void> | void)}
+   * PopulateStoreFn
+   */
+
+  /**
+   * Populate the Nimbus enrollment store.
+   *
+   * The store will be finalized to ensure that all pending writes are flushed.
+   *
+   * @param {PopulateStoreFn} populateStore
+   * A function that will be called with the store.
+   */
+  async populateStore(populateStore) {
     const store = NimbusTestUtils.stubs.store();
     await store.init();
-    await fn(store);
-    return NimbusTestUtils.saveStore(store);
+    await populateStore(store);
+    await store._db.finalize();
   },
 
   async deleteEnrollmentsFromProfiles(profileIds) {
@@ -1003,35 +1050,6 @@ export const NimbusTestUtils = {
         );
       }
     });
-  },
-
-  enableNimbusEnrollments({ read = false, sync = false } = {}) {
-    const writePref = "nimbus.profilesdatastoreservice.enabled";
-    const readPref = "nimbus.profilesdatastoreservice.read.enabled";
-    const syncPref = "nimbus.profilesdatastoreservice.sync.enabled";
-
-    const originalWriteValue = Services.prefs.getBoolPref(writePref, false);
-    const originalReadValue = Services.prefs.getBoolPref(readPref, false);
-    const originalSyncValue = Services.prefs.getBoolPref(syncPref, false);
-
-    Services.prefs.setBoolPref(writePref, true);
-
-    if (!originalReadValue && read) {
-      Services.prefs.setBoolPref(readPref, true);
-    }
-
-    if (!originalSyncValue && sync) {
-      Services.prefs.setBoolPref(syncPref, true);
-    }
-
-    lazy.NimbusEnrollments._reloadPrefsForTests();
-
-    return function () {
-      Services.prefs.setBoolPref(writePref, originalWriteValue);
-      Services.prefs.setBoolPref(readPref, originalReadValue);
-      Services.prefs.setBoolPref(syncPref, originalSyncValue);
-      lazy.NimbusEnrollments._reloadPrefsForTests();
-    };
   },
 
   /**
@@ -1282,56 +1300,13 @@ export const NimbusTestUtils = {
   },
 
   /**
-   * Remove the ExperimentStore file.
-   *
-   * If the store contains active enrollments this function will cause the test
-   * to fail.
+   * Flush the NimbusEnrollments table.
    *
    * @param {ExperimentStore} store
-   *         The store to delete.
-   */
-  async removeStore(store) {
-    await NimbusTestUtils.assert.storeIsEmpty(store);
-
-    // Prevent the next save from happening.
-    store._jsonFile._saver.disarm();
-
-    // If we're too late to stop the save from happening then we need to wait
-    // for it to finish. Otherwise the saver might recreate the file on disk
-    // after we delete it.
-    if (store._jsonFile._saver.isRunning) {
-      await store._jsonFile._saver._runningPromise;
-    }
-
-    await IOUtils.remove(store._jsonFile.path);
-  },
-
-  /**
-   * Save the store to disk.
-   *
-   * This will also flush the NimbusEnrollments table.
-   *
-   * @param {ExperimentStore} store
-   *        The store to save.
-   *
-   * @returns {string} The path to the file on disk.
+   * The store to save.
    */
   async saveStore(store) {
-    const jsonFile = store._jsonFile;
-
-    if (jsonFile._saver.isRunning) {
-      // It is possible that the store has been updated since we started writing
-      // to disk. If we've already started writing, wait for that to finish.
-      await jsonFile._saver._runningPromise;
-    } else if (jsonFile._saver.isArmed) {
-      // Otherwise, if we have a pending write we cancel it.
-      jsonFile._saver.disarm();
-    }
-
-    await jsonFile._save();
     await store._db?._flushNow();
-
-    return jsonFile.path;
   },
 
   /**
@@ -1355,62 +1330,85 @@ export const NimbusTestUtils = {
   /**
    * @param {object} options
    * @param {boolean?} options.init
-   *        Initialize the Experiment API.
+   * Initialize the Experiment API.
    *
-   *        If false, the caller must call {@link ExperimentAPI.init} to
-   *        complete initialization.
+   * If false, the caller must call {@link ExperimentAPI.init} to complete
+   * initialization.
    *
-   * @param {string?} options.storePath
-   *        An optional path to an existing ExperimentStore to use for the
-   *        ExperimentManager.
+   * @param {string?} options.legacyStorePath
+   * If provided, this will be used as the path of the legacy experiment store
+   * during migrations.
    *
-   *        If provided, the {@link options.migrationState} option must also be
-   *        set.
+   * If provided, the {@link options.migrationState} option must also be set.
    *
-   * @param {object[]?} options.experiments
-   *        If provided, these recipes will be returned by the RemoteSettings
-   *        experiments client.
+   * @param {PopulateStoreFn} options.populateStore
+   * A function that will populate the Nimbus enrollment store prior to
+   * initialization.
+   *
+   * If provided, the {@link options.migrationState} option must also be set.
+   *
+   * Note: The actual store object used by this function will *not*
+   * be used by the instantiated ExperimentAPI.
+   *
+   * @param {(object[] | function(): object[])?} options.experiments
+   * If provided, these recipes will be returned by the RemoteSettings
+   * experiments client.
    *
    * @param {object[]?} options.secureExperiments
-   *        If provided, these recipes will be returned by the RemoteSetings
-   *        secureExperiments client.
+   * If provided, these recipes will be returned by the RemoteSetings
+   * secureExperiments client.
    *
    * @param {boolean?} options.clearTelemetry
-   *        If true, telemetry will be reset in the cleanup function.
+   * If true, telemetry will be reset in the cleanup function.
    *
    * @param {_ExperimentFeature[] | undefined} options.features
-   *        Features to add to NimbusFeatures.
+   * Features to add to NimbusFeatures.
    *
    * @param {Record<Phase, number>?} options.migrationState
-   *        The value that should be set for the Nimbus migration prefs. If
-   *        not provided, {@link NimbusTestUtils.migrationState.LATEST} will be used.
+   * The value that should be set for the Nimbus migration prefs. If not
+   * provided, {@link NimbusTestUtils.migrationState.LATEST} will be used.
    *
-   *        Required if {@link options.storePath} is also provided.
+   * Most tests will want to use either
+   * {@link NimbusTestUtils.migrationState.UNMIGRATED} or
+   * {@link NimbusTestUtils.migrationState.LATEST}, depending on whether or not
+   * they are writing to the `NimbusEnrollments` database table.
    *
-   *        Most tests will want to use either
-   *        {@link NimbusTestUtils.migrationState.UNMIGRATED} or
-   *        {@link NimbusTestUtils.migrationState.LATEST}, depending on whether
-   *        or not they are writing to the `NimbusEnrollments` database table.
-   *
-   * @throws {Error} If the the arguments to this function are not consistent.
+   * @throws {Error}
+   * If the the arguments to this function are not consistent.
    *
    * @returns {TestContext}
-   *          Everything you need to write a test using Nimbus.
+   * Everything you need to write a test using Nimbus.
    */
   async setupTest({
     init = true,
-    storePath,
+    populateStore,
+    legacyStorePath,
     experiments,
     secureExperiments,
     clearTelemetry = false,
     features,
-    migrationState = undefined,
+    migrationState,
   } = {}) {
-    if (storePath && typeof migrationState === "undefined") {
-      throw new Error("setupTest: storePath requires migrationState");
+    if (populateStore || legacyStorePath) {
+      if (!lazy.NimbusEnrollments.persistenceEnabled) {
+        throw new Error("persistence is disabled");
+      }
+
+      if (typeof migrationState === "undefined") {
+        throw new Error("setupTest: populateStore requires migrationState");
+      }
     }
 
     NimbusLogging.enableLogging();
+
+    if (populateStore) {
+      await NimbusTestUtils.populateStore(populateStore);
+    } else if (legacyStorePath) {
+      Services.prefs.setStringPref(
+        "nimbus.persistence.legacyStorePath",
+        legacyStorePath
+      );
+    }
 
     const sandbox = lazy.sinon.createSandbox();
 
@@ -1419,7 +1417,7 @@ export const NimbusTestUtils = {
       cleanupFeatures = NimbusTestUtils.addTestFeatures(...features);
     }
 
-    const store = NimbusTestUtils.stubs.store(storePath);
+    const store = NimbusTestUtils.stubs.store();
     const manager = NimbusTestUtils.stubs.manager(store);
     const loader = NimbusTestUtils.stubs.rsLoader(manager);
 
@@ -1478,6 +1476,13 @@ export const NimbusTestUtils = {
         Services.prefs.deleteBranch("nimbus.migrations.");
 
         Services.prefs.clearUserPref("nimbus.firstUpdateComplete");
+
+        if (legacyStorePath) {
+          Services.prefs.clearUserPref("nimbus.persistence.legacyStorePath");
+
+          // The legacy store may have already been deleted by a migration.
+          await IOUtils.remove(legacyStorePath, { ignoreAbsent: true });
+        }
 
         NimbusLogging.maybeResetLogLevel();
       },
@@ -1547,30 +1552,6 @@ export const NimbusTestUtils = {
     );
   },
 
-  async waitForActiveEnrollments(expectedSlugs) {
-    const profileId = ExperimentAPI.profileId;
-
-    await this.flushStore();
-    await lazy.TestUtils.waitForCondition(async () => {
-      const conn = await lazy.ProfilesDatastoreService.getConnection();
-      const slugs = await conn
-        .execute(
-          `
-            SELECT
-              slug
-            FROM NimbusEnrollments
-            WHERE
-              active = true AND
-              profileId = :profileId;
-          `,
-          { profileId }
-        )
-        .then(rows => rows.map(row => row.getResultByName("slug")));
-
-      return lazy.ObjectUtils.deepEqual(slugs.sort(), expectedSlugs.sort());
-    }, `Waiting for enrollments of ${expectedSlugs} to sync to database`);
-  },
-
   async flushStore(store = null) {
     const db = (store ?? ExperimentAPI.manager.store)._db;
 
@@ -1605,5 +1586,83 @@ export const NimbusTestUtils = {
         client.verifySignature = originalValues[key];
       }
     };
+  },
+
+  /**
+   * Return all enrollment status entries
+   *
+   * @see {@link NimbusTestUtils.loadEnrollmentStatusEntriesForSlug}
+   *
+   * @param {string} filterSlug The slug to filter by.
+   *
+   * @returns {Promise<Map<string, EnrollmentStatusEntry[]>>}
+   * A map mapping of slugs to their enrollment status entries, sorted by
+   * {@link EnrollmentStatusEntry.index index}.
+   */
+  async loadEnrollmentStatusEntries(filterSlug = undefined) {
+    const conn = await lazy.ProfilesDatastoreService.getConnection();
+
+    let query = `
+      SELECT
+        slug,
+        entryIndex,
+        timestamp,
+        json(status) AS status
+      FROM NimbusEnrollmentStatuses
+      WHERE
+        profileId = :profileId
+    `;
+
+    if (filterSlug) {
+      query += `
+        AND slug = :slug
+      `;
+    }
+
+    query += `
+      ORDER BY entryIndex ASC;
+    `;
+
+    const rows = await conn.execute(query, {
+      profileId: ExperimentAPI.profileId,
+      slug: filterSlug,
+    });
+
+    const enrollmentStatuses = new Map();
+    for (const row of rows) {
+      const slug = row.getResultByName("slug");
+      const timestamp = new Date(row.getResultByName("timestamp"));
+      const index = row.getResultByName("entryIndex");
+      const status = JSON.parse(row.getResultByName("status"));
+
+      enrollmentStatuses
+        .getOrInsertComputed(slug, () => [])
+        .push({
+          timestamp,
+          index,
+          status,
+        });
+    }
+
+    return enrollmentStatuses;
+  },
+
+  /**
+   * Return all enrollment status entries for the given slug.
+   *
+   * @param {string} slug The slug to filter by.
+   *
+   * @returns {Promise<EnrollmentStatusEntry[]>}
+   * An array of all enrollment status entries for the given slug, sorted by
+   * {@link EnrollmentStatusEntry.index index}.
+   */
+  async loadEnrollmentStatusEntriesForSlug(slug) {
+    if (!slug) {
+      throw new TypeError("slug is required");
+    }
+
+    const entryMap = await NimbusTestUtils.loadEnrollmentStatusEntries(slug);
+
+    return entryMap.get(slug) ?? [];
   },
 };

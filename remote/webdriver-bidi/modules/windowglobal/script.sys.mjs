@@ -290,7 +290,9 @@ class ScriptModule extends WindowGlobalBiDiModule {
           })
         : null;
 
-    realm.userActivationEnabled = userActivation;
+    if (userActivation) {
+      realm.notifyUserActivation();
+    }
 
     const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
     const rv = realm.executeInRealmWithBindings(
@@ -367,7 +369,9 @@ class ScriptModule extends WindowGlobalBiDiModule {
 
     const realm = this.messageHandler.getRealm({ realmId, sandboxName });
 
-    realm.userActivationEnabled = userActivation;
+    if (userActivation) {
+      realm.notifyUserActivation();
+    }
 
     const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
     const rv = realm.executeInRealm(expression, debuggerEnvironment);

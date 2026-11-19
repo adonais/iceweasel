@@ -16,6 +16,7 @@ import mozilla.components.feature.listentopage.PlaybackSpeed
 import mozilla.components.feature.listentopage.PlaybackState
 import mozilla.components.feature.listentopage.Voice
 import mozilla.components.feature.listentopage.VoiceState
+import mozilla.components.feature.listentopage.content.LanguageSource
 import mozilla.components.feature.listentopage.listenReducer
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -206,6 +207,30 @@ class ListenToPageTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `WHEN content is ready in the language the page declares THEN record content_ready with the page source`() {
+        val store = createStore(phase = PlaybackPhase.Idle)
+
+        store.dispatch(ListenAction.Content.ContentReady(languageTag = "de", languageSource = LanguageSource.Page))
+
+        val extra = ListenToPage.contentReady.testGetValue()!!.single().extra
+        assertEquals("de", extra?.get("language"))
+        assertEquals("page", extra?.get("language_source"))
+    }
+
+    @Test
+    fun `WHEN content is ready in the fallback language THEN record content_ready with the device source`() {
+        val store = createStore(phase = PlaybackPhase.Idle)
+
+        store.dispatch(
+            ListenAction.Content.ContentReady(languageTag = "en-US", languageSource = LanguageSource.Fallback)
+        )
+
+        val extra = ListenToPage.contentReady.testGetValue()!!.single().extra
+        assertEquals("en-US", extra?.get("language"))
+        assertEquals("device", extra?.get("language_source"))
+    }
+
+    @Test
     fun `WHEN playback starts across chunks THEN record playback_started once per session`() {
         val store = createStore(phase = PlaybackPhase.Buffering)
 
@@ -272,6 +297,36 @@ class ListenToPageTelemetryMiddlewareTest {
         store.dispatch(ListenAction.Session.StopRequested(ListenAction.Session.StopSource.TabClosed))
 
         assertEquals("tab_closed", ListenToPage.stopped.testGetValue()!!.single().extra?.get("source"))
+    }
+
+    @Test
+    fun `WHEN the session is stopped by closing reader mode THEN record stopped with reader_mode_closed`() {
+        val store = createStore(phase = PlaybackPhase.Playing)
+
+        store.dispatch(ListenAction.Session.StopRequested(ListenAction.Session.StopSource.ReaderModeClosed))
+
+        assertEquals("reader_mode_closed", ListenToPage.stopped.testGetValue()!!.single().extra?.get("source"))
+    }
+
+    @Test
+    fun `WHEN the session is stopped by turning the feature off THEN record stopped with feature_disabled`() {
+        val store = createStore(phase = PlaybackPhase.Paused)
+
+        store.dispatch(ListenAction.Session.StopRequested(ListenAction.Session.StopSource.FeatureDisabled))
+
+        assertEquals("feature_disabled", ListenToPage.stopped.testGetValue()!!.single().extra?.get("source"))
+    }
+
+    @Test
+    fun `WHEN the media session ended outside the app THEN record stopped with media_session_ended_outside_app`() {
+        val store = createStore(phase = PlaybackPhase.Paused)
+
+        store.dispatch(ListenAction.Session.StopRequested(ListenAction.Session.StopSource.MediaSessionEndedOutsideApp))
+
+        assertEquals(
+            "media_session_ended_outside_app",
+            ListenToPage.stopped.testGetValue()!!.single().extra?.get("source"),
+        )
     }
 
     @Test

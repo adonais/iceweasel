@@ -117,7 +117,7 @@ static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
             return aCp->SendDecodeImage(WrapNotNull(remoteURI), aSize, aStretch,
                                         aColorScheme, WrapNotNull(principal));
           },
-          [](nsresult aError) {
+          [](nsresult /*aError*/) {
             return ContentParent::DecodeImagePromise::CreateAndReject(
                 ipc::ResponseRejectReason::SendError, __func__);
           })

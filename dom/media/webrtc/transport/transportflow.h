@@ -49,9 +49,9 @@ class TransportFlow final : public nsISupports {
  public:
   TransportFlow()
       : id_("(anonymous)"),
-        layers_(MakeUnique<std::deque<TransportLayer*>>()) {}
+        layers_(std::make_unique<std::deque<TransportLayer*>>()) {}
   explicit TransportFlow(const std::string id)
-      : id_(id), layers_(MakeUnique<std::deque<TransportLayer*>>()) {}
+      : id_(id), layers_(std::make_unique<std::deque<TransportLayer*>>()) {}
 
   const std::string& id() const { return id_; }
 

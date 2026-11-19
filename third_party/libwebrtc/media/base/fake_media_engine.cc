@@ -22,6 +22,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 #include "api/audio/audio_device.h"
 #include "api/audio_options.h"
 #include "api/call/audio_sink.h"
@@ -272,6 +273,9 @@ const AudioOptions& FakeVoiceMediaSendChannel::options() const {
 int FakeVoiceMediaSendChannel::max_bps() const {
   return max_bps_;
 }
+const std::string& FakeVoiceMediaSendChannel::mid() const {
+  return mid_;
+}
 bool FakeVoiceMediaSendChannel::SetSenderParameters(
     const AudioSenderParameter& params) {
   set_send_rtcp_parameters(params.rtcp);
@@ -280,6 +284,9 @@ bool FakeVoiceMediaSendChannel::SetSenderParameters(
           SetSendRtpHeaderExtensions(params.extensions) &&
           SetMaxSendBandwidth(params.max_bandwidth_bps) &&
           SetOptions(params.options));
+}
+void FakeVoiceMediaSendChannel::SetMid(absl::string_view mid) {
+  mid_ = std::string(mid);
 }
 bool FakeVoiceMediaSendChannel::SetSend(bool send) {
   return set_sending(send);

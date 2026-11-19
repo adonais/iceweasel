@@ -452,7 +452,9 @@ struct FrameEncodeSettings {
   frame (`FrameType`).
 - **`temporal_id`**: The temporal ID for this frame. Must be set to 0 for
   keyframes. Provided as input for the CBR rate controller.
-- **`spatial_id`**: The spatial ID for this frame.
+- **`spatial_id`**: The spatial ID for this frame. The `FrameEncodeSettings` of
+  a temporal unit must be ordered by strictly increasing spatial ID, i.e. there
+  is at most one frame per spatial layer and lower layers come first.
 - **`resolution`**: The resolution to encode the frame at. Note that any
   reference buffer used for prediction must have a resolution that is a multiple
   of the supported scaling factors.

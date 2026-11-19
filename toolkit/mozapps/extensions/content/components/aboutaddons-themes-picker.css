@@ -10,6 +10,11 @@ moz-message-bar.picker-error-bar {
   margin-block-end: var(--space-small);
 }
 
+moz-card {
+  /* Align card heading to the theme picker cards grid. */
+  --card-heading-padding-inline: var(--space-xlarge);
+}
+
 moz-card::part(heading) {
   margin: 0;
   font-size: var(--font-size-large);

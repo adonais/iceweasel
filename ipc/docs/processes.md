@@ -78,12 +78,9 @@ graph TD
     Launcher --> Main
 
     Main ==>|PContent| Content
-    Main ==>|PSocketProcess| Socket(Network Socket)
     Main ==>|PGMP| GMP(Gecko Media Plugins)
     VR ==>|PVR| Main
     GPU ==>|PGPU| Main
-
-    Socket -->|PSocketProcessBridge| Content
 
     GPU -->|PCompositorManager| Main
     GPU -->|PCompositorManager| Content
@@ -589,7 +586,7 @@ UniquePtr<ProcessChild> process;
 switch (XRE_GetProcessType()) {
     // ...
     case GeckoProcessType_Demo:
-      process = MakeUnique<DemoChild::Process>(parentPID);
+      process = std::make_unique<DemoChild::Process>(parentPID);
       break;
 }
 ```
@@ -650,7 +647,7 @@ special to new processes, namely `ProcessSelector`. `ProcessSelector`
 is used to determine what process types have access to what XPCOM components.
 By default, a process has access to none. The code adds enums for selecting
 a subset of process types, like
-`ALLOW_IN_GPU_RDD_VR_SOCKET_UTILITY_AND_DEMO_PROCESS`, to the
+`ALLOW_IN_GPU_RDD_VR_UTILITY_AND_DEMO_PROCESS`, to the
 `ProcessSelector` enum in {searchfox}`gen_static_components.py <xpcom/components/gen_static_components.py>`
 and {searchfox}`Module.h <xpcom/components/Module.h>`.
 It then updates the selectors in various `components.conf` files and

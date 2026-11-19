@@ -46,7 +46,30 @@
 
 #include "cairoint.h"
 
+#include "cairo-win32-private.h"
+
 #include <windows.h>
+
+#include <stdbool.h>
+
+typedef HRESULT (__stdcall *pCoIncrementMTAUsage_t) (CO_MTA_USAGE_COOKIE*);
+typedef HRESULT (__stdcall *pCoDecrementMTAUsage_t) (CO_MTA_USAGE_COOKIE);
+
+static struct {
+    cairo_atomic_once_t once;
+
+    struct {
+        CO_MTA_USAGE_COOKIE cookie;
+        bool cookie_is_set;
+        pCoDecrementMTAUsage_t pCoDecrementMTAUsage;
+    } mta_usage;
+    HANDLE thread;
+} mta =
+{
+    CAIRO_ATOMIC_ONCE_INIT,
+    { 0, false, NULL },
+    NULL,
+};
 
 /**
  * _cairo_win32_print_api_error:
@@ -107,20 +130,146 @@ _cairo_win32_load_library_from_system32 (const wchar_t *name)
     return module_handle;
 }
 
-#if CAIRO_MUTEX_IMPL_WIN32
+static DWORD __stdcall
+mta_thread_main (void *user_data)
+{
+    HRESULT hr;
+
+    hr = CoInitializeEx (NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    assert (SUCCEEDED (hr));
+
+    HANDLE event = (HANDLE) user_data;
+    if (!SignalObjectAndWait (event, GetCurrentProcess (), INFINITE, FALSE)) {
+        assert (0 && "SignalObjectAndWait failed");
+    }
+
+    return 0;
+}
+
+/**
+ * cairo_win32_ensure_mta:
+ *
+ * Ensures that the MTA is initialized and keeps running in this
+ * process. Helps for COM usage on threads that we don't own,
+ * since we don't have to call CoInitializeEx.
+ **/
+void
+cairo_win32_ensure_mta (void)
+{
+    if (_cairo_atomic_init_once_enter (&mta.once)) {
+        HMODULE ole32 = _cairo_win32_load_library_from_system32 (L"OLE32.DLL");
+
+        /* Windows 8+ */
+        if (ole32) {
+            pCoIncrementMTAUsage_t pCoIncrementMTAUsage =
+                (pCoIncrementMTAUsage_t) GetProcAddress (ole32, "CoIncrementMTAUsage");
+            pCoDecrementMTAUsage_t pCoDecrementMTAUsage =
+                (pCoDecrementMTAUsage_t) GetProcAddress (ole32, "CoDecrementMTAUsage");
+
+            if (pCoIncrementMTAUsage && pCoDecrementMTAUsage &&
+                SUCCEEDED (pCoIncrementMTAUsage (&mta.mta_usage.cookie)))
+            {
+                mta.mta_usage.cookie_is_set = true;
+                mta.mta_usage.pCoDecrementMTAUsage = pCoDecrementMTAUsage;
+            }
+        }
+
+        /* Downlevel support for Windows 7 */
+        if (!mta.mta_usage.cookie_is_set) {
+            HANDLE event = CreateEvent (NULL, TRUE, FALSE, NULL);
+            if (!event) {
+                assert (0 && "CreateEvent failed");
+            }
+
+            /* Since the UCRT _beginthreadex takes a reference on the "calling
+             * HMODULE", which makes Cairo unloadable. Use CreateThread.
+             */
+            mta.thread = CreateThread (NULL, 0, mta_thread_main, event, 0, NULL);
+            if (!mta.thread) {
+                assert (0 && "_beginthreadex failed");
+            }
+
+            DWORD ret = WaitForSingleObject (event, INFINITE);
+            if (ret != WAIT_OBJECT_0) {
+                assert (0 && "WaitForSingleObject failed");
+            }
+
+            CloseHandle (event);
+        }
+
+        _cairo_atomic_init_once_leave (&mta.once);
+    }
+}
+
+static void
+cairo_win32_mta_finalize (void)
+{
+    /* Loader-lock-safe */
+
+    if (_cairo_atomic_init_once_check (&mta.once)) {
+        if (mta.mta_usage.cookie_is_set) {
+            void *free_func = mta.mta_usage.pCoDecrementMTAUsage;
+            cairo_win32_async_stdcall_free (free_func, mta.mta_usage.cookie);
+        }
+        else if (mta.thread) {
+            /* Yeah, TerminateThread is generally unsafe. however, this is synchronized
+             * with entering of kernel-mode (SignalObjectAndWait) and thus is completely
+             * safe. Note also that TerminateThread is asynchronous, so it can be used
+             * from DllMain.
+             */
+            TerminateThread (mta.thread, 0);
+            CloseHandle (mta.thread);
+        }
+    }
+}
+
+void
+cairo_win32_async_stdcall_free (stdcall_free_func_t func, void *data)
+{
+    QueueUserWorkItem (func, data, WT_EXECUTEDEFAULT);
+}
+
+void
+cairo_win32_async_com_release (IUnknown *iface_ptr)
+{
+    if (iface_ptr) {
+        QueueUserWorkItem ((void *) iface_ptr->lpVtbl->Release,
+                           iface_ptr, WT_EXECUTEDEFAULT);
+    }
+}
+
+static void
+cairo_win32_initialize (void)
+{
+    CAIRO_MUTEX_INITIALIZE ();
+    cairo_win32_thread_data_initialize ();
+}
+
+static void
+cairo_win32_finalize (void)
+{
+    cairo_win32_dwrite_finalize ();
+    cairo_win32_thread_data_finalize ();
+    cairo_win32_mta_finalize ();
+    CAIRO_MUTEX_FINALIZE ();
+}
 
 static void NTAPI
 cairo_win32_tls_callback (PVOID hinstance, DWORD dwReason, PVOID lpvReserved)
 {
     switch (dwReason) {
         case DLL_PROCESS_ATTACH:
-            CAIRO_MUTEX_INITIALIZE ();
+            cairo_win32_initialize ();
+            break;
+
+        case DLL_THREAD_DETACH:
+            cairo_win32_thread_data_free ();
             break;
 
         case DLL_PROCESS_DETACH:
-            if (lpvReserved == NULL) {
-                CAIRO_MUTEX_FINALIZE ();
-            }
+            if (lpvReserved != NULL)
+                break;
+            cairo_win32_finalize ();
             break;
     }
 }
@@ -168,5 +317,3 @@ static const PIMAGE_TLS_CALLBACK _ptr_##func = func;
 #endif /* !_MSC_VER */
 
 DEFINE_TLS_CALLBACK (cairo_win32_tls_callback);
-
-#endif /* CAIRO_MUTEX_IMPL_WIN32 */

@@ -288,11 +288,11 @@ function getMapEntries(objectActor) {
   const iterator = obj.makeDebuggeeValue(
     waiveXrays(Map.prototype.keys.call(rawObj))
   );
-  return [...DevToolsUtils.makeDebuggeeIterator(iterator)].map(k => {
+  return Array.from(DevToolsUtils.makeDebuggeeIterator(iterator).map(k => {
     const key = waiveXrays(ObjectUtils.unwrapDebuggeeValue(k));
     const value = Map.prototype.get.call(rawObj, key);
     return [key, value];
-  });
+  }));
 }
 
 function enumMapEntries(objectActor, depth) {
@@ -301,7 +301,10 @@ function enumMapEntries(objectActor, depth) {
   return {
     *[Symbol.iterator]() {
       for (const [key, value] of entries) {
-        yield [key, value].map(val => gripFromEntry(objectActor, val, depth));
+        yield [
+          gripFromEntry(objectActor, key, depth),
+          gripFromEntry(objectActor, value, depth)
+        ];
       }
     },
     size: entries.length,

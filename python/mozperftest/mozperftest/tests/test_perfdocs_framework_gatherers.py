@@ -739,27 +739,6 @@ def test_awsy_build_test_description_tp6(structured_logger):
         assert "mozilla-central" in text
 
 
-def test_awsy_build_test_description_tp5_uses_awsy_e10s_tag(structured_logger):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        top_dir = pathlib.Path(tmpdir)
-        _setup_fg_logger(MagicMock(), structured_logger, top_dir)
-
-        g = _awsy_gatherer(top_dir)
-        g._task_list["test-linux64/opt"] = [
-            {
-                "test_name": "awsy-e10s-tp5",
-                "run_on_projects": [],
-                "worker_pool": "gecko-t/t-linux-docker-noscratch-amd",
-            },
-        ]
-
-        result = g.build_test_description("tp5", "TP5 test", suite_name="Awsy tests")
-        text = result[0]
-
-        assert "awsy-e10s-tp5" in text
-        assert "None" in text
-
-
 def test_awsy_build_test_description_empty_run_on_projects(structured_logger):
     with tempfile.TemporaryDirectory() as tmpdir:
         top_dir = pathlib.Path(tmpdir)

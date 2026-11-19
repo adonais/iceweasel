@@ -28,8 +28,9 @@
   background-repeat: no-repeat;
 }
 
-// Once a picture loads, the image replaces the fallback gradient.
-.picture-of-the-day:has(.picture-of-the-day-image.loaded)::before {
+// With a picture to show, drop the fallback so a loading picture shows the
+// plain tile instead.
+.picture-of-the-day.has-picture::before {
   content: none;
 }
 

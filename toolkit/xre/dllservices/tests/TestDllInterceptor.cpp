@@ -15,10 +15,11 @@
 #include <oleauto.h>
 #pragma comment(lib, "oleaut32.lib")
 
+#include <memory>
+
 #include "AssemblyPayloads.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsProcessMitigations.h"
 #include "nsWindowsDllInterceptor.h"
 #include "nsWindowsHelpers.h"
@@ -315,7 +316,7 @@ template <typename OrigFuncT, size_t N, typename PredicateT, typename... Args>
 bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
               Args&&... aArgs) {
   auto orig_func(
-      mozilla::MakeUnique<WindowsDllInterceptor::FuncHookType<OrigFuncT>>());
+      std::make_unique<WindowsDllInterceptor::FuncHookType<OrigFuncT>>());
   wchar_t dllW[N];
   std::copy(std::begin(dll), std::end(dll), std::begin(dllW));
 
@@ -443,7 +444,7 @@ bool TestHook(const char (&dll)[N], const char* func, PredicateT&& aPred,
 template <typename OrigFuncT, size_t N, typename PredicateT>
 bool TestDetour(const char (&dll)[N], const char* func, PredicateT&& aPred) {
   auto orig_func(
-      mozilla::MakeUnique<WindowsDllInterceptor::FuncHookType<OrigFuncT>>());
+      std::make_unique<WindowsDllInterceptor::FuncHookType<OrigFuncT>>());
   wchar_t dllW[N];
   std::copy(std::begin(dll), std::end(dll), std::begin(dllW));
 
@@ -1220,7 +1221,7 @@ bool TestSpareBytesAfterDetour() {
   interceptor.Init("TestDllInterceptor.exe");
   InterceptorFunction& interceptorFunc = InterceptorFunction::Create();
   auto orig_func(
-      mozilla::MakeUnique<WindowsDllInterceptor::FuncHookType<void (*)()>>());
+      std::make_unique<WindowsDllInterceptor::FuncHookType<void (*)()>>());
 
   bool successful = orig_func->Set(
       interceptor, "SpareBytesAfterDetour",
@@ -1282,7 +1283,7 @@ bool TestSpareBytesAfterDetourFor10BytePatch() {
   InterceptorFunction& interceptorFunc = InterceptorFunction::Create();
 
   auto orig_func(
-      mozilla::MakeUnique<ShortInterceptor::FuncHookType<void (*)()>>());
+      std::make_unique<ShortInterceptor::FuncHookType<void (*)()>>());
   bool successful = orig_func->SetDetour(
       interceptor, "SpareBytesAfterDetourFor10BytePatch",
       reinterpret_cast<void (*)()>(interceptorFunc.GetFunction()));

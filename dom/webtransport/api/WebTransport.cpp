@@ -130,8 +130,7 @@ void WebTransport::NewBidirectionalStream(
   // IncomingBidirectionalStreams stream. Must be added to the ReceiveStreams
   // and SendStreams arrays
 
-  UniquePtr<BidirectionalPair> streams =
-      std::make_unique<BidirectionalPair>(aIncoming, aOutgoing);
+  auto streams = std::make_unique<BidirectionalPair>(aIncoming, aOutgoing);
   auto tuple = std::tuple<uint64_t, UniquePtr<BidirectionalPair>>(
       aStreamId, std::move(streams));
   mBidirectionalStreams.AppendElement(std::move(tuple));
@@ -493,13 +492,28 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   // options's anticipatedConcurrentIncomingUnidirectionalStreams.
   // Step 15: Let anticipatedConcurrentIncomingBidirectionalStreams be
   // options's anticipatedConcurrentIncomingBidirectionalStreams.
+  mAnticipatedConcurrentIncomingUnidirectionalStreams =
+      aOptions.mAnticipatedConcurrentIncomingUnidirectionalStreams;
+  mAnticipatedConcurrentIncomingBidirectionalStreams =
+      aOptions.mAnticipatedConcurrentIncomingBidirectionalStreams;
+
+  Maybe<uint16_t> anticipatedUni;
+  if (!mAnticipatedConcurrentIncomingUnidirectionalStreams.IsNull()) {
+    anticipatedUni =
+        Some(mAnticipatedConcurrentIncomingUnidirectionalStreams.Value());
+  }
+  Maybe<uint16_t> anticipatedBidi;
+  if (!mAnticipatedConcurrentIncomingBidirectionalStreams.IsNull()) {
+    anticipatedBidi =
+        Some(mAnticipatedConcurrentIncomingBidirectionalStreams.Value());
+  }
 
   backgroundChild
       ->SendCreateWebTransportParent(
           aURL, principal, mBrowsingContextID, ipcClientInfo, dedicated,
           requireUnreliable, (uint32_t)congestionControl, protocols,
-          requestHeaderList, std::move(aServerCertHashes),
-          std::move(parentEndpoint))
+          requestHeaderList, std::move(aServerCertHashes), anticipatedUni,
+          anticipatedBidi, std::move(parentEndpoint))
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}](
                  PBackgroundChild::CreateWebTransportParentPromise::
@@ -979,6 +993,32 @@ bool WebTransport::SupportsReliableOnly(const GlobalObject& aGlobal) {
 }
 
 void WebTransport::GetProtocol(nsAString& aProtocol) { aProtocol = mProtocol; }
+
+Nullable<uint16_t>
+WebTransport::GetAnticipatedConcurrentIncomingUnidirectionalStreams() {
+  return mAnticipatedConcurrentIncomingUnidirectionalStreams;
+}
+
+void WebTransport::SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+    const Nullable<uint16_t>& aValue) {
+  mAnticipatedConcurrentIncomingUnidirectionalStreams = aValue;
+  if (mChild) {
+    mChild->SetAnticipatedConcurrentIncomingUnidirectionalStreams(aValue);
+  }
+}
+
+Nullable<uint16_t>
+WebTransport::GetAnticipatedConcurrentIncomingBidirectionalStreams() {
+  return mAnticipatedConcurrentIncomingBidirectionalStreams;
+}
+
+void WebTransport::SetAnticipatedConcurrentIncomingBidirectionalStreams(
+    const Nullable<uint16_t>& aValue) {
+  mAnticipatedConcurrentIncomingBidirectionalStreams = aValue;
+  if (mChild) {
+    mChild->SetAnticipatedConcurrentIncomingBidirectionalStreams(aValue);
+  }
+}
 
 void WebTransport::ResolveDraining() {
   LOG(("ResolveDraining() called"));

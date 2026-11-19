@@ -89,7 +89,7 @@ deps = {
   'src/testing':
     'https://chromium.googlesource.com/chromium/src/testing@e0ff46a43cd2df3c15abe57a3d78a12bbb2aba64',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@6eabe54fa10922ba0d3f9a8e5a01055d371ebaf7',
+    'https://chromium.googlesource.com/chromium/src/third_party@8a83e63525b495aa7f35648a3b4b676279deb864',
 
   'src/buildtools/third_party/mold/cipd': {
       'packages': [
@@ -690,7 +690,7 @@ deps = {
     'https://chromium.googlesource.com/external/github.com/google/re2.git@972a15cedd008d846f1a39b2e88ce48d7f166cbd',
 
   'src/third_party/sframe/src':
-    Var('chromium_git') + '/external/github.com/cisco/sframe' + '@' + 'db604c8f1960dc2047f1d708d521b28dba058dc9',
+    Var('chromium_git') + '/external/github.com/cisco/sframe' + '@' + '6a37f061f4eda0c6594c91ecf99b5ff498c8c124',
 
   'src/third_party/r8/cipd': {
       'packages': [
@@ -902,6 +902,17 @@ deps = {
 
     'condition': 'checkout_linux',
     'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/cipd': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/autorolled',
+              'version': '-VG0wmSq86E_kYUtjovcWcZ9CHJExiXYLZW21pDxZ6sC',
+          },
+      ],
+      'condition': 'checkout_android and non_git_source',
+      'dep_type': 'cipd',
   },
 
   'src/third_party/android_deps/autorolled/cipd': {

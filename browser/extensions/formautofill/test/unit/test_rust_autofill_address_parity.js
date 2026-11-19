@@ -17,7 +17,7 @@
  * these are the records where the two could plausibly part company.
  */
 
-const { FormAutofillStorage } = ChromeUtils.importESModule(
+const { FormAutofillStorage, formAutofillStorage } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofillStorage.sys.mjs"
 );
 const { RustAutofillAddressesAdapter } = ChromeUtils.importESModule(
@@ -31,6 +31,22 @@ const { FormAutofill } = ChromeUtils.importESModule(
 // bundled address metadata, so it is absent from FormAutofill.countries and
 // AddressesBase._recordReadProcessor hides it on read.
 const UNSUPPORTED_COUNTRY = "XK";
+
+// See the address migration test: the per-process storage singleton would
+// migrate its own empty store alongside the throwaway one here.
+add_setup(async function () {
+  try {
+    await formAutofillStorage._finalize();
+  } catch (_) {}
+  formAutofillStorage.initialize = () => Promise.resolve();
+  const noFieldNames = { getSavedFieldNames: async () => new Set() };
+  for (const collection of ["addresses", "creditCards"]) {
+    Object.defineProperty(formAutofillStorage, collection, {
+      configurable: true,
+      get: () => noFieldNames,
+    });
+  }
+});
 
 const ENABLED_PREF = "extensions.formautofill.addresses.storage.rust.enabled";
 const ACTIVE_PREF = "extensions.formautofill.addresses.storage.rust.active";

@@ -567,6 +567,15 @@ sm-all:
         - "!android !asan !shippable 'jsreftest"
         - "!shippable !android 'jittest"  # macosx64 jittests
 
+sm-perf:
+    selector: fuzzy
+    description: >-
+        Runs Speedometer 3, Speedometer experimental, and JetStream 3 on the
+        desktop platforms.
+    query:
+        - "^test- '-shippable/ !android 'browsertime-benchmark-firefox- jetstream3$ | speedometer3$ | speedometer-experimental$"
+    rebuild: 10
+
 webextensions:
     selector: fuzzy
     description: <-

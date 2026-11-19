@@ -37,7 +37,7 @@ nsDragSessionWayland::DragTaskWayland::DragTaskWayland(DragTaskType aType,
 
 nsDragSessionWayland::nsDragSessionWayland() {
   LOGDRAGSERVICE("nsDragSessionWayland::nsDragSessionWayland()");
-  mRecentTask = MakeUnique<DragTaskWayland>();
+  mRecentTask = std::make_unique<DragTaskWayland>();
 }
 
 NS_IMETHODIMP
@@ -121,14 +121,12 @@ void nsDragSessionWayland::DropFinish(bool aSucceed) {
 }
 
 void nsDragSessionWayland::ScheduleMotionEvent(RefPtr<DataOffer> aDataOffer) {
-  UniquePtr<DragTaskWayland> task =
-      MakeUnique<DragTaskWayland>(eDragTaskMotion, aDataOffer);
+  auto task = std::make_unique<DragTaskWayland>(eDragTaskMotion, aDataOffer);
   Schedule(std::move(task));
 }
 
 void nsDragSessionWayland::ScheduleDropEvent(RefPtr<DataOffer> aDataOffer) {
-  UniquePtr<DragTaskWayland> task =
-      MakeUnique<DragTaskWayland>(eDragTaskDrop, aDataOffer);
+  auto task = std::make_unique<DragTaskWayland>(eDragTaskDrop, aDataOffer);
   if (!Schedule(std::move(task))) {
     NS_WARNING("Additional drag drop ignored");
     return;
@@ -142,7 +140,7 @@ void nsDragSessionWayland::ScheduleLeaveEvent() {
   // We don't know at this stage whether a drop signal will immediately
   // follow.  If the drop signal gets sent it will happen before we return
   // to the main loop and the scheduled leave task will be replaced.
-  UniquePtr<DragTaskWayland> task = MakeUnique<DragTaskWayland>(eDragTaskLeave);
+  auto task = std::make_unique<DragTaskWayland>(eDragTaskLeave);
   if (!Schedule(std::move(task))) {
     NS_WARNING("Drag leave after drop");
   }

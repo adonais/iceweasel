@@ -613,6 +613,7 @@ class Marionette:
         self.chrome_window = None
         self.baseurl = baseurl
         self._test_name = None
+        self._test_group = None
         self.crashed = 0
         self.is_shutting_down = False
         self.cleanup_ran = False
@@ -635,8 +636,13 @@ class Marionette:
             )
             self.start_binary(self.startup_timeout)
 
-        self.actions = Actions(self)
-        self.timeout = Timeouts(self)
+    @property
+    def actions(self):
+        return Actions(self)
+
+    @property
+    def timeout(self):
+        return Timeouts(self)
 
     @property
     def profile_path(self):
@@ -799,8 +805,9 @@ class Marionette:
         crash_count = 0
 
         if self.instance:
-            name = self.test_name or "marionette.py"
-            crash_count = self.instance.runner.check_for_crashes(test_name=name)
+            crash_count = self.instance.runner.check_for_crashes(
+                test_name=self.test_name or "marionette.py", group=self.test_group
+            )
             self.crashed = self.crashed + crash_count
 
         return crash_count > 0
@@ -1401,6 +1408,15 @@ class Marionette:
     @test_name.setter
     def test_name(self, test_name):
         self._test_name = test_name
+
+    @property
+    def test_group(self):
+        """Group (e.g. manifest) of the tests being run, crashes are attributed to it."""
+        return self._test_group
+
+    @test_group.setter
+    def test_group(self, test_group):
+        self._test_group = test_group
 
     def delete_session(self, send_request=True):
         """Close the current session and disconnect from the server.

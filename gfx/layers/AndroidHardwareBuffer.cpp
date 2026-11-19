@@ -5,6 +5,7 @@
 #include "AndroidHardwareBuffer.h"
 
 #include <android/sync.h>
+#include <errno.h>
 #include <sys/socket.h>
 
 #include "mozilla/TimeStamp.h"
@@ -181,7 +182,7 @@ AndroidHardwareBuffer::DeserializeFromFileDescriptor(UniqueFileHandle&& aFd) {
 int AndroidHardwareBuffer::Lock(uint64_t aUsage, const ARect* aRect,
                                 void** aOutVirtualAddress) {
   UniqueFileHandle fd = GetAndResetReleaseFence();
-  return AHardwareBuffer_lock(mNativeBuffer, aUsage, fd.get(), aRect,
+  return AHardwareBuffer_lock(mNativeBuffer, aUsage, fd.release(), aRect,
                               aOutVirtualAddress);
 }
 
@@ -211,7 +212,19 @@ UniqueFileHandle AndroidHardwareBuffer::MergeFences(
   UniqueFileHandle fence1 = std::move(aFence1);
   UniqueFileHandle fence2 = std::move(aFence2);
 
-  int fd = sync_merge("MergeFences", fence1.get(), fence2.get());
+#ifdef DEBUG
+  // Limit retries in debug builds so persistent EINTR does not go unnoticed.
+  const int kMaxEintrRetries = 100;
+  int eintrCounter = 0;
+#endif
+  int fd;
+  do {
+    fd = sync_merge("MergeFences", fence1.get(), fence2.get());
+  } while (fd == -1 && errno == EINTR
+#ifdef DEBUG
+           && eintrCounter++ < kMaxEintrRetries
+#endif
+  );
   if (fd < 0) {
     gfxCriticalNote << "AndroidHardwareBuffer::MergeFences: "
                        "failed to merge fences";
@@ -230,7 +243,9 @@ void AndroidHardwareBuffer::SetReleaseFence(UniqueFileHandle&& aFenceFd) {
 void AndroidHardwareBuffer::SetAcquireFence(UniqueFileHandle&& aFenceFd) {
   MonitorAutoLock lock(mMonitor);
 
-  mAcquireFenceFd = std::move(aFenceFd);
+  // Preserve an unconsumed acquire fence rather than silently dropping it.
+  mAcquireFenceFd =
+      MergeFences(std::move(mAcquireFenceFd), std::move(aFenceFd));
 }
 
 UniqueFileHandle AndroidHardwareBuffer::GetAndResetReleaseFence() {

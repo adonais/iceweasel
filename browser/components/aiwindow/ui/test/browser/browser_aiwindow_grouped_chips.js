@@ -4,7 +4,7 @@
 /**
  * Tests for grouped context chips in the chat bubble.
  *
- * The chat bubble shows one `ai-website-chip` per context website until there
+ * The chat bubble shows one `smartwindow-chip` per context website until there
  * are 3 or more, at which point `website-chip-container` collapses them into a
  * single `ai-grouped-chip-container` (the ".grouped-chips" trigger button that
  * opens a panel). These tests cover the 1 / 2 / 3 chip boundary and the panel
@@ -106,13 +106,13 @@ async function getBubbleChipInfo(browser) {
         container.shadowRoot,
         { childList: true, subtree: true },
         () =>
-          container.shadowRoot.querySelector("ai-website-chip") ||
+          container.shadowRoot.querySelector("smartwindow-chip") ||
           container.shadowRoot.querySelector("ai-grouped-chip-container")
       );
 
       return {
         websiteChipCount:
-          container.shadowRoot.querySelectorAll("ai-website-chip").length,
+          container.shadowRoot.querySelectorAll("smartwindow-chip").length,
         hasGroupedChips: !!container.shadowRoot.querySelector(
           "ai-grouped-chip-container"
         ),
@@ -135,7 +135,7 @@ add_task(async function test_grouped_chips_single_chip() {
     Assert.equal(
       info.websiteChipCount,
       1,
-      "One context website should render a single ai-website-chip"
+      "One context website should render a single smartwindow-chip"
     );
     Assert.ok(!info.hasGroupedChips, "A single chip should not be grouped");
   } finally {
@@ -159,7 +159,7 @@ add_task(async function test_grouped_chips_two_chips() {
     Assert.equal(
       info.websiteChipCount,
       2,
-      "Two context websites should render two ai-website-chip elements"
+      "Two context websites should render two smartwindow-chip elements"
     );
     Assert.ok(!info.hasGroupedChips, "Two chips should not be grouped");
   } finally {
@@ -187,7 +187,7 @@ add_task(async function test_grouped_chips_three_chips_group() {
     Assert.equal(
       info.websiteChipCount,
       0,
-      "Grouped chips should not render individual ai-website-chip elements"
+      "Grouped chips should not render individual smartwindow-chip elements"
     );
   } finally {
     await mockEngineManager.rejectAllRequests();
@@ -260,7 +260,7 @@ add_task(async function test_tab_group_chip_renders_as_single_chip() {
             ".chat-bubble-user website-chip-container"
           ),
         ].at(-1);
-        const chip = container.shadowRoot.querySelector("ai-website-chip");
+        const chip = container.shadowRoot.querySelector("smartwindow-chip");
         await chip.updateComplete;
         const node = chip.shadowRoot.querySelector("tab-group-icon");
 
@@ -410,7 +410,7 @@ add_task(async function test_tab_group_chip_click_opens_group() {
             ".chat-bubble-user website-chip-container"
           ),
         ].at(-1);
-        const chip = container.shadowRoot.querySelector("ai-website-chip");
+        const chip = container.shadowRoot.querySelector("smartwindow-chip");
         await chip.updateComplete;
         chip.shadowRoot.querySelector("button.chip").click();
       },

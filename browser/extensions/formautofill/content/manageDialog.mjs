@@ -401,7 +401,7 @@ export class ManageCreditCards extends ManageRecords {
     if (!FormAutofill.isAutofillCreditCardCVVEnabled || !creditCard["cc-csc"]) {
       return labelInfo;
     }
-    return this.#withSecurityCodeLabel(labelInfo);
+    return this.#withSecurityCodeLabel(labelInfo, creditCard);
   }
 
   /**
@@ -415,18 +415,21 @@ export class ManageCreditCards extends ManageRecords {
    *        Fluent id of the label to wrap.
    * @param {object} labelInfo.args
    *        Fluent arguments for that label.
+   * @param {object} creditCard
+   *        The card, whose network decides what the security code is called.
    * @returns {Promise<object>} An { id, args } pair for the wrapping string.
    */
-  async #withSecurityCodeLabel({ id, args }) {
+  async #withSecurityCodeLabel({ id, args }, creditCard) {
     const [message] = await document.l10n.formatMessages([{ id, args }]);
     const ariaLabel = message?.attributes?.find(
       attribute => attribute.name == "aria-label"
     )?.value;
     return {
-      id: "credit-card-label-with-security-code",
+      id: "credit-card-label-with-security-code-2",
       args: {
         label: message?.value ?? "",
         ariaLabel: ariaLabel ?? message?.value ?? "",
+        securityCode: lazy.CreditCard.formatSecurityCodeName(creditCard),
       },
     };
   }

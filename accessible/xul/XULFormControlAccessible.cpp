@@ -152,19 +152,9 @@ bool XULButtonAccessible::AreItemsOperable() const {
 }
 
 bool XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
-  if (
-      //   menu buttons can have popup accessibles (@type="menu" or
-      //   columnpicker).
-      aEl->IsXULElement(nsGkAtoms::menupopup)) {
+  // menu buttons can have popup accessibles (@type="menu" or columnpicker).
+  if (aEl->IsAnyOfXULElements(nsGkAtoms::menupopup, nsGkAtoms::label)) {
     return true;
-  }
-  if (aEl->IsXULElement(nsGkAtoms::label)) {
-    // The label is exposed so that the name can be computed from the subtree,
-    // including any generated content. However, an empty label renders a zero
-    // width space, which shouldn't be used as the name.
-    return aEl->HasChildren() ||
-           !aEl->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value,
-                                          nsGkAtoms::_empty, eCaseMatters);
   }
   if (!aEl->IsText()) {
     return false;

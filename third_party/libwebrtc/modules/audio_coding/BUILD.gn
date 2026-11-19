@@ -76,6 +76,7 @@ rtc_library("webrtc_cng") {
 
   deps = [
     "../../common_audio:common_audio_c",
+    "../../common_audio:common_audio_cc",
     "../../rtc_base:buffer",
     "../../rtc_base:checks",
     "../../rtc_base:safe_conversions",

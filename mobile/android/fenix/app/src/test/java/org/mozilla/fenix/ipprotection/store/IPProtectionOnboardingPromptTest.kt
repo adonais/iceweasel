@@ -47,7 +47,7 @@ class IPProtectionOnboardingPromptTest {
 
                 startBinding(repository, store, onShowOnboarding = { shownCount++ })
 
-                store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+                store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(1, shownCount)
@@ -70,7 +70,7 @@ class IPProtectionOnboardingPromptTest {
                     onAlreadySatisfied = { alreadySatisfiedCount++ },
                 )
 
-                store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+                store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(0, shownCount)
@@ -95,7 +95,7 @@ class IPProtectionOnboardingPromptTest {
                     onAlreadySatisfied = { alreadySatisfiedCount++ },
                 )
 
-                store.dispatch(IPProtectionAction.EligibilityChanged(ineligibleStatus))
+                store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(ineligibleStatus))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(1, ineligibleCount)
@@ -113,7 +113,7 @@ class IPProtectionOnboardingPromptTest {
 
                 startBinding(repository, store, onShowOnboarding = {}, onAlreadySatisfied = { alreadySatisfiedCount++ })
 
-                store.dispatch(IPProtectionAction.AccountStateChanged(status))
+                store.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(status))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(0, alreadySatisfiedCount)
@@ -129,7 +129,7 @@ class IPProtectionOnboardingPromptTest {
 
             startBinding(repository, store, onShowOnboarding = {}, onAlreadySatisfied = { alreadySatisfiedCount++ })
 
-            store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(0, alreadySatisfiedCount)
@@ -145,8 +145,10 @@ class IPProtectionOnboardingPromptTest {
 
                 startBinding(repository, store, onShowOnboarding = { shownCount++ })
 
-                store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Ineligible))
-                store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.UnsupportedRegion))
+                store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Ineligible))
+                store.dispatch(
+                    IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.UnsupportedRegion)
+                )
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(0, shownCount)
@@ -163,7 +165,7 @@ class IPProtectionOnboardingPromptTest {
 
                 startBinding(repository, store, onShowOnboarding = {}, onIneligible = { ineligibleCount++ })
 
-                store.dispatch(IPProtectionAction.EligibilityChanged(ineligibleStatus))
+                store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(ineligibleStatus))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(1, ineligibleCount)
@@ -179,7 +181,7 @@ class IPProtectionOnboardingPromptTest {
 
             startBinding(repository, store, onShowOnboarding = {}, onIneligible = { ineligibleCount++ })
 
-            store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(0, ineligibleCount)
@@ -194,7 +196,7 @@ class IPProtectionOnboardingPromptTest {
 
             startBinding(repository, store, onShowOnboarding = {}, onIneligible = { ineligibleCount++ })
 
-            store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Unknown))
+            store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Unknown))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(0, ineligibleCount)
@@ -210,7 +212,7 @@ class IPProtectionOnboardingPromptTest {
 
                 startBinding(repository, store, onShowOnboarding = { shownCount++ })
 
-                store.dispatch(IPProtectionAction.AccountStateChanged(status))
+                store.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(status))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(0, shownCount)
@@ -227,7 +229,7 @@ class IPProtectionOnboardingPromptTest {
 
                 startBinding(repository, store, onShowOnboarding = { shownCount++ })
 
-                store.dispatch(IPProtectionAction.AccountStateChanged(status))
+                store.dispatch(IPProtectionAction.AccountAction.AccountStateChanged(status))
                 testDispatcher.scheduler.advanceUntilIdle()
 
                 assertEquals(1, shownCount)
@@ -247,7 +249,7 @@ class IPProtectionOnboardingPromptTest {
 
             startBinding(repository, store, onShowOnboarding = { shownCount++ })
 
-            store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(1, shownCount)
@@ -266,7 +268,7 @@ class IPProtectionOnboardingPromptTest {
 
             startBinding(repository, store, onShowOnboarding = { shownCount++ })
 
-            store.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(EligibilityStatus.Eligible))
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(0, shownCount)

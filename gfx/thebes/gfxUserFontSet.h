@@ -366,6 +366,16 @@ class gfxUserFontSet {
     // Clear everything so that we don't leak URIs and Principals.
     static void Shutdown();
 
+#if MOZ_FONTATIONS
+    static void PrefChangedCallback(const char* aPref, void* aClosure) {
+      if (!strcmp(aPref, "gfx.font_rendering.fontations.enabled")) {
+        if (sUserFonts) {
+          sUserFonts->Clear();
+        }
+      }
+    }
+#endif
+
     // Memory-reporting support.
     class MemoryReporter final : public nsIMemoryReporter {
      private:

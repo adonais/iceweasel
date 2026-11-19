@@ -1342,19 +1342,6 @@ function isLikelyFocusChange(rects, frame) {
     // Full-width rect in the top of the titlebar.
     return true;
   }
-  // Treat a full-window change as a likely focus change under nova.
-  // With the nova floating chrome, the window background is visible in the gaps
-  // around the toolbox and content areas. When the window's active state changes,
-  // we see a repaint across the whole window (not just the titlebar.)
-  if (
-    Services.prefs.getBoolPref("browser.nova.enabled", false) &&
-    rects.length &&
-    rects.every(
-      r => r.x1 == 0 && r.y1 == 0 && r.w >= frame.width && r.h >= frame.height
-    )
-  ) {
-    return true;
-  }
   return false;
 }
 

@@ -38,6 +38,7 @@ import androidx.core.os.BundleCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.text.layoutDirection
 import androidx.core.view.doOnLayout
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -57,6 +58,7 @@ import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.MediaSessionAction
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.action.WebExtensionAction
+import mozilla.components.browser.state.search.SearchAccessPoint
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.selectedTab
@@ -73,6 +75,7 @@ import mozilla.components.feature.customtabs.isCustomTabIntent
 import mozilla.components.feature.media.ext.findActiveMediaTab
 import mozilla.components.feature.privatemode.notification.PrivateNotificationFeature
 import mozilla.components.feature.search.BrowserStoreSearchAdapter
+import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.store.CrashAction
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.support.base.feature.ActivityResultHandler
@@ -105,6 +108,7 @@ import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
 import org.mozilla.fenix.automation.AutomatedLaunch
 import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
 import org.mozilla.fenix.bindings.HomepageTabBinding
+import org.mozilla.fenix.bindings.PendingExtensionUpdateBinding
 import org.mozilla.fenix.bindings.SummarizeToolbarHighlightBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
 import org.mozilla.fenix.browser.BrowserFragment
@@ -198,7 +202,6 @@ import org.mozilla.fenix.splashscreen.SplashScreenOperation
 import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.StatusBarColorManager
-import org.mozilla.fenix.theme.TabStripStatusBarView
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.translations.TranslationsAIControllableFeatureRegistrar
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
@@ -219,6 +222,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     lateinit var browsingModeManager: BrowsingModeManager
 
     private var isVisuallyComplete = false
+
+    @VisibleForTesting internal var isDeferringIntentsUntilOnboardingCompletes = false
 
     private var privateNotificationObserver: PrivateNotificationFeature<PrivateNotificationService>? = null
 
@@ -270,6 +275,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                             FxNimbus.features.ipProtection.value().dataLimitGigabyte,
                         )
                 ),
+            repository = components.ipProtection.ipProtectionRepository,
         )
     }
 
@@ -288,6 +294,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         DefaultPinnedSitesBinding(
             browserStore = components.core.store,
             topSitesStorage = components.core.topSitesStorage,
+            pinnedSitesStorage = components.core.pinnedSiteStorage,
+            defaultTopSitesProvider = components.core.defaultTopSitesProvider,
+            blocklistHandler = components.blocklistHandler,
             settings = components.settings,
             resources = resources,
             crashReporter = components.analytics.crashReporter,
@@ -331,6 +340,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             appLinksUseCases = components.useCases.appLinksUseCases,
             browserStore = components.core.store,
             appStore = components.appStore,
+        )
+    }
+
+    private val pendingExtensionUpdateBinding by lazy {
+        PendingExtensionUpdateBinding(
+            appStore = components.appStore,
+            browserStore = components.core.store,
         )
     }
 
@@ -387,7 +403,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             StartSearchIntentProcessor(
                 fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
                 browsingModeManager = browsingModeManager,
-                userHasBeenOnboarded = { components.fenixOnboarding.userHasBeenOnboarded() },
             ),
             LensResultIntentProcessor(this),
             OpenHomeIntentProcessor(
@@ -561,6 +576,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                                 loginsStorage = components.core.passwordsStorage,
                                 tabGroupRepository = components.core.tabGroupRepository,
                                 listenStore = components.listenToPage.store,
+                                listenDebugController = components.listenToPage.debugController,
                             )
                         }
                     } else {
@@ -607,7 +623,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 StartOnHome.enterHomeScreen.record(NoExtras())
             }
         } else {
-            processLaunchIntentAfterOnboarding()
+            registerDeferredIntentProcessing()
         }
 
         // This will record an event in Nimbus' internal event store. Used for behavioral targeting
@@ -649,6 +665,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             downloadSnackbar,
             privateBrowsingLockFeature,
             externalAppLinkStatusBinding,
+            pendingExtensionUpdateBinding,
             summarizeToolbarHighlightBinding,
             components.core.summarizationSettingsBinding,
             translationsAIControllableFeatureRegistrar,
@@ -688,13 +705,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             StatusBarColorManager(
                 themeManager = themeManager,
                 activity = this,
-                appStore = components.appStore,
-                settings = components.settings,
-                tabStripStatusBarView =
-                    TabStripStatusBarView(
-                        rootView = window.decorView as ViewGroup,
-                        lifecycle = lifecycle,
-                    ),
             ),
             true,
         )
@@ -1078,6 +1088,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                     )
             }
         } else {
+            if (shouldDeferIntentUntilOnboardingCompletes(intent)) {
+                setIntent(intent)
+                return
+            }
+
             // Diagnostic breadcrumb for "Display already aquired" crash:
             // https://github.com/mozilla-mobile/android-components/issues/7960
             breadcrumb(
@@ -1336,27 +1351,15 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_MENU) {
             val navHostFragment = supportFragmentManager.findFragmentById(R.id.container) as? NavHostFragment
             val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
-            when (currentFragment) {
-                is HomeFragment -> {
-                    val action =
-                        when (getSettings().isMenuCustomizationEnabled) {
-                            true -> HomeFragmentDirections.actionHomeFragmentToMenuFragment(MenuAccessPoint.Home)
-                            else -> NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Home)
-                        }
-                    navHost.navController.navigate(action)
-                    return true
-                }
-
-                is BrowserFragment -> {
-                    val action =
-                        when (getSettings().isMenuCustomizationEnabled) {
-                            true ->
-                                BrowserFragmentDirections.actionBrowserFragmentToMenuFragment(MenuAccessPoint.Browser)
-                            else -> NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Browser)
-                        }
-                    navHost.navController.navigate(action)
-                    return true
-                }
+            if (
+                handleMenuKeyPress(
+                    event = event,
+                    currentFragment = currentFragment,
+                    navController = navHost.navController,
+                    isMenuCustomizationEnabled = getSettings().isMenuCustomizationEnabled,
+                )
+            ) {
+                return true
             }
         }
         return super.dispatchKeyEvent(event)
@@ -1547,6 +1550,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
      * @param flags Flags that will be used when loading the URL (not applied to searches).
      * @param historyMetadata The [HistoryMetadataKey] of the new tab in case this tab was opened from history.
      * @param additionalHeaders The extra headers to use when loading the URL.
+     * @param accessPoint The search access point the search is performed from. Only applies when a search is performed.
      */
     @Deprecated(
         message =
@@ -1564,6 +1568,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         flags: EngineSession.LoadUrlFlags = EngineSession.LoadUrlFlags.none(),
         historyMetadata: HistoryMetadataKey? = null,
         additionalHeaders: Map<String, String>? = null,
+        accessPoint: String = SearchAccessPoint.DEFAULT,
     ) {
         openToBrowser(from, customTabSessionId)
 
@@ -1574,6 +1579,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             private = browsingModeManager.mode.isPrivate,
             searchEngine = engine,
             flags = flags,
+            accessPoint = accessPoint,
             historyMetadata = historyMetadata,
             additionalHeaders = additionalHeaders,
         )
@@ -1589,10 +1595,29 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     /**
-     * Onboarding skips processing of the launch intent in [onCreate], so process it once the user completes onboarding.
+     * Whether [intent] should be stored as the activity intent for [registerDeferredIntentProcessing] to be processed
+     * once onboarding completes.
+     *
+     * Crash intents are never deferred because they only record crash state and are not handled by the post-onboarding
+     * intent processors. Crash intents that reach the HomeActivity are non-fatal.
      */
-    private fun processLaunchIntentAfterOnboarding() {
-        components.fenixOnboarding.registerOnboardingCompletedListener(this) { processIntent(intent) }
+    private fun shouldDeferIntentUntilOnboardingCompletes(intent: Intent): Boolean =
+        isDeferringIntentsUntilOnboardingCompletes && !Crash.isCrashIntent(intent)
+
+    /**
+     * Registers a listener to process the activity's current intent when onboarding completes, and defers new intents
+     * until then. Only registered when the onboarding flow should be shown.
+     */
+    @VisibleForTesting
+    internal fun registerDeferredIntentProcessing() {
+        isDeferringIntentsUntilOnboardingCompletes = true
+
+        components.fenixOnboarding.registerOnboardingCompletedListener(this) {
+            isDeferringIntentsUntilOnboardingCompletes = false
+
+            browsingModeManager.updateMode(intent)
+            processIntent(intent)
+        }
     }
 
     @VisibleForTesting
@@ -1871,5 +1896,48 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 R.id.turnOnSyncFragment,
                 R.id.pairFragment,
             )
+
+        /**
+         * Opens the menu for a menu key [event] when [currentFragment] is home or the browser.
+         *
+         * @return true if the event was consumed, false if it should be handled elsewhere.
+         */
+        @VisibleForTesting
+        internal fun handleMenuKeyPress(
+            event: KeyEvent,
+            currentFragment: Fragment?,
+            navController: NavController,
+            isMenuCustomizationEnabled: Boolean,
+        ): Boolean {
+            val (expectedDestinationId, directions) =
+                when (currentFragment) {
+                    is HomeFragment ->
+                        R.id.homeFragment to
+                            when (isMenuCustomizationEnabled) {
+                                true -> HomeFragmentDirections.actionHomeFragmentToMenuFragment(MenuAccessPoint.Home)
+                                else -> NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Home)
+                            }
+
+                    is BrowserFragment ->
+                        R.id.browserFragment to
+                            when (isMenuCustomizationEnabled) {
+                                true ->
+                                    BrowserFragmentDirections.actionBrowserFragmentToMenuFragment(
+                                        MenuAccessPoint.Browser
+                                    )
+                                else -> NavGraphDirections.actionGlobalMenuDialogFragment(MenuAccessPoint.Browser)
+                            }
+
+                    else -> return false
+                }
+
+            // Hardware keyboards auto repeat ACTION_DOWN while the key is held down, so only
+            // the initial press may open the menu. Navigating is also skipped when the menu is
+            // already open.
+            if (event.repeatCount == 0) {
+                navController.nav(expectedDestinationId, directions)
+            }
+            return true
+        }
     }
 }

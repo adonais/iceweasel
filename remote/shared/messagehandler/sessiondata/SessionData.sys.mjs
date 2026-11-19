@@ -27,6 +27,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
  * @enum {SessionDataCategory}
  */
 export const SessionDataCategory = {
+  DevicePixelRatioOverride: "device-pixel-ratio-override",
   DownloadBehaviorOverride: "download-behavior-override",
   Event: "event",
   GeolocationOverride: "geolocation-override",

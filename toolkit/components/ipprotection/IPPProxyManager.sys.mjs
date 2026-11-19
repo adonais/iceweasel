@@ -252,6 +252,7 @@ class IPPProxyManagerSingleton extends EventTarget {
   /** @type {string | null} */
   #errorType = null;
   #refreshUsageAbortController = null;
+  #observingOfflineStatus = false;
 
   constructor() {
     super();
@@ -259,6 +260,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     this.setErrorState = this.#setErrorState.bind(this);
     this.handleProxyErrorEvent = this.#handleProxyErrorEvent.bind(this);
     this.handleEvent = this.#handleEvent.bind(this);
+    this.observeOfflineStatus = this.#observeOfflineStatus.bind(this);
   }
 
   init() {
@@ -266,6 +268,13 @@ class IPPProxyManagerSingleton extends EventTarget {
       "IPProtectionService:StateChanged",
       this.handleEvent
     );
+    if (!this.#observingOfflineStatus) {
+      Services.obs.addObserver(
+        this.observeOfflineStatus,
+        "network:offline-status-changed"
+      );
+      this.#observingOfflineStatus = true;
+    }
 
     if (!this.#usage) {
       this.#usage = lazy.IPPStartupCache.usageInfo;
@@ -286,6 +295,13 @@ class IPPProxyManagerSingleton extends EventTarget {
       "IPProtectionService:StateChanged",
       this.handleEvent
     );
+    if (this.#observingOfflineStatus) {
+      Services.obs.removeObserver(
+        this.observeOfflineStatus,
+        "network:offline-status-changed"
+      );
+      this.#observingOfflineStatus = false;
+    }
 
     if (
       this.#activatingPromise ||
@@ -477,9 +493,9 @@ class IPPProxyManagerSingleton extends EventTarget {
    * True if started by user action, false if system action
    * @param {boolean} inPrivateBrowsing
    * True if started from a private browsing window
-   * @param {string} [country]
-   * Optional ISO 3166-1 alpha-2 country code to route through. When
-   * omitted, the recommended (anycast) location is used.
+   * @param {string|Promise<string|undefined>} [country]
+   * Optional ISO 3166-1 alpha-2 country code to route through, or a promise
+   * for one. When omitted, the recommended (anycast) location is used.
    * @param {import("./IPPChannelFilter.sys.mjs").IPPProxyMode} [mode]
    * Mode for this connection. When omitted, browser.ipProtection.mode decides.
    * @returns {Promise<{started: boolean, error?: string}>}
@@ -642,6 +658,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
     this.#schedulePassRotation(this.#pass);
 
+    country = await country;
     const location = country
       ? lazy.IPProtectionServerlist.getLocation(country)
       : lazy.IPProtectionServerlist.getRecommendedLocation();
@@ -1096,6 +1113,16 @@ class IPPProxyManagerSingleton extends EventTarget {
     // Envoy returns a 401 if the token is rejected
     // So for now as we only care about rotating tokens we can exit here.
     return null;
+  }
+
+  /**
+   * Fails an active connection when the user switches to offline mode, so it
+   * doesn't keep appearing connected.
+   */
+  #observeOfflineStatus() {
+    if (Services.io.offline && this.#state === IPPProxyStates.ACTIVE) {
+      this.#setErrorState(ERRORS.NETWORK);
+    }
   }
 
   updateState() {

@@ -27,14 +27,12 @@ using namespace mozilla::layout;
 
 nsFirstLetterFrame* NS_NewFirstLetterFrame(PresShell* aPresShell,
                                            ComputedStyle* aStyle) {
-  return new (aPresShell)
-      nsFirstLetterFrame(aStyle, aPresShell->GetPresContext());
+  return new nsFirstLetterFrame(aStyle, aPresShell->GetPresContext());
 }
 
 nsFirstLetterFrame* NS_NewFloatingFirstLetterFrame(PresShell* aPresShell,
                                                    ComputedStyle* aStyle) {
-  return new (aPresShell)
-      nsFloatingFirstLetterFrame(aStyle, aPresShell->GetPresContext());
+  return new nsFloatingFirstLetterFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFirstLetterFrame)
@@ -160,26 +158,36 @@ bool nsFirstLetterFrame::UseTightBounds() const {
   // webkit/blink-style behavior:
   // If line-height is less than font-size, or there is a negative block-start
   // or -end margin, use webkit/blink behavior.
+  // Currently, we only check for margins with negative *length* values;
+  // negative percentages seem unlikely to be used/useful in this context.
+  const auto wm = GetWritingMode();
+  const auto* styleMargin = StyleMargin();
+  const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
+  const auto bStart =
+      styleMargin->GetMargin(LogicalSide::BStart, wm, anchorResolutionParams);
+  const auto bEnd =
+      styleMargin->GetMargin(LogicalSide::BEnd, wm, anchorResolutionParams);
+  const bool negativeBStart =
+      bStart->ConvertsToLength() && bStart->ToLength() < 0;
+  const bool negativeBEnd = bEnd->ConvertsToLength() && bEnd->ToLength() < 0;
+  // Some pages special-case Gecko by compensating a negative block-end margin
+  // with an equivalent block-start margin, so keep the legacy behavior there.
+  if (negativeBEnd && bStart->ConvertsToLength() &&
+      bStart->ToLength() == -bEnd->ToLength()) {
+    return true;
+  }
+
+  if (negativeBStart || negativeBEnd) {
+    return false;
+  }
+
   if (nsTextFrame* textFrame = do_QueryFrame(mFrames.FirstChild())) {
     RefPtr<nsFontMetrics> fm = textFrame->InflatedFontMetrics();
     if (textFrame->ComputeLineHeight() < fm->EmHeight()) {
       return false;
     }
   }
-
-  const auto wm = GetWritingMode();
-  const auto* styleMargin = StyleMargin();
-  const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-  const auto bStart =
-      styleMargin->GetMargin(LogicalSide::BStart, wm, anchorResolutionParams);
-  // Currently, we only check for margins with negative *length* values;
-  // negative percentages seem unlikely to be used/useful in this context.
-  if (bStart->ConvertsToLength() && bStart->ToLength() < 0) {
-    return false;
-  }
-  const auto bEnd =
-      styleMargin->GetMargin(LogicalSide::BEnd, wm, anchorResolutionParams);
-  return !(bEnd->ConvertsToLength() && bEnd->ToLength() < 0);
+  return true;
 }
 
 void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
@@ -430,8 +438,7 @@ void nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext) {
   // Check for an overflow list with our prev-in-flow
   nsFirstLetterFrame* prevInFlow = (nsFirstLetterFrame*)GetPrevInFlow();
   if (prevInFlow) {
-    AutoFrameListPtr overflowFrames(aPresContext,
-                                    prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr overflowFrames(prevInFlow->StealOverflowFrames());
     if (overflowFrames) {
       NS_ASSERTION(mFrames.IsEmpty(), "bad overflow list");
       mFrames.InsertFrames(this, nullptr, std::move(*overflowFrames));
@@ -439,7 +446,7 @@ void nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext) {
   }
 
   // It's also possible that we have an overflow list for ourselves
-  AutoFrameListPtr overflowFrames(aPresContext, StealOverflowFrames());
+  AutoFrameListPtr overflowFrames(StealOverflowFrames());
   if (overflowFrames) {
     NS_ASSERTION(mFrames.NotEmpty(), "overflow list w/o frames");
     mFrames.AppendFrames(nullptr, std::move(*overflowFrames));

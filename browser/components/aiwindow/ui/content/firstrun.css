@@ -155,11 +155,11 @@
 
 .welcome-text {
   .screen:not(.AI_WINDOW_INTRO) & {
-    margin-bottom: 0;
+    margin-block-end: 0;
 
     h2 {
       opacity: var(--opacity-deemphasized);
-      margin-top: var(--space-medium);
+      margin-block-start: var(--space-medium);
       font-size: var(--font-size-root);
       font-weight: normal;
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom subtitle width per Figma design */
@@ -169,7 +169,7 @@
 
   .screen.AI_WINDOW_MEMORIES &,
   .screen.AI_WINDOW_SET_DEFAULT & {
-    margin-bottom: var(--space-large);
+    margin-block-end: var(--space-large);
 
     p {
       opacity: var(--opacity-deemphasized);
@@ -190,7 +190,7 @@
 .screen.AI_WINDOW_MEMORIES,
 .screen.AI_WINDOW_SET_DEFAULT {
   .section-main {
-    margin-top: calc(var(--space-xxlarge) * 3);
+    margin-block-start: calc(var(--space-xxlarge) * 3);
   }
 
   #content-tiles-container {
@@ -225,7 +225,7 @@
     }
 
     .confirmation-checklist-icon {
-      margin-top: var(--space-xxsmall);
+      margin-block-start: var(--space-xxsmall);
       -moz-context-properties: fill;
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand color per Figma design */
       fill: var(--card-text-color);
@@ -300,13 +300,13 @@
 
   .action-buttons {
     gap: var(--space-small);
-    margin-top: var(--space-small);
+    margin-block-start: var(--space-small);
   }
 }
 
 .screen.AI_WINDOW_SET_DEFAULT {
   .multi-select-container {
-    margin-top: var(--space-large);
+    margin-block-start: var(--space-large);
 
     .checkbox-container.multi-select-item {
       padding: var(--space-xlarge);
@@ -420,8 +420,7 @@
 
     .label-text {
       grid-area: title;
-      margin-bottom: 0;
-      margin-top: 0;
+      margin-block: 0;
       line-height: normal;
       text-align: start;
     }
@@ -440,8 +439,7 @@
       grid-row-end: 3;
       grid-row-start: 1;
       line-height: normal;
-      margin-bottom: 0;
-      margin-top: 0;
+      margin-block: 0;
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       max-width: 196px;
       text-align: end;

@@ -3,7 +3,7 @@
 
 // This test triggers a stack overflow, then calls a finalization registry
 // cleanup callback that previously used data that had already been discarded.
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 var registry = new FinalizationRegistry(()=>{
 });
 registry.register({}, 1, {});

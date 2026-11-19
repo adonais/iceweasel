@@ -100,7 +100,7 @@ class PannerNodeEngine final : public AudioNodeEngine {
     RefPtr<HRTFDatabaseLoader> loader =
         HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(
             NodeMainThread()->Context()->SampleRate());
-    mHRTFPanner = MakeUnique<HRTFPanner>(
+    mHRTFPanner = std::make_unique<HRTFPanner>(
         NodeMainThread()->Context()->SampleRate(), loader.forget());
   }
 

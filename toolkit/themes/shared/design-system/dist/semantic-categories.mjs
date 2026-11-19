@@ -2037,6 +2037,36 @@ export const tokensTable = {
     { value: "var(--button-font-weight)", name: "--select-font-weight" },
     { value: "var(--font-weight)", name: "--select-option-font-weight" },
   ],
+  motion: [
+    { value: "cubic-bezier(0.2, 0, 0, 1)", name: "--motion-easing-emphasized" },
+    {
+      value: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+      name: "--motion-easing-standard",
+    },
+    { value: "150ms", name: "--panel-motion-duration-enter" },
+    { value: "120ms", name: "--panel-motion-duration-exit" },
+    { value: "120ms", name: "--panel-motion-duration-fade" },
+    { value: "var(--motion-easing-emphasized)", name: "--panel-motion-easing" },
+    { value: "0.96", name: "--panel-motion-scale" },
+    { value: "-4px", name: "--panel-motion-translate-y" },
+    { value: "185ms", name: "--panel-subview-motion-duration-enter" },
+    { value: "130ms", name: "--panel-subview-motion-duration-exit" },
+    { value: "150ms", name: "--panel-subview-motion-duration-parent-exit" },
+    { value: "120ms", name: "--panel-subview-motion-duration-fade-reduced" },
+    { value: "200ms", name: "--sidebar-motion-duration-enter" },
+    { value: "160ms", name: "--sidebar-motion-duration-exit" },
+    {
+      value: "var(--motion-easing-emphasized)",
+      name: "--sidebar-motion-easing",
+    },
+    { value: "230ms", name: "--sidebar-panel-motion-duration-enter" },
+    { value: "190ms", name: "--sidebar-panel-motion-duration-exit" },
+    { value: "130ms", name: "--sidebar-panel-content-motion-duration-fade" },
+    {
+      value: "var(--motion-easing-standard)",
+      name: "--sidebar-panel-content-motion-easing-fade",
+    },
+  ],
   size: [
     { value: "40px", name: "--size-image-xsmall" },
     { value: "48px", name: "--size-image-small" },
@@ -2345,7 +2375,7 @@ export const tokensTable = {
     {
       value: {
         default: "color-mix(in srgb, currentColor 69%, transparent)",
-        prefersContrast: "inherit",
+        prefersContrast: "currentColor",
       },
       name: "--text-color-deemphasized",
     },
@@ -2451,7 +2481,7 @@ export const tokensTable = {
     },
     {
       value: {
-        default: "inherit",
+        default: "currentColor",
         prefersContrast: "var(--button-text-color)",
         forcedColors: "var(--button-text-color)",
       },
@@ -2459,7 +2489,7 @@ export const tokensTable = {
     },
     {
       value: {
-        default: "inherit",
+        default: "currentColor",
         prefersContrast: "var(--button-text-color-active)",
         forcedColors: "var(--button-text-color-active)",
       },
@@ -2467,17 +2497,15 @@ export const tokensTable = {
     },
     {
       value: {
-        default: "inherit",
-        brand: {
-          prefersContrast: "var(--button-text-color-disabled)",
-          forcedColors: "var(--button-text-color-disabled)",
-        },
+        default: "currentColor",
+        prefersContrast: "currentColor",
+        forcedColors: "var(--button-text-color-disabled)",
       },
       name: "--button-text-color-ghost-disabled",
     },
     {
       value: {
-        default: "inherit",
+        default: "currentColor",
         prefersContrast: "var(--button-text-color-hover)",
         forcedColors: "var(--button-text-color-hover)",
       },
@@ -2514,6 +2542,7 @@ export const tokensTable = {
     {
       value: {
         default: "var(--button-text-color-ghost)",
+        prefersContrast: "currentColor",
         forcedColors: "MenuText",
       },
       name: "--button-text-color-menu",
@@ -3484,17 +3513,19 @@ export const tokensTable = {
     },
     {
       value: {
-        light: "var(--color-gray-70)",
-        dark: "var(--color-gray-0)",
+        light: "color-mix(in srgb, currentColor 69%, transparent)",
+        dark: "currentColor",
         nativeTheme: "currentColor",
         forcedColors: "var(--button-text-color)",
-        default: "light-dark(var(--color-gray-70), var(--color-gray-0))",
+        default:
+          "light-dark(color-mix(in srgb, currentColor 69%, transparent), currentColor)",
         platform: {
           default: "currentColor",
           browserTheme: {
-            light: "var(--color-gray-70)",
-            dark: "var(--color-gray-0)",
-            default: "light-dark(var(--color-gray-70), var(--color-gray-0))",
+            light: "color-mix(in srgb, currentColor 69%, transparent)",
+            dark: "currentColor",
+            default:
+              "light-dark(color-mix(in srgb, currentColor 69%, transparent), currentColor)",
           },
         },
       },
@@ -4040,6 +4071,8 @@ export const variableLookupTable = {
   "font-weight-semibold": "600",
   "font-weight-bold": "700",
   "font-weight-heading": "var(--font-weight-semibold)",
+  "motion-easing-emphasized": "cubic-bezier(0.2, 0, 0, 1)",
+  "motion-easing-standard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
   "size-image-xsmall": "40px",
   "size-image-small": "48px",
   "size-image-medium": "56px",
@@ -4076,7 +4109,7 @@ export const variableLookupTable = {
   },
   "text-color-deemphasized": {
     default: "color-mix(in srgb, currentColor 69%, transparent)",
-    prefersContrast: "inherit",
+    prefersContrast: "currentColor",
   },
   "text-color-disabled": {
     default: "color-mix(in srgb, currentColor 40%, transparent)",
@@ -4413,24 +4446,22 @@ export const variableLookupTable = {
     forcedColors: "GrayText",
   },
   "button-text-color-ghost": {
-    default: "inherit",
+    default: "currentColor",
     prefersContrast: "var(--button-text-color)",
     forcedColors: "var(--button-text-color)",
   },
   "button-text-color-ghost-active": {
-    default: "inherit",
+    default: "currentColor",
     prefersContrast: "var(--button-text-color-active)",
     forcedColors: "var(--button-text-color-active)",
   },
   "button-text-color-ghost-disabled": {
-    default: "inherit",
-    brand: {
-      prefersContrast: "var(--button-text-color-disabled)",
-      forcedColors: "var(--button-text-color-disabled)",
-    },
+    default: "currentColor",
+    prefersContrast: "currentColor",
+    forcedColors: "var(--button-text-color-disabled)",
   },
   "button-text-color-ghost-hover": {
-    default: "inherit",
+    default: "currentColor",
     prefersContrast: "var(--button-text-color-hover)",
     forcedColors: "var(--button-text-color-hover)",
   },
@@ -4448,6 +4479,7 @@ export const variableLookupTable = {
   },
   "button-text-color-menu": {
     default: "var(--button-text-color-ghost)",
+    prefersContrast: "currentColor",
     forcedColors: "MenuText",
   },
   "button-text-color-menu-active": {
@@ -4734,6 +4766,12 @@ export const variableLookupTable = {
     },
   },
   "panel-footer-text-color": "inherit",
+  "panel-motion-duration-enter": "150ms",
+  "panel-motion-duration-exit": "120ms",
+  "panel-motion-duration-fade": "120ms",
+  "panel-motion-easing": "var(--motion-easing-emphasized)",
+  "panel-motion-scale": "0.96",
+  "panel-motion-translate-y": "-4px",
   "panel-padding": "16px",
   "panel-padding-block": "4px",
   "panel-separator-color": {
@@ -4815,6 +4853,13 @@ export const variableLookupTable = {
       browserTheme: { default: "var(--card-border-color)" },
     },
   },
+  "sidebar-motion-duration-enter": "200ms",
+  "sidebar-motion-duration-exit": "160ms",
+  "sidebar-motion-easing": "var(--motion-easing-emphasized)",
+  "sidebar-panel-motion-duration-enter": "230ms",
+  "sidebar-panel-motion-duration-exit": "190ms",
+  "sidebar-panel-content-motion-duration-fade": "130ms",
+  "sidebar-panel-content-motion-easing-fade": "var(--motion-easing-standard)",
   "table-background-color": {
     light: "#f8f8fa",
     dark: "rgb(35, 34, 43)",
@@ -4971,17 +5016,19 @@ export const variableLookupTable = {
   "toolbarbutton-padding-inner-touch": "9px",
   "toolbarbutton-padding-inner-touch-narrow": "8px",
   "toolbarbutton-icon-fill": {
-    light: "var(--color-gray-70)",
-    dark: "var(--color-gray-0)",
+    light: "color-mix(in srgb, currentColor 69%, transparent)",
+    dark: "currentColor",
     nativeTheme: "currentColor",
     forcedColors: "var(--button-text-color)",
-    default: "light-dark(var(--color-gray-70), var(--color-gray-0))",
+    default:
+      "light-dark(color-mix(in srgb, currentColor 69%, transparent), currentColor)",
     platform: {
       default: "currentColor",
       browserTheme: {
-        light: "var(--color-gray-70)",
-        dark: "var(--color-gray-0)",
-        default: "light-dark(var(--color-gray-70), var(--color-gray-0))",
+        light: "color-mix(in srgb, currentColor 69%, transparent)",
+        dark: "currentColor",
+        default:
+          "light-dark(color-mix(in srgb, currentColor 69%, transparent), currentColor)",
       },
     },
   },

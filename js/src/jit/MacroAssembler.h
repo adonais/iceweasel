@@ -594,6 +594,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
  public:
   // ===============================================================
+  // Indirect call/jump targets.
+
+  // Emit an indirect call or jump target of the specified kind. These ops may
+  // emit additional instructions before/after the actual target location. The
+  // returned CodeOffset and bound label identify the first instruction executed
+  // at the target.
+  inline CodeOffset indirectTarget(TargetKind kind);
+  inline void bindIndirectTarget(Label* label, TargetKind kind);
+  inline void bindIndirectTarget(CodeLabel* label, TargetKind kind);
+
+  // ===============================================================
   // Simple call functions.
 
   // The returned CodeOffset is the assembler offset for the instruction
@@ -2002,6 +2013,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                Label* label) PER_SHARED_ARCH;
   inline void branchTestPrimitive(Condition cond, Register tag,
                                   Label* label) PER_SHARED_ARCH;
+  inline void branchTestGCThing(Condition cond, Register tag,
+                                Label* label) PER_SHARED_ARCH;
   inline void branchTestMagic(Condition cond, Register tag,
                               Label* label) PER_SHARED_ARCH;
   void branchTestType(Condition cond, Register tag, JSValueType type,
@@ -2069,6 +2082,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              Label* label) PER_SHARED_ARCH;
   inline void branchTestNull(Condition cond, const ValueOperand& value,
                              Label* label) PER_SHARED_ARCH;
+
+  // Branch if the value is null or undefined (Equal) or neither (NotEqual).
+  inline void branchTestNullOrUndefined(Condition cond, Register tag,
+                                        Label* label) PER_SHARED_ARCH;
+  inline void branchTestNullOrUndefined(Condition cond,
+                                        const ValueOperand& value,
+                                        Label* label) PER_ARCH;
 
   // Clobbers the ScratchReg on x64.
   inline void branchTestObject(Condition cond, const Address& address,
@@ -5880,6 +5900,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
                               uint32_t end);
   void fillSlotsWithUninitialized(Address addr, Register temp, uint32_t start,
                                   uint32_t end);
+  // Store all four fields of the ObjectElements header that starts at
+  // |header|.
+  void storeElementsHeader(const Address& header, uint32_t flags,
+                           uint32_t initializedLength, uint32_t capacity,
+                           uint32_t length);
 
   void initGCSlots(Register obj, Register temp,
                    const TemplateNativeObject& templateObj);

@@ -7,8 +7,8 @@
 use crate::counter_style::{CounterStyle, CounterStyleParsingFlags};
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
-use cssparser::{Parser, Token};
-use style_traits::{ParseError, StyleParseErrorKind};
+use cssparser::{match_ignore_ascii_case, Parser, Token};
+use style_traits::{KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind};
 
 /// Specified and computed `list-style-type` property.
 #[derive(
@@ -128,14 +128,13 @@ pub struct QuoteList(
     pub crate::ArcSlice<QuotePair>,
 );
 
-/// Specified and computed `quotes` property: `auto`, `none`, or a list
-/// of characters.
+/// Specified and computed `quotes` property: `auto`, `none`, `match-parent`,
+/// or a list of characters.
 #[derive(
     Clone,
     Debug,
     MallocSizeOf,
     PartialEq,
-    SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
@@ -149,28 +148,26 @@ pub enum Quotes {
     QuoteList(QuoteList),
     /// auto (use lang-dependent quote marks)
     Auto,
+    /// match-parent (use the value from the element's parent)
+    MatchParent,
+}
+
+impl SpecifiedValueInfo for Quotes {
+    fn collect_completion_keywords(f: KeywordsCollectFn) {
+        f(&["auto", "none"]);
+        if crate::pref!("layout.css.quotes.match-parent.enabled") {
+            f(&["match-parent"]);
+        }
+    }
 }
 
 impl Parse for Quotes {
     fn parse(_: &ParserContext, input: &mut Parser) -> Result<Quotes, ParseError> {
-        if input
-            .try_parse(|input| input.expect_ident_matching("auto"))
-            .is_ok()
-        {
-            return Ok(Quotes::Auto);
-        }
-
-        if input
-            .try_parse(|input| input.expect_ident_matching("none"))
-            .is_ok()
-        {
-            return Ok(Quotes::QuoteList(QuoteList::default()));
-        }
-
         let mut quotes = Vec::new();
         loop {
             let opening = match input.next() {
                 Ok(Token::QuotedString(value)) => value.as_ref().to_owned().into(),
+                Ok(Token::Ident(id)) if quotes.is_empty() => return Self::from_ident(id),
                 Ok(_) => return Err(ParseError::unexpected_token()),
                 Err(_) => break,
             };
@@ -185,6 +182,19 @@ impl Parse for Quotes {
             ))))
         } else {
             Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError))
+        }
+    }
+}
+
+impl Quotes {
+    fn from_ident(id: &str) -> Result<Self, ParseError> {
+        match_ignore_ascii_case! { id,
+            "auto" => Ok(Self::Auto),
+            "none" => Ok(Self::QuoteList(QuoteList::default())),
+            "match-parent" if crate::pref!("layout.css.quotes.match-parent.enabled") => {
+                Ok(Self::MatchParent)
+            },
+            _ => Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError)),
         }
     }
 }

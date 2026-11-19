@@ -53,8 +53,9 @@ class BaseType:
                 config.get("exclude_extensions", []),
             )
             config["exclude"] = exclude
-        elif config.get("exclude"):
-            del config["exclude"]
+        else:
+            config.pop("exclude", None)
+            config.pop("global_exclude", None)
 
         if not paths:
             return {"results": [], "fixed": 0}

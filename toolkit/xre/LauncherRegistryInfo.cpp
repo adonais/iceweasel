@@ -87,7 +87,7 @@ ReadRegistryValueString(const nsAutoRegKey& aKey, const std::wstring& aName) {
     return LAUNCHER_ERROR_FROM_WIN32(status);
   }
 
-  buf = mozilla::MakeUnique<wchar_t[]>(dataLen / sizeof(wchar_t));
+  buf = std::make_unique<wchar_t[]>(dataLen / sizeof(wchar_t));
 
   status = ::RegGetValueW(aKey.get(), nullptr, aName.c_str(), RRF_RT_REG_SZ,
                           nullptr, buf.get(), &dataLen);

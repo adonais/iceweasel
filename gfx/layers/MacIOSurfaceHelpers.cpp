@@ -40,8 +40,8 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
     size_t cbCrWidth = aSurface->GetDevicePixelWidth(1);
     size_t cbCrHeight = aSurface->GetDevicePixelHeight(1);
 
-    auto cbPlane = MakeUnique<uint8_t[]>(cbCrWidth * cbCrHeight);
-    auto crPlane = MakeUnique<uint8_t[]>(cbCrWidth * cbCrHeight);
+    auto cbPlane = std::make_unique<uint8_t[]>(cbCrWidth * cbCrHeight);
+    auto crPlane = std::make_unique<uint8_t[]>(cbCrWidth * cbCrHeight);
 
     uint8_t* src = (uint8_t*)aSurface->GetBaseAddressOfPlane(1);
     uint8_t* cbDest = cbPlane.get();
@@ -91,8 +91,8 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
     size_t cbCrWidth = aSurface->GetDevicePixelWidth(1);
     size_t cbCrHeight = aSurface->GetDevicePixelHeight(1);
 
-    auto cbPlane = MakeUnique<uint16_t[]>(cbCrWidth * cbCrHeight);
-    auto crPlane = MakeUnique<uint16_t[]>(cbCrWidth * cbCrHeight);
+    auto cbPlane = std::make_unique<uint16_t[]>(cbCrWidth * cbCrHeight);
+    auto crPlane = std::make_unique<uint16_t[]>(cbCrWidth * cbCrHeight);
 
     uint8_t* src = (uint8_t*)aSurface->GetBaseAddressOfPlane(1);
     uint16_t* cbDest = cbPlane.get();
@@ -144,9 +144,10 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
       size_t strideDelta = cbCrStride - cbCrWidth;
       MOZ_ASSERT(strideDelta <= 31);
 
-      auto yPlane = MakeUnique<uint8_t[]>(cbCrStride * 2 * aSize.height + 31);
-      auto cbPlane = MakeUnique<uint8_t[]>(cbCrStride * cbCrHeight + 31);
-      auto crPlane = MakeUnique<uint8_t[]>(cbCrStride * cbCrHeight + 31);
+      auto yPlane =
+          std::make_unique<uint8_t[]>(cbCrStride * 2 * aSize.height + 31);
+      auto cbPlane = std::make_unique<uint8_t[]>(cbCrStride * cbCrHeight + 31);
+      auto crPlane = std::make_unique<uint8_t[]>(cbCrStride * cbCrHeight + 31);
 
       uint8_t* src = (uint8_t*)aSurface->GetBaseAddress();
       uint8_t* yDest = ALIGNEDPTR_32(yPlane.get());

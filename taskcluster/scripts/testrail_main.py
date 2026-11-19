@@ -54,13 +54,15 @@ def main():
     except KeyError as e:
         raise ValueError(f"ERROR: Missing Environment Variable: {e}")
 
+    build_number = os.environ.get("MOZ_BUILD_NUMBER", "").strip() or None
+
     # Release information
     release_version = get_release_version()
     release_type = get_release_type(release_version)
 
     # Build milestone information
     milestone_name = build_milestone_name(
-        testrail_product_type, release_type, release_version
+        testrail_product_type, release_type, release_version, build_number
     )
     milestone_description = build_milestone_description(milestone_name)
 
@@ -74,7 +76,7 @@ def main():
             sys.exit()
 
         # Create milestone and test runs
-        devices = ["Google Pixel 3(Android11)", "Google Pixel 2(Android11)"]
+        devices = ["MediumPhone.arm (API 34)"]
         milestone = testrail.create_milestone(
             testrail_project_id, milestone_name, milestone_description
         )
@@ -88,6 +90,7 @@ def main():
         product_icon = get_product_icon(shipping_product)
         ui_test_task_id = os.environ.get("UI_TEST_TASK_ID", "")
         test_run_emoji = get_test_run_emoji(ui_test_task_id, options)
+        build_number_text = f"Build {build_number} " if build_number else ""
 
         # Send success notification
         success_values = {
@@ -99,6 +102,8 @@ def main():
             "PRODUCT_ICON": product_icon,
             "UI_TEST_TASK_ID": ui_test_task_id,
             "TEST_RUN_EMOJI": test_run_emoji,
+            "MILESTONE_ID": str(milestone["id"]),
+            "BUILD_NUMBER_TEXT": build_number_text,
         }
         send_success_notification(success_values, SUCCESS_CHANNEL_ID, options)
 

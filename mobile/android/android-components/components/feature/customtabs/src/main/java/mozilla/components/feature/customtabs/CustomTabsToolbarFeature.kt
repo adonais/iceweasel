@@ -181,7 +181,7 @@ class CustomTabsToolbarFeature(
             addMenuItems()
         }
 
-        menuDrawableIcon = getDrawable(context, iconsR.drawable.mozac_ic_ellipsis_vertical_24)
+        menuDrawableIcon = getDrawable(context, iconsR.drawable.mozac_ic_more_vertical_round_24)
         menuDrawableIcon?.setTint(readableColor)
 
         if (customTabsToolbarButtonConfig.showMenu && isMenuAvailable()) {

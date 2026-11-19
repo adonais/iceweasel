@@ -5,9 +5,9 @@
 import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
 import { escapeHtmlEntities } from "./helpers.mjs";
 import { ViewPage } from "./viewpage.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/firefoxview/chats-tab-list.mjs";
 
 const lazy = {};
@@ -18,7 +18,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindowUI:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   ChatsController: "resource:///modules/ChatsController.sys.mjs",
-  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
@@ -126,32 +125,7 @@ class ChatsInView extends ViewPage {
       return;
     }
 
-    const win = event.target.documentGlobal;
-    const mostRecentPage = conversation.getMostRecentPageVisited();
-
-    if (mostRecentPage?.href) {
-      // Chat has a page URL - open the page and sidebar
-      lazy.URILoadingHelper.openTrustedLinkIn(win, mostRecentPage.href, "tab", {
-        resolveOnContentBrowserCreated: async targetBrowser => {
-          lazy.AIWindowUI.openSidebar(
-            targetBrowser.documentGlobal,
-            conversation
-          );
-        },
-      });
-    } else {
-      // Chat has no page URL - open AI Window directly in fullpage mode
-      lazy.URILoadingHelper.openTrustedLinkIn(
-        win,
-        lazy.AIWindow.newTabURL,
-        "tab",
-        {
-          resolveOnContentBrowserCreated: async targetBrowser => {
-            lazy.AIWindowUI.openInFullWindow(targetBrowser, conversation);
-          },
-        }
-      );
-    }
+    lazy.AIWindowUI.reopenConversationInTab(this.getWindow(), conversation);
 
     if (this.controller.searchQuery) {
       this.cumulativeSearches = 0;

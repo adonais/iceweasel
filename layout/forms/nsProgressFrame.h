@@ -53,6 +53,15 @@ class nsProgressFrame final : public nsContainerFrame,
 
   bool ShouldUseNativeStyle() const;
 
+  // The side the bar begins at, given whether it is vertical and the writing
+  // mode of the element.
+  static mozilla::LogicalSide LogicalStartSide(bool aIsVertical,
+                                               mozilla::WritingMode aWM);
+  static mozilla::Side PhysicalStartSide(bool aIsVertical,
+                                         mozilla::WritingMode aWM) {
+    return aWM.PhysicalSide(LogicalStartSide(aIsVertical, aWM));
+  }
+
  protected:
   mozilla::LogicalSize DefaultSize() const;
   // Helper function to reflow a child frame.

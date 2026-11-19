@@ -1139,6 +1139,13 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_customizationFragment_to_customizeMenuFragment"
+            app:destination="@id/customizeMenuFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
     <fragment
         android:id="@+id/privateBrowsingFragment"
@@ -1921,15 +1928,15 @@
         app:launchSingleTop="true" />
 
       <action
-        android:id="@+id/action_menuFragment_to_fenixCustomizeMenuFragment"
-        app:destination="@id/fenixCustomizeMenuFragment" />
+        android:id="@+id/action_menuFragment_to_customizeMenuFragment"
+        app:destination="@id/customizeMenuFragment" />
     </dialog>
   </navigation>
 
     <fragment
-      android:id="@+id/fenixCustomizeMenuFragment"
-      android:name="org.mozilla.fenix.components.menu.FenixCustomizeMenuFragment"
-      android:label="FenixCustomizeMenuFragment" />
+      android:id="@+id/customizeMenuFragment"
+      android:name="org.mozilla.fenix.components.menu.compose.customize.CustomizeMenuFragment"
+      android:label="@string/customize_menu" />
 
     <navigation
         android:id="@+id/trust_panel_graph"

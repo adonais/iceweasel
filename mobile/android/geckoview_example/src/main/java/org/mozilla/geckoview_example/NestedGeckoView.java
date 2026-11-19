@@ -21,7 +21,7 @@ import org.mozilla.geckoview.PanZoomController;
  *
  * <p>Based on: https://github.com/takahirom/webview-in-coordinatorlayout
  */
-public class NestedGeckoView extends GeckoView implements NestedScrollingChild {
+public final class NestedGeckoView extends GeckoView implements NestedScrollingChild {
 
   private int mLastY;
   private final int[] mScrollOffset = new int[2];

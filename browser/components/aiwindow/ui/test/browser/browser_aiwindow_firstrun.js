@@ -37,7 +37,6 @@ add_task(async function test_firstrun_europe_promotes_mistral() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.autoAdvanceMS", 0],
-      ["browser.smartwindow.mistralRelease", true],
       ["browser.smartwindow.firstrun.modelChoice", ""],
     ],
   });
@@ -93,7 +92,6 @@ add_task(async function test_firstrun_non_europe_no_promotion() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.autoAdvanceMS", 0],
-      ["browser.smartwindow.mistralRelease", true],
       ["browser.smartwindow.firstrun.modelChoice", ""],
     ],
   });
@@ -135,10 +133,6 @@ add_task(async function test_firstrun_non_europe_no_promotion() {
 });
 
 add_task(async function test_firstrun_welcome_screen_renders() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.firstrun.autoAdvanceMS", 0]],
-  });
-
   const tab = await openFirstrunPage();
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
@@ -166,7 +160,6 @@ add_task(async function test_firstrun_welcome_screen_renders() {
   });
 
   BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_launchWindow_shows_firstrun_when_not_completed() {
@@ -360,12 +353,6 @@ add_task(async function test_firstrun_explainer_page_opens() {
 
     await ContentTaskUtils.waitForMutationCondition(
       root,
-      { childList: true, subtree: true },
-      () => content.document.querySelector(".screen.AI_WINDOW_INTRO")
-    );
-
-    await ContentTaskUtils.waitForMutationCondition(
-      root,
       { childList: true, subtree: true, attributes: true },
       () => content.document.querySelector(".screen.AI_WINDOW_CHOOSE_MODEL")
     );
@@ -437,8 +424,6 @@ add_task(async function test_firstrun_telemetry() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.autoAdvanceMS", 0],
-      // TODO: Bug 2053495 - Refactor tests upon pref removal
-      ["browser.smartwindow.mistralRelease", false],
       ["browser.smartwindow.firstrun.modelChoice", ""],
     ],
   });
@@ -459,17 +444,13 @@ add_task(async function test_firstrun_telemetry() {
 
     await ContentTaskUtils.waitForMutationCondition(
       root,
-      { childList: true, subtree: true },
-      () => content.document.querySelector(".screen.AI_WINDOW_INTRO")
-    );
-
-    await ContentTaskUtils.waitForMutationCondition(
-      root,
       { childList: true, subtree: true, attributes: true },
       () => content.document.querySelector(".screen.AI_WINDOW_CHOOSE_MODEL")
     );
 
-    const model2Box = content.document.querySelectorAll(".select-item")[1];
+    const model2Box = content.document.querySelector(
+      ".select-item:has(input[value='model_2'])"
+    );
     const nextButton = content.document.querySelector(
       ".action-buttons > button"
     );
@@ -771,8 +752,6 @@ add_task(async function test_firstrun_telemetry_unchecked() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.autoAdvanceMS", 0],
-      // TODO: Bug 2053495 - Refactor tests upon pref removal
-      ["browser.smartwindow.mistralRelease", false],
       ["browser.smartwindow.firstrun.modelChoice", ""],
       ["browser.smartwindow.memories.generateFromHistory", true],
       ["browser.smartwindow.memories.generateFromConversation", true],
@@ -802,17 +781,13 @@ add_task(async function test_firstrun_telemetry_unchecked() {
 
     await ContentTaskUtils.waitForMutationCondition(
       root,
-      { childList: true, subtree: true },
-      () => content.document.querySelector(".screen.AI_WINDOW_INTRO")
-    );
-
-    await ContentTaskUtils.waitForMutationCondition(
-      root,
       { childList: true, subtree: true, attributes: true },
       () => content.document.querySelector(".screen.AI_WINDOW_CHOOSE_MODEL")
     );
 
-    const model2Box = content.document.querySelectorAll(".select-item")[1];
+    const model2Box = content.document.querySelector(
+      ".select-item:has(input[value='model_2'])"
+    );
     const nextButton = content.document.querySelector(
       ".action-buttons > button"
     );

@@ -114,6 +114,13 @@ var NonBrowserWindow = {
       }
     }
 
+    // These windows include their own copy of the browser window's menu bar
+    // and key elements, and their native menu bar takes its shortcuts from
+    // these key elements.
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
+    ).CustomKeys.initWindow(window);
+
     this.delayedStartupTimeoutId = setTimeout(() => this.delayedStartup(), 0);
   },
 
@@ -135,6 +142,10 @@ var NonBrowserWindow = {
     if (window.location.href == this.MAC_HIDDEN_WINDOW) {
       this.dockSupport.dockMenu = null;
     }
+
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
+    ).CustomKeys.uninitWindow(window);
 
     // If nonBrowserWindowDelayedStartup hasn't run yet, we have no work to do -
     // just cancel the pending timeout and return;

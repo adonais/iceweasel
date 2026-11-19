@@ -70,6 +70,8 @@ class WaylandVsyncSource final : public gfx::VsyncSource {
   void EnableVSyncSource();
   void DisableVSyncSource();
 
+  void WatchHiddenWindowVSync();
+
   // We addref/unref this during init so we should not
   // call it from constructor.
   void Init();
@@ -80,8 +82,6 @@ class WaylandVsyncSource final : public gfx::VsyncSource {
   void CalculateVsyncRateLocked(const MutexAutoLock& aProofOfLock,
                                 TimeStamp aVsyncTimestamp);
   void* GetWindowForLogging() { return mWindow; };
-
-  void SetHiddenWindowVSync();
 
   void SetVSyncEventsStateLocked(const MutexAutoLock& aProofOfLock,
                                  bool aEnabled);

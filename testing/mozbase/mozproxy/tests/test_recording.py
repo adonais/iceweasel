@@ -7,7 +7,7 @@ import mozinfo
 import mozunit
 import requests
 from mozproxy import get_playback
-from support import tempdir
+from support import firefox_binary, tempdir
 
 here = os.path.dirname(__file__)
 os.environ["MOZPROXY_DIR"] = os.path.join(here, "files")
@@ -35,7 +35,6 @@ def test_record_and_replay(*args):
         "playback_version": "8.1.1",
         "platform": mozinfo.os,
         "run_local": "MOZ_AUTOMATION" not in os.environ,
-        "binary": "firefox",
         "app": "firefox",
         "host": "127.0.0.1",
         "record": True,
@@ -43,6 +42,7 @@ def test_record_and_replay(*args):
 
     with tempdir() as obj_path:
         config["obj_path"] = obj_path
+        config["binary"] = firefox_binary(obj_path)
         record = get_playback(config)
         assert record is not None
 
@@ -71,7 +71,6 @@ def test_record_and_replay(*args):
     # Cleanup
     try:
         os.remove(recording_file)
-        os.remove(os.path.join("distribution", "policies.json"))
     except Exception:
         pass
 

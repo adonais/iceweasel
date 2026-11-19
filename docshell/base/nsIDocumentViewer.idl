@@ -84,6 +84,7 @@ interface nsIDocumentViewer : nsISupports
     eContinue = 0,
     eCanceledByBeforeUnload = 1,
     eCanceledByNavigate = 2,
+    eInterceptedByNavigate = 3,
   };
 
   /**

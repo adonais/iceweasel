@@ -142,5 +142,63 @@
         ["measure.stop", ""]
       ]
     }
+  ],
+  "mobile": [
+    {
+      "name": "amazon-nav",
+      "type": "interactive",
+      "test_url": "https://www.amazon.ca/s?k=laptop",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://www.amazon.ca/s?k=laptop"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        ["click.bySelectorAndWait", "a[href*=\"/dp/\"]"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "wikipedia-nav",
+      "type": "interactive",
+      "test_url": "https://en.m.wikipedia.org/wiki/Barack_Obama",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://en.m.wikipedia.org/wiki/Barack_Obama"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        ["click.bySelectorAndWait", "a[href*=\"/wiki/Honolulu\"]"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "duckduckgo-nav",
+      "type": "interactive",
+      "test_url": "https://duckduckgo.com/?q=mandelbrot+set",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://duckduckgo.com/?q=mandelbrot+set"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        ["click.bySelectorAndWait", "a[href*=\"ia=images\"]"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "bbc-nav",
+      "type": "interactive",
+      "test_url": "https://www.bbc.com/news/",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://www.bbc.com/news/"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""]
+      ]
+    }
   ]
 }

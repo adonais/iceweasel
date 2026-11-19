@@ -35,9 +35,9 @@ async function getPromoCards() {
     monitorPromoCard: doc.getElementById("mozilla-monitor"),
     relayPromoCard: doc.getElementById("firefox-relay"),
     thunderbirdCard: doc.getElementById("thunderbird"),
+    enterpriseCard: doc.getElementById("firefox-enterprise"),
     newProductsCard: doc.getElementById("mozilla-new-products"),
     mdnCard: doc.getElementById("mdn"),
-    soloCard: doc.getElementById("solo-ai"),
   };
 }
 

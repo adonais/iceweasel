@@ -37,6 +37,9 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /** Settings builder used to construct the settings object. */
   @AnyThread
   public static final class Builder extends RuntimeSettings.Builder<GeckoRuntimeSettings> {
+    /** Public constructor for Builder. */
+    public Builder() {}
+
     @Override
     protected @NonNull GeckoRuntimeSettings newSettings(
         final @Nullable GeckoRuntimeSettings settings) {

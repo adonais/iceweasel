@@ -234,7 +234,7 @@ bool UniqueStacks::FrameKey::NormalFrameData::operator==(
 }
 
 UniqueStacks::UniqueStacks()
-    : mUniqueStrings(MakeUnique<UniqueJSONStrings>(
+    : mUniqueStrings(std::make_unique<UniqueJSONStrings>(
           FailureLatchInfallibleSource::Singleton())),
       mFrameTableWriter(FailureLatchInfallibleSource::Singleton()),
       mStackTableWriter(FailureLatchInfallibleSource::Singleton()) {
@@ -560,7 +560,7 @@ class EntryGetter {
 BaseProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
     SpliceableJSONWriter& aWriter, BaseProfilerThreadId aThreadId,
     double aSinceTime, UniqueStacks& aUniqueStacks) const {
-  UniquePtr<char[]> dynStrBuf = MakeUnique<char[]>(kMaxFrameKeyLength);
+  auto dynStrBuf = std::make_unique<char[]>(kMaxFrameKeyLength);
 
   return mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
     MOZ_ASSERT(aReader,

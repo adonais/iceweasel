@@ -10,7 +10,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -51,7 +50,7 @@ class BookmarkMenuItemProviderTest {
     fun `GIVEN the current page is not bookmarked WHEN providing the item THEN offer bookmarking it`() = runTest {
         val provider = provider(bookmarksStorage = storageWith(bookmark = null))
 
-        assertEquals(addBookmarkItem, provider.itemFlow.value)
+        assertEquals(addBookmarkItem, provider.itemsFlow.value.single())
     }
 
     @Test
@@ -59,11 +58,11 @@ class BookmarkMenuItemProviderTest {
         val provider = provider(bookmarksStorage = storageWith(bookmark = bookmark))
 
         // Bookmarking the page is offered before reading from disk, editing the bookmark once it is known.
-        assertEquals(addBookmarkItem, provider.itemFlow.value)
+        assertEquals(addBookmarkItem, provider.itemsFlow.value.single())
 
         runCurrent()
 
-        assertEquals(editBookmarkItem, provider.itemFlow.value)
+        assertEquals(editBookmarkItem, provider.itemsFlow.value.single())
     }
 
     @Test
@@ -77,18 +76,18 @@ class BookmarkMenuItemProviderTest {
                 target = MenuTarget.CustomTab("customTabId"),
             )
 
-        assertEquals(addBookmarkItem, provider.itemFlow.value)
+        assertEquals(addBookmarkItem, provider.itemsFlow.value.single())
 
         runCurrent()
 
-        assertEquals(editBookmarkItem, provider.itemFlow.value)
+        assertEquals(editBookmarkItem, provider.itemsFlow.value.single())
     }
 
     @Test
     fun `GIVEN there is no page shown WHEN providing the item THEN don't offer bookmarking`() = runTest {
         val provider = provider(browserStore = BrowserStore(), bookmarksStorage = storageWith(bookmark = null))
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -189,7 +188,7 @@ class BookmarkMenuItemProviderTest {
             val provider = provider(bookmarksStorage = storageWith(bookmark = bookmark))
             runCurrent()
 
-            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+            val events = provider.itemsFlow.value.single().reachableEvents()
 
             assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
             assertFalse(provider.handles(MenuAction.FindInPage))

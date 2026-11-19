@@ -2329,7 +2329,15 @@
     obj: ObjId
     offset: RawInt32Field
 
-- name: LoadFixedSlotTypedResult
+- name: LoadReservedFixedSlotResult
+  shared: false
+  transpile: true
+  cost_estimate: 1
+  args:
+    obj: ObjId
+    offset: RawInt32Field
+
+- name: LoadReservedFixedSlotTypedResult
   shared: false
   transpile: true
   cost_estimate: 1
@@ -3963,7 +3971,7 @@
   transpile: true
   cost_estimate: 1
   args:
-    builderAddr: RawPointerField
+    hasBuilderAddr: RawPointerField
 
 #ifdef FUZZING_JS_FUZZILLI
 - name: FuzzilliHashResult

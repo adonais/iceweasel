@@ -20,10 +20,6 @@ prefs = [
 support-files = ["head.js"]
 
 ["browser_appmenu.js"]
-skip-if = [
-  "asan",
-  "debug",
-]
 
 ["browser_hidden_browser_vsync.js"]
 
@@ -38,9 +34,6 @@ support-files = ["!/browser/components/downloads/test/browser/head.js"]
 https_first_disabled = true
 run-if = [
   "debug",
-]
-skip-if = [
-  "socketprocess_networking",
 ]
 
 ["browser_startup.js"]
@@ -64,9 +57,6 @@ support-files = [
 run-if = [
   "debug",
   "nightly_build", # Requires StartupRecorder.sys.mjs, which isn't shipped everywhere by default
-]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1889278
 ]
 
 ["browser_tabclose.js"]

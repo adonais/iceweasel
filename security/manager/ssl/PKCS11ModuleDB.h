@@ -77,7 +77,7 @@ class PKCS11ModuleDB : public nsIPKCS11ModuleDB {
                                                const nsCString& oldPassword,
                                                const nsCString& newPassword);
 
-  typedef MozPromise<nsTArray<IPCClientCertObject>, nsresult, true>
+  typedef MozPromise<nsTArray<CryptokiObject>, nsresult, true>
       FindObjectsPromise;
   RefPtr<FindObjectsPromise> FindObjects(SearchingFor searchingFor);
 
@@ -110,7 +110,6 @@ class PKCS11ModuleDB : public nsIPKCS11ModuleDB {
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 };
 
-const nsLiteralCString kIPCClientCertsModuleName("IPC Client Cert Module");
 const nsLiteralCString kNSSInternalModuleName("NSS Internal PKCS #11 Module");
 const nsLiteralCString kOSClientCertsModuleName("OS Client Cert Module");
 const nsLiteralCString kRemoteCertsModuleName("Remote Certs Module");

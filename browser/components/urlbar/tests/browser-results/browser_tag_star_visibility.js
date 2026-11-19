@@ -150,17 +150,13 @@ add_task(async function () {
     if (testcase.expected.typeImageVisible) {
       Assert.equal(
         result.displayed.typeIcon,
-        Services.prefs.getBoolPref("browser.nova.enabled", false)
-          ? 'url("chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-icon")'
-          : 'url("chrome://browser/skin/bookmark-12.svg")',
+        'url("chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-icon")',
         "Should have the star image displayed or not as expected"
       );
     } else {
       Assert.equal(
         result.displayed.typeIcon,
-        Services.prefs.getBoolPref("browser.nova.enabled", false)
-          ? 'url("chrome://browser/skin/urlbar/badge-history.svg#ltr-icon")'
-          : "none",
+        'url("chrome://browser/skin/urlbar/badge-history.svg#ltr-icon")',
         "Should have the star image displayed or not as expected"
       );
     }

@@ -3652,7 +3652,7 @@ RecordedPathCreation::RecordedPathCreation(S& aStream)
   ReadElement(aStream, mRefPtr);
   ReadElementConstrained(aStream, mFillRule, FillRule::FILL_WINDING,
                          FillRule::FILL_EVEN_ODD);
-  mPathOps = MakeUnique<PathOps>(aStream);
+  mPathOps = std::make_unique<PathOps>(aStream);
 }
 
 inline void RecordedPathCreation::OutputSimpleEventInfo(
@@ -3716,10 +3716,11 @@ void RecordedSourceSurfaceCreation::Record(S& aStream) const {
     gfxWarning()
         << "RecordedSourceSurfaceCreation::Record failed to map surface";
     WriteElement(aStream, IntSize(1, 1));
-    int bpp = BytesPerPixel(format);
-    WriteElement(aStream, bpp <= 4 ? format : SurfaceFormat::B8G8R8A8);
+    SurfaceFormat fallbackFormat =
+        BytesPerPixel(format) <= 4 ? format : SurfaceFormat::B8G8R8A8;
+    WriteElement(aStream, fallbackFormat);
     static const char zeroData[4] = {0, 0, 0, 0};
-    aStream.write(zeroData, BytesPerPixel(format));
+    aStream.write(zeroData, BytesPerPixel(fallbackFormat));
   }
 }
 
@@ -4242,7 +4243,7 @@ inline bool RecordedFontData::PlayEvent(Translator* aTranslator) const {
     }
 
     gfxOTSExpandingMemoryStream<gfxOTSMozAlloc> output(lengthHint);
-    gfxOTSContext otsContext;
+    gfxOTSContext otsContext(/* aDropShapingTables = */ true);
     if (!otsContext.Process(&output, data, length)) {
       gfxCriticalNote << "Failed sanitizing recorded font of size " << length;
       return false;

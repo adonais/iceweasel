@@ -273,6 +273,37 @@ add_task(async function test_appmenu_layout_two_profiles() {
   await PanelUI.hide();
 });
 
+add_task(async function test_appmenu_profiles_subview_keeps_main_view_height() {
+  await SelectableProfileService.init();
+
+  let promiseViewShown = BrowserTestUtils.waitForEvent(
+    PanelUI.panel,
+    "ViewShown"
+  );
+  PanelUI.show();
+  await promiseViewShown;
+
+  let mainViewHeight = PanelUI.mainView.getBoundingClientRect().height;
+
+  let subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
+  let button = document.getElementById("appMenu-profiles-button");
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(button),
+    "The profiles app menu button should become visible"
+  );
+  let subviewShown = BrowserTestUtils.waitForEvent(subview, "ViewShown");
+  EventUtils.synthesizeMouseAtCenter(button, {});
+  await subviewShown;
+
+  Assert.less(
+    Math.abs(subview.getBoundingClientRect().height - mainViewHeight),
+    1,
+    "The secure sync subpanel is as tall as the account menu main view"
+  );
+
+  await PanelUI.hide();
+});
+
 add_task(async function test_appmenu_create_profile_button_no_profiles() {
   const sandbox = sinon.createSandbox();
   // No profiles: the service reports as not initialized, so getAllProfiles

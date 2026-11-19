@@ -2271,7 +2271,7 @@ public class GeckoSessionTestRule implements TestRule {
    * to set test setting geo.provider.testing to false to prevent network geolocation from
    * interfering when using.
    */
-  public class MockLocationProvider {
+  public final class MockLocationProvider {
 
     private final LocationManager locationManager;
     private final String mockProviderName;

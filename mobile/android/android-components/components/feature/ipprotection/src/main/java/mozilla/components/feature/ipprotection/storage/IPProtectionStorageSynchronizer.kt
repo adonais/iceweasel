@@ -16,7 +16,6 @@ import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.feature.ipprotection.auth.fxa.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
-import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.service.fxa.manager.FxaAccountManager
@@ -55,7 +54,7 @@ internal class StorageStoreSync(
     fun initialize() {
         CoroutineScope(dispatcher).launch {
             storage.eligibilityStatus.distinctUntilChanged().collect {
-                store.dispatch(IPProtectionAction.EligibilityChanged(it))
+                store.dispatch(IPProtectionAction.EligibilityAction.EligibilityChanged(it))
             }
         }
         storage.init()
@@ -75,7 +74,7 @@ internal class FxaAccountStoreSync(
                 .distinctUntilChanged()
                 .collect { state ->
                     ipProtectionStore.dispatch(
-                        InternalAction.AccountManagerStateChanged(
+                        IPProtectionAction.AccountAction.AccountManagerStateChanged(
                             when (state) {
                                 AccountState.Authenticated -> {
                                     if (lazyAccountManager.value.containsScope(SCOPE_IPPROTECTION)) {
@@ -99,7 +98,7 @@ internal class FxaAccountStoreSync(
         super.onReady(authenticatedAccount)
 
         ipProtectionStore.dispatch(
-            InternalAction.AccountManagerStateChanged(
+            IPProtectionAction.AccountAction.AccountManagerStateChanged(
                 if (authenticatedAccount == null) AccountStatus.NoAccount else AccountStatus.WarmingUp
             )
         )
@@ -110,6 +109,8 @@ internal class FxaAccountStoreSync(
     // This should be safe to do because an AuthFlowError happens late enough in an app when the observer is already
     // registered because it's a user interaction.
     override fun onFlowError(error: AuthFlowError) {
-        ipProtectionStore.dispatch(InternalAction.AccountManagerStateChanged(AccountStatus.AuthFailed))
+        ipProtectionStore.dispatch(
+            IPProtectionAction.AccountAction.AccountManagerStateChanged(AccountStatus.AuthFailed)
+        )
     }
 }

@@ -9,7 +9,6 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.activity.result.ActivityResultLauncher
 import io.mockk.every
 import io.mockk.mockk
@@ -55,13 +54,6 @@ class LensFeatureTest {
             hasAcknowledgedOptOut = { hasAcknowledgedOptOut },
         )
 
-    private fun imageResultIntent(source: String? = "camera") =
-        mockk<Intent> {
-            every { data } returns Uri.parse("content://test/image.jpg")
-            every { getStringExtra(LensCameraActivity.EXTRA_IMAGE_SOURCE) } returns source
-            every { getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL) } returns null
-        }
-
     private fun uploadedResultIntent(isPrivate: Boolean) =
         Intent().apply {
             putExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL, "https://lens.google.com/results")
@@ -86,36 +78,11 @@ class LensFeatureTest {
         }
 
     @Test
-    fun `GIVEN a camera image result WHEN handleImageResult is called THEN the image search is started`() =
-        runTest(testDispatcher) {
-            feature.handleImageResult(Activity.RESULT_OK, imageResultIntent())
-
-            verify {
-                lensImageSearch.searchWithImage(Uri.parse("content://test/image.jpg"), source = "camera")
-            }
-            verify(exactly = 0) { appStore.dispatch(LensAction.LensDismissed) }
-        }
-
-    @Test
-    fun `GIVEN a missing source extra WHEN handleImageResult is called THEN the unknown source is forwarded`() =
-        runTest(testDispatcher) {
-            feature.handleImageResult(Activity.RESULT_OK, imageResultIntent(source = null))
-
-            verify {
-                lensImageSearch.searchWithImage(
-                    Uri.parse("content://test/image.jpg"),
-                    source = LensImageSearch.SOURCE_UNKNOWN,
-                )
-            }
-        }
-
-    @Test
     fun `GIVEN an already uploaded private result WHEN handleImageResult is called THEN the result is opened as private without uploading`() =
         runTest(testDispatcher) {
             feature.handleImageResult(Activity.RESULT_OK, uploadedResultIntent(isPrivate = true))
 
             verify { lensImageSearch.openResult("https://lens.google.com/results", isPrivate = true) }
-            verify(exactly = 0) { lensImageSearch.searchWithImage(any(), any()) }
             verify(exactly = 0) { appStore.dispatch(LensAction.LensDismissed) }
         }
 
@@ -125,39 +92,31 @@ class LensFeatureTest {
             feature.handleImageResult(Activity.RESULT_CANCELED, null)
 
             verify { appStore.dispatch(LensAction.LensDismissed) }
-            verify(exactly = 0) { lensImageSearch.searchWithImage(any(), any()) }
+            verify(exactly = 0) { lensImageSearch.openResult(any(), any()) }
         }
 
     @Test
-    fun `GIVEN an image result with no URI WHEN handleImageResult is called THEN dispatches LensDismissed`() =
+    fun `GIVEN a result with no Lens result URL WHEN handleImageResult is called THEN dispatches LensDismissed`() =
         runTest(testDispatcher) {
-            val resultData =
-                mockk<Intent> {
-                    every { data } returns null
-                    every { getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL) } returns null
-                }
-
-            feature.handleImageResult(Activity.RESULT_OK, resultData)
+            feature.handleImageResult(Activity.RESULT_OK, Intent())
 
             verify { appStore.dispatch(LensAction.LensDismissed) }
-            verify(exactly = 0) { lensImageSearch.searchWithImage(any(), any()) }
+            verify(exactly = 0) { lensImageSearch.openResult(any(), any()) }
         }
 
     @Test
-    fun `GIVEN the feature has been stopped WHEN handleImageResult is called THEN the image search is still started`() =
+    fun `GIVEN the feature has been stopped WHEN handleImageResult is called THEN the uploaded result is still opened`() =
         runTest(testDispatcher) {
             feature.stop()
 
-            feature.handleImageResult(Activity.RESULT_OK, imageResultIntent())
+            feature.handleImageResult(Activity.RESULT_OK, uploadedResultIntent(isPrivate = false))
 
-            verify {
-                lensImageSearch.searchWithImage(Uri.parse("content://test/image.jpg"), source = "camera")
-            }
+            verify { lensImageSearch.openResult("https://lens.google.com/results", isPrivate = false) }
             verify(exactly = 0) { appStore.dispatch(LensAction.LensDismissed) }
         }
 
     @Test
-    fun `GIVEN the feature was never started WHEN handleImageResult is called THEN the image search is still started`() =
+    fun `GIVEN the feature was never started WHEN handleImageResult is called THEN the uploaded result is still opened`() =
         runTest(testDispatcher) {
             val neverStarted =
                 LensFeature(
@@ -171,11 +130,9 @@ class LensFeatureTest {
                     hasAcknowledgedOptOut = { hasAcknowledgedOptOut },
                 )
 
-            neverStarted.handleImageResult(Activity.RESULT_OK, imageResultIntent())
+            neverStarted.handleImageResult(Activity.RESULT_OK, uploadedResultIntent(isPrivate = false))
 
-            verify {
-                lensImageSearch.searchWithImage(Uri.parse("content://test/image.jpg"), source = "camera")
-            }
+            verify { lensImageSearch.openResult("https://lens.google.com/results", isPrivate = false) }
         }
 
     @Test
@@ -269,26 +226,17 @@ class LensFeatureTest {
 
             verify { appStore.dispatch(LensAction.LensDismissed) }
             verify { qrFeature.handleToolbarQrScanResults(Activity.RESULT_OK, qrIntent) }
-            verify(exactly = 0) { lensImageSearch.searchWithImage(any(), any()) }
+            verify(exactly = 0) { lensImageSearch.openResult(any(), any()) }
         }
 
     @Test
-    fun `GIVEN an image intent WHEN handleCameraActivityResult is called THEN it delegates to handleImageResult`() =
+    fun `GIVEN an uploaded image intent WHEN handleCameraActivityResult is called THEN it delegates to handleImageResult`() =
         runTest(testDispatcher) {
             val qrFeature: QrScanFenixFeature = mockk(relaxed = true)
-            val imageIntent =
-                mockk<Intent> {
-                    every { hasExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA) } returns false
-                    every { data } returns Uri.parse("content://test/image.jpg")
-                    every { getStringExtra(LensCameraActivity.EXTRA_IMAGE_SOURCE) } returns "camera"
-                    every { getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL) } returns null
-                }
 
-            feature.handleCameraActivityResult(Activity.RESULT_OK, imageIntent, qrFeature)
+            feature.handleCameraActivityResult(Activity.RESULT_OK, uploadedResultIntent(isPrivate = false), qrFeature)
 
-            verify {
-                lensImageSearch.searchWithImage(Uri.parse("content://test/image.jpg"), source = "camera")
-            }
+            verify { lensImageSearch.openResult("https://lens.google.com/results", isPrivate = false) }
             verify(exactly = 0) { qrFeature.handleToolbarQrScanResults(any(), any()) }
         }
 
@@ -303,7 +251,7 @@ class LensFeatureTest {
             feature.handleCameraActivityResult(Activity.RESULT_OK, qrIntent, qrScanFeature = null)
 
             verify { appStore.dispatch(LensAction.LensDismissed) }
-            verify(exactly = 0) { lensImageSearch.searchWithImage(any(), any()) }
+            verify(exactly = 0) { lensImageSearch.openResult(any(), any()) }
         }
 
     @Test

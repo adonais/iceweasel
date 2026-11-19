@@ -78,7 +78,9 @@ class GTests:
         * cwd: The directory to run tests from (support files will be found
                in this direcotry).
         * symbols_path: A path to a directory containing Breakpad-formatted
-                        symbol files for producing stack traces on crash.
+                        symbol files for producing stack traces on crash, or
+                        the URL of a zip file containing symbols, or a list
+                        of such paths and URLs.
         * utility_path: A path to a directory containing utility programs.
                         currently used to locate a stack fixer to provide
                         symbols symbols for assertion stacks.
@@ -98,7 +100,13 @@ class GTests:
 
         stack_fixer = None
         if utility_path:
-            stack_fixer = get_stack_fixer_function(utility_path, symbols_path)
+            symbols_paths = (
+                symbols_path if isinstance(symbols_path, list) else [symbols_path]
+            )
+            local_symbols_path = next(
+                (p for p in symbols_paths if p and os.path.isdir(p)), None
+            )
+            stack_fixer = get_stack_fixer_function(utility_path, local_symbols_path)
 
         def output_line_handler(proc, line):
             if stack_fixer:
@@ -299,10 +307,11 @@ class gtestOptions(argparse.ArgumentParser):
         self.add_argument(
             "--symbols-path",
             dest="symbols_path",
+            action="append",
             default=None,
             help="absolute path to directory containing breakpad "
             "symbols, or the URL of a zip file containing "
-            "symbols",
+            "symbols; can be given multiple times",
         )
         self.add_argument(
             "--utility-path",

@@ -117,9 +117,6 @@ support-files = ["test_accept_header.sjs", "test_import_json_module.mjs"]
 run-if = [
   "arch != 'x86'", # Large ArrayBuffers not supported on 32-bit.
 ]
-skip-if = [
-  "asan",
-]
 
 ["test_different_domain_in_hierarchy.html"]
 skip-if = [

@@ -20,6 +20,7 @@ pypi:sphinxcontrib-htmlhelp==2.0.1
 pypi:sphinxcontrib-mermaid==1.0.0
 pypi:werkzeug==2.3.8
 pypi:zstandard==0.25.0
+requirements-txt:build/psutil_requirements.txt
 requirements-txt:taskcluster/requirements.txt
 vendored:testing/web-platform/tests/tools/third_party/h2/src
 vendored:testing/web-platform/tests/tools/third_party/hpack/src

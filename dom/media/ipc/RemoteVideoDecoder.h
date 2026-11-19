@@ -66,6 +66,8 @@ class RemoteVideoDecoderParent final : public RemoteDecoderParent {
   MediaResult ProcessDecodedData(MediaDataDecoder::DecodedData&& aData,
                                  DecodedOutputIPDL& aDecodedData) override;
 
+  MediaResult AdjustDecodeError(const MediaResult& aError) override;
+
  private:
   void RequestTextureFactoryIdentifier(ConstructResolver&& aResolver);
   void CreateDecoder(const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,

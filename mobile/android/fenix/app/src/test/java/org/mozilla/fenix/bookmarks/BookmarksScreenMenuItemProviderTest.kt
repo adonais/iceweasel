@@ -16,6 +16,7 @@ import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.fake.FakeMenuHost
 import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
@@ -23,7 +24,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction
 class BookmarksScreenMenuItemProviderTest {
     @Test
     fun `WHEN building the menu item THEN provide the item for opening the bookmarks screen`() {
-        val provider = BookmarksScreenMenuItemProvider()
+        val provider = BookmarksScreenMenuItemProvider(target = MenuTarget.BrowserTab)
 
         assertEquals(
             StandardMenuItem(
@@ -31,7 +32,7 @@ class BookmarksScreenMenuItemProviderTest {
                 icon = MenuItemIconRes(iconsR.drawable.mozac_ic_bookmark_tray_fill_24),
                 onClickEvent = MenuAction.Navigate.Bookmarks,
             ),
-            provider.itemFlow.value,
+            provider.itemsFlow.value.single(),
         )
     }
 
@@ -39,16 +40,16 @@ class BookmarksScreenMenuItemProviderTest {
     fun `WHEN clicking the item THEN show the mobile bookmarks in place of the menu`() {
         val menu = FakeMenuHost()
 
-        BookmarksScreenMenuItemProvider().onEvent(MenuAction.Navigate.Bookmarks, menu)
+        BookmarksScreenMenuItemProvider(target = MenuTarget.BrowserTab).onEvent(MenuAction.Navigate.Bookmarks, menu)
 
         assertEquals(NavGraphDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id), menu.directions)
     }
 
     @Test
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() {
-        val provider = BookmarksScreenMenuItemProvider()
+        val provider = BookmarksScreenMenuItemProvider(target = MenuTarget.BrowserTab)
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.Navigate.History))

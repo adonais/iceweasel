@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>VideoEncoder dimension parity requirements</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script>
+// The two requirements differ per codec because the bitstreams do. H.264 4:2:0
+// cannot express an odd display size -- coded width is a multiple of 16 and the
+// frame-cropping unit is 2 -- so configuring for one must be refused. VP8 and
+// VP9 can express one, so those must keep working.
+
+const kH264 = "avc1.42001E";
+
+function config(codec, width, height) {
+  return { codec, width, height, bitrate: 1000000, framerate: 30 };
+}
+
+// Even: an odd-width I420 VideoFrame cannot be constructed, so the odd size has
+// to come from the encoder configuration and be scaled to.
+function makeI420Frame(width, height) {
+  const chromaWidth = Math.ceil(width / 2);
+  const chromaHeight = Math.ceil(height / 2);
+  const data = new Uint8Array(width * height + 2 * chromaWidth * chromaHeight);
+  data.fill(0x80);
+  return new VideoFrame(data, {
+    timestamp: 0,
+    codedWidth: width,
+    codedHeight: height,
+    format: "I420",
+  });
+}
+
+function makeEncoder() {
+  const state = { chunks: [], error: null };
+  let signalError;
+  state.errored = new Promise(resolve => {
+    signalError = resolve;
+  });
+  state.encoder = new VideoEncoder({
+    output: chunk => state.chunks.push(chunk),
+    error: e => {
+      state.error = e;
+      signalError(e);
+    },
+  });
+  return state;
+}
+
+async function expectRefused(codec, width, height) {
+  const label = `${codec} ${width}x${height}`;
+  const cfg = config(codec, width, height);
+
+  const support = await VideoEncoder.isConfigSupported(cfg);
+  ok(!support.supported, `${label}: must not be a supported configuration`);
+
+  // Rejected asynchronously, not thrown.
+  const state = makeEncoder();
+  state.encoder.configure(cfg);
+  const error = await state.errored;
+
+  is(error.name, "NotSupportedError", `${label}: should be NotSupportedError`);
+  is(state.encoder.state, "closed", `${label}: encoder should be closed`);
+  is(state.chunks.length, 0, `${label}: should produce no output`);
+}
+
+async function expectEncodes(codec, width, height) {
+  const label = `${codec} config ${width}x${height}`;
+  const cfg = config(codec, width, height);
+
+  const support = await VideoEncoder.isConfigSupported(cfg);
+  ok(support.supported, `${label}: should be a supported configuration`);
+  if (!support.supported) {
+    return;
+  }
+
+  const state = makeEncoder();
+  state.encoder.configure(cfg);
+
+  const frame = makeI420Frame(64, 64);
+  state.encoder.encode(frame, { keyFrame: true });
+  frame.close();
+  await state.encoder.flush();
+
+  is(state.error, null, `${label}: encoder should not report an error`);
+  ok(!!state.chunks.length, `${label}: should produce at least one chunk`);
+  state.encoder.close();
+}
+
+add_task(async function h264RefusesOddDimensions() {
+  await expectRefused(kH264, 65, 64);
+  await expectRefused(kH264, 64, 65);
+  await expectRefused(kH264, 65, 65);
+});
+
+add_task(async function vpxEncodesOddWidth() {
+  for (const codec of ["vp8", "vp09.00.10.08"]) {
+    await expectEncodes(codec, 65, 64);
+    await expectEncodes(codec, 64, 64);
+  }
+});
+</script>
+</body>
+</html>

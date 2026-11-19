@@ -369,6 +369,19 @@ def check_redundant_ping(
             yield ("The word 'custom' is redundant.")
 
 
+def check_ohttp_and_info(
+    ping: pings.Ping, parser_config: Dict[str, Any]
+) -> LintGenerator:
+    """
+    Ensure pings with uploader_capabilities containing "ohttp" have metadata.include_info_sections: false
+    """
+    if "ohttp" in ping.uploader_capabilities and (
+        "include_info_sections" not in ping.metadata
+        or ping.metadata["include_info_sections"]
+    ):
+        yield ("OHTTP requires `metadata.include_info_sections: false`.")
+
+
 def check_unknown_ping(
     check_name: str,
     check_type: CheckType,
@@ -478,6 +491,7 @@ PING_CHECKS: Dict[
     "BUG_NUMBER": (check_bug_number, CheckType.error),
     "TAGS_REQUIRED": (check_tags_required, CheckType.error),
     "REDUNDANT_PING": (check_redundant_ping, CheckType.error),
+    "NO_INFO_FOR_OHTTP": (check_ohttp_and_info, CheckType.error),
 }
 
 ALL_OBJECT_CHECKS: Dict[

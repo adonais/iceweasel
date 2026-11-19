@@ -156,3 +156,59 @@ add_task(async function test_hidden_divider_is_still_a_drag_target() {
 
   await setSplitterHovered(pinnedTabsSplitter, false);
 });
+
+add_task(async function test_tools_divider_follows_tabs_overflow() {
+  const sidebarMain = SidebarController.sidebarMain;
+  const tabsContainer = gBrowser.tabContainer;
+  const toolsSplitter = getToolsSplitter();
+
+  await setLauncherExpanded(false);
+  await setSplitterHovered(toolsSplitter, false);
+  Assert.ok(
+    !sidebarMain.hasAttribute("tabs-overflow"),
+    "The launcher has no tabs-overflow attribute before the tabs overflow"
+  );
+  assertDivider(
+    toolsSplitter,
+    false,
+    "The tools divider is hidden while the tabs fit"
+  );
+
+  info("Open tabs until the tab strip overflows");
+  while (!tabsContainer.hasAttribute("overflow")) {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
+  }
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebarMain,
+    { attributes: true, attributeFilter: ["tabs-overflow"] },
+    () => sidebarMain.hasAttribute("tabs-overflow")
+  );
+  await waitForRepaint();
+  assertDivider(
+    toolsSplitter,
+    true,
+    "The tools divider is drawn while the tabs overflow"
+  );
+
+  await setSplitterHovered(toolsSplitter, true);
+  Assert.strictEqual(
+    window.getComputedStyle(toolsSplitter).backgroundImage,
+    "none",
+    "Hovering the tools divider shows the highlight instead of the line"
+  );
+  await setSplitterHovered(toolsSplitter, false);
+
+  info("Close tabs until the tab strip no longer overflows");
+  cleanUpExtraTabs();
+  await BrowserTestUtils.waitForMutationCondition(
+    sidebarMain,
+    { attributes: true, attributeFilter: ["tabs-overflow"] },
+    () => !sidebarMain.hasAttribute("tabs-overflow")
+  );
+  await waitForRepaint();
+  assertDivider(
+    toolsSplitter,
+    false,
+    "The tools divider is hidden again once the tabs fit"
+  );
+});

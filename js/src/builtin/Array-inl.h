@@ -7,9 +7,13 @@
 
 #include "builtin/Array.h"
 
+#include "vm/ArrayObject.h"
+#include "vm/GlobalObject.h"
 #include "vm/JSObject.h"
+#include "vm/Realm.h"
 
 #include "vm/ArgumentsObject-inl.h"
+#include "vm/JSObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
 
 namespace js {
@@ -31,6 +35,27 @@ inline bool GetElement(JSContext* cx, HandleObject obj, uint32_t index,
   }
 
   return GetElement(cx, obj, obj, index, vp);
+}
+
+/*
+ * Whether obj may have indexed properties anywhere besides its dense elements.
+ * This includes other indexed properties in its shape hierarchy, and indexed
+ * properties or elements along its prototype chain.
+ */
+inline bool ObjectMayHaveExtraIndexedProperties(JSObject* obj) {
+  // Inline fast path for arrays with Array.prototype as proto.
+  if (obj->is<ArrayObject>() && !obj->as<ArrayObject>().isIndexed()) {
+    JSObject* proto = obj->staticPrototype();
+    if (!proto) {
+      return false;
+    }
+    Realm* realm = obj->nonCCWRealm();
+    if (proto == obj->nonCCWGlobal().maybeGetPrototype(JSProto_Array) &&
+        realm->realmFuses.arrayProtoHasNoIndexedPropsFuse.intact()) {
+      return false;
+    }
+  }
+  return ObjectMayHaveExtraIndexedPropertiesSlow(obj);
 }
 
 }  // namespace js

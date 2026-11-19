@@ -85,8 +85,10 @@ add_task(async function test_idleDailyRerecordsPrefValues() {
 });
 
 /**
- * browser.nova.enabled is reported on the same schedule, so that we can tell
- * how many people turn the Nova redesign off once it is enabled by default.
+ * browser.nova.enabled is reported on the same schedule.
+ * While the pref isn't locked in yet (see Bug 2082898), verify it is
+ * correctly recorded so we can tell how many people turn the Nova redesign
+ * off after the pref is enabled by default.
  */
 add_task(async function test_idleDailyRecordsNovaEnabled() {
   // The task above already fired idle-daily, so clear that value: otherwise the
@@ -98,21 +100,69 @@ add_task(async function test_idleDailyRecordsNovaEnabled() {
     "the metric should start out unset"
   );
 
-  for (let novaEnabled of [true, false]) {
-    await SpecialPowers.pushPrefEnv({ set: [[NOVA_PREF, novaEnabled]] });
+  let novaEnabled = Services.prefs.getBoolPref(NOVA_PREF, true);
 
-    Services.obs.notifyObservers(null, "idle-daily");
+  Services.obs.notifyObservers(null, "idle-daily");
 
-    await TestUtils.waitForCondition(
-      () => Glean.nova.enabled.testGetValue() === novaEnabled,
-      `wait for idle-daily to record browser.nova.enabled=${novaEnabled}`
-    );
-    Assert.equal(
-      Glean.nova.enabled.testGetValue(),
-      novaEnabled,
-      `idle-daily should have recorded browser.nova.enabled=${novaEnabled}`
-    );
+  await TestUtils.waitForCondition(
+    () => Glean.nova.enabled.testGetValue() === novaEnabled,
+    `wait for idle-daily to record browser.nova.enabled=${novaEnabled}`
+  );
+  Assert.equal(
+    Glean.nova.enabled.testGetValue(),
+    novaEnabled,
+    `idle-daily should have recorded browser.nova.enabled=${novaEnabled}`
+  );
+});
 
-    await SpecialPowers.popPrefEnv();
+/**
+ * The theme picker's appearance and native theme settings are reported on the
+ * same schedule, so that we can tell how often they differ from the default.
+ */
+add_task(async function test_idleDailyRecordsThemePickerValues() {
+  await resetTelemetry();
+  Assert.equal(
+    Glean.themePicker.appearance.testGetValue(),
+    null,
+    "appearance should start out unset"
+  );
+  Assert.equal(
+    Glean.themePicker.nativeTheme.testGetValue(),
+    null,
+    "nativeTheme should start out unset"
+  );
+
+  const cases = [
+    { prefs: [["ui.systemUsesDarkTheme", 0]], appearance: "light" },
+    { prefs: [["ui.systemUsesDarkTheme", 1]], appearance: "dark" },
+    { prefs: [], appearance: "device" },
+  ];
+  for (let { prefs, appearance } of cases) {
+    for (let nativeTheme of [true, false]) {
+      await SpecialPowers.pushPrefEnv({
+        set: [...prefs, ["browser.theme.native-theme", nativeTheme]],
+      });
+
+      Services.obs.notifyObservers(null, "idle-daily");
+
+      await TestUtils.waitForCondition(
+        () =>
+          Glean.themePicker.appearance.testGetValue() === appearance &&
+          Glean.themePicker.nativeTheme.testGetValue() === nativeTheme,
+        `wait for idle-daily to record appearance=${appearance} nativeTheme=${nativeTheme}`
+      );
+      Assert.equal(
+        Glean.themePicker.appearance.testGetValue(),
+        appearance,
+        `idle-daily should have recorded appearance=${appearance}`
+      );
+      Assert.equal(
+        Glean.themePicker.nativeTheme.testGetValue(),
+        nativeTheme,
+        `idle-daily should have recorded nativeTheme=${nativeTheme}`
+      );
+
+      await SpecialPowers.popPrefEnv();
+    }
   }
 });

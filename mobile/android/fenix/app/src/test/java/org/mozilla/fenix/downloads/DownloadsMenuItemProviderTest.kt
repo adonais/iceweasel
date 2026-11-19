@@ -23,6 +23,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.fake.FakeMenuHost
 import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
@@ -33,33 +34,52 @@ class DownloadsMenuItemProviderTest {
     fun `GIVEN there are no downloads notifications WHEN building the downloads menu item THEN return a non-highlighted item`() =
         runTest {
             val appStore = AppStore(AppState(supportedMenuNotifications = emptySet()))
-            val provider = DownloadsMenuItemProvider(appStore, this.backgroundScope)
+            val provider =
+                DownloadsMenuItemProvider(appStore, target = MenuTarget.BrowserTab, scope = this.backgroundScope)
 
-            assertEquals(expectedItem(isHighlighted = false), provider.itemFlow.value)
+            assertEquals(expectedItem(isHighlighted = false), provider.itemsFlow.value.single())
+        }
+
+    @Test
+    fun `GIVEN target is CustomizeMenu WHEN building the downloads menu item THEN return item without click event`() =
+        runTest {
+            val appStore = AppStore(AppState(supportedMenuNotifications = emptySet()))
+            val provider =
+                DownloadsMenuItemProvider(appStore, target = MenuTarget.CustomizeMenu, scope = this.backgroundScope)
+
+            assertEquals(
+                StandardMenuItem(
+                    title = MenuItemTitle(Text.Resource(R.string.library_downloads)),
+                    icon = MenuItemIconRes(iconsR.drawable.mozac_ic_download_24, isHighlighted = false),
+                    onClickEvent = null,
+                ),
+                provider.itemsFlow.value.single(),
+            )
         }
 
     @Test
     fun `GIVEN there are downloads notifications WHEN building the downloads menu item THEN return a highlighted item`() =
         runTest {
             val appStore = AppStore(AppState(supportedMenuNotifications = setOf(SupportedMenuNotifications.Downloads)))
-            val provider = DownloadsMenuItemProvider(appStore, this.backgroundScope)
+            val provider =
+                DownloadsMenuItemProvider(appStore, target = MenuTarget.BrowserTab, scope = this.backgroundScope)
 
-            assertEquals(expectedItem(isHighlighted = true), provider.itemFlow.value)
+            assertEquals(expectedItem(isHighlighted = true), provider.itemsFlow.value.single())
         }
 
     @Test
     fun `WHEN the downloads notifications status changes THEN update the downloads menu item`() = runTest {
         val appStore = AppStore(AppState(supportedMenuNotifications = emptySet()))
-        val provider = DownloadsMenuItemProvider(appStore, this.backgroundScope)
+        val provider = DownloadsMenuItemProvider(appStore, target = MenuTarget.BrowserTab, scope = this.backgroundScope)
 
-        val collectJob = launch { provider.itemFlow.collect {} }
+        val collectJob = launch { provider.itemsFlow.collect {} }
 
-        assertEquals(expectedItem(isHighlighted = false), provider.itemFlow.value)
+        assertEquals(expectedItem(isHighlighted = false), provider.itemsFlow.value.single())
 
         appStore.dispatch(AppAction.MenuNotification.AddMenuNotification(SupportedMenuNotifications.Downloads))
         advanceUntilIdle()
 
-        assertEquals(expectedItem(isHighlighted = true), provider.itemFlow.value)
+        assertEquals(expectedItem(isHighlighted = true), provider.itemsFlow.value.single())
 
         collectJob.cancel()
     }
@@ -79,16 +99,18 @@ class DownloadsMenuItemProviderTest {
     fun `WHEN clicking the item THEN show the downloads in place of the menu`() = runTest {
         val menu = FakeMenuHost()
 
-        DownloadsMenuItemProvider(AppStore(AppState()), backgroundScope).onEvent(MenuAction.Navigate.Downloads, menu)
+        DownloadsMenuItemProvider(AppStore(AppState()), target = MenuTarget.BrowserTab, scope = backgroundScope)
+            .onEvent(MenuAction.Navigate.Downloads, menu)
 
         assertEquals(NavGraphDirections.actionGlobalDownloadsFragment(), menu.directions)
     }
 
     @Test
     fun `WHEN building the item THEN handle all events it can dispatch and no others`() = runTest {
-        val provider = DownloadsMenuItemProvider(AppStore(AppState()), backgroundScope)
+        val provider =
+            DownloadsMenuItemProvider(AppStore(AppState()), target = MenuTarget.BrowserTab, scope = backgroundScope)
 
-        val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+        val events = provider.itemsFlow.value.single().reachableEvents()
 
         assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
         assertFalse(provider.handles(MenuAction.Navigate.History))

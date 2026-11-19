@@ -37,14 +37,16 @@ uint32_t PageloadEventData::sPageLoadEventCounter = 0;
 // We don't want to record an event for every page load, so instead we
 // randomly sample the events based on the channel.
 //
-// For nightly and beta, 100% of page loads will be sent using the default
-// page_load ping, and 10% will be sent as page_load_domain pings.
+// Each page load is sent as at most one ping, with the page_load_domain
+// sample taken first.
 //
-// For release, 10% of page loads will be sent using the default ping,
-// and 0.1% will be sent as page_load_domain pings.
+// Nightly: page_load_domain every 10 pageloads, page_load for the rest.
+// Dev edition: page_load_domain every 1000 pageloads, page_load for the rest.
+// Release: page_load_domain every 1000 pageloads, page_load every 3 of the
+// rest.
 
 // Normal sampling
-#ifdef EARLY_BETA_OR_EARLIER
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 static constexpr uint64_t kNormalSamplingInterval = 1;  // Every pageload.
 #else
 static constexpr uint64_t kNormalSamplingInterval = 3;  // Every 3 pageloads.

@@ -5,7 +5,7 @@
 import sdl from "eslint-plugin-sdl";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import html from "eslint-plugin-html";
-import importPlugin from "eslint-plugin-import";
+import { importX } from "eslint-plugin-import-x";
 import json from "@eslint/json";
 import lit from "eslint-plugin-lit";
 import mozilla from "eslint-plugin-mozilla";
@@ -84,8 +84,8 @@ let config = [
   {
     name: "import-plugin-settings",
     settings: {
-      "import/extensions": [".mjs"],
-      "import/resolver": {
+      "import-x/extensions": [".mjs"],
+      "import-x/resolver": {
         [path.resolve(import.meta.dirname, "srcdir-resolver.js")]: {},
         node: {},
       },
@@ -161,6 +161,18 @@ let config = [
     files: ["taskcluster/docker/image_builder/policy.json"],
     rules: {
       "json/no-empty-keys": "off",
+    },
+  },
+  {
+    name: "figma-code-connect",
+    files: ["**/*.figma.ts"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+    plugins: { "import-x": importX },
+    rules: {
+      "import-x/no-unresolved": "off",
     },
   },
   {
@@ -254,27 +266,27 @@ let config = [
   {
     name: "eslint-plugin-import-rules",
     files: ["**/*.mjs"],
-    plugins: { import: importPlugin },
+    plugins: { "import-x": importX },
     rules: {
-      "import/default": "error",
-      "import/export": "error",
-      "import/named": "error",
-      "import/namespace": "error",
-      "import/newline-after-import": "error",
-      "import/no-duplicates": "error",
-      "import/no-absolute-path": "error",
-      "import/no-named-default": "error",
-      "import/no-named-as-default": "error",
-      "import/no-named-as-default-member": "error",
-      "import/no-self-import": "error",
-      "import/no-unassigned-import": "error",
-      "import/no-unresolved": [
+      "import-x/default": "error",
+      "import-x/export": "error",
+      "import-x/named": "error",
+      "import-x/namespace": "error",
+      "import-x/newline-after-import": "error",
+      "import-x/no-duplicates": "error",
+      "import-x/no-absolute-path": "error",
+      "import-x/no-named-default": "error",
+      "import-x/no-named-as-default": "error",
+      "import-x/no-named-as-default-member": "error",
+      "import-x/no-self-import": "error",
+      "import-x/no-unassigned-import": "error",
+      "import-x/no-unresolved": [
         "error",
         // Bug 1773473 - Ignore resolver URLs for chrome and resource as we
         // do not yet have a resolver for them.
         { ignore: ["chrome://", "resource://"] },
       ],
-      "import/no-useless-path-segments": "error",
+      "import-x/no-useless-path-segments": "error",
     },
   },
   {
@@ -284,9 +296,9 @@ let config = [
     // the custom element being registered) rather than any particular
     // export:
     files: ["**/*.stories.mjs"],
-    plugins: { import: importPlugin },
+    plugins: { "import-x": importX },
     rules: {
-      "import/no-unassigned-import": "off",
+      "import-x/no-unassigned-import": "off",
     },
   },
   {

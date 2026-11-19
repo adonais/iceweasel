@@ -67,8 +67,6 @@ Structure:
   fileIOReports: {...},
   addonDetails: {...},
   UIMeasurements: [...],  // Android only
-  slowSQL: {...},
-  slowSQLstartup: {...},
 }
 ```
 
@@ -232,35 +230,6 @@ Structure:
 }
 ```
 
-## slowSQL
-
-This section contains the information about the slow SQL queries for both the main and other threads. The execution of an SQL statement is considered slow if it takes 50ms or more on the main thread or 100ms or more on other threads. Slow SQL statements will be automatically trimmed to 1000 characters. This limit doesn't include the ellipsis and database name, that are appended at the end of the stored statement.
-
-Structure:
-
-```js
-"slowSQL": {
-  "mainThread": {
-    "Sanitized SQL Statement": [
-      1, // the number of times this statement was hit
-      200  // the total time (in milliseconds) that was spent on this statement
-    ],
-    ...
-  },
-  "otherThreads": {
-    "VACUUM /* places.sqlite */": [
-      1,
-      330
-    ],
-    ...
-  }
-},
-```
-
-## slowSQLStartup
-
-This section contains the slow SQL statements gathered at startup (until the "sessionstore-windows-restored" event is fired). The structure of this section resembles the one for [slowSQL].
-
 ## UIMeasurements
 
 This section is Android-only and contains UI specific Telemetry measurements and events ([see here](https://searchfox.org/mozilla-central/search?q=UITelemetry.%28addEvent|startSession|stopSession%29&redirect=false&case=false&regexp=true)).
@@ -289,6 +258,9 @@ Structure:
 ```
 
 ## Version History
+
+- Firefox 161:
+  - Removed `slowSQL` and `slowSQLStartup` ([bug 2082925](https://bugzilla.mozilla.org/show_bug.cgi?id=2082925)).
 
 - Firefox 150:
 

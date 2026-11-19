@@ -158,7 +158,7 @@ add_task(async function test_all_patterns() {
         {
           value: "",
           label:
-            "This connection is not secure. Logins entered here could be compromised. Learn More",
+            "This connection is not secure. Logins entered here could be compromised.",
           style: "insecureWarning",
           comment: {
             fillMessageName:
@@ -185,7 +185,7 @@ add_task(async function test_all_patterns() {
         {
           value: "",
           label:
-            "This connection is not secure. Logins entered here could be compromised. Learn More",
+            "This connection is not secure. Logins entered here could be compromised.",
           style: "insecureWarning",
           comment: {
             fillMessageName:
@@ -294,7 +294,7 @@ add_task(async function test_all_patterns() {
         {
           value: "",
           label:
-            "This connection is not secure. Logins entered here could be compromised. Learn More",
+            "This connection is not secure. Logins entered here could be compromised.",
           style: "insecureWarning",
           comment: {
             fillMessageName:
@@ -404,7 +404,7 @@ add_task(async function test_all_patterns() {
         {
           value: "",
           label:
-            "This connection is not secure. Logins entered here could be compromised. Learn More",
+            "This connection is not secure. Logins entered here could be compromised.",
           style: "insecureWarning",
           comment: {
             fillMessageName:

@@ -159,13 +159,11 @@ ProfilerString8View PlaybackStage::Name() const {
 void PlaybackStage::AddMarker(MarkerOptions&& aOption) {
   if (mStartAndEndTimeUs) {
     auto& pair = *mStartAndEndTimeUs;
-    profiler_add_marker(Name(), Category(),
-                        std::forward<MarkerOptions&&>(aOption),
+    profiler_add_marker(Name(), Category(), std::move(aOption),
                         geckoprofiler::markers::MediaSampleMarker{}, pair.first,
                         pair.second, 1 /* queue length */);
   } else {
-    profiler_add_marker(Name(), Category(),
-                        std::forward<MarkerOptions&&>(aOption));
+    profiler_add_marker(Name(), Category(), std::move(aOption));
   }
 }
 
@@ -214,13 +212,11 @@ ProfilerString8View DecodeStage::Name() const {
 void DecodeStage::AddMarker(MarkerOptions&& aOption) {
   if (mStartAndEndTimeUs) {
     auto& pair = *mStartAndEndTimeUs;
-    profiler_add_marker(Name(), Category(),
-                        std::forward<MarkerOptions&&>(aOption),
+    profiler_add_marker(Name(), Category(), std::move(aOption),
                         geckoprofiler::markers::MediaSampleMarker{}, pair.first,
                         pair.second, 1 /* queue length */);
   } else {
-    profiler_add_marker(Name(), Category(),
-                        std::forward<MarkerOptions&&>(aOption));
+    profiler_add_marker(Name(), Category(), std::move(aOption));
   }
 }
 

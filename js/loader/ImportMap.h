@@ -68,13 +68,13 @@ class ImportMap {
             mozilla::UniquePtr<ScopeMap> aScopes,
             mozilla::UniquePtr<IntegrityMap> aIntegrity)
       : mImports(aImports ? std::move(aImports)
-                          : mozilla::MakeUnique<SpecifierMap>()),
-        mScopes(aScopes ? std::move(aScopes) : mozilla::MakeUnique<ScopeMap>()),
+                          : std::make_unique<SpecifierMap>()),
+        mScopes(aScopes ? std::move(aScopes) : std::make_unique<ScopeMap>()),
         mIntegrity(aIntegrity ? std::move(aIntegrity)
-                              : mozilla::MakeUnique<IntegrityMap>()) {}
+                              : std::make_unique<IntegrityMap>()) {}
 
   static mozilla::UniquePtr<ImportMap> CreateEmpty() {
-    return mozilla::MakeUnique<ImportMap>(nullptr, nullptr, nullptr);
+    return std::make_unique<ImportMap>(nullptr, nullptr, nullptr);
   }
 
   /**

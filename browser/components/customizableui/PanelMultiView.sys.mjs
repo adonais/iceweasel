@@ -1852,7 +1852,6 @@ export var PanelView = class extends AssociatedToNode {
    * undefined at any time.
    *
    * @type {DOMNode|null}
-   *   The selected element, or null if no element is selected.
    */
   get selectedElement() {
     return this._selectedElement && this._selectedElement.get();
@@ -2130,41 +2129,25 @@ export var PanelView = class extends AssociatedToNode {
         stop();
 
         this._doingKeyboardActivation = true;
-        const details = {
-          bubbles: true,
-          ctrlKey: event.ctrlKey,
-          altKey: event.altKey,
-          shiftKey: event.shiftKey,
-          metaKey: event.metaKey,
-        };
-        // The a11y-checks want the target to be accessible. For moz-button the
-        // focus is really on the inner button which is accessible, but we check
-        // a11y against the event target (moz-button) which fails. Dispatch from
-        // the inner button element instead.
-        let target = button;
-        if (
-          button.localName == "moz-button" ||
-          button.localName == "moz-box-button"
-        ) {
-          target = button.buttonEl;
-          details.composed = true;
+        let win = event.target.documentGlobal;
+        let rect = button.getBoundingClientRect();
+        let x = rect.left + rect.width / 2;
+        let y = rect.top + rect.height / 2;
+        let modifiers =
+          (event.ctrlKey ? win.windowUtils.MODIFIER_CONTROL : 0) |
+          (event.altKey ? win.windowUtils.MODIFIER_ALT : 0) |
+          (event.shiftKey ? win.windowUtils.MODIFIER_SHIFT : 0) |
+          (event.metaKey ? win.windowUtils.MODIFIER_META : 0);
+        // The mouseup triggers a click, which triggers a command event too.
+        for (let type of ["mousedown", "mouseup"]) {
+          win.synthesizeMouseEvent(
+            type,
+            x,
+            y,
+            { inputSource: MouseEvent.MOZ_SOURCE_KEYBOARD, modifiers },
+            { toWindow: true, isDOMEventSynthesized: false }
+          );
         }
-        let dispEvent = new event.target.documentGlobal.MouseEvent(
-          "mousedown",
-          details
-        );
-        target.dispatchEvent(dispEvent);
-        dispEvent = new event.target.documentGlobal.MouseEvent(
-          "mouseup",
-          details
-        );
-        target.dispatchEvent(dispEvent);
-        // This event will trigger a command event too.
-        dispEvent = new event.target.documentGlobal.PointerEvent(
-          "click",
-          details
-        );
-        target.dispatchEvent(dispEvent);
         this._doingKeyboardActivation = false;
         break;
       }

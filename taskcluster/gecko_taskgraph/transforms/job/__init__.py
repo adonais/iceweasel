@@ -24,6 +24,7 @@ from taskgraph.util.schema import LegacySchema, Schema, validate_schema
 from taskgraph.util.taskcluster import get_artifact_prefix
 
 from gecko_taskgraph.transforms.cached_tasks import order_tasks
+from gecko_taskgraph.transforms.job.common import add_gradle
 from gecko_taskgraph.transforms.task import (
     TaskDescriptionSchema,
 )
@@ -113,6 +114,8 @@ class JobDescriptionSchema(Schema, kw_only=True):
     use_python: TOptional[Union[Literal["system", "default"], str]] = None
     # Fetch uv binary and add it to PATH
     use_uv: TOptional[bool] = None
+    use_gradle: TOptional[Literal["offline", "online"]] = None
+    use_gradle_cache: TOptional[bool] = None
     priority: TOptional[TaskDescriptionSchema.__annotations__["priority"]] = None  # type: ignore
     # The "when" section contains descriptions of the circumstances under which
     # this task should be included in the task graph.  This will be converted
@@ -182,7 +185,9 @@ def make_task_description(config, jobs):
         if job["worker"]["implementation"] == "docker-worker":
             job["run"].setdefault("workdir", "/builds/worker")
 
+        use_gradle = job.pop("use-gradle", None)
         taskdesc = deepcopy(job)
+        taskdesc.pop("use-gradle-cache", None)
 
         # fill in some empty defaults to make run implementations easier
         taskdesc.setdefault("attributes", {})
@@ -198,6 +203,8 @@ def make_task_description(config, jobs):
         configure_taskdesc_for_run(
             config, job, taskdesc, job["worker"]["implementation"]
         )
+        if use_gradle:
+            add_gradle(config, job, taskdesc, use_gradle)
         del taskdesc["run"]
 
         # yield only the task description, discarding the job description

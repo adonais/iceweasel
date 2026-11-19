@@ -32,6 +32,7 @@
 #include "api/units/timestamp.h"
 #include "media/base/media_channel.h"
 #include "pc/test/mock_voice_media_receive_channel_interface.h"
+#include "rtc_base/event.h"
 #include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -119,6 +120,74 @@ TEST_F(AudioRtpReceiverTest, VolumesSetBeforeStartingAreRespected) {
 
   auto setup_task = receiver_->GetSetupForMediaChannel(kSsrc);
   worker_thread_->BlockingCall([&]() { std::move(setup_task)(); });
+}
+
+// Tests that a volume that is set while the track is disabled is applied when
+// the track is enabled again.
+TEST_F(AudioRtpReceiverTest, VolumeSetWhileTrackDisabledIsAppliedWhenEnabled) {
+  receiver_->track()->set_enabled(true);
+  SetMediaChannel(&receive_channel_);
+  EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kDefaultVolume));
+  auto setup_task = receiver_->GetSetupForMediaChannel(kSsrc);
+  worker_thread_->BlockingCall([&]() { std::move(setup_task)(); });
+
+  EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kVolumeMuted));
+  receiver_->track()->set_enabled(false);
+  receiver_->OnSetVolume(kVolume);
+  // Flush the worker thread.
+  worker_thread_->BlockingCall([] {});
+
+  EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kVolume));
+  receiver_->track()->set_enabled(true);
+  // Flush the worker thread.
+  worker_thread_->BlockingCall([] {});
+}
+
+// Tests that OnSetVolume() does not wait for the worker thread.
+TEST_F(AudioRtpReceiverTest, SetVolumeDoesNotWaitForWorkerThread) {
+  receiver_->track()->set_enabled(true);
+  SetMediaChannel(&receive_channel_);
+  EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kDefaultVolume));
+  auto setup_task = receiver_->GetSetupForMediaChannel(kSsrc);
+  worker_thread_->BlockingCall([&]() { std::move(setup_task)(); });
+
+  // Keep the worker thread busy until OnSetVolume() has returned.
+  Event worker_busy;
+  Event set_volume_returned;
+  bool returned_while_busy = false;
+  worker_thread_->PostTask([&] {
+    worker_busy.Set();
+    returned_while_busy = set_volume_returned.Wait(TimeDelta::Seconds(5));
+  });
+  ASSERT_TRUE(worker_busy.Wait(TimeDelta::Seconds(5)));
+
+  EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kVolume));
+  receiver_->OnSetVolume(kVolume);
+  set_volume_returned.Set();
+  // Flush the worker thread.
+  worker_thread_->BlockingCall([] {});
+  EXPECT_TRUE(returned_while_busy);
+}
+
+// Tests that a volume that is set on another thread than the signaling thread,
+// as done by the Android and Objective-C SDKs, is applied.
+TEST_F(AudioRtpReceiverTest, VolumeSetOnOtherThreadIsApplied) {
+  receiver_->track()->set_enabled(true);
+  SetMediaChannel(&receive_channel_);
+  EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kDefaultVolume));
+  auto setup_task = receiver_->GetSetupForMediaChannel(kSsrc);
+  worker_thread_->BlockingCall([&]() { std::move(setup_task)(); });
+
+  EXPECT_CALL(receive_channel_, SetOutputVolume(kSsrc, kVolume));
+  std::unique_ptr<Thread> other_thread = Thread::Create();
+  other_thread->Start();
+  other_thread->BlockingCall(
+      [&] { receiver_->audio_track()->GetSource()->SetVolume(kVolume); });
+
+  // Deliver the volume to the receiver on the signaling thread, then flush the
+  // worker thread.
+  loop_.Flush();
+  worker_thread_->BlockingCall([] {});
 }
 
 TEST(AudioRtpReceiver, PropagatesPacketInfosToTrackSink) {

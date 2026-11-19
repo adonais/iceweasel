@@ -103,6 +103,10 @@ support-files = [
 
 ["browser_oneOffs_settings.js"]
 
+["browser_partnerCode_smartbar.js"]
+
+["browser_partnerCode_urlbar.js"]
+
 ["browser_placeholder.js"]
 support-files = [
   "../browser/searchSuggestionEngine.xml",

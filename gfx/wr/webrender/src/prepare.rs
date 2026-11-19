@@ -280,6 +280,7 @@ fn prepare_prim_for_render(
                 &prim_info.clip_chain,
                 &frame_state.surfaces[pic_context.surface_index.0],
                 &data_stores.clip,
+                frame_context.dl_stores,
             );
 
             quad::prepare_quad(
@@ -401,13 +402,14 @@ fn prepare_prim_for_render(
         &prim_info.clip_chain,
         &frame_state.surfaces[pic_context.surface_index.0],
         &data_stores.clip,
+        frame_context.dl_stores,
     );
 
     match &mut prim_instance.kind {
-        PrimitiveKind::BoxShadow { data_handle, .. } => {
+        PrimitiveKind::BoxShadow { handle } => {
             tracy_rs::profile_scope!("BoxShadow");
 
-            let prim_data = &data_stores.box_shadow[*data_handle];
+            let prim_data = &dl_stores.box_shadows[*handle];
 
             prepare_box_shadow(
                 &prim_data.kind,
@@ -426,9 +428,9 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::LineDecoration { data_handle } => {
+        PrimitiveKind::LineDecoration { handle } => {
             tracy_rs::profile_scope!("LineDecoration");
-            let prim_data = &data_stores.line_decoration[*data_handle];
+            let prim_data = &dl_stores.line_decorations[*handle];
             let line_dec_data = &prim_data.kind;
 
             let task = prim_data.kind.prepare(
@@ -485,10 +487,16 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::TextRun { data_handle } => {
+        PrimitiveKind::TextRun { handle } => {
             tracy_rs::profile_scope!("TextRun");
 
-            let prim_data = &data_stores.text_run[*data_handle];
+            // A run whose font could not be resolved draws nothing. Leaving the
+            // draw without kind scratch is what keeps it out of batching.
+            let prim_template = &dl_stores.text_runs[*handle];
+            let prim_data = match prim_template.kind {
+                Some(ref run) => run,
+                None => return,
+            };
 
             // The transform has to match the prim -> raster transform applied
             // by "ps_text_run" via `transform.m` + `device_pixel_scale`.
@@ -505,7 +513,7 @@ fn prepare_prim_for_render(
             // positions in the template are stored relative to it. Use the
             // unsnapped rect so the anchor matches what the shader receives in
             // `PrimitiveHeader.local_rect`.
-            let pattern_rect = prim_data.common.prim_rect;
+            let pattern_rect = prim_template.common.prim_rect;
 
             let surface = &frame_state.surfaces[pic_context.surface_index.0];
 
@@ -538,7 +546,7 @@ fn prepare_prim_for_render(
                 }
             };
 
-            let text_run_handle = prim_data.kind.request_resources(
+            let text_run_handle = prim_data.request_resources(
                 pattern_rect,
                 prim_info.clip_chain.local_clip_rect,
                 &transform.to_transform().with_destination::<_>(),
@@ -555,9 +563,9 @@ fn prepare_prim_for_render(
             scratch.frame.draw_mut(draw_index).kind_scratch =
                 KindScratchHandle::TextRun(text_run_handle);
         }
-        PrimitiveKind::NormalBorder { data_handle } => {
+        PrimitiveKind::NormalBorder { handle } => {
             tracy_rs::profile_scope!("NormalBorder");
-            let prim_data = &data_stores.normal_border[*data_handle];
+            let prim_data = &dl_stores.normal_borders[*handle];
             let aligned_aa_edges = prim_data.common.aligned_aa_edges;
             let transformed_aa_edges = prim_data.common.transformed_aa_edges;
             let border_data = &prim_data.kind;
@@ -580,9 +588,9 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::ImageBorder { data_handle, .. } => {
+        PrimitiveKind::ImageBorder { handle } => {
             tracy_rs::profile_scope!("ImageBorder");
-            let prim_data = &data_stores.image_border[*data_handle];
+            let prim_data = &dl_stores.image_borders[*handle];
             let aligned_aa_edges = prim_data.common.aligned_aa_edges;
             let transformed_aa_edges = prim_data.common.transformed_aa_edges;
             let border_data = &prim_data.kind;
@@ -645,9 +653,9 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::YuvImage { data_handle, .. } => {
+        PrimitiveKind::YuvImage { handle } => {
             tracy_rs::profile_scope!("YuvImage");
-            let prim_data = &data_stores.yuv_image[*data_handle];
+            let prim_data = &dl_stores.yuv_images[*handle];
             let common_data = &prim_data.common;
             let yuv_image_data = &prim_data.kind;
 
@@ -710,10 +718,10 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::Image { data_handle, .. } => {
+        PrimitiveKind::Image { handle } => {
             tracy_rs::profile_scope!("Image");
 
-            let prim_data = &data_stores.image[*data_handle];
+            let prim_data = &dl_stores.images[*handle];
             let common_data = &prim_data.common;
             let image_data = &prim_data.kind;
 
@@ -755,9 +763,10 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::LinearGradient { data_handle, .. } => {
+        PrimitiveKind::LinearGradient { handle } => {
             tracy_rs::profile_scope!("LinearGradient");
-            let prim_data = &data_stores.linear_grad[*data_handle];
+            let prim_data = &dl_stores.linear_gradients[*handle];
+            let prim_uid = dl_stores.linear_gradients.uid(*handle);
             let prim_rect = prim_info.snapped_pattern_rect;
             let stretch_size = LayoutSize::new(
                 prim_data.stretch_ratio.width * prim_rect.size().width,
@@ -869,7 +878,7 @@ fn prepare_prim_for_render(
 
             let cache_key = if should_cache {
                 quad::cache_key(
-                    data_handle.uid(),
+                    prim_uid,
                     quad_transform,
                     quad_clips,
                 )
@@ -899,9 +908,9 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::RadialGradient { data_handle, .. } => {
+        PrimitiveKind::RadialGradient { handle } => {
             tracy_rs::profile_scope!("RadialGradient");
-            let prim_data = &data_stores.radial_grad[*data_handle];
+            let prim_data = &dl_stores.radial_gradients[*handle];
             let pattern_rect = prim_info.snapped_pattern_rect;
             let stretch_size = LayoutSize::new(
                 prim_data.stretch_ratio.width * pattern_rect.size().width,
@@ -949,9 +958,10 @@ fn prepare_prim_for_render(
             );
             return;
         }
-        PrimitiveKind::ConicGradient { data_handle, .. } => {
+        PrimitiveKind::ConicGradient { handle } => {
             tracy_rs::profile_scope!("ConicGradient");
-            let prim_data = &data_stores.conic_grad[*data_handle];
+            let prim_data = &dl_stores.conic_gradients[*handle];
+            let prim_uid = dl_stores.conic_gradients.uid(*handle);
             let prim_rect = prim_info.snapped_pattern_rect;
             let stretch_size = LayoutSize::new(
                 prim_data.stretch_ratio.width * prim_rect.size().width,
@@ -1001,7 +1011,7 @@ fn prepare_prim_for_render(
 
             let cache_key = if should_cache {
                 quad::cache_key(
-                    data_handle.uid(),
+                    prim_uid,
                     quad_transform,
                     quad_clips,
                 )
@@ -1266,6 +1276,7 @@ fn add_clip_mask_render_task(
         &mut quad_clips,
         clip_node_range,
         clips,
+        frame_context.dl_stores,
     );
 
     quad::prepare_clip_range(
@@ -1280,6 +1291,7 @@ fn add_clip_mask_render_task(
         frame_state.rg_builder,
         &mut frame_state.frame_gpu_data.f32,
         frame_state.transforms,
+        frame_state.cmd_buffers,
     );
 
     clip_task_id

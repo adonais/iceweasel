@@ -64,8 +64,6 @@ Expression ranks:
    - privateBrowsing
    - remote_async
    - snapshot
-   - socketprocess_e10s
-   - socketprocess_networking
    - swgl
    - trainhop
    - vertical_tab

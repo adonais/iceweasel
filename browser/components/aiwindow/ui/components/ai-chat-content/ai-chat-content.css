@@ -61,12 +61,12 @@
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         height: 110px;
         mask: linear-gradient(var(--color-black) 30%, var(--color-black-alpha-60) 50%, transparent 70%);
-        top: 0;
+        inset-block-start: 0;
       }
 
       &::before {
         height: var(--size-item-xlarge);
-        bottom: 0;
+        inset-block-end: 0;
         mask: linear-gradient(transparent 30%, var(--color-black-alpha-60) 50%, var(--color-black) 70%);
         z-index: 1;
       }
@@ -240,7 +240,7 @@
 moz-button.jump-to-bottom-button {
   --button-border-radius: var(--border-radius-large);
   --button-opacity-disabled: 1;
-  bottom: var(--space-large);
+  inset-block-end: var(--space-large);
   inset-inline: 0;
   margin-inline: auto;
   opacity: 0;

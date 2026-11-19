@@ -99,8 +99,8 @@ bool APZThreadUtils::IsControllerThreadAlive() {
 /*static*/
 void APZThreadUtils::DelayedDispatch(already_AddRefed<Runnable> aRunnable,
                                      int aDelayMs) {
-  MOZ_ASSERT(!XRE_IsContentProcess(),
-             "ContentProcessController should only be used remotely.");
+  MOZ_RELEASE_ASSERT(!XRE_IsContentProcess(),
+                     "ContentProcessController should only be used remotely.");
   RefPtr<nsISerialEventTarget> thread;
   {
     StaticMutexAutoLock lock(sControllerThreadMutex);

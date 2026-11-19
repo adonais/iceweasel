@@ -44,10 +44,10 @@ index aff523be6c..f8d5e58730 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index 73c1a74575..1ed0d868df 100644
+index 4adf6ed84d..c8fb2b1c09 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
-@@ -120,12 +120,14 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
+@@ -119,12 +119,14 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
      bool enable_non_sender_rtt,
      uint32_t remote_ssrc,
@@ -62,7 +62,7 @@ index 73c1a74575..1ed0d868df 100644
        .rtcp_packet_type_counter_observer = rtcp_packet_type_counter_observer,
        .rtcp_mode = RtcpMode::kCompound,
        .remote_ssrc = remote_ssrc,
-@@ -158,6 +160,7 @@ class ChannelReceive : public ChannelReceiveInterface,
+@@ -157,6 +159,7 @@ class ChannelReceive : public ChannelReceiveInterface,
                   const CryptoOptions& crypto_options,
                   scoped_refptr<FrameTransformerInterface> frame_transformer,
                   absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -70,7 +70,7 @@ index 73c1a74575..1ed0d868df 100644
                   PacketRouter* absl_nonnull packet_router,
                   absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp)
                                          const> on_frame_delivered_callback);
-@@ -599,6 +602,7 @@ ChannelReceive::ChannelReceive(
+@@ -600,6 +603,7 @@ ChannelReceive::ChannelReceive(
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -78,7 +78,7 @@ index 73c1a74575..1ed0d868df 100644
      PacketRouter* absl_nonnull packet_router,
      absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
          on_frame_delivered_callback)
-@@ -611,6 +615,7 @@ ChannelReceive::ChannelReceive(
+@@ -612,6 +616,7 @@ ChannelReceive::ChannelReceive(
                                      this,
                                      enable_non_sender_rtt,
                                      remote_ssrc,
@@ -86,7 +86,7 @@ index 73c1a74575..1ed0d868df 100644
                                      packet_router)),
        remote_ssrc_(remote_ssrc),
        on_frame_delivered_callback_(std::move(on_frame_delivered_callback)),
-@@ -1230,6 +1235,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1234,6 +1239,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
      absl::AnyInvocable<void(uint32_t ssrc) &&> on_first_packet,
@@ -94,7 +94,7 @@ index 73c1a74575..1ed0d868df 100644
      PacketRouter* absl_nonnull packet_router,
      absl::AnyInvocable<void(const RtpPacketInfos&, Timestamp) const>
          on_frame_delivered_callback) {
-@@ -1238,7 +1244,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1242,7 +1248,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
        jitter_buffer_max_packets, jitter_buffer_fast_playout,
        jitter_buffer_min_delay_ms, enable_non_sender_rtt, decoder_factory,
        std::move(frame_decryptor), crypto_options, std::move(frame_transformer),
@@ -258,10 +258,10 @@ index c98342dcfb..bfe64780a8 100644
    RtcpLossNotificationObserver* const rtcp_loss_notification_observer_;
    NetworkStateEstimateObserver* const network_state_estimate_observer_;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index ac2f1b0b19..635da55547 100644
+index 0063849904..b5878404d8 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -70,6 +70,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -71,6 +71,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
      // bandwidth estimation related message.
      NetworkLinkRtcpObserver* network_link_rtcp_observer = nullptr;
  
@@ -272,7 +272,7 @@ index ac2f1b0b19..635da55547 100644
  
      RtcpRttStats* rtt_stats = nullptr;
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 6e71625ead..82f1954d8a 100644
+index 52691cfc80..bfbb9d0345 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -131,6 +131,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(

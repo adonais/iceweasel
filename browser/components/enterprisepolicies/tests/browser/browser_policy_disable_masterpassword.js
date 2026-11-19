@@ -47,25 +47,14 @@ async function checkAboutPreferences({
   checkboxIsDisabled,
   hasPassword = false,
 }) {
-  let srdEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
-  );
   await BrowserTestUtils.withNewTab(
-    srdEnabled
-      ? "about:preferences#passwordsAutofill"
-      : "about:preferences#privacy",
+    "about:preferences#passwordsAutofill",
     async browser => {
-      let target;
-      if (srdEnabled) {
-        target = hasPassword ? "changePrimaryPassword" : "addPrimaryPassword";
-      } else {
-        target = "useMasterPassword";
-      }
+      let target = hasPassword ? "changePrimaryPassword" : "addPrimaryPassword";
       is(
         browser.contentDocument.getElementById(target).disabled,
         checkboxIsDisabled,
-        `SRD ${srdEnabled} - Master Password checkbox is in the correct state: ` +
+        `Master Password checkbox is in the correct state: ` +
           checkboxIsDisabled
       );
     }

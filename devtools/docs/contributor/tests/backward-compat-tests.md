@@ -6,7 +6,7 @@ either the `same` version, or is older (`beta`, `release`, …).
 
 See [bug 2053559](https://bugzilla.mozilla.org/show_bug.cgi?id=2053559).
 
-Check the job results for the last 30 days on [devtools-backward-monitor](https://juliandescottes.github.io/devtools-backward-monitor/).
+Check the job results for the last 30 days on [devtools-backward-monitor](https://firefox-devtools.github.io/devtools-backward-monitor/).
 
 ## Technical overview
 
@@ -21,6 +21,12 @@ The server is setup by the python module found in
 `devtools/client/aboutdebugging/test/backward_compat_test_server`. It handles
 the logic to download, install and start the server. This server will be driven
 by Marionette, and a few command wrappers are exposed through control.py.
+
+`browser_backward_compat_xpcshell.js` is a special case. It does not use the
+server Firefox. Instead it starts an xpcshell test with `--jsdebugger`, through
+the `start-xpcshell` command of the control channel, and debugs it. The xpcshell
+harness comes from the build under test, so this test only runs with the `local`
+server, and returns early with the other servers.
 
 ## Running the tests
 
@@ -77,7 +83,7 @@ Three tasks run once a day on mozilla-central, through the
 They will be scheduled in regular mozilla-central jobs. You can look for
 previous runs by [filtering on devtools-compat](https://treeherder.mozilla.org/jobs?repo=mozilla-central&searchStr=devtools-compat).
 
-An easier way to find the jobs is to directly check the [monitoring page](https://juliandescottes.github.io/devtools-backward-monitor/).
+An easier way to find the jobs is to directly check the [monitoring page](https://firefox-devtools.github.io/devtools-backward-monitor/).
 
 ## Manual Try push
 

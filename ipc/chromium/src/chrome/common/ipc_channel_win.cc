@@ -99,7 +99,7 @@ void ChannelWin::Init(Mode mode) {
   waiting_connect_ = true;
   processing_incoming_ = false;
   input_buf_offset_ = 0;
-  input_buf_ = mozilla::MakeUnique<char[]>(Channel::kReadBufferSize);
+  input_buf_ = std::make_unique<char[]>(Channel::kReadBufferSize);
   other_process_ = INVALID_HANDLE_VALUE;
 }
 
@@ -195,7 +195,7 @@ bool ChannelWin::Send(mozilla::UniquePtr<Message> message) {
 bool ChannelWin::EnqueueHelloMessage() {
   chan_cap_.NoteExclusiveAccess();
 
-  auto m = mozilla::MakeUnique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
+  auto m = std::make_unique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
 
   // Also, don't send if the value is zero (for IPC backwards compatability).
   if (!m->WriteInt(GetCurrentProcessId())) {
@@ -359,7 +359,7 @@ bool ChannelWin::ProcessIncomingMessages(MessageLoopForIO::IOContext* context,
         // How much data from this message is stored in input_buf_?
         uint32_t in_buf = std::min(message_length, uint32_t(end - p));
 
-        incoming_message_ = mozilla::MakeUnique<Message>(p, in_buf);
+        incoming_message_ = std::make_unique<Message>(p, in_buf);
         p += in_buf;
 
         // Are we done reading this message?

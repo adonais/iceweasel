@@ -8,6 +8,7 @@
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/TimelineCollection.h"
+#include "mozilla/TimelineScope.h"
 #include "mozilla/dom/CSSAnimation.h"
 #include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/ScrollTimeline.h"
@@ -35,7 +36,7 @@ ElementAnimationData::GetOrCreatePseudoData(
   MOZ_ASSERT(AnimationUtils::IsSupportedPseudoForAnimations(aRequest.mType));
 
   UniquePtr<PerElementOrPseudoData>& data = mPseudoData.LookupOrInsertWith(
-      aRequest, [&] { return MakeUnique<PerElementOrPseudoData>(); });
+      aRequest, [&] { return std::make_unique<PerElementOrPseudoData>(); });
   MOZ_ASSERT(data);
   return *data;
 }
@@ -52,6 +53,7 @@ void ElementAnimationData::ClearAllAnimationCollections() {
   mElementData.mTransitions = nullptr;
   mElementData.mScrollTimelines = nullptr;
   mElementData.mViewTimelines = nullptr;
+  mElementData.mTimelineScope = nullptr;
   ClearAllPseudos(false);
 }
 
@@ -77,6 +79,7 @@ void ElementAnimationData::ClearAllPseudos(bool aOnlyViewTransitions) {
     data->mTransitions = nullptr;
     data->mScrollTimelines = nullptr;
     data->mViewTimelines = nullptr;
+    data->mTimelineScope = nullptr;
 
     if (data->IsEmpty()) {
       iter.Remove();
@@ -177,6 +180,13 @@ void ElementAnimationData::ClearViewTimelineCollectionFor(
   });
 }
 
+void ElementAnimationData::ClearTimelineScopeFor(
+    const PseudoStyleRequest& aRequest) {
+  WithDataForRemoval(aRequest, [](PerElementOrPseudoData& aData) {
+    aData.mTimelineScope = nullptr;
+  });
+}
+
 ElementAnimationData::PerElementOrPseudoData::PerElementOrPseudoData() =
     default;
 ElementAnimationData::PerElementOrPseudoData::~PerElementOrPseudoData() =
@@ -193,7 +203,7 @@ void ElementAnimationData::PerElementOrPseudoData::Traverse(
 
 EffectSet& ElementAnimationData::PerElementOrPseudoData::DoEnsureEffectSet() {
   MOZ_ASSERT(!mEffectSet);
-  mEffectSet = MakeUnique<EffectSet>();
+  mEffectSet = std::make_unique<EffectSet>();
   return *mEffectSet;
 }
 
@@ -201,7 +211,7 @@ CSSTransitionCollection&
 ElementAnimationData::PerElementOrPseudoData::DoEnsureTransitions(
     dom::Element& aOwner, const PseudoStyleRequest& aRequest) {
   MOZ_ASSERT(!mTransitions);
-  mTransitions = MakeUnique<CSSTransitionCollection>(aOwner, aRequest);
+  mTransitions = std::make_unique<CSSTransitionCollection>(aOwner, aRequest);
   return *mTransitions;
 }
 
@@ -209,7 +219,7 @@ CSSAnimationCollection&
 ElementAnimationData::PerElementOrPseudoData::DoEnsureAnimations(
     dom::Element& aOwner, const PseudoStyleRequest& aRequest) {
   MOZ_ASSERT(!mAnimations);
-  mAnimations = MakeUnique<CSSAnimationCollection>(aOwner, aRequest);
+  mAnimations = std::make_unique<CSSAnimationCollection>(aOwner, aRequest);
   return *mAnimations;
 }
 
@@ -217,7 +227,8 @@ ScrollTimelineCollection&
 ElementAnimationData::PerElementOrPseudoData::DoEnsureScrollTimelines(
     dom::Element& aOwner, const PseudoStyleRequest& aRequest) {
   MOZ_ASSERT(!mScrollTimelines);
-  mScrollTimelines = MakeUnique<ScrollTimelineCollection>(aOwner, aRequest);
+  mScrollTimelines =
+      std::make_unique<ScrollTimelineCollection>(aOwner, aRequest);
   return *mScrollTimelines;
 }
 
@@ -225,8 +236,16 @@ ViewTimelineCollection&
 ElementAnimationData::PerElementOrPseudoData::DoEnsureViewTimelines(
     dom::Element& aOwner, const PseudoStyleRequest& aRequest) {
   MOZ_ASSERT(!mViewTimelines);
-  mViewTimelines = MakeUnique<ViewTimelineCollection>(aOwner, aRequest);
+  mViewTimelines = std::make_unique<ViewTimelineCollection>(aOwner, aRequest);
   return *mViewTimelines;
+}
+
+TimelineScope&
+ElementAnimationData::PerElementOrPseudoData::DoEnsureTimelineScope(
+    dom::Element& aOwner, const PseudoStyleRequest& aRequest) {
+  MOZ_ASSERT(!mTimelineScope);
+  mTimelineScope = std::make_unique<TimelineScope>(aOwner, aRequest);
+  return *mTimelineScope;
 }
 
 }  // namespace mozilla

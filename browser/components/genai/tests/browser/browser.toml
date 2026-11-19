@@ -1,6 +1,7 @@
 [DEFAULT]
 support-files = ["head.js"]
 prefs = [
+  "browser.highlightToSearch.callout.seen=true",
   "browser.ml.chat.enabled=true",
   "browser.ml.chat.openSidebarOnProviderChange=false",
   "browser.ml.linkPreview.collapsed=false",
@@ -21,6 +22,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1975092
   "verify-standalone",
 ]
+
+["browser_chat_page_menus.js"]
 
 ["browser_chat_promo.js"]
 

@@ -7,6 +7,13 @@ use crate::mars::error::{FetchAdsError, RecordClickError, RecordImpressionError,
 
 #[derive(Debug, thiserror::Error)]
 pub enum ComponentError {
+    #[cfg(feature = "stateful")]
+    #[error("Error requesting ads from worker: {0}")]
+    BackgroundWorker(#[from] BackgroundWorkerError),
+
+    #[error("Error clearing the cache: {0}")]
+    ClearCache(#[from] sql_support::open_database::Error),
+
     #[error("Error recording a click for a placement: {0}")]
     RecordClick(#[from] RecordClickError),
 
@@ -27,4 +34,11 @@ pub enum RequestAdsError {
 
     #[error("Error requesting ads from MARS: {0}")]
     FetchAds(#[from] FetchAdsError),
+}
+
+#[cfg(feature = "stateful")]
+#[derive(Debug, thiserror::Error)]
+pub enum BackgroundWorkerError {
+    #[error("Background worker is closed")]
+    Closed,
 }

@@ -115,7 +115,7 @@ gfxSVGGlyphsDocument* gfxSVGGlyphs::FindOrCreateGlyphsDocument(
   if (entry->mDocOffset > 0 && uint64_t(mHeader->mDocIndexOffset) +
                                        entry->mDocOffset + entry->mDocLength <=
                                    length) {
-    auto doc = MakeUnique<gfxSVGGlyphsDocument>(
+    auto doc = std::make_unique<gfxSVGGlyphsDocument>(
         data + mHeader->mDocIndexOffset + entry->mDocOffset, entry->mDocLength,
         this);
     // Similarly to the Lookup() call above, if we've already created a separate

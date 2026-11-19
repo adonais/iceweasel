@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 
 @SuppressLint("DiscouragedPrivateApi")
-public class SharedMemory implements Parcelable {
+public final class SharedMemory implements Parcelable {
   private static final String LOGTAG = "GeckoShmem";
   private static final Method sGetFDMethod;
   private ParcelFileDescriptor mDescriptor;

@@ -272,6 +272,41 @@ add_task(async function test_buttons_persist_after_tab_added() {
   BrowserTestUtils.removeTab(newTab);
 });
 
+add_task(async function test_container_tabs_view_labels() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.userContext.enabled", true]],
+  });
+
+  window.gTabsPanel.init();
+  await openAllTabsMenu();
+
+  const containerView = document.getElementById(
+    "allTabsMenu-containerTabsView"
+  );
+  const viewShown = BrowserTestUtils.waitForEvent(containerView, "ViewShown");
+  document.getElementById("allTabsMenu-containerTabsButton").click();
+  await viewShown;
+
+  const identities = ContextualIdentityService.getPublicIdentities();
+  Assert.greater(identities.length, 0, "There are default containers");
+  for (const { userContextId } of identities) {
+    const item = containerView.querySelector(
+      `toolbarbutton[data-usercontextid='${userContextId}']`
+    );
+    const expected =
+      ContextualIdentityService.getUserContextLabel(userContextId);
+    ok(expected, `Container ${userContextId} has a label`);
+    is(
+      item.getAttribute("label"),
+      expected,
+      `Container ${userContextId} is labeled in the menu`
+    );
+  }
+
+  await closeAllTabsMenu();
+  await SpecialPowers.popPrefEnv();
+});
+
 // "Search All Tabs" is sticky above the scrollable list and "View All Tabs" is
 // sticky below it
 add_task(async function test_search_and_view_all_tabs_sticky() {

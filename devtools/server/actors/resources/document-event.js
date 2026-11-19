@@ -86,6 +86,11 @@ class DocumentEventWatcher {
           // other events
           hasNativeConsoleAPI:
             name == "dom-complete" ? hasNativeConsoleAPI : null,
+          activatedFromNavigationalPrefetch:
+            name === "dom-loading"
+              ? !!targetActor.docShell?.currentDocumentChannel?.loadInfo
+                  ?.activatedFromNavigationalPrefetch
+              : undefined,
           // Fallback to undefined to drop the attribute when serializating to JSON
           isErrorPage: isErrorPage || undefined,
         },

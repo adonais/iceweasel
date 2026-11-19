@@ -9,7 +9,6 @@ import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 import { parseWatchlist } from "common/StocksWatchlist.mjs";
 import { Stocks } from "content-src/components/Widgets/Stocks/Stocks";
-import { focusOnceRendered } from "content-src/components/Widgets/Stocks/useStockSearch";
 
 const mockState = {
   ...INITIAL_STATE,
@@ -2511,22 +2510,5 @@ describe("Stocks ticker search", () => {
     expect(container.querySelector("article.stocks").className).toContain(
       "medium-widget"
     );
-  });
-});
-
-describe("focusOnceRendered", () => {
-  it("waits for a moz-button's first render before focusing it", async () => {
-    const focus = jest.fn();
-    focusOnceRendered({ updateComplete: Promise.resolve(), focus });
-    expect(focus).not.toHaveBeenCalled();
-    await Promise.resolve();
-    expect(focus).toHaveBeenCalledTimes(1);
-  });
-
-  it("focuses an element with no pending render straight away and ignores null", () => {
-    const focus = jest.fn();
-    focusOnceRendered({ focus });
-    expect(focus).toHaveBeenCalledTimes(1);
-    expect(() => focusOnceRendered(null)).not.toThrow();
   });
 });

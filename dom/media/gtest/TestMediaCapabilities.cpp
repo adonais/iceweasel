@@ -30,7 +30,7 @@ TEST(TestMediaCapabilities, SoftwareDRMHardwareDecode)
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::SUPERVISOR),
                         "TestCheckVideoDecodingInfo");
 
-  auto config = MakeUnique<VideoInfo>(1280, 720);
+  auto config = std::make_unique<VideoInfo>(1280, 720);
   config->mMimeType = "video/vp9"_ns;
   VPXDecoder::GetVPCCBox(config->mExtraData, VPXDecoder::VPXStreamInfo());
 
@@ -58,7 +58,7 @@ TEST(TestMediaCapabilities, SoftwareDRMSoftwareDecode)
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::SUPERVISOR),
                         "TestCheckVideoDecodingInfo");
 
-  auto config = MakeUnique<VideoInfo>(1280, 720);
+  auto config = std::make_unique<VideoInfo>(1280, 720);
   config->mMimeType = "video/vp9"_ns;
   VPXDecoder::GetVPCCBox(config->mExtraData, VPXDecoder::VPXStreamInfo());
 
@@ -86,7 +86,7 @@ TEST(TestMediaCapabilities, RFPSuppressesPowerEfficient)
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::SUPERVISOR),
                         "TestCheckVideoDecodingInfo");
 
-  auto config = MakeUnique<VideoInfo>(1280, 720);
+  auto config = std::make_unique<VideoInfo>(1280, 720);
   config->mMimeType = "video/vp9"_ns;
   VPXDecoder::GetVPCCBox(config->mExtraData, VPXDecoder::VPXStreamInfo());
 

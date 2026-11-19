@@ -58,7 +58,7 @@ add_task(async function test_autocomplete_warning_no_logins() {
   is(popupState.selectedIndex, -1, "Check no entries are selected upon opening");
 
   let expectedMenuItems = [
-    "This connection is not secure. Logins entered here could be compromised. Learn More",
+    "This connection is not secure. Logins entered here could be compromised.",
   ];
   checkAutoCompleteResults(items, expectedMenuItems, hostname, "Check all menuitems are displayed correctly.");
 

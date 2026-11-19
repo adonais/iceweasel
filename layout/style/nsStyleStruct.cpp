@@ -427,6 +427,12 @@ nsChangeHint nsStyleMargin::CalcDifference(
             nsChangeHint_ClearAncestorIntrinsics;
   }
 
+  if (mMarginTrim != aNewData.mMarginTrim) {
+    // Which margins are trimmed determines the used margins of our
+    // descendants, so they need to be reflowed as well.
+    hint |= NS_STYLE_HINT_REFLOW;
+  }
+
   if (mScrollMargin != aNewData.mScrollMargin) {
     // FIXME: Bug 1530253 Support re-snapping when scroll-margin changes.
     hint |= nsChangeHint_NeutralChange;
@@ -3105,6 +3111,7 @@ nsStyleText::nsStyleText(const nsStyleText& aSource)
       mWordBreak(aSource.mWordBreak),
       mOverflowWrap(aSource.mOverflowWrap),
       mTextAutospace(aSource.mTextAutospace),
+      mTextAutospaceSize(aSource.mTextAutospaceSize),
       mHyphens(aSource.mHyphens),
       mRubyAlign(aSource.mRubyAlign),
       mRubyPosition(aSource.mRubyPosition),
@@ -3168,7 +3175,8 @@ nsChangeHint nsStyleText::CalcDifference(const nsStyleText& aNewData) const {
       (mHyphenateLimitChars != aNewData.mHyphenateLimitChars) ||
       (mWebkitTextSecurity != aNewData.mWebkitTextSecurity) ||
       (mTextWrapStyle != aNewData.mTextWrapStyle) ||
-      (mTextAutospace != aNewData.mTextAutospace)) {
+      (mTextAutospace != aNewData.mTextAutospace) ||
+      (mTextAutospaceSize != aNewData.mTextAutospaceSize)) {
     return NS_STYLE_HINT_REFLOW;
   }
 

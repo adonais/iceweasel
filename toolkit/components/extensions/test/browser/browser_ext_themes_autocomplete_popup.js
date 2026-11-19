@@ -6,12 +6,6 @@ let scotchBonnet = Services.prefs.getBoolPref(
   "browser.urlbar.scotchBonnet.enableOverride"
 );
 
-// Nova being enabled changes some of the styling that is being tested here.
-let novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true // If the pref isn't set to false, assume Nova styles are enabled by default.
-);
-
 // This test checks whether applied WebExtension themes that attempt to change
 // popup properties are applied correctly to the autocomplete bar.
 const POPUP_COLOR_DARK = "#00A400";
@@ -23,13 +17,11 @@ const POPUP_SELECTED_TEXT_COLOR = "#09b9a6";
 
 // Nova doesn't force a brand link color on LWT documents, so URLs fall back to
 // the platform's system link color for both color-schemes.
-const POPUP_URL_COLOR_DARK = novaEnabled ? "LinkText" : "oklch(0.55 0.24 260)";
+const POPUP_URL_COLOR_DARK = "LinkText";
 const POPUP_ACTION_COLOR_DARK = scotchBonnet
   ? POPUP_TEXT_COLOR_DARK
   : "#5b5b66";
-const POPUP_URL_COLOR_BRIGHT = novaEnabled
-  ? "LinkText"
-  : "oklch(0.76 0.14 205)";
+const POPUP_URL_COLOR_BRIGHT = "LinkText";
 const POPUP_ACTION_COLOR_BRIGHT = scotchBonnet
   ? POPUP_TEXT_COLOR_BRIGHT
   : "#bfbfc9";
@@ -65,8 +57,6 @@ function getComputedColorValue(color, contextElement) {
 }
 
 add_setup(async function () {
-  info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
   await PlacesUtils.history.clear();
   const NUM_VISITS = 10;
   let visits = [];

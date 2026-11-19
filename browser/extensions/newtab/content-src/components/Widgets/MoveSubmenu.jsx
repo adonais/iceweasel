@@ -2,13 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useContext, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac } from "common/Actions.mjs";
 import {
   PREF_WIDGETS_ORDER,
   resolveWidgetOrder,
 } from "common/WidgetsRegistry.mjs";
+import { WIDGET_PLACEMENTS } from "common/PageLayoutVariants.mjs";
+import { WidgetPlacementContext, setWidgetOnHome } from "./WidgetPlacement";
 
 // Action is order-based and direction-agnostic: onMoveLeft always swaps with
 // the previous item in the order array. The Fluent strings handle the visual
@@ -42,12 +44,19 @@ export function buildMoveProps(id, order, enabledMap, dispatch) {
 export function MoveSubmenu({ widgetId, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const dispatch = useDispatch();
+  const placement = useContext(WidgetPlacementContext);
   const moveProps = buildMoveProps(
     widgetId,
     resolveWidgetOrder(prefs),
     widgetEnabledMap,
     dispatch
   );
+  // Where the user pins widgets to Home, the widget can also move between Home
+  // and the widget library.
+  const toHome = placement === WIDGET_PLACEMENTS.LIBRARY;
+  const spaceMove = placement && { dir: toHome ? "home" : "widgets" };
+  moveProps.onMoveSpace = () =>
+    setWidgetOnHome(dispatch, prefs, widgetId, toHome, "context_menu");
 
   // Read the latest moveProps via a ref so the ref callback stays stable and
   // doesn't re-attach the listener every render.
@@ -75,13 +84,15 @@ export function MoveSubmenu({ widgetId, widgetEnabledMap }) {
         movePropsRef.current.onMoveLeft();
       } else if (item.dataset.moveDir === "right") {
         movePropsRef.current.onMoveRight();
+      } else if (["home", "widgets"].includes(item.dataset.moveDir)) {
+        movePropsRef.current.onMoveSpace();
       }
     };
     el.addEventListener("click", listener);
     cleanupRef.current = () => el.removeEventListener("click", listener);
   }, []);
 
-  if (!moveProps.canMoveLeft && !moveProps.canMoveRight) {
+  if (!moveProps.canMoveLeft && !moveProps.canMoveRight && !spaceMove) {
     return null;
   }
   const submenuId = `${widgetId}-move-submenu`;
@@ -99,6 +110,12 @@ export function MoveSubmenu({ widgetId, widgetEnabledMap }) {
           data-move-dir="right"
           {...(moveProps.canMoveRight ? {} : { disabled: true })}
         ></panel-item>
+        {spaceMove && (
+          <panel-item
+            data-l10n-id={`newtab-widget-menu-move-to-${spaceMove.dir}`}
+            data-move-dir={spaceMove.dir}
+          ></panel-item>
+        )}
       </panel-list>
     </panel-item>
   );

@@ -10,41 +10,43 @@ import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.support.v4.media.session.MediaSessionCompat
 import androidx.annotation.DrawableRes
+import androidx.annotation.OptIn
 import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
-import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaStyleNotificationHelper
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.MediaSessionState
 import mozilla.components.browser.state.state.SessionState
-import mozilla.components.concept.engine.mediasession.MediaSession
+import mozilla.components.concept.engine.mediasession.MediaSession as MozMediaSession
 import mozilla.components.feature.media.R
 import mozilla.components.feature.media.ext.getArtistOrUrl
-import mozilla.components.feature.media.ext.getNonPrivateIcon
 import mozilla.components.feature.media.ext.getTitleOrUrl
 import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.support.base.ids.SharedIdsHelper
 
 /** Helper to display a notification for web content playing media. */
+@OptIn(UnstableApi::class)
 internal class MediaNotification(
     private val context: Context,
     private val cls: Class<*>,
 ) {
-    /** Creates a new [Notification] for the given [sessionState]. */
-    suspend fun create(sessionState: SessionState?, mediaSessionCompat: MediaSessionCompat): Notification {
-        val data = sessionState?.toNotificationData(context, cls) ?: NotificationData()
+    /** Creates a new [Notification] for the given [sessionState], showing [artwork] as its large icon. */
+    fun create(sessionState: SessionState?, mediaSession: MediaSession, artwork: Bitmap?): Notification {
+        val data = sessionState?.toNotificationData(context, cls, artwork) ?: NotificationData()
 
-        return buildNotification(data, mediaSessionCompat, sessionState !is CustomTabSessionState)
+        return buildNotification(data, mediaSession, sessionState !is CustomTabSessionState)
     }
 
     private fun buildNotification(
         data: NotificationData,
-        mediaSession: MediaSessionCompat,
-        isCustomTab: Boolean,
+        mediaSession: MediaSession,
+        isNormalTab: Boolean,
     ): Notification {
         val channel = MediaNotificationChannel.ensureChannelExists(context)
-        val style = MediaStyle().setMediaSession(mediaSession.sessionToken)
+        val style = MediaStyleNotificationHelper.MediaStyle(mediaSession)
         val builder =
             NotificationCompat.Builder(context, channel)
                 .setSmallIcon(data.icon)
@@ -59,7 +61,7 @@ internal class MediaNotification(
             @Suppress("SpreadOperator") style.setShowActionsInCompactView(*data.actions.compactIndices)
         }
         builder.setStyle(style)
-        if (isCustomTab) {
+        if (isNormalTab) {
             // We only set a content intent if this media notification is not for an "external app"
             // like a custom tab. Currently we can't route the user to that particular activity:
             // https://github.com/mozilla-mobile/android-components/issues/3986
@@ -70,9 +72,10 @@ internal class MediaNotification(
     }
 }
 
-private suspend fun SessionState.toNotificationData(
+private fun SessionState.toNotificationData(
     context: Context,
     cls: Class<*>,
+    artwork: Bitmap?,
 ): NotificationData {
     val intent =
         context.packageManager.getLaunchIntentForPackage(context.packageName)?.also {
@@ -82,14 +85,14 @@ private suspend fun SessionState.toNotificationData(
     val mediaState = mediaSessionState ?: return NotificationData()
     val playPauseAction =
         when (mediaState.playbackState) {
-            MediaSession.PlaybackState.PLAYING ->
+            MozMediaSession.PlaybackState.PLAYING ->
                 buildAction(
                     context = context,
                     iconRes = R.drawable.mozac_feature_media_action_pause,
                     titleRes = R.string.mozac_feature_media_notification_action_pause,
                     intent = AbstractMediaSessionService.pauseIntent(context, cls),
                 )
-            MediaSession.PlaybackState.PAUSED ->
+            MozMediaSession.PlaybackState.PAUSED ->
                 buildAction(
                     context = context,
                     iconRes = R.drawable.mozac_feature_media_action_play,
@@ -101,7 +104,7 @@ private suspend fun SessionState.toNotificationData(
 
     val icon =
         when (mediaState.playbackState) {
-            MediaSession.PlaybackState.PLAYING -> R.drawable.mozac_feature_media_playing
+            MozMediaSession.PlaybackState.PLAYING -> R.drawable.mozac_feature_media_playing
             else -> R.drawable.mozac_feature_media_paused
         }
 
@@ -109,7 +112,7 @@ private suspend fun SessionState.toNotificationData(
         title = getTitleOrUrl(context, mediaState.metadata?.title),
         description = getArtistOrUrl(mediaState.metadata?.artist),
         icon = icon,
-        largeIcon = getNonPrivateIcon(mediaState.metadata?.getArtwork),
+        largeIcon = artwork,
         actions = mediaState.buildActions(context, cls, playPauseAction),
         contentIntent =
             PendingIntent.getActivity(
@@ -129,7 +132,7 @@ private fun MediaSessionState.buildActions(
     val actions = mutableListOf<NotificationCompat.Action>()
     val compactIndices = mutableListOf<Int>()
 
-    if (features.contains(MediaSession.Feature.PREVIOUS_TRACK)) {
+    if (features.contains(MozMediaSession.Feature.PREVIOUS_TRACK)) {
         compactIndices += actions.size
         actions +=
             buildAction(
@@ -141,7 +144,7 @@ private fun MediaSessionState.buildActions(
     }
     compactIndices += actions.size
     actions += playPauseAction
-    if (features.contains(MediaSession.Feature.NEXT_TRACK)) {
+    if (features.contains(MozMediaSession.Feature.NEXT_TRACK)) {
         compactIndices += actions.size
         actions +=
             buildAction(

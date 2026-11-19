@@ -12,8 +12,6 @@
     <string name="content_description_menu">More options</string>
     <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
     <string name="content_description_private_browsing">Private browsing</string>
-    <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
-    <string name="content_description_normal_browsing">Normal browsing</string>
     <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
     <string name="search_hint">Search or enter address</string>
     <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
@@ -183,6 +181,10 @@
     <string name="browser_menu_no_extensions_installed_description">No extensions enabled</string>
     <!-- The description of the browser menu appears when the user hasn't installed any extensions and there are recommended extensions. -->
     <string name="browser_menu_try_a_recommended_extension_description">Try a recommended extension</string>
+    <!-- In the browser menu: Message under the Extensions menu item, displayed when one or more extensions have updates that require approving changes to their permission settings. %1$s is a comma-separated list of one or more extension names. -->
+    <string name="browser_menu_extensions_review_update_description">Review update for %1$s</string>
+    <!-- In the browser menu: Message under an extension name, displayed when the update requires approving changes to extension settings. -->
+    <string name="browser_menu_extension_review_update_description">Review settings to update</string>
     <!-- Browser menu button that opens account settings -->
     <string name="browser_menu_account_settings">Account info</string>
     <!-- Browser menu button that opens the settings menu -->
@@ -335,6 +337,10 @@
     <string name="ai_controls_voice_search_title">Voice search</string>
     <!-- Description for the voice search AI feature toggle -->
     <string name="ai_controls_voice_search_description">Audio is converted to text by Google Speech Services.</string>
+    <!-- Title for the listen to page AI feature toggle -->
+    <string name="ai_controls_listen_to_page_title">Listen to page</string>
+    <!-- Description for the listen to page AI feature toggle -->
+    <string name="ai_controls_listen_to_page_description">Your device may use AI to read aloud. The text and audio stay private.</string>
     <!-- Title for the block AI enhancements confirmation dialog -->
     <string name="ai_controls_block_dialog_title">Block AI enhancements?</string>
     <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
@@ -758,6 +764,8 @@
     <string name="preferences_toolbar_select_shortcut">Select a shortcut</string>
     <!-- Title of a menu option allowing to change the shortcut button shown in the toolbar -->
     <string name="toolbar_shortcut_menu_edit_option">Edit shortcut</string>
+    <!-- Preference category for menu customization -->
+    <string name="preferences_menu">Menu</string>
     <!-- Preference for gestures based actions -->
     <string name="preferences_gestures">Gestures</string>
     <!-- Preference for settings related to visual options -->
@@ -830,6 +838,10 @@
     <string name="preferences_open_links_in_apps_ask">Ask before opening</string>
     <!-- Preference for open links in third party apps never open in apps option -->
     <string name="preferences_open_links_in_apps_never">Never</string>
+    <!-- Preference category header for media related open links in apps settings -->
+    <string name="preferences_media_category">Media</string>
+    <!-- Preference label for choosing whether links open in the YouTube app -->
+    <string name="preferences_open_links_in_youtube">Open links in YouTube app</string>
     <!-- Preference category for file storage. -->
     <string name="preferences_category_file_storage">File storage</string>
     <!-- Preference title for downloads default location. -->
@@ -908,6 +920,16 @@
     <string name="customize_addon_collection_user_hint">Collection owner (User ID)</string>
     <!-- Toast shown after confirming the custom extension collection configuration -->
     <string name="toast_customize_extension_collection_done">Extension collection modified. Quitting the application to apply changes…</string>
+
+    <!-- Add-on removal confirmation dialog -->
+    <!-- Title of confirmation dialog. Displayed when uninstalling an extension. %1$s is the name of the extension (for example: Firefox Relay). -->
+    <string name="addon_remove_dialog_title">Remove %1$s?</string>
+    <!-- Body of confirmation dialog. Displayed when uninstalling an extension. -->
+    <string name="addon_remove_dialog_body">This removes the extension and its settings from this device.</string>
+    <!-- Primary button on confirmation dialog. Tapping it uninstalls the selected extension. -->
+    <string name="addon_remove_dialog_confirm">Remove</string>
+    <!-- Secondary button on confirmation dialog. Tapping cancels the process of uninstalling the extension and closes the dialog window. -->
+    <string name="addon_remove_dialog_cancel">Cancel</string>
 
     <!-- Customize Home -->
     <!-- Title for the customize home screen section with privacy report. -->
@@ -1058,6 +1080,12 @@
     <string name="preferences_sync_category">Choose what to sync</string>
     <!-- Preference category for sync controls -->
     <string name="preferences_category_sync">Synced data</string>
+    <!-- Preference title for the toggle that allows user to turn sync on or off for the device they are on -->
+    <string name="preferences_enable_sync_title">Sync this device</string>
+    <!-- Preference summary for the toggle that turns sync on or off for the device, shown when sync is on. -->
+    <string name="preferences_enable_sync_summary_sync_enabled">Your data is backed up and available on synced devices.</string>
+    <!-- Preference summary for the toggle that turns sync on or off for the device, shown when sync is off. It explains where synced data comes from. %1$s is the Firefox brand name.  -->
+    <string name="preferences_enable_sync_summary_sync_disabled">Using saved data in your %1$s account.</string>
     <!-- Summary for the sync preference category. -->
     <string name="preferences_sync_category_summary">Manage what syncs on all your connected devices</string>
     <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
@@ -1187,6 +1215,12 @@
     <string name="preference_simple_toolbar">Simple</string>
     <!-- Preference for using expanded toolbar -->
     <string name="preference_expanded_toolbar">Expanded</string>
+    <!-- Preference for changing where the search bar is positioned on the homepage, shown when the user has set the address bar to be displayed at the top of the screen -->
+    <string name="preferences_homepage_search_location">Homepage search location</string>
+    <!-- Preference for showing the homepage search bar in the middle of the homepage -->
+    <string name="preference_homepage_search_location_middle">Middle</string>
+    <!-- Preference for showing the homepage search bar at the top of the homepage (combined with the address bar, already displayed at the top) -->
+    <string name="preference_homepage_search_location_top">Top</string>
 
     <!-- New tab shortcut in toolbar customization -->
     <string name="toolbar_customize_shortcut_new_tab">Open a new tab</string>
@@ -1761,6 +1795,8 @@
     <string name="download_search_no_results_found">No results found</string>
     <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
     <string name="download_select_all_items">Select all</string>
+    <!-- Shown in the downloads list in place of a website name when a file came from a data: or blob: URL that has no website address. "data" refers to the data: URL scheme. -->
+    <string name="download_item_source_data">(data)</string>
 
     <!-- Downloads Content Type Filters -->
     <!-- Text for the filter button to show all files in the downloads list -->
@@ -2993,6 +3029,14 @@
     <string name="credit_cards_warning_dialog_set_up_now">Set up now</string>
     <!-- Negative button to ignore warning dialog if users have no device authentication set up -->
     <string name="credit_cards_warning_dialog_later">Later</string>
+    <!-- Title of the dialog shown on Android Automotive OS (in cars) when users have no device authentication set up and try to access their saved passwords, payment methods, or sign in to their account -->
+    <string name="automotive_authentication_setup_dialog_title">Secure your sensitive data</string>
+    <!-- Message of the dialog shown on Android Automotive OS (in cars) when users have no device authentication set up and try to access their saved passwords, payment methods, or sign in to their account -->
+    <string name="automotive_authentication_setup_dialog_message">Set up a device lock pattern, PIN, or password to protect your saved sensitive data from being accessed if someone else is driving your car.</string>
+    <!-- Primary button on the dialog shown on Android Automotive OS (in cars). Tapping it directs users to the device settings to set up a device lock -->
+    <string name="automotive_authentication_setup_dialog_set_up_now">Set up now</string>
+    <!-- Secondary button of the dialog shown on Android Automotive OS (in cars). Tapping closes the dialogue and cancels the action that triggered the dialogue. -->
+    <string name="automotive_authentication_setup_dialog_cancel">Cancel</string>
     <!-- Title of PIN verification dialog to direct users to re-enter their device credentials to access their credit cards -->
     <string name="credit_cards_biometric_prompt_message_pin">Unlock your device</string>
     <!-- Message displayed in biometric prompt for authentication, before allowing users to use their stored payment method information -->
@@ -3207,12 +3251,6 @@
     <string name="homepage_shortcuts_add_website_title">Enter a Website URL</string>
     <!-- Title for the "Popular sites" section in the "Add to homepage" bottom sheet. -->
     <string name="homepage_shortcuts_popular_sites">Popular sites</string>
-    <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
-    <string name="shortcut_max_limit_title">Shortcut limit reached</string>
-    <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
-    <string name="shortcut_max_limit_content">To add a new shortcut, remove one. Touch and hold the site and select remove.</string>
-    <!-- Confirmation dialog button text when top sites limit is reached. -->
-    <string name="top_sites_max_limit_confirmation_button">OK, Got It</string>
     <!-- Label for the preference to show the shortcuts for the most visited top sites on the homepage -->
     <string name="top_sites_toggle_top_recent_sites_4">Shortcuts</string>
     <!-- Title text displayed in the rename top site dialog. -->
@@ -3566,6 +3604,8 @@
     <string name="protection_panel_privacy_and_security_settings_2">Privacy Settings</string>
     <!-- Title text for the protection panel permissions section. -->
     <string name="protection_panel_permissions_title">Permissions</string>
+    <!-- Certificate panel - Title of the section that contains the website's certificate information (issued to, issued by, etc.) as verified by Firefox (thus guaranteeing the HTTPS connection is secure) -->
+    <string name="certificate_details_panel_secure_connection_title">Secure connection</string>
     <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
         %1$d is a placeholder for the number of trackers blocked. -->
     <plurals name="trackers_blocked_panel_total_num_trackers_blocked_2">
@@ -4059,6 +4099,67 @@
 
     <!-- ==== End of Terms of use popup prompt. ==== -->
 
+    <!-- Sports widget -->
+    <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+    <string name="wrex_widget_match_live">LIVE</string>
+    <!-- Label shown on the sports widget match status badge when the start of a match has been delayed. -->
+    <string name="wrex_widget_match_delayed">Delayed</string>
+    <!-- Label shown on the sports widget match status badge when a match has been suspended after it started. -->
+    <string name="wrex_widget_match_suspended">Suspended</string>
+    <!-- Label shown on the sports widget match status badge when a match has been postponed to a later date. -->
+    <string name="wrex_widget_match_postponed">Postponed</string>
+    <!-- Sports widget action label to refresh match data after an error. -->
+    <string name="wrex_widget_error_refresh">Refresh</string>
+    <!-- Sports widget menu item to view the team's match results. -->
+    <string name="wrex_widget_results">Results</string>
+    <!-- Sports widget menu item to view the league standings table. -->
+    <string name="wrex_widget_standings">Standings</string>
+    <!-- Sports widget menu item to browse the team's wallpapers. -->
+    <string name="wrex_widget_wallpapers">Wallpapers</string>
+    <!-- Sports widget menu item to remove the widget from the homepage. -->
+    <string name="wrex_widget_remove_widget">Remove Widget</string>
+  <!-- Sports widget match status label shown at full-time (abbreviated) - indicates the match has ended, after regulation and extra time have been played -->
+    <string name="wrex_widget_match_full_time_short">FT</string>
+    <!-- Sports widget match status label shown during half-time of a match. -->
+    <string name="wrex_widget_match_half_time">Half-time</string>
+    <!-- Sports widget match status label shown during extra time of a match (abbreviated) -->
+    <string name="wrex_widget_match_extra_time_short">ET</string>
+    <!-- Sports widget match status label shown during penalties of a match. -->
+    <string name="wrex_widget_match_penalties">Penalties</string>
+    <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+    <string name="wrex_widget_more_options_content_description">More options</string>
+    <!-- Content description (for accessibility, not displayed) announcing a soccer match.
+      %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+      (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+      or a match status like "Full time"). -->
+    <string name="wrex_widget_match_content_description">%1$s versus %2$s, %3$s</string>
+    <!-- Content description (for accessibility, not displayed) used for the sports widget card header announcing a live match.
+      %s is the name of the competition the match belongs to (e.g. "FA Cup"). -->
+    <string name="wrex_widget_live_game_content_description">%s, live game</string>
+    <!-- Content description (for accessibility, not displayed) announcing a live score.
+      %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+      and %5$s is the match elapsed time (e.g. 72 minutes). -->
+    <string name="wrex_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, live</string>
+    <!-- Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+      %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3"). -->
+    <string name="wrex_widget_match_elapsed_minutes">Elapsed time in minutes: %1$s</string>
+    <!-- Content description (for accessibility, not displayed) for a paginated item.
+      %1$s is the name of the competition the match belongs to (e.g. "FA Cup"),
+      %2$d is the current page number, and %3$d is the total number of pages. -->
+    <string name="wrex_widget_page_position_content_description">%1$s, page %2$d of %3$d</string>
+    <!-- Sports widget error card title shown when the user is offline. -->
+    <string name="wrex_widget_error_connection_offline_title">Looks like you’re offline</string>
+    <!-- Sports widget error card description shown when the user is offline. -->
+    <string name="wrex_widget_error_connection_offline_description">Check your internet connection and try again.</string>
+    <!-- Sports widget error card title shown when match data fails to load. -->
+    <string name="wrex_widget_error_load_failed_title">Can’t show match info right now</string>
+    <!-- Sports widget error card description suggesting to refresh after match information could not be displayed. -->
+    <string name="wrex_widget_error_try_refreshing">Try refreshing or check back later.</string>
+    <!-- Sports widget error card title shown when the latest match results fail to load. -->
+    <string name="wrex_widget_error_results_load_failed_title">Can’t show results right now</string>
+    <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+    <string name="wrex_widget_team_to_be_determined">Team to be determined</string>
+
     <!-- Privacy notice homepage banner -->
     <!-- A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
     %1$s is replaced by an active link using privacy_notice_updated_homepage_message_privacy_notice as text (Privacy Notice)
@@ -4107,15 +4208,15 @@
     <string name="lens_camera_mode_qr">QR scanner</string>
     <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
     <string name="lens_camera_qr_no_code_found">No QR code found in image</string>
-    <!-- Status shown under an image picked from the gallery while it is being sent to Google Lens for a visual search -->
+    <!-- Status shown under an image picked from the gallery or taken with the camera while it is being sent to Google Lens for a visual search -->
     <string name="lens_camera_loading_status">Looking this up</string>
-    <!-- Button shown under an image picked from the gallery while it is being sent to Google Lens. Tapping it stops the search and returns to the camera. -->
+    <!-- Button shown under an image picked from the gallery or taken with the camera while it is being sent to Google Lens. Tapping it stops the search and returns to the camera. -->
     <string name="lens_camera_loading_cancel_button">Cancel</string>
-    <!-- Snackbar message shown when an image picked from the gallery could not be opened or read, so it was never sent to Google Lens. Shown after returning to the camera. -->
-    <string name="lens_camera_image_load_failed">Couldn’t load this image. Try a different one.</string>
-    <!-- Snackbar message shown when an image picked from the gallery could not be searched because of a network problem or an error from Google Lens. Shown after returning to the camera, next to the lens_camera_upload_failed_retry_button action. -->
+    <!-- Snackbar message shown when an image picked from the gallery or taken with the camera could not be opened or read, so it was never sent to Google Lens. Shown after returning to the camera. -->
+    <string name="lens_camera_image_load_failed_v2">Couldn’t load this image.</string>
+    <!-- Snackbar message shown when an image picked from the gallery or taken with the camera could not be searched because of a network problem or an error from Google Lens. Shown after returning to the camera, next to the lens_camera_upload_failed_retry_button action. -->
     <string name="lens_camera_upload_failed">Couldn’t get results from Google Lens</string>
-    <!-- Action in the snackbar shown when an image picked from the gallery could not be searched with Google Lens. Tapping it searches the same image again. -->
+    <!-- Action in the snackbar shown when an image picked from the gallery or taken with the camera could not be searched with Google Lens. Tapping it searches the same image again. -->
     <string name="lens_camera_upload_failed_retry_button">Try again</string>
     <!-- Title of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
     <string name="lens_opt_out_title">Find it with Google Lens</string>
@@ -4189,12 +4290,16 @@
     <string name="pdf_tools_signature_clear_button">Clear</string>
     <!-- The text for the button that adds the signature the user has typed to the PDF. -->
     <string name="pdf_tools_signature_add_button">Add</string>
+    <!-- Content description for accessibility (used by screen readers): Description for the loading indicator when a signature is in the process of being added to a PDF. -->
+    <string name="pdf_tools_signature_adding_content_description">Adding signature</string>
 
     <!-- Listen to page -->
-    <!-- Content description for the reader mode panel: a group of buttons floating over the content -->
-    <string name="reader_mode_panel_content_description">Reader Mode Options</string>
-    <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
+    <!-- Content description for the reader view panel: a group of buttons floating over the content, which allow customizing the reader view or activating the Listen to Page feature -->
+    <string name="reader_mode_panel_content_description_2">Reader View Options</string>
+    <!-- Content description for the button in the reader view panel that turns on the Listen to Page feature (playback of content begins when button is pressed) -->
     <string name="reader_mode_panel_listen_content_description">Read Aloud</string>
-    <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+    <!-- Content description for media player displayed in Reader view when the Listen to Page (Read Aloud) feature is selected -->
     <string name="reader_mode_panel_media_player_content_description">Media Player</string>
+    <!-- Content description for the reader view button Reader view facilitates readability and has a Listen to Page feature. Button icon is a document with headphones, and is displayed next to the page URL when the feature is available. -->
+    <string name="browser_menu_read_or_listen">Reader view, read or listen to page</string>
 </resources>

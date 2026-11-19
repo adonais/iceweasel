@@ -637,7 +637,7 @@ void ServiceWorkerRegistration::WhenVersionReached(
   }
 
   mVersionCallbackList.AppendElement(
-      MakeUnique<VersionCallback>(aVersion, std::move(aCallback)));
+      std::make_unique<VersionCallback>(aVersion, std::move(aCallback)));
 }
 
 void ServiceWorkerRegistration::MaybeScheduleUpdateFound(

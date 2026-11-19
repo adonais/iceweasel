@@ -40,9 +40,9 @@ function waitForColorSchemeToBe(scheme) {
   });
 }
 
-async function switchColorScheme(dark) {
-  await SpecialPowers.pushPrefEnv({ set: [["layout.css.prefers-color-scheme.content-override", dark ? 0 : 1]] });
-  await waitForColorSchemeToBe(dark ? "dark" : "light");
+async function switchColorScheme(userPrefIsDark, expectedScheme) {
+  await SpecialPowers.pushPrefEnv({ set: [["layout.css.prefers-color-scheme.content-override", userPrefIsDark ? 0 : 1]] });
+  await waitForColorSchemeToBe(expectedScheme);
 }
 
 add_task(async function() {
@@ -50,8 +50,12 @@ add_task(async function() {
 
   for (let dark of [false, true]) {
     for (let metaValue of ["light", "dark", "light dark"]) {
+      let followsMeta =
+        metaValue != "light dark" &&
+        SpecialPowers.getBoolPref("layout.css.prefers-color-scheme.meta-tag.enabled");
+      let expectedScheme = followsMeta ? metaValue : (dark ? "dark" : "light");
       meta.setAttribute("content", metaValue);
-      await switchColorScheme(dark);
+      await switchColorScheme(dark, expectedScheme);
       runTests();
     }
   }

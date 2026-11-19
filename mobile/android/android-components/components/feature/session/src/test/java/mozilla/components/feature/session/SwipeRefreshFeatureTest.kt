@@ -103,6 +103,44 @@ class SwipeRefreshFeatureTest {
         }
 
     @Test
+    fun `feature disables the swipeRefreshLayout in fullscreen and re-enables it after exiting`() =
+        runTest(testDispatcher) {
+            refreshFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val selectedTab = store.state.findCustomTabOrSelectedTab()!!
+
+            store.dispatch(ContentAction.FullScreenChangedAction(selectedTab.id, true))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(mockLayout).isEnabled = false
+
+            store.dispatch(ContentAction.FullScreenChangedAction(selectedTab.id, false))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(mockLayout, times(2)).isEnabled = true
+        }
+
+    @Test
+    fun `feature disables the swipeRefreshLayout on a PDF and re-enables it after leaving`() =
+        runTest(testDispatcher) {
+            refreshFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val selectedTab = store.state.findCustomTabOrSelectedTab()!!
+
+            store.dispatch(ContentAction.EnteredPdfViewer(selectedTab.id))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(mockLayout).isEnabled = false
+
+            store.dispatch(ContentAction.ExitedPdfViewer(selectedTab.id))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(mockLayout, times(2)).isEnabled = true
+        }
+
+    @Test
     fun `feature clears the swipeRefreshLayout#isRefreshing when tab fishes loading or a refreshCanceled`() =
         runTest(testDispatcher) {
             refreshFeature.start()

@@ -48,12 +48,10 @@ NS_IMETHODIMP
 nsSocketProviderService::GetSocketProvider(const char* type,
                                            nsISocketProvider** result) {
   nsCOMPtr<nsISocketProvider> inst;
-  if (!nsCRT::strcmp(type, "ssl") &&
-      (XRE_IsParentProcess() || XRE_IsSocketProcess()) &&
+  if (!nsCRT::strcmp(type, "ssl") && XRE_IsParentProcess() &&
       EnsureNSSInitializedChromeOrContent()) {
     inst = new nsSSLSocketProvider();
-  } else if (!nsCRT::strcmp(type, "starttls") &&
-             (XRE_IsParentProcess() || XRE_IsSocketProcess()) &&
+  } else if (!nsCRT::strcmp(type, "starttls") && XRE_IsParentProcess() &&
              EnsureNSSInitializedChromeOrContent()) {
     inst = new nsTLSSocketProvider();
   } else if (!nsCRT::strcmp(type, "socks")) {

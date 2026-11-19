@@ -1,4 +1,4 @@
-/* eslint-disable import/no-unassigned-import */
-/* eslint-disable import/no-unresolved */
+/* eslint-disable import-x/no-unassigned-import */
+/* eslint-disable import-x/no-unresolved */
 import {} from "./foo";
 import {} from "./bar";

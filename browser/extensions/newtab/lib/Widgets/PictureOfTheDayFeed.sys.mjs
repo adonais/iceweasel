@@ -155,7 +155,6 @@ export class PictureOfTheDayFeed {
   async reset() {
     await this.resetCache();
     this.loaded = false;
-    this.update({});
   }
 
   // Map a raw Merino payload onto our internal shape. Returns null when there's

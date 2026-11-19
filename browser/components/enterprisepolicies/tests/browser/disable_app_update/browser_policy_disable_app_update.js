@@ -26,14 +26,10 @@ add_task(async function test_updates_post_policy() {
 });
 
 add_task(async function test_update_preferences_ui() {
-  let settingsRedesignEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:preferences#about"
   );
-  let prefUrl = settingsRedesignEnabled
-    ? "about:preferences#about"
-    : "about:preferences";
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, prefUrl);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     let settingControl = content.document.getElementById(

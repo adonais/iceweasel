@@ -187,7 +187,7 @@ add_task(async function test_overflow_panel_holds_hidden_sources() {
     await panel.updateComplete;
     const innerList = panel.shadowRoot.querySelector("panel-list");
     Assert.equal(
-      innerList.querySelectorAll("ai-website-chip").length,
+      innerList.querySelectorAll("smartwindow-chip").length,
       overflowCount,
       "The overflow panel holds exactly the hidden sources"
     );
@@ -239,7 +239,7 @@ add_task(async function test_overflow_panel_keeps_duplicate_urls() {
     const innerList = panel.shadowRoot.querySelector("panel-list");
     const hiddenTitles = sources.slice(inline).map(s => s.title);
     Assert.deepEqual(
-      [...innerList.querySelectorAll("ai-website-chip")].map(c => c.label),
+      [...innerList.querySelectorAll("smartwindow-chip")].map(c => c.label),
       hiddenTitles,
       "The overflow panel lists every hidden source even with duplicate URLs"
     );

@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+<meta charset=utf-8>
+<head>
+  <title>Test for Bug 2059164 - a captured low-rate media element resampled into a high-rate context stays silent</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="webaudio_asan_fill.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+SimpleTest.waitForExplicitFinish();
+
+// Capturing this 1 Hz stereo FLAC into a 262145 Hz context asks the resampler
+// for more output frames than a buffer can hold, so the chunk is rejected and
+// every channel must stay silent. A non-silent sample on channel 1 therefore
+// means the graph emitted samples the resampler never produced. On ASan builds
+// such samples carry the allocator's fill word, which the probe counts
+// separately so the two cases can be told apart in the failure message.
+
+// The fixture is one 16384-frame block declaring 1 Hz.
+const FIXTURE_FRAMES = 16384;
+const FIXTURE_RATE = 1;
+// 262144 Hz makes the output length wrap to zero; the next rate up is the
+// smallest that still asks for more than a buffer can hold.
+const RATE_WRAPPING_TO_ZERO = 2 ** 32 * FIXTURE_RATE / FIXTURE_FRAMES;
+const CTX_RATE = RATE_WRAPPING_TO_ZERO + 1;
+
+// Observe two seconds of graph time after playback starts. Counting graph frames
+// rather than wall-clock time means a loaded machine cannot end the window early.
+const OBSERVE_SECONDS = 2;
+const OBSERVE_FRAMES = Math.ceil(CTX_RATE * OBSERVE_SECONDS);
+
+let finished = false;
+function finish(verdict) {
+  if (finished) {
+    return;
+  }
+  finished = true;
+  verdict();
+  SimpleTest.finish();
+}
+
+async function runTest() {
+  if (!asanVerifyFillOptions()) {
+    SimpleTest.finish();
+    return;
+  }
+
+  // Autoplay so the captured element drives the resample path with no gesture.
+  await SpecialPowers.pushPrefEnv({ set: [
+    ["media.autoplay.default", 0],
+    ["media.autoplay.blocking_policy", 0],
+  ] });
+
+  const ctx = new AudioContext({ sampleRate: CTX_RATE });
+  await ctx.audioWorklet.addModule("webaudio_channel_fill_probe_processor.js");
+
+  const audio = new Audio("bug2059164_1hz_stereo.flac");
+  // A load failure means the resample path was not exercised.
+  audio.onerror = () => finish(() => ok(false,
+    `the 1 Hz FLAC failed to load (error code ` +
+    `${audio.error && audio.error.code}), so the resample path was never ` +
+    `exercised`));
+
+  // Input 0 is captured audio; input 1 is the playback marker.
+  const probe = new AudioWorkletNode(ctx, "channel-fill-probe", {
+    numberOfInputs: 2,
+    numberOfOutputs: 0,
+    processorOptions: {
+      fillWord: ASAN_EXPECTED_SENTINEL,
+      budgetFrames: OBSERVE_FRAMES,
+    },
+  });
+  // A processor failure would otherwise appear as a harness timeout.
+  probe.onprocessorerror = () => finish(() => ok(false,
+    "the channel fill probe failed, so no samples were scanned"));
+  probe.port.onmessage = ({ data }) => finish(() => {
+    if (data.nonSilent) {
+      ok(false,
+        `channel 1 emitted ${data.nonSilent} samples the resampler never ` +
+        `produced (${data.fillWords} carrying the allocator fill word)`);
+    } else {
+      ok(true,
+        `channel 1 stayed silent across ${data.frames} frames after playback ` +
+        `started`);
+    }
+  });
+
+  ctx.createMediaElementSource(audio).connect(probe, 0, 0);
+
+  // Start the probe's observation window when playback begins. The marker
+  // only opens it; every quantum is scanned regardless.
+  const playbackMarker = new ConstantSourceNode(ctx, { offset: 1 });
+  playbackMarker.connect(probe, 0, 1);
+  audio.addEventListener("playing", () => playbackMarker.start(), { once: true });
+
+  await ctx.resume();
+  audio.play().catch(e => finish(() => ok(false,
+    `playback of the 1 Hz FLAC was refused (${e.name}), so the resample path ` +
+    `was never exercised`)));
+}
+
+runTest().catch(e => finish(() => ok(false, "unexpected exception: " + e)));
+
+</script>
+</pre>
+</body>
+</html>

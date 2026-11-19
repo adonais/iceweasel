@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.topsites
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,10 +19,8 @@ import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.feature.top.sites.PinnedSiteStorage
-import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
 import mozilla.components.ui.icons.R as iconsR
-import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
@@ -32,7 +29,6 @@ import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.middleware.getTabUrl
 import org.mozilla.fenix.components.menu.store.MenuAction
-import org.mozilla.fenix.utils.Settings
 
 /**
  * [MenuItemProvider] for the menu item allowing to add or remove the current webpage from home shortcuts.
@@ -43,14 +39,10 @@ import org.mozilla.fenix.utils.Settings
  * @param areShortcutsEnabled Whether the user allows shortcuts to be shown at all.
  * @param topSitesUseCases [TopSitesUseCases] for adding or removing the current webpage from shortcuts.
  * @param appStore [AppStore] for informing the rest of the application about a new shortcut.
- * @param settings [Settings] used to know how many shortcuts the user can have.
- * @param materialAlertDialogBuilder [MaterialAlertDialogBuilder] for telling the user when they cannot have another
- *   shortcut.
  * @param scope [CoroutineScope] tied to the lifetime of the menu, on which to query and change the shortcuts.
  * @param applicationScope [CoroutineScope] tied to the lifetime of the application, on which to remove a shortcut since
  *   that cannot be interrupted.
  */
-@Suppress("LongParameterList")
 class ShortcutMenuItemProvider(
     private val browserStore: BrowserStore,
     private val target: MenuTarget,
@@ -58,22 +50,28 @@ class ShortcutMenuItemProvider(
     areShortcutsEnabled: Boolean,
     private val topSitesUseCases: TopSitesUseCases,
     private val appStore: AppStore,
-    private val settings: Settings,
-    private val materialAlertDialogBuilder: MaterialAlertDialogBuilder,
     private val scope: CoroutineScope,
     private val applicationScope: CoroutineScope,
 ) : MenuItemProvider {
     // Without a page shown there is nothing to add to shortcuts. Knowing whether the shown page already is one means
     // reading from disk, which the menu should not wait for, so it starts out offered as not being a shortcut.
-    private val mutableItem =
-        MutableStateFlow<MenuItem?>(
-            ADD_SHORTCUT_ITEM.takeIf { areShortcutsEnabled && target.browserSessionFrom(browserStore.state) != null }
+    private val mutableItems =
+        MutableStateFlow<List<MenuItem>>(
+            listOfNotNull(
+                if (target == MenuTarget.CustomizeMenu) {
+                    DEFAULT_MENU_ITEM
+                } else {
+                    DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.AddShortcut).takeIf {
+                        areShortcutsEnabled && target.browserSessionFrom(browserStore.state) != null
+                    }
+                }
+            )
         )
 
-    override val itemFlow: StateFlow<MenuItem?> = mutableItem.asStateFlow()
+    override val itemsFlow: StateFlow<List<MenuItem>> = mutableItems.asStateFlow()
 
     init {
-        if (mutableItem.value != null) {
+        if (target != MenuTarget.CustomizeMenu && mutableItems.value.isNotEmpty()) {
             scope.launch { resolveShortcut() }
         }
     }
@@ -82,7 +80,7 @@ class ShortcutMenuItemProvider(
         val url = target.browserSessionFrom(browserStore.state)?.getTabUrl() ?: return
         pinnedSiteStorage.getPinnedSites().firstOrNull { it.url == url } ?: return
 
-        mutableItem.value = REMOVE_SHORTCUT_ITEM
+        mutableItems.value = listOf(REMOVE_SHORTCUT_ITEM)
     }
 
     override fun handles(event: MenuEvent) = event == MenuAction.AddShortcut || event == MenuAction.RemoveShortcut
@@ -95,7 +93,6 @@ class ShortcutMenuItemProvider(
         }
     }
 
-    /** Shortcuts are limited in number, so the user is told when the current page cannot become one of them. */
     private suspend fun addShortcut(menu: MenuHost) {
         val tab = target.browserSessionFrom(browserStore.state) ?: return
         val url = tab.getTabUrl() ?: return
@@ -105,15 +102,10 @@ class ShortcutMenuItemProvider(
         // The menu item may have been shown before the page was known to already be a shortcut.
         if (shortcuts.any { it.url == url }) return
 
-        if (shortcuts.count { it.isPinned() } >= settings.topSitesMaxLimit) {
-            showMaxShortcutsReached()
-            menu.dismiss()
-            return
-        }
-
         topSitesUseCases.addPinnedSites(title = title, url = url)
         appStore.dispatch(
             ShortcutAction.ShortcutAdded(
+                url = url,
                 source = AddShortcutSource.MANUAL,
                 entryPoint = AddShortcutEntryPoint.PAGE_MENU,
             )
@@ -134,32 +126,19 @@ class ShortcutMenuItemProvider(
         menu.dismiss()
     }
 
-    private fun showMaxShortcutsReached() {
-        materialAlertDialogBuilder
-            .apply {
-                setTitle(R.string.shortcut_max_limit_title)
-                setMessage(R.string.shortcut_max_limit_content)
-                setPositiveButton(R.string.top_sites_max_limit_confirmation_button) { dialog, _ -> dialog.dismiss() }
-                create().withCenterAlignedButtons()
-            }
-            .show()
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_add_to_shortcuts)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_pin_24),
+            )
+
+        private val REMOVE_SHORTCUT_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_remove_from_shortcuts)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_pin_fill_24),
+                onClickEvent = MenuAction.RemoveShortcut,
+                state = MenuItemState.ACTIVE,
+            )
     }
-
-    /** Only the shortcuts the user can add themselves count towards the limit of how many they can have. */
-    private fun TopSite.isPinned() = this is TopSite.Default || this is TopSite.Pinned
 }
-
-private val ADD_SHORTCUT_ITEM =
-    StandardMenuItem(
-        title = MenuItemTitle(Text.Resource(R.string.browser_menu_add_to_shortcuts)),
-        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_pin_24),
-        onClickEvent = MenuAction.AddShortcut,
-    )
-
-private val REMOVE_SHORTCUT_ITEM =
-    StandardMenuItem(
-        title = MenuItemTitle(Text.Resource(R.string.browser_menu_remove_from_shortcuts)),
-        icon = MenuItemIconRes(iconsR.drawable.mozac_ic_pin_fill_24),
-        onClickEvent = MenuAction.RemoveShortcut,
-        state = MenuItemState.ACTIVE,
-    )

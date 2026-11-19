@@ -1232,14 +1232,14 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
   }
 
   void TakeDiscard(nsTArray<RefPtr<CachedSurface>>& aDiscard,
-                   const StaticMutexAutoLock& aAutoLock) {
+                   const StaticMutexAutoLock& /*aAutoLock*/) {
     MOZ_ASSERT(aDiscard.IsEmpty());
     aDiscard = std::move(mCachedSurfacesDiscard);
   }
 
   already_AddRefed<CachedSurface> GetSurfaceForResetAnimation(
       const ImageKey aImageKey, const SurfaceKey& aSurfaceKey,
-      const StaticMutexAutoLock& aAutoLock) {
+      const StaticMutexAutoLock& /*aAutoLock*/) {
     RefPtr<CachedSurface> surface;
 
     RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
@@ -1267,7 +1267,8 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
   }
 
   size_t ShallowSizeOfIncludingThis(
-      MallocSizeOf aMallocSizeOf, const StaticMutexAutoLock& aAutoLock) const {
+      MallocSizeOf aMallocSizeOf,
+      const StaticMutexAutoLock& /*aAutoLock*/) const {
     size_t bytes =
         aMallocSizeOf(this) + mCosts.ShallowSizeOfExcludingThis(aMallocSizeOf) +
         mImageCaches.ShallowSizeOfExcludingThis(aMallocSizeOf) +
@@ -1281,7 +1282,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
 
   NS_IMETHOD
   CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
-                 bool aAnonymize) override {
+                 bool /*aAnonymize*/) override {
     StaticMutexAutoLock lock(sInstanceMutex);
 
     uint32_t lockedImageCount = 0;
@@ -1398,7 +1399,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
   }
 
   void ReleaseImageOnMainThread(already_AddRefed<image::Image> aImage,
-                                const StaticMutexAutoLock& aAutoLock) {
+                                const StaticMutexAutoLock& /*aAutoLock*/) {
     RefPtr<image::Image> image = aImage;
     if (!image) {
       return;
@@ -1420,7 +1421,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
   }
 
   void TakeReleasingImages(nsTArray<RefPtr<image::Image>>& aImage,
-                           const StaticMutexAutoLock& aAutoLock) {
+                           const StaticMutexAutoLock& /*aAutoLock*/) {
     MOZ_ASSERT(NS_IsMainThread());
     aImage.SwapElements(mReleasingImagesOnMainThread);
   }

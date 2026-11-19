@@ -55,9 +55,6 @@ credit-card-label-number-name-expiration-2 =
 # code is saved alongside the card. Only the presence of a saved security code
 # is ever shown, never the code itself.
 #
-# "CVV" is a common abbreviation for the security code printed on a payment
-# card. Use whichever abbreviation is most familiar in your locale.
-#
 # The visible label separates the two with a vertical bar, while the
 # accessibility label uses a comma so that it is read as part of the same
 # sentence as the rest of the card description.
@@ -66,5 +63,10 @@ credit-card-label-number-name-expiration-2 =
 #   $label (String): One of the credit-card-label-* values above
 #   $ariaLabel (String): The .aria-label of that same credit-card-label-*
 #     string, which additionally names the card type
-credit-card-label-with-security-code = { $label } | CVV saved
-    .aria-label = { $ariaLabel }, CVV saved
+#   $securityCode (String): The name of the card's security code, which depends
+#     on the card network (for example "CVV")
+#
+# In the visible label, "•••" stands for the hidden security code; keep it as is
+# rather than translating it into words.
+credit-card-label-with-security-code-2 = { $label } | { $securityCode } •••
+    .aria-label = { $ariaLabel }, { $securityCode } saved

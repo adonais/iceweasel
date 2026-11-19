@@ -11,8 +11,10 @@ releases. It includes functions for building milestone names and descriptions, d
 release types, and loading TestRail credentials.
 
 Functions:
-- build_milestone_name(product_type, release_type, version_number): Constructs a formatted
-  milestone name based on the product type, release type, and version number.
+- build_milestone_name(product_type, release_type, version_number, build_number=None):
+  Constructs a formatted milestone name based on the product type, release type, and
+  version number. When build_number is provided, appends " Build {N}" to distinguish
+  per-build milestones (e.g., build1 vs build2 of the same version).
 - build_milestone_description(milestone_name): Generates a detailed description for the
   milestone, including the release date and placeholders for testing status and QA recommendations.
 - get_release_version(): Reads and returns the release version number from a 'version.txt' file.
@@ -28,8 +30,9 @@ import textwrap
 from datetime import datetime
 
 
-def build_milestone_name(product_type, release_type, version_number):
-    return f"Build Validation sign-off - {product_type} {release_type} {version_number}"
+def build_milestone_name(product_type, release_type, version_number, build_number=None):
+    base = f"Build Validation sign-off - {product_type} {release_type} {version_number}"
+    return f"{base} Build {build_number}" if build_number else base
 
 
 def build_milestone_description(milestone_name):

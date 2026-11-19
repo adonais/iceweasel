@@ -39,15 +39,20 @@ class RenderCompositorEGL : public RenderCompositor {
   LayoutDeviceIntSize GetBufferSize() override;
 
   // Interface for partial present
-  bool UsePartialPresent() override;
+  bool UseWindowPartialPresent() override;
   bool RequestFullRender() override;
   uint32_t GetMaxPartialPresentRects() override;
-  bool ShouldDrawPreviousPartialPresentRegions() override;
   size_t GetBufferAge() const override;
   void SetBufferDamageRegion(const wr::DeviceIntRect* aRects,
                              size_t aNumRects) override;
 
   RefPtr<layers::Fence> GetAndResetReadFence() override;
+
+#ifdef MOZ_WIDGET_ANDROID
+  bool CaptureScreenPixels(
+      const gfx::IntRect& aSourceRect,
+      layers::AndroidHardwareBuffer* aHardwareBuffer) override;
+#endif
 
   void MaybeWaitingForPendingReadFence(RenderTextureHost* aTexture) override;
 

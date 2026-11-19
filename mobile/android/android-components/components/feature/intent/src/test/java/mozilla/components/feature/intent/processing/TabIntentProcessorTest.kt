@@ -12,6 +12,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.action.BrowserAction
+import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.search.SearchEngine
@@ -40,6 +41,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,6 +57,7 @@ class TabIntentProcessorTest {
     private lateinit var middleware: CaptureActionsMiddleware<BrowserState, BrowserAction>
 
     private lateinit var searchEngine: SearchEngine
+    private lateinit var applicationSearchEngine: SearchEngine
     private lateinit var store: BrowserStore
     private lateinit var engine: Engine
     private lateinit var engineSession: EngineSession
@@ -72,6 +75,14 @@ class TabIntentProcessorTest {
                 icon = mock(),
             )
 
+        applicationSearchEngine =
+            SearchEngine(
+                id = "bookmarks",
+                name = "Bookmarks",
+                icon = mock(),
+                type = SearchEngine.Type.APPLICATION,
+            )
+
         engine = mock()
         engineSession = mock()
         doReturn(engineSession).`when`(engine).createSession(anyBoolean(), anyString())
@@ -80,7 +91,7 @@ class TabIntentProcessorTest {
 
         store =
             BrowserStore(
-                BrowserState(search = SearchState(regionSearchEngines = listOf(searchEngine))),
+                BrowserState(search = SearchState(regionSearchEngines = listOf(searchEngine), complete = true)),
                 middleware =
                     EngineMiddleware.create(
                         engine = mock(),
@@ -95,7 +106,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open or select tab on ACTION_VIEW intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
         whenever(intent.dataString).thenReturn("http://mozilla.org")
@@ -136,7 +148,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open or select tab on ACTION_MAIN intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_MAIN)
         whenever(intent.dataString).thenReturn("https://mozilla.org")
@@ -168,7 +181,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open or select tab on ACTION_NDEF_DISCOVERED intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(ACTION_NDEF_DISCOVERED)
         whenever(intent.dataString).thenReturn("https://mozilla.org")
@@ -199,7 +213,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab on ACTION_SEND intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEND)
@@ -245,7 +260,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab and trigger search on ACTION_SEND if text is not a URL`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val searchTerms = "mozilla android"
         val searchUrl = "https://localhost/?q=mozilla%20android"
@@ -265,7 +281,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `nothing happens on ACTION_SEND if no text is provided`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEND)
@@ -277,7 +294,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `nothing happens on ACTION_SEARCH if text is empty`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEARCH)
@@ -289,7 +307,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab on ACTION_SEARCH intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEARCH)
@@ -313,7 +332,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab and trigger search on ACTION_SEARCH intent if text is not a URL`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val searchTerms = "mozilla android"
         val searchUrl = "https://localhost/?q=mozilla%20android"
@@ -332,8 +352,58 @@ class TabIntentProcessorTest {
     }
 
     @Test
+    fun `search on ACTION_SEARCH intent is deferred until the search engines have loaded`() {
+        val incompleteStore =
+            BrowserStore(
+                BrowserState(search = SearchState(applicationSearchEngines = listOf(applicationSearchEngine))),
+                middleware = EngineMiddleware.create(engine = mock(), scope = scope),
+            )
+        val tabsUseCases = TabsUseCases(incompleteStore)
+        val searchUseCases = SearchUseCases(incompleteStore, tabsUseCases, SessionUseCases(incompleteStore))
+        val handler =
+            TabIntentProcessor(
+                incompleteStore,
+                tabsUseCases,
+                searchUseCases.newTabSearch,
+                applicationScope = scope,
+            )
+
+        val searchTerms = "mozilla android"
+        val intent: Intent = mock()
+        whenever(intent.action).thenReturn(Intent.ACTION_SEARCH)
+        whenever(intent.getStringExtra(SearchManager.QUERY)).thenReturn(searchTerms)
+
+        assertTrue(handler.process(intent))
+        assertEquals(0, incompleteStore.state.tabs.size)
+
+        incompleteStore.dispatch(
+            SearchAction.SetSearchEnginesAction(
+                regionSearchEngines = listOf(searchEngine),
+                userSelectedSearchEngineId = null,
+                userSelectedSearchEngineName = null,
+                userSelectedPrivateSearchEngineId = null,
+                userSelectedPrivateSearchEngineName = null,
+                regionDefaultSearchEngineId = searchEngine.id,
+                customSearchEngines = emptyList(),
+                hiddenSearchEngines = emptyList(),
+                disabledSearchEngineIds = emptyList(),
+                additionalAvailableSearchEngines = emptyList(),
+                additionalSearchEngines = emptyList(),
+                regionSearchEnginesOrder = listOf(searchEngine.id),
+                searchEnginesConfigurationId = 1,
+            )
+        )
+
+        assertEquals(1, incompleteStore.state.tabs.size)
+        assertEquals("https://localhost/?q=mozilla%20android", incompleteStore.state.tabs[0].content.url)
+        assertEquals(searchTerms, incompleteStore.state.tabs[0].content.searchTerms)
+        assertIs<SessionState.Source.External.ActionSearch>(incompleteStore.state.tabs[0].source)
+    }
+
+    @Test
     fun `nothing happens on ACTION_WEB_SEARCH if text is empty`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_WEB_SEARCH)
@@ -345,7 +415,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab on ACTION_WEB_SEARCH intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_WEB_SEARCH)
@@ -368,7 +439,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab and trigger search on ACTION_WEB_SEARCH intent if text is not a URL`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val searchTerms = "mozilla android"
         val searchUrl = "https://localhost/?q=mozilla%20android"
@@ -387,7 +459,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `returns external flags when no intent extra for app link launch type extra present`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         val safeIntent = SafeIntent(intent)
 
@@ -398,7 +471,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `uses app link launch type from intent when the extra is present`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent =
             Intent().apply {
@@ -415,7 +489,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `uses the default unknown app link launch type when an invalid extra value is present`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent =
             Intent().apply {
@@ -432,7 +507,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `does not use the default when the extra is present but an invalid integer value`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent =
             Intent().apply {
@@ -451,7 +527,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `process intent sets app link intent launch type value`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -470,7 +547,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `process intent sets does not app link intent launch type value when there's no extra`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -486,7 +564,8 @@ class TabIntentProcessorTest {
 
     @Test
     fun `process intent sets default app link intent launch type value when there's no valid value for type`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
+        val handler =
+            TabIntentProcessor(store, TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -506,6 +585,7 @@ class TabIntentProcessorTest {
         whenever(engine.settings).thenReturn(settings)
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = engine,
@@ -523,6 +603,7 @@ class TabIntentProcessorTest {
         whenever(engine.settings).thenReturn(settings)
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = engine,
@@ -544,6 +625,7 @@ class TabIntentProcessorTest {
         whenever(engine.settings).thenReturn(settings)
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = engine,
@@ -565,6 +647,7 @@ class TabIntentProcessorTest {
         whenever(engine.settings).thenReturn(settings)
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = engine,
@@ -586,6 +669,7 @@ class TabIntentProcessorTest {
         whenever(engine.settings).thenReturn(settings)
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = engine,
@@ -601,6 +685,7 @@ class TabIntentProcessorTest {
     fun `getHostForDnsWarmup returns app link host when engine is null`() {
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = null,
@@ -618,6 +703,7 @@ class TabIntentProcessorTest {
         whenever(engine.settings).thenReturn(settings)
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = engine,
@@ -639,6 +725,7 @@ class TabIntentProcessorTest {
         whenever(engine.settings).thenReturn(settings)
         val handler =
             TabIntentProcessor(
+                store,
                 TabsUseCases(store),
                 searchUseCases.newTabSearch,
                 engine = engine,

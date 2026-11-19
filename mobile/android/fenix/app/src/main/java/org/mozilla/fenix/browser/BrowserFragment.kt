@@ -84,7 +84,6 @@ import org.mozilla.fenix.onboarding.OnboardingFragmentDirections
 import org.mozilla.fenix.onboarding.OnboardingReason
 import org.mozilla.fenix.onboarding.OnboardingTelemetryRecorder
 import org.mozilla.fenix.onboarding.continuous.ContinuousOnboardingFeature
-import org.mozilla.fenix.pdf.PdfToolsIntegration
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.summarization.SummarizationNavigator
 import org.mozilla.fenix.termsofuse.store.Surface
@@ -97,7 +96,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
     private val openInAppOnboardingObserver = ViewBoundFeatureWrapper<OpenInAppOnboardingObserver>()
     private val translationsBinding = ViewBoundFeatureWrapper<TranslationsBinding>()
     private val translationsBannerIntegration = ViewBoundFeatureWrapper<TranslationsBannerIntegration>()
-    private val pdfToolsIntegration = ViewBoundFeatureWrapper<PdfToolsIntegration>()
     private val listenSheetIntegration = ViewBoundFeatureWrapper<ListenSheetIntegration>()
     private val powerSavingModeReaderViewBinding = ViewBoundFeatureWrapper<PowerSavingModeReaderViewBinding>()
     private val continuousOnboardingFeature = ViewBoundFeatureWrapper<ContinuousOnboardingFeature>()
@@ -169,7 +167,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
 
         initBrowserToolbarComposableUpdates(view)
         initTranslationsUpdates(context = context, rootView = view)
-        initPdfTools(context = context, rootView = view)
         initListenSheet(context = context, rootView = view)
         initContinuousOnboardingFeature()
 
@@ -347,27 +344,10 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         }
     }
 
-    private fun initPdfTools(context: Context, rootView: View) {
-        val settings = context.components.settings
-        if (!settings.enablePdfTools) {
-            return
-        }
-
-        pdfToolsIntegration.set(
-            feature =
-                PdfToolsIntegration(
-                    container = binding.browserLayout,
-                    browserStore = context.components.core.store,
-                    isAddressBarAtBottom = settings.toolbarPosition == ToolbarPosition.BOTTOM,
-                ),
-            owner = this,
-            view = rootView,
-        )
-    }
-
     private fun initListenSheet(context: Context, rootView: View) {
         val settings = context.components.settings
-        if (!settings.listenToPageFeatureFlagEnabled) {
+        val listenSettings = context.components.listenToPage.settings
+        if (!listenSettings.available) {
             return
         }
 
@@ -379,6 +359,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                     listenStore = context.components.listenToPage.store,
                     engineView = binding.engineView,
                     isAddressBarAtBottom = settings.toolbarPosition == ToolbarPosition.BOTTOM,
+                    isEnabled = listenSettings.enabled,
                     onListenClicked = {
                         context.components.core.store.state.selectedTab?.let { tab ->
                             context.components.listenToPage.store.dispatch(

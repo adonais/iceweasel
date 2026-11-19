@@ -101,7 +101,7 @@ class InvalidRegressionDetectorQuery(Exception):
 
 class PerfParser(CompareParser):
     name = "perf"
-    common_groups = ["push"]
+    common_groups = ["push", "preset"]
     task_configs = [
         "artifact",
         "browsertime",
@@ -1503,6 +1503,7 @@ class PerfParser(CompareParser):
         rebuild=1,
         clear_cache=False,
         push_to_vcs=False,
+        full_task_graph=True,
         **kwargs,
     ):
         # Setup fzf
@@ -1519,7 +1520,7 @@ class PerfParser(CompareParser):
         all_tasks, cache_dir = setup_tasks_for_fzf(
             not dry_run,
             parameters,
-            full=True,
+            full=full_task_graph,
             disable_target_task_filter=False,
         )
         base_cmd = build_base_cmd(

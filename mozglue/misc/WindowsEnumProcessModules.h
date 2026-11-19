@@ -29,7 +29,7 @@ inline bool EnumerateProcessModules(
   }
 
   DWORD modulesNum = modulesSize / sizeof(HMODULE);
-  UniquePtr<HMODULE[]> modules = MakeUnique<HMODULE[]>(modulesNum);
+  auto modules = std::make_unique<HMODULE[]>(modulesNum);
   if (!::EnumProcessModules(nt::kCurrentProcess, modules.get(),
                             modulesNum * sizeof(HMODULE), &modulesSize)) {
     return false;

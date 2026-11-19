@@ -18,20 +18,12 @@ const IMPORT_HISTORY_DISMISSED_PREF =
   "browser.tabs.firefox-view.importHistory.dismissed";
 const NEVER_REMEMBER_HISTORY_PREF = "browser.privatebrowsing.autostart";
 
-// Different strings used for Nova UI.
-const isNovaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
-const EMPTY_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-history-empty-header-2"
-  : "firefoxview-history-empty-header";
-const EMPTY_DESCRIPTION_L10N_ID = isNovaEnabled
-  ? "firefoxview-history-empty-description-2"
-  : "firefoxview-history-empty-description";
-const NEVER_REMEMBER_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-dont-remember-history-empty-header-3"
-  : "firefoxview-dont-remember-history-empty-header-2";
-const NEVER_REMEMBER_DESCRIPTION_L10N_ID = isNovaEnabled
-  ? "firefoxview-dont-remember-history-empty-description-2"
-  : "firefoxview-dont-remember-history-empty-description-one";
+const EMPTY_HEADER_L10N_ID = "firefoxview-history-empty-header-2";
+const EMPTY_DESCRIPTION_L10N_ID = "firefoxview-history-empty-description-2";
+const NEVER_REMEMBER_HEADER_L10N_ID =
+  "firefoxview-dont-remember-history-empty-header-3";
+const NEVER_REMEMBER_DESCRIPTION_L10N_ID =
+  "firefoxview-dont-remember-history-empty-description-2";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const today = new Date();

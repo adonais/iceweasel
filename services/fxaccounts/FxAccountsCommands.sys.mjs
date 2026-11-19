@@ -24,7 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   BulkKeyBundle: "resource://services-sync/keys.sys.mjs",
   CryptoWrapper: "resource://services-sync/record.sys.mjs",
-  PushCrypto: "resource://gre/modules/PushCrypto.sys.mjs",
+  PushCrypto: "moz-src:///dom/push/PushCrypto.sys.mjs",
   getRemoteCommandStore: "resource://services-sync/TabsStore.sys.mjs",
   RemoteCommand: "resource://services-sync/TabsStore.sys.mjs",
   Resource: "resource://services-sync/resource.sys.mjs",

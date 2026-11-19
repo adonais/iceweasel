@@ -256,7 +256,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   bool IsRedirectDueToAuthRetry(uint32_t redirectFlags);
 
   // Sets mAltDataBindingOrigin from aChannel's principal, or clears it if the
-  // principal is not one the content process could have loaded.
+  // content process has not loaded that principal's origin.
   void UpdateAltDataBindingOrigin(HttpBaseChannel* aChannel);
 
   int32_t mSendWindowSize;
@@ -330,10 +330,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   // increase 1 to mAsyncOpenBarrier and invoke TryInvokeAsyncOpen after
   // finished. This attribute is main thread only.
   uint8_t mAsyncOpenBarrier = 0;
-
-  // When true, ODAs are sent from the socket process to the child process
-  // directly.
-  uint8_t mDataSentToChildProcess : 1;
 };
 
 }  // namespace net

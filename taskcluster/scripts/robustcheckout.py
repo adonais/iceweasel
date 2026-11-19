@@ -74,6 +74,24 @@ configitem(b"robustcheckout", b"retryjittermin", default=configitems.dynamicdefa
 configitem(b"robustcheckout", b"retryjittermax", default=configitems.dynamicdefault)
 
 
+def record_marker(name, start, end):
+    """Add a marker to the profile of the resource monitor run-task runs, if
+    any, using the forwarding protocol of mozsystemmonitor."""
+    path = os.environ.get("MOZ_RESOURCE_MONITOR_FORWARD")
+    if not path:
+        return
+    # 2 is the "Tasks" category.
+    record = ["marker", "robustcheckout", start, end, {"type": "Text", "text": name}, 2]
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_APPEND)
+        try:
+            os.write(fd, (json.dumps(record) + "\n").encode("utf-8"))
+        finally:
+            os.close(fd)
+    except OSError:
+        pass
+
+
 def getsparse():
     from mercurial import sparse
 
@@ -164,6 +182,12 @@ def remove_dangling_links(ui, path):
             False,
             b"the clone will include an empty working directory\n(only a repository)",
         ),
+        (
+            b"",
+            b"perfherderoutput",
+            b"",
+            b"Path to a file where Perfherder data should be written",
+        ),
     ],
     b"[OPTION]... URL DEST",
     norepo=True,
@@ -181,6 +205,7 @@ def robustcheckout(
     sparseprofile=None,
     bundle=None,
     noupdate=False,
+    perfherderoutput=None,
 ):
     """Ensure a working copy has the specified revision checked out.
 
@@ -273,6 +298,7 @@ def robustcheckout(
     optimes = []
     behaviors = set()
     start = time.time()
+    monotonic_start = time.monotonic()
 
     try:
         return _docheckout(
@@ -299,6 +325,7 @@ def robustcheckout(
 
         # ``overall`` is always the total operation time.
         optimes.append(("overall", overall))
+        record_marker("overall", monotonic_start, time.monotonic())
 
         def record_op(name):
             # If special behaviors due to "corrupt" storage occur, we vary the
@@ -366,10 +393,11 @@ def robustcheckout(
                     "extraOptions": [os.environ["TASKCLUSTER_INSTANCE_TYPE"]],
                     "subtests": [],
                 })
-            ui.write(
-                b"PERFHERDER_DATA: %s\n"
-                % pycompat.bytestr(json.dumps(perfherder, sort_keys=True))
-            )
+            perfherder_data = json.dumps(perfherder, sort_keys=True)
+            ui.write(b"PERFHERDER_DATA: %s\n" % pycompat.bytestr(perfherder_data))
+            if perfherderoutput:
+                with open(perfherderoutput, "w", encoding="utf-8") as fh:
+                    fh.write(perfherder_data)
 
 
 def _docheckout(
@@ -417,6 +445,7 @@ def _docheckout(
         errored = False
         try:
             start = time.time()
+            monotonic_start = time.monotonic()
             yield
         except Exception:
             errored = True
@@ -428,6 +457,7 @@ def _docheckout(
                 op += "_errored"
 
             optimes.append((op, elapsed))
+            record_marker(op, monotonic_start, time.monotonic())
 
     ui.write(b"ensuring %s@%s is available at %s\n" % (url, revision or branch, dest))
 

@@ -659,8 +659,8 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     }
 
     // If the entry was updated, update also the LoadingSessionHistoryInfo.
-    UniquePtr<LoadingSessionHistoryInfo> lshi =
-        MakeUnique<LoadingSessionHistoryInfo>(entry, existingLoadingInfo);
+    auto lshi =
+        std::make_unique<LoadingSessionHistoryInfo>(entry, existingLoadingInfo);
     aLoadState->SetLoadingSessionHistoryInfo(std::move(lshi));
     existingLoadingInfo = aLoadState->GetLoadingSessionHistoryInfo();
     (void)SetHistoryEntryCount(entry->BCHistoryLength());
@@ -686,9 +686,10 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
 
   UniquePtr<LoadingSessionHistoryInfo> loadingInfo;
   if (existingLoadingInfo) {
-    loadingInfo = MakeUnique<LoadingSessionHistoryInfo>(*existingLoadingInfo);
+    loadingInfo =
+        std::make_unique<LoadingSessionHistoryInfo>(*existingLoadingInfo);
   } else {
-    loadingInfo = MakeUnique<LoadingSessionHistoryInfo>(entry);
+    loadingInfo = std::make_unique<LoadingSessionHistoryInfo>(entry);
     mLoadingEntries.AppendElement(
         LoadingSessionHistoryEntry{loadingInfo->mLoadId, entry});
   }
@@ -805,7 +806,8 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
         MaybeReuseNavigationKeyFromActiveEntry(loadingEntry);
       }
 
-      auto result = MakeUnique<LoadingSessionHistoryInfo>(loadingEntry, aInfo);
+      auto result =
+          std::make_unique<LoadingSessionHistoryInfo>(loadingEntry, aInfo);
       if (Navigation::IsAPIEnabled()) {
         MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
                     "CanonicalBrowsingContext::"
@@ -839,6 +841,7 @@ void CanonicalBrowsingContext::GetContiguousEntriesForLoad(
   NavigationType navigationType =
       aLoadingInfo.mTriggeringNavigationType.valueOr(NavigationType::Push);
   bool found = false;
+  bool replaced = false;
   if (sameOrigin || !aEntry->ForInitialLoad()) {
     RefPtr<SessionHistoryEntry> entry =
         !aEntry->ForInitialLoad() ? aEntry : mActiveEntry;
@@ -847,15 +850,19 @@ void CanonicalBrowsingContext::GetContiguousEntriesForLoad(
       nsSHistory::WalkContiguousEntriesInOrder(
           entry, [activeEntry = entry, targetEntry = aEntry,
                   entries = &aLoadingInfo.mContiguousEntries, navigationType,
-                  &found](auto* aEntry) {
+                  &found, &replaced](auto* aEntry) {
             nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry);
             found = found || targetEntry->GetID() == entry->GetID();
             MOZ_ASSERT(entry);
             if (navigationType == NavigationType::Replace &&
                 entry->GetID() == activeEntry->GetID()) {
-              // In the case of a replace navigation, we end up dropping the
-              // active entry and all following entries.
-              return false;
+              // https://html.spec.whatwg.org/#finalize-a-cross-document-navigation
+              // In the case of a replace navigation, the target entry takes
+              // the place of the active entry and all following entries are
+              // kept.
+              entries->AppendElement(targetEntry->Info());
+              replaced = true;
+              return true;
             }
 
             entries->AppendElement(entry->Info());
@@ -875,7 +882,7 @@ void CanonicalBrowsingContext::GetContiguousEntriesForLoad(
     }
   }
 
-  if (aEntry->ForInitialLoad() || !found) {
+  if (!replaced && (aEntry->ForInitialLoad() || !found)) {
     aLoadingInfo.mContiguousEntries.AppendElement(aEntry->Info());
   }
 }
@@ -919,8 +926,9 @@ class PrintListenerAdapter final : public nsIWebProgressListener {
   NS_DECL_ISUPPORTS
 
   // NS_DECL_NSIWEBPROGRESSLISTENER
-  NS_IMETHOD OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
-                           uint32_t aStateFlags, nsresult aStatus) override {
+  NS_IMETHOD OnStateChange(nsIWebProgress* /*aWebProgress*/,
+                           nsIRequest* /*aRequest*/, uint32_t aStateFlags,
+                           nsresult /*aStatus*/) override {
     MOZ_ASSERT(NS_IsMainThread());
     if (aStateFlags & nsIWebProgressListener::STATE_STOP &&
         aStateFlags & nsIWebProgressListener::STATE_IS_DOCUMENT && mPromise) {
@@ -932,34 +940,36 @@ class PrintListenerAdapter final : public nsIWebProgressListener {
     }
     return NS_OK;
   }
-  NS_IMETHOD OnStatusChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
-                            nsresult aStatus,
-                            const char16_t* aMessage) override {
+  NS_IMETHOD OnStatusChange(nsIWebProgress* /*aWebProgress*/,
+                            nsIRequest* /*aRequest*/, nsresult aStatus,
+                            const char16_t* /*aMessage*/) override {
     if (aStatus != NS_OK && mPromise) {
       mPromise->Reject(aStatus, __func__);
       mPromise = nullptr;
     }
     return NS_OK;
   }
-  NS_IMETHOD OnProgressChange(nsIWebProgress* aWebProgress,
-                              nsIRequest* aRequest, int32_t aCurSelfProgress,
-                              int32_t aMaxSelfProgress,
-                              int32_t aCurTotalProgress,
-                              int32_t aMaxTotalProgress) override {
+  NS_IMETHOD OnProgressChange(nsIWebProgress* /*aWebProgress*/,
+                              nsIRequest* /*aRequest*/,
+                              int32_t /*aCurSelfProgress*/,
+                              int32_t /*aMaxSelfProgress*/,
+                              int32_t /*aCurTotalProgress*/,
+                              int32_t /*aMaxTotalProgress*/) override {
     return NS_OK;
   }
-  NS_IMETHOD OnLocationChange(nsIWebProgress* aWebProgress,
-                              nsIRequest* aRequest, nsIURI* aLocation,
-                              uint32_t aFlags) override {
+  NS_IMETHOD OnLocationChange(nsIWebProgress* /*aWebProgress*/,
+                              nsIRequest* /*aRequest*/, nsIURI* /*aLocation*/,
+                              uint32_t /*aFlags*/) override {
     return NS_OK;
   }
-  NS_IMETHOD OnSecurityChange(nsIWebProgress* aWebProgress,
-                              nsIRequest* aRequest, uint32_t aState) override {
+  NS_IMETHOD OnSecurityChange(nsIWebProgress* /*aWebProgress*/,
+                              nsIRequest* /*aRequest*/,
+                              uint32_t /*aState*/) override {
     return NS_OK;
   }
-  NS_IMETHOD OnContentBlockingEvent(nsIWebProgress* aWebProgress,
-                                    nsIRequest* aRequest,
-                                    uint32_t aEvent) override {
+  NS_IMETHOD OnContentBlockingEvent(nsIWebProgress* /*aWebProgress*/,
+                                    nsIRequest* /*aRequest*/,
+                                    uint32_t /*aEvent*/) override {
     return NS_OK;
   }
 
@@ -1150,7 +1160,7 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::PrintWithNoContentAnalysis(
           listener->StaticCloneForPrintingCreated(
               std::move(cachedStaticDocument));
         },
-        [promise](ResponseRejectReason reason) {
+        [promise](ResponseRejectReason /*reason*/) {
           NS_WARNING("SendPrint() failed");
           promise->Reject(NS_ERROR_FAILURE, __func__);
         });
@@ -1423,8 +1433,7 @@ already_AddRefed<nsDocShellLoadState> CanonicalBrowsingContext::CreateLoadInfo(
   const SessionHistoryInfo& info = aEntry->Info();
   RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(info.GetURI());
   info.FillLoadInfo(*loadState);
-  UniquePtr<LoadingSessionHistoryInfo> loadingInfo;
-  loadingInfo = MakeUnique<LoadingSessionHistoryInfo>(aEntry);
+  auto loadingInfo = std::make_unique<LoadingSessionHistoryInfo>(aEntry);
   loadingInfo->mTriggeringNavigationType = Some(aNavigationType);
   mLoadingEntries.AppendElement(
       LoadingSessionHistoryEntry{loadingInfo->mLoadId, aEntry});
@@ -1435,8 +1444,7 @@ already_AddRefed<nsDocShellLoadState> CanonicalBrowsingContext::CreateLoadInfo(
 
 void CanonicalBrowsingContext::NotifyOnHistoryReload(
     uint32_t aReloadFlags, bool& aCanReload,
-    Maybe<NotNull<RefPtr<nsDocShellLoadState>>>& aLoadState,
-    Maybe<bool>& aReloadActiveEntry) {
+    Maybe<NotNull<RefPtr<nsDocShellLoadState>>>& aLoadState) {
   MOZ_DIAGNOSTIC_ASSERT(!aLoadState);
 
   aCanReload = true;
@@ -1448,24 +1456,24 @@ void CanonicalBrowsingContext::NotifyOnHistoryReload(
     return;
   }
 
+  bool reloadActiveEntry = false;
   if (mActiveEntry) {
     shistory->PrepareReloadEntry(mActiveEntry, aReloadFlags);
     aLoadState.emplace(WrapMovingNotNull(
         RefPtr{CreateLoadInfo(mActiveEntry, NavigationType::Reload)}));
-    aReloadActiveEntry.emplace(true);
+    reloadActiveEntry = true;
   } else if (!mLoadingEntries.IsEmpty()) {
     RefPtr<SessionHistoryEntry> loadingEntry =
         mLoadingEntries.LastElement().mEntry;
     shistory->PrepareReloadEntry(loadingEntry, aReloadFlags);
     aLoadState.emplace(WrapMovingNotNull(
         RefPtr{CreateLoadInfo(loadingEntry, NavigationType::Reload)}));
-    aReloadActiveEntry.emplace(false);
+    reloadActiveEntry = false;
   }
 
   if (aLoadState) {
     // Use 0 as the offset, since aLoadState will be be used for reload.
-    aLoadState.ref()->SetLoadIsFromSessionHistory(0,
-                                                  aReloadActiveEntry.value());
+    aLoadState.ref()->SetLoadIsFromSessionHistory(0, reloadActiveEntry);
   }
   // If we don't have an active entry and we don't have a loading entry then
   // the nsDocShell will create a load state based on its document.
@@ -2130,7 +2138,7 @@ void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
 }
 
 uint32_t CanonicalBrowsingContext::CountSiteOrigins(
-    GlobalObject& aGlobal,
+    GlobalObject& /*aGlobal*/,
     const Sequence<OwningNonNull<BrowsingContext>>& aRoots) {
   nsTHashSet<nsCString> uniqueSiteOrigins;
 
@@ -2187,7 +2195,7 @@ void CanonicalBrowsingContext::LoadURI(nsIURI* aURI,
                                        ErrorResult& aError) {
   RefPtr<nsDocShellLoadState> loadState;
   nsresult rv = nsDocShellLoadState::CreateFromLoadURIOptions(
-      this, aURI, aOptions, getter_AddRefs(loadState));
+      aURI, aOptions, getter_AddRefs(loadState));
   MOZ_ASSERT(rv != NS_ERROR_MALFORMED_URI);
 
   if (NS_FAILED(rv)) {
@@ -3144,7 +3152,8 @@ void CanonicalBrowsingContext::DeactivateDocuments(
     Group()->EachParent([this, &targetInfo, aNavigationType,
                          aForUnload](ContentParent* aContentParent) {
       (void)aContentParent->SendDeactivateDocuments(
-          this, targetInfo, aNavigationType, aForUnload);
+          this, GetContentParent() == aContentParent ? targetInfo : Nothing(),
+          aNavigationType, aForUnload);
     });
 
     // When the old document unloads (aForUnload) it is destroyed rather than
@@ -3169,14 +3178,28 @@ void CanonicalBrowsingContext::DeactivateDocuments(
 void CanonicalBrowsingContext::ReactivateDocuments(
     SessionHistoryEntry* aEntry,
     SessionHistoryEntry* aPreviousEntryForActivation) {
-  nsTArray<SessionHistoryInfo> topNewSHIs;
+  nsTArray<NavigationReactivationData> reactivationData;
 
   if (Navigation::IsAPIEnabled()) {
-    nsSHistory::WalkContiguousEntriesInOrder(
-        aEntry, [&topNewSHIs](auto* aContiguousEntry) {
-          topNewSHIs.AppendElement(aContiguousEntry->Info());
-          return true;
-        });
+    PreOrderWalk([&](BrowsingContext* aContext) {
+      RefPtr<SessionHistoryEntry> activeEntry =
+          aContext == this
+              ? aEntry
+              : aContext->Canonical()->GetActiveSessionHistoryEntry();
+      if (!activeEntry) {
+        return;
+      }
+      nsTArray<SessionHistoryInfo> newSHIs;
+      nsSHistory::WalkContiguousEntriesInOrder(
+          activeEntry, [&newSHIs](auto* aContiguousEntry) {
+            newSHIs.AppendElement(aContiguousEntry->Info());
+            return true;
+          });
+      reactivationData.AppendElement(NavigationReactivationData(
+          aContext,
+          aContext == this ? mActiveEntry->Info() : activeEntry->Info(),
+          std::move(newSHIs)));
+    });
   }
 
   Maybe previousEntryForActivation =
@@ -3187,21 +3210,24 @@ void CanonicalBrowsingContext::ReactivateDocuments(
           }),
           Some(NavigationType::Traverse));
   if (IsInProcess()) {
-    BrowsingContext::ReactivateDocuments(Some(mActiveEntry->Info()), topNewSHIs,
+    BrowsingContext::ReactivateDocuments(reactivationData,
                                          previousEntryForActivation);
 
   } else {
     Group()->EachParent([&](ContentParent* aContentParent) {
-      nsTArray<SessionHistoryInfo> newSHIs;
-      Maybe<SessionHistoryInfo> reactivatedEntry;
+      nsTArray<NavigationReactivationData> processData;
+      for (const auto& data : reactivationData) {
+        if (data.context().get_canonical()->GetContentParent() ==
+            aContentParent) {
+          processData.AppendElement(data);
+        }
+      }
       Maybe<PreviousSessionHistoryInfo> previousEntry;
       if (GetContentParent() == aContentParent && Navigation::IsAPIEnabled()) {
-        newSHIs.AppendElements(std::move(topNewSHIs));
-        reactivatedEntry.emplace(mActiveEntry->Info());
         previousEntry = previousEntryForActivation;
       }
-      (void)aContentParent->SendReactivateDocuments(this, reactivatedEntry,
-                                                    newSHIs, previousEntry);
+      (void)aContentParent->SendReactivateDocuments(this, processData,
+                                                    previousEntry);
     });
 
     UpdateCurrentTopByBrowserId(this);
@@ -3753,7 +3779,7 @@ struct ClearSiteWalkHistoryData {
 // static
 nsresult CanonicalBrowsingContext::ContainsSameOriginBfcacheEntry(
     SessionHistoryEntry* aEntry, mozilla::dom::BrowsingContext* aBC,
-    int32_t aChildIndex, void* aData) {
+    int32_t /*aChildIndex*/, void* aData) {
   if (!aEntry) {
     return NS_OK;
   }

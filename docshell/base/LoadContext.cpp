@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -43,9 +44,7 @@ LoadContext::LoadContext(OriginAttributes& aAttrs)
   // This constructor does not have a base load context, so we need to decide
   // the mUseTrackingProtection based on prefs.
   mUseTrackingProtection =
-      StaticPrefs::privacy_trackingprotection_enabled() ||
-      (UsePrivateBrowsing() &&
-       StaticPrefs::privacy_trackingprotection_pbmode_enabled());
+      AntiTrackingUtils::IsTrackingProtectionEnabled(UsePrivateBrowsing());
 }
 
 LoadContext::LoadContext(nsIPrincipal* aPrincipal,
@@ -62,9 +61,7 @@ LoadContext::LoadContext(nsIPrincipal* aPrincipal,
   if (!aOptionalBase) {
     // Fallback to prefs to determine if tracking protection is enabled.
     mUseTrackingProtection =
-        StaticPrefs::privacy_trackingprotection_enabled() ||
-        (UsePrivateBrowsing() &&
-         StaticPrefs::privacy_trackingprotection_pbmode_enabled());
+        AntiTrackingUtils::IsTrackingProtectionEnabled(UsePrivateBrowsing());
 
     return;
   }
@@ -127,7 +124,7 @@ LoadContext::GetUsePrivateBrowsing(bool* aUsePrivateBrowsing) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetUsePrivateBrowsing(bool aUsePrivateBrowsing) {
+LoadContext::SetUsePrivateBrowsing(bool /*aUsePrivateBrowsing*/) {
   MOZ_ASSERT(mIsNotNull);
 
   // We shouldn't need this on parent...
@@ -135,7 +132,7 @@ LoadContext::SetUsePrivateBrowsing(bool aUsePrivateBrowsing) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetPrivateBrowsing(bool aUsePrivateBrowsing) {
+LoadContext::SetPrivateBrowsing(bool /*aUsePrivateBrowsing*/) {
   MOZ_ASSERT(mIsNotNull);
 
   // We shouldn't need this on parent...
@@ -153,7 +150,7 @@ LoadContext::GetUseRemoteTabs(bool* aUseRemoteTabs) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetRemoteTabs(bool aUseRemoteTabs) {
+LoadContext::SetRemoteTabs(bool /*aUseRemoteTabs*/) {
   MOZ_ASSERT(mIsNotNull);
 
   // We shouldn't need this on parent...
@@ -171,7 +168,7 @@ LoadContext::GetUseRemoteSubframes(bool* aUseRemoteSubframes) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetRemoteSubframes(bool aUseRemoteSubframes) {
+LoadContext::SetRemoteSubframes(bool /*aUseRemoteSubframes*/) {
   MOZ_ASSERT(mIsNotNull);
 
   // We shouldn't need this on parent...
@@ -202,7 +199,7 @@ LoadContext::GetUseTrackingProtection(bool* aUseTrackingProtection) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetUseTrackingProtection(bool aUseTrackingProtection) {
+LoadContext::SetUseTrackingProtection(bool /*aUseTrackingProtection*/) {
   MOZ_ASSERT_UNREACHABLE("Should only be set through nsDocShell");
 
   return NS_ERROR_UNEXPECTED;

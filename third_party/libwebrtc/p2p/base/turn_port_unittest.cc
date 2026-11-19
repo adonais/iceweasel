@@ -25,8 +25,10 @@
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/environment/environment.h"
+#include "api/local_network_access_permission.h"
 #include "api/packet_socket_factory.h"
 #include "api/test/mock_async_dns_resolver.h"
+#include "api/test/mock_local_network_access_permission.h"
 #include "api/test/rtc_error_matchers.h"
 #include "api/transport/ecn_marking.h"
 #include "api/transport/stun.h"
@@ -78,6 +80,7 @@ using ::testing::_;
 using ::testing::Eq;
 using ::testing::IsTrue;
 using ::testing::Ne;
+using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::ReturnPointee;
 
@@ -291,6 +294,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     args.config = &config;
     args.turn_customizer = turn_customizer_.get();
     args.ice_tiebreaker = kTiebreakerDefault;
+    args.lna_permission_factory = lna_permission_factory_.get();
 
     turn_port_ = TurnPort::Create(args, 0, 0);
     if (!turn_port_) {
@@ -571,30 +575,27 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     ASSERT_EQ(0U, turn_port_->Candidates().size());
   }
 
-  // A certain security exploit works by redirecting to a loopback address,
-  // which doesn't ever actually make sense. So redirects to loopback should
-  // be treated as errors.
-  // See: https://bugs.chromium.org/p/chromium/issues/detail?id=649118
-  void TestTurnAlternateServerLoopback(ProtocolType protocol_type, bool ipv6) {
+  // Redirects the allocation to `redirect_address` and verifies that the
+  // redirect is treated as an error, i.e. that the allocation fails and that
+  // nothing is sent to `redirect_address`.
+  void TestTurnAlternateServerBlocked(ProtocolType protocol_type,
+                                      bool ipv6,
+                                      const SocketAddress& redirect_address) {
     const SocketAddress& local_address = ipv6 ? kLocalIPv6Addr : kLocalAddr1;
     const SocketAddress& server_address =
         ipv6 ? kTurnIPv6IntAddr : kTurnIntAddr;
 
     std::vector<SocketAddress> redirect_addresses;
-    // Pick an unusual address in the 127.0.0.0/8 range to make sure more than
-    // 127.0.0.1 is covered.
-    SocketAddress loopback_address(ipv6 ? "::1" : "127.1.2.3",
-                                   TURN_SERVER_PORT);
-    redirect_addresses.push_back(loopback_address);
+    redirect_addresses.push_back(redirect_address);
 
-    // Make a socket and bind it to the local port, to make extra sure no
+    // Make a socket and bind it to the redirect address, to make extra sure no
     // packet is sent to this address.
-    std::unique_ptr<Socket> loopback_socket(ss_->CreateSocket(
+    std::unique_ptr<Socket> redirect_socket(ss_->CreateSocket(
         AF_INET, protocol_type == PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM));
-    ASSERT_NE(nullptr, loopback_socket.get());
-    ASSERT_EQ(0, loopback_socket->Bind(loopback_address));
-    if (protocol_type == PROTO_TCP) {
-      ASSERT_EQ(0, loopback_socket->Listen(1));
+    ASSERT_NE(nullptr, redirect_socket.get());
+    ASSERT_EQ(0, redirect_socket->Bind(redirect_address));
+    if (protocol_type != PROTO_UDP) {
+      ASSERT_EQ(0, redirect_socket->Listen(1));
     }
 
     TestTurnRedirector redirector(redirect_addresses);
@@ -608,18 +609,91 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     EXPECT_TRUE(WaitUntil([&] { return turn_error_; },
                           {.timeout = TimeToGetTurnCandidate(protocol_type),
                            .clock = &time_controller_}));
+    EXPECT_EQ(server_address, turn_port_->server_address().address);
 
     // Wait for some extra time, and make sure no packets were received on the
-    // loopback port we created (or in the case of TCP, no connection attempt
-    // occurred).
+    // redirect port we created (or in the case of TCP and TLS, no connection
+    // attempt occurred).
     time_controller_.AdvanceTime(kSimulatedRtt);
     if (protocol_type == PROTO_UDP) {
       char buf[1];
-      EXPECT_EQ(-1, loopback_socket->Recv(&buf, 1, nullptr));
+      EXPECT_EQ(-1, redirect_socket->Recv(&buf, 1, nullptr));
     } else {
-      std::unique_ptr<Socket> accepted_socket(loopback_socket->Accept(nullptr));
+      std::unique_ptr<Socket> accepted_socket(redirect_socket->Accept(nullptr));
       EXPECT_EQ(nullptr, accepted_socket.get());
     }
+  }
+
+  // A certain security exploit works by redirecting to a loopback address,
+  // which doesn't ever actually make sense. So redirects to loopback should
+  // be treated as errors.
+  // See: https://bugs.chromium.org/p/chromium/issues/detail?id=649118
+  void TestTurnAlternateServerLoopback(ProtocolType protocol_type, bool ipv6) {
+    // Pick an unusual address in the 127.0.0.0/8 range to make sure more than
+    // 127.0.0.1 is covered.
+    TestTurnAlternateServerBlocked(
+        protocol_type, ipv6,
+        SocketAddress(ipv6 ? "::1" : "127.1.2.3", TURN_SERVER_PORT));
+  }
+
+  // Sending to the unspecified address (0.0.0.0 or ::) reaches the local host
+  // on some platforms, so redirects to it must be treated as errors, just like
+  // redirects to loopback.
+  // See: https://crbug.com/502821327
+  void TestTurnAlternateServerAnyAddress(ProtocolType protocol_type,
+                                         bool ipv6) {
+    TestTurnAlternateServerBlocked(
+        protocol_type, ipv6,
+        SocketAddress(ipv6 ? "::" : "0.0.0.0", TURN_SERVER_PORT));
+  }
+
+  // Redirects the allocation to `kTurnAlternateIntAddr`. Unlike connecting to
+  // the original server, connecting to the alternate server requires Local
+  // Network Access permission, and the permission request is responded to
+  // with `status`. Verifies that the allocation only succeeds if the
+  // permission is granted.
+  void TestTurnAlternateServerLocalNetworkAccess(
+      ProtocolType protocol_type,
+      LocalNetworkAccessPermissionStatus status) {
+    auto lna_permission_factory =
+        std::make_unique<MockLocalNetworkAccessPermissionFactory>();
+    EXPECT_CALL(*lna_permission_factory, Create()).WillRepeatedly([status] {
+      auto permission =
+          std::make_unique<NiceMock<MockLocalNetworkAccessPermission>>();
+      ON_CALL(*permission, ShouldRequestPermission(kTurnAlternateIntAddr))
+          .WillByDefault(Return(true));
+      ON_CALL(*permission, RequestPermission(_, _))
+          .WillByDefault(
+              [status](
+                  const SocketAddress& /* addr */,
+                  absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)>
+                      callback) {
+                Thread::Current()->PostTask(
+                    [callback = std::move(callback), status]() mutable {
+                      std::move(callback)(status);
+                    });
+              });
+      return permission;
+    });
+    lna_permission_factory_ = std::move(lna_permission_factory);
+
+    std::vector<SocketAddress> redirect_addresses;
+    redirect_addresses.push_back(kTurnAlternateIntAddr);
+    TestTurnRedirector redirector(redirect_addresses);
+
+    turn_server_.AddInternalSocket(kTurnIntAddr, protocol_type);
+    turn_server_.AddInternalSocket(kTurnAlternateIntAddr, protocol_type);
+    turn_server_.set_redirect_hook(&redirector);
+    CreateTurnPort(kTurnUsername, kTurnPassword,
+                   ProtocolAddress(kTurnIntAddr, protocol_type));
+
+    turn_port_->PrepareAddress();
+    const bool granted = status == LocalNetworkAccessPermissionStatus::kGranted;
+    EXPECT_TRUE(
+        WaitUntil([&] { return granted ? turn_ready_ : turn_error_; },
+                  {.timeout = TimeToGetAlternateTurnCandidate(protocol_type),
+                   .clock = &time_controller_}));
+    EXPECT_EQ(granted ? 1U : 0U, turn_port_->Candidates().size());
   }
 
   void TestTurnConnection(ProtocolType protocol_type) {
@@ -905,6 +979,9 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
   Thread* main_;
   std::unique_ptr<AsyncPacketSocket> socket_;
   TestTurnServer turn_server_;
+  // Passed to the TURN port if set, so it must outlive `turn_port_`.
+  std::unique_ptr<LocalNetworkAccessPermissionFactoryInterface>
+      lna_permission_factory_;
   std::unique_ptr<TurnPort> turn_port_;
   std::unique_ptr<UDPPort> udp_port_;
   bool turn_ready_ = false;
@@ -1630,6 +1707,119 @@ TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTlsIpv6) {
   TestTurnAlternateServerLoopback(PROTO_TLS, true);
 }
 
+// Test catching the case of a redirect to the unspecified address.
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressUdpIpv4) {
+  TestTurnAlternateServerAnyAddress(PROTO_UDP, false);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressUdpIpv6) {
+  TestTurnAlternateServerAnyAddress(PROTO_UDP, true);
+}
+
+// The IPv4-mapped form of the unspecified address (::ffff:0.0.0.0) must be
+// blocked as well, since dual-stack sockets treat it like 0.0.0.0.
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressUdpIpv4Mapped) {
+  TestTurnAlternateServerBlocked(
+      PROTO_UDP, /*ipv6=*/true,
+      SocketAddress("::ffff:0.0.0.0", TURN_SERVER_PORT));
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTcpIpv4) {
+  TestTurnAlternateServerAnyAddress(PROTO_TCP, false);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTcpIpv6) {
+  TestTurnAlternateServerAnyAddress(PROTO_TCP, true);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTcpIpv4Mapped) {
+  TestTurnAlternateServerBlocked(
+      PROTO_TCP, /*ipv6=*/true,
+      SocketAddress("::ffff:0.0.0.0", TURN_SERVER_PORT));
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTlsIpv4) {
+  TestTurnAlternateServerAnyAddress(PROTO_TLS, false);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTlsIpv6) {
+  TestTurnAlternateServerAnyAddress(PROTO_TLS, true);
+}
+
+// Test that a redirect to a server that requires Local Network Access
+// permission only succeeds if the permission is granted.
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessGrantedUDP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_UDP, LocalNetworkAccessPermissionStatus::kGranted);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessGrantedTCP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_TCP, LocalNetworkAccessPermissionStatus::kGranted);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessDeniedUDP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_UDP, LocalNetworkAccessPermissionStatus::kDenied);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessDeniedTCP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_TCP, LocalNetworkAccessPermissionStatus::kDenied);
+}
+
+// Redirects for UDP reuse the socket, which may be closed while the Local
+// Network Access permission for the alternate server is pending. Granting the
+// permission after that must not send an Allocate request on the closed socket.
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessSocketClosedUDP) {
+  absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)>
+      permission_callback;
+  auto lna_permission_factory =
+      std::make_unique<MockLocalNetworkAccessPermissionFactory>();
+  EXPECT_CALL(*lna_permission_factory, Create())
+      .WillRepeatedly([&permission_callback] {
+        auto permission =
+            std::make_unique<NiceMock<MockLocalNetworkAccessPermission>>();
+        ON_CALL(*permission, ShouldRequestPermission(kTurnAlternateIntAddr))
+            .WillByDefault(Return(true));
+        // Hold on to the callback, so that the test decides when to respond.
+        ON_CALL(*permission, RequestPermission(_, _))
+            .WillByDefault(
+                [&permission_callback](
+                    const SocketAddress& /* addr */,
+                    absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)>
+                        callback) {
+                  permission_callback = std::move(callback);
+                });
+        return permission;
+      });
+  lna_permission_factory_ = std::move(lna_permission_factory);
+
+  std::vector<SocketAddress> redirect_addresses;
+  redirect_addresses.push_back(kTurnAlternateIntAddr);
+  TestTurnRedirector redirector(redirect_addresses);
+
+  turn_server_.AddInternalSocket(kTurnIntAddr, PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnAlternateIntAddr, PROTO_UDP);
+  turn_server_.set_redirect_hook(&redirector);
+  CreateTurnPort(kTurnUsername, kTurnPassword,
+                 ProtocolAddress(kTurnIntAddr, PROTO_UDP));
+
+  turn_port_->PrepareAddress();
+  ASSERT_TRUE(WaitUntil([&] { return permission_callback != nullptr; },
+                        {.timeout = TimeToGetAlternateTurnCandidate(PROTO_UDP),
+                         .clock = &time_controller_}));
+
+  turn_port_->socket()->NotifyClosedForTest(1);
+  std::move(permission_callback)(LocalNetworkAccessPermissionStatus::kGranted);
+  EXPECT_FALSE(turn_port_->HasRequests());
+
+  time_controller_.AdvanceTime(TimeToGetTurnCandidate(PROTO_UDP));
+  EXPECT_TRUE(turn_error_);
+  EXPECT_FALSE(turn_ready_);
+  EXPECT_EQ(turn_port_->Candidates().size(), 0U);
+}
+
 // Do a TURN allocation and try to send a packet to it from the outside.
 // The packet should be dropped. Then, try to send a packet from TURN to the
 // outside. It should reach its destination. Finally, try again from the
@@ -2195,6 +2385,12 @@ TEST_F(TurnPortTest, TestTurnDangerousAlternateServer) {
   // should be gathered.
   EXPECT_FALSE(turn_ready_);
   ASSERT_EQ(0U, turn_port_->Candidates().size());
+}
+
+// Redirects for UDP reuse the socket and don't go through PrepareAddress(), but
+// must be blocked from going to a dangerous port too.
+TEST_F(TurnPortTest, TestTurnDangerousAlternateServerUDP) {
+  TestTurnAlternateServerBlocked(PROTO_UDP, /*ipv6=*/false, kTurnDangerousAddr);
 }
 
 class TurnPortWithMockDnsResolverTest : public TurnPortTest {

@@ -296,31 +296,11 @@ add_task(async function test_pref_remembering() {
   dh.open();
   await dh.promiseClosed;
 
-  if (!settingsRedesignHistoryEnabled()) {
-    // test rememebering prefs from the clear history context
-    // since clear history and clear site data have seperate remembering
-    // of prefs
-    dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-    dh.onload = function () {
-      this.checkPrefCheckbox("cookiesAndStorage", true);
-      this.checkPrefCheckbox("siteSettings", false);
-      this.checkPrefCheckbox("cache", false);
-
-      this.acceptDialog();
-    };
-    dh.open();
-    await dh.promiseClosed;
-  }
-
   // validate if prefs are remembered across both clear history and browser
   dh = new ClearHistoryDialogHelper({ mode: "browser" });
   dh.onload = function () {
     this.validateCheckbox("cookiesAndStorage", true);
     this.validateCheckbox("siteSettings", false);
-    if (!settingsRedesignHistoryEnabled()) {
-      this.validateCheckbox("cache", false);
-    }
-
     this.cancelDialog();
   };
   dh.open();
@@ -766,116 +746,114 @@ add_task(async function test_clear_on_shutdown() {
   await SiteDataTestUtils.clear();
 });
 
-if (!settingsRedesignHistoryEnabled()) {
-  add_task(async function testClearHistoryCheckboxStatesAfterMigration() {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["privacy.cpd.history", false],
-        ["privacy.cpd.formdata", true],
-        ["privacy.cpd.cookies", true],
-        ["privacy.cpd.offlineApps", false],
-        ["privacy.cpd.sessions", false],
-        ["privacy.cpd.siteSettings", false],
-        ["privacy.cpd.cache", true],
-        // Set cookiesAndStorage to verify that the pref is flipped in the test
-        ["privacy.clearHistory.cookiesAndStorage", false],
-        // We set the old migrate pref to false to simulate a user who has not migrated to the new dialog.
-        // we should follow the user's old prefs with "cpd." prefix in this case.
-        ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", false],
-        ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
-      ],
-    });
-
-    let dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-    dh.onload = function () {
-      this.validateCheckbox("cookiesAndStorage", true);
-      this.validateCheckbox("browsingHistoryAndDownloads", false);
-      this.validateCheckbox("formdata", true);
-      this.validateCheckbox("cache", true);
-      this.validateCheckbox("siteSettings", false);
-
-      this.checkPrefCheckbox("siteSettings", true);
-      this.checkPrefCheckbox("cookiesAndStorage", false);
-      this.acceptDialog();
-    };
-    dh.open();
-    await dh.promiseClosed;
-
-    is(
-      Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
-      true,
-      "Migration is complete for cpd branch"
-    );
-
-    // make sure the migration doesn't run again
-    dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-    dh.onload = function () {
-      this.validateCheckbox("siteSettings", true);
-      this.validateCheckbox("cookiesAndStorage", false);
-      this.cancelDialog();
-    };
-    dh.open();
-    await dh.promiseClosed;
+add_task(async function testClearHistoryCheckboxStatesAfterMigration() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.cpd.history", false],
+      ["privacy.cpd.formdata", true],
+      ["privacy.cpd.cookies", true],
+      ["privacy.cpd.offlineApps", false],
+      ["privacy.cpd.sessions", false],
+      ["privacy.cpd.siteSettings", false],
+      ["privacy.cpd.cache", true],
+      // Set cookiesAndStorage to verify that the pref is flipped in the test
+      ["privacy.clearHistory.cookiesAndStorage", false],
+      // We set the old migrate pref to false to simulate a user who has not migrated to the new dialog.
+      // we should follow the user's old prefs with "cpd." prefix in this case.
+      ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", false],
+      ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
+    ],
   });
 
-  add_task(async function testClearHistoryCheckboxStatesAfterMigration3() {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["privacy.cpd.history", false],
-        ["privacy.cpd.formdata", true],
-        ["privacy.cpd.cookies", true],
-        ["privacy.cpd.offlineApps", false],
-        ["privacy.cpd.sessions", false],
-        ["privacy.cpd.siteSettings", true],
-        ["privacy.cpd.cache", true],
-        // Verify that prefs not in not touched in migration from v2
-        ["privacy.clearHistory.cookiesAndStorage", false],
-        ["privacy.clearHistory.siteSettings", false],
-        ["privacy.clearHistory.cache", false],
-        // Verify that formData and browsingHistoryAndDownloads inherit this value
-        ["privacy.clearHistory.historyFormDataAndDownloads", true],
-        // migrate from v2 to v3, dont redo the v1 to v2 migration
-        ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", true],
-        ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
-      ],
-    });
+  let dh = new ClearHistoryDialogHelper({ mode: "browser" });
+  dh.onload = function () {
+    this.validateCheckbox("cookiesAndStorage", true);
+    this.validateCheckbox("browsingHistoryAndDownloads", false);
+    this.validateCheckbox("formdata", true);
+    this.validateCheckbox("cache", true);
+    this.validateCheckbox("siteSettings", false);
 
-    let dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-    dh.onload = function () {
-      // migration to v3 shouldn't modify these values
-      this.validateCheckbox("cookiesAndStorage", false);
-      this.validateCheckbox("siteSettings", false);
-      this.validateCheckbox("cache", false);
+    this.checkPrefCheckbox("siteSettings", true);
+    this.checkPrefCheckbox("cookiesAndStorage", false);
+    this.acceptDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
 
-      // migration to v3 should set them initially to true from historyFormDataAndDownloads pref
-      this.validateCheckbox("browsingHistoryAndDownloads", true);
-      this.validateCheckbox("formdata", true);
+  is(
+    Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
+    true,
+    "Migration is complete for cpd branch"
+  );
 
-      // flip two prefs to open to verify migration doesn't happen again and checkboxes retain their value
-      this.checkPrefCheckbox("siteSettings", true);
-      this.checkPrefCheckbox("browsingHistoryAndDownloads", false);
-      this.acceptDialog();
-    };
-    dh.open();
-    await dh.promiseClosed;
+  // make sure the migration doesn't run again
+  dh = new ClearHistoryDialogHelper({ mode: "browser" });
+  dh.onload = function () {
+    this.validateCheckbox("siteSettings", true);
+    this.validateCheckbox("cookiesAndStorage", false);
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
 
-    is(
-      Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
-      true,
-      "Migration is complete for cpd branch"
-    );
-
-    // make sure the migration doesn't run again
-    dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-    dh.onload = function () {
-      this.validateCheckbox("siteSettings", true);
-      this.validateCheckbox("browsingHistoryAndDownloads", false);
-      this.cancelDialog();
-    };
-    dh.open();
-    await dh.promiseClosed;
+add_task(async function testClearHistoryCheckboxStatesAfterMigration3() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.cpd.history", false],
+      ["privacy.cpd.formdata", true],
+      ["privacy.cpd.cookies", true],
+      ["privacy.cpd.offlineApps", false],
+      ["privacy.cpd.sessions", false],
+      ["privacy.cpd.siteSettings", true],
+      ["privacy.cpd.cache", true],
+      // Verify that prefs not in not touched in migration from v2
+      ["privacy.clearHistory.cookiesAndStorage", false],
+      ["privacy.clearHistory.siteSettings", false],
+      ["privacy.clearHistory.cache", false],
+      // Verify that formData and browsingHistoryAndDownloads inherit this value
+      ["privacy.clearHistory.historyFormDataAndDownloads", true],
+      // migrate from v2 to v3, dont redo the v1 to v2 migration
+      ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", true],
+      ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
+    ],
   });
-}
+
+  let dh = new ClearHistoryDialogHelper({ mode: "browser" });
+  dh.onload = function () {
+    // migration to v3 shouldn't modify these values
+    this.validateCheckbox("cookiesAndStorage", false);
+    this.validateCheckbox("siteSettings", false);
+    this.validateCheckbox("cache", false);
+
+    // migration to v3 should set them initially to true from historyFormDataAndDownloads pref
+    this.validateCheckbox("browsingHistoryAndDownloads", true);
+    this.validateCheckbox("formdata", true);
+
+    // flip two prefs to open to verify migration doesn't happen again and checkboxes retain their value
+    this.checkPrefCheckbox("siteSettings", true);
+    this.checkPrefCheckbox("browsingHistoryAndDownloads", false);
+    this.acceptDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+
+  is(
+    Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
+    true,
+    "Migration is complete for cpd branch"
+  );
+
+  // make sure the migration doesn't run again
+  dh = new ClearHistoryDialogHelper({ mode: "browser" });
+  dh.onload = function () {
+    this.validateCheckbox("siteSettings", true);
+    this.validateCheckbox("browsingHistoryAndDownloads", false);
+    this.cancelDialog();
+  };
+  dh.open();
+  await dh.promiseClosed;
+});
 
 /**
  * Both contexts that delete data read the same, whichever entry point opened
@@ -965,26 +943,94 @@ add_task(async function testCloseButtonCancels() {
 
 /**
  * The close button comes first in the document, but keyboard users should
- * start on the dialog's content rather than on it.
+ * start on the dialog's content rather than on it. That initial focus only
+ * shows a focus ring if the dialog was opened with the keyboard.
  */
 add_task(async function testCloseButtonNotInitiallyFocused() {
-  let dh = new ClearHistoryDialogHelper();
-  dh.onload = async function () {
-    let doc = this.win.document;
+  for (let [description, trigger, expectRing] of [
+    ["Opened with the mouse", () => openFromAppMenuWithInput(false), false],
+    [
+      "Opened from the app menu with the keyboard",
+      () => openFromAppMenuWithInput(true),
+      true,
+    ],
+    [
+      "Opened with the keyboard shortcut",
+      () =>
+        EventUtils.synthesizeKey("KEY_Delete", {
+          accelKey: true,
+          shiftKey: true,
+        }),
+      true,
+    ],
+  ]) {
+    let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+      null,
+      "chrome://browser/content/sanitize_v2.xhtml",
+      { isSubDialog: true }
+    );
+    await trigger();
+    let win = await dialogPromise;
+    let doc = win.document;
     await TestUtils.waitForCondition(
       () => doc.activeElement && doc.activeElement != doc.documentElement,
       "Wait for the dialog to set its initial focus"
     );
     is(
       doc.activeElement,
-      this.getDurationDropdown(),
-      "Initial focus is on the duration dropdown, not the close button"
+      doc.getElementById("sanitizeDurationChoice"),
+      `${description}: initial focus is on the duration dropdown, not the close button`
     );
-    this.cancelDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
+    is(
+      doc.activeElement.matches(":focus-visible"),
+      expectRing,
+      `${description}: the initial focus ${expectRing ? "shows" : "doesn't show"} a focus ring`
+    );
+    if (!expectRing) {
+      EventUtils.synthesizeKey("KEY_Tab", {}, win);
+      ok(
+        doc.activeElement.matches(":focus-visible"),
+        `${description}: moving focus with the keyboard shows the focus ring`
+      );
+    }
+    let unloaded = BrowserTestUtils.waitForEvent(win, "unload");
+    doc.querySelector("dialog").cancelDialog();
+    await unloaded;
+  }
 });
+
+/**
+ * Open the dialog from the History view of the app menu.
+ *
+ * @param {boolean} withKeyboard - Whether to get to the item and activate it
+ *        with the arrow keys and Enter, or click it with the mouse.
+ */
+async function openFromAppMenuWithInput(withKeyboard) {
+  const { CustomizableUITestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/CustomizableUITestUtils.sys.mjs"
+  );
+  await new CustomizableUITestUtils(window).openMainMenu();
+  let activate = id => {
+    let item = PanelMultiView.getViewNode(document, id);
+    if (!withKeyboard) {
+      EventUtils.synthesizeMouseAtCenter(item, {});
+      return;
+    }
+    let { length } = item
+      .closest("panelview")
+      .querySelectorAll("toolbarbutton");
+    for (let i = 0; i < length && document.activeElement != item; i++) {
+      EventUtils.synthesizeKey("KEY_ArrowDown");
+    }
+    is(document.activeElement, item, `${id} is focused with the arrow keys`);
+    EventUtils.synthesizeKey("KEY_Enter");
+  };
+  let historyView = PanelMultiView.getViewNode(document, "PanelUI-history");
+  let shown = BrowserTestUtils.waitForEvent(historyView, "ViewShown");
+  activate("appMenu-history-button");
+  await shown;
+  activate("appMenuClearRecentHistory");
+}
 
 /**
  * Clear on shutdown has no duration dropdown, so it keeps the default initial
@@ -1033,15 +1079,19 @@ add_task(async function testNoCloseButtonInPreferences() {
 });
 
 /**
- * A caller can ask for the windows to be replaced when history is cleared.
- * The dialog then adds openWindows to the same sanitization, which closes the
- * windows before clearing anything else.
+ * Opened from the fire button, the dialog deletes only the selected data and
+ * keeps the windows open, even when everything is selected over all time.
  */
-add_task(async function testCloseWindowsWithHistory() {
+add_task(async function testFireButtonDialogKeepsWindowsOpen() {
+  // Accepting saves the selection, so restore it afterwards.
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["privacy.clearHistory.browsingHistoryAndDownloads", true],
-      ["privacy.clearHistory.cookiesAndStorage", true],
+      ["privacy.sanitize.timeSpan", Sanitizer.TIMESPAN_HOUR],
+      ["privacy.clearSiteData.browsingHistoryAndDownloads", false],
+      ["privacy.clearSiteData.cookiesAndStorage", false],
+      ["privacy.clearSiteData.cache", false],
+      ["privacy.clearSiteData.formdata", false],
+      ["privacy.clearSiteData.siteSettings", false],
     ],
   });
   // Really closing every window would take the test harness with it.
@@ -1053,37 +1103,24 @@ add_task(async function testCloseWindowsWithHistory() {
   };
 
   try {
-    for (let [showUIOptions, clearHistory] of [
-      [{ closeWindowsWithHistory: true }, true],
-      [{ closeWindowsWithHistory: true }, false],
-      [undefined, true],
-    ]) {
-      let dh = new ClearHistoryDialogHelper({ showUIOptions });
-      dh.onload = function () {
-        this.checkPrefCheckbox("browsingHistoryAndDownloads", clearHistory);
-        this.checkPrefCheckbox("cookiesAndStorage", true);
-        this.acceptDialog();
-      };
-      dh.open();
-      await dh.promiseClosed;
-    }
+    let dh = new ClearHistoryDialogHelper({
+      mode: "clearSiteData",
+      showUIOptions: { entryPoint: Sanitizer.DIALOG_ENTRY_POINTS.FIRE_BUTTON },
+    });
+    dh.onload = function () {
+      this.selectDuration(Sanitizer.TIMESPAN_EVERYTHING);
+      this.checkAllCheckboxes();
+      this.acceptDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
   } finally {
     Sanitizer.sanitize = originalSanitize;
   }
 
-  Assert.equal(calls.length, 3, "Each dialog sanitized once");
-  ok(
-    calls[0].includes("openWindows"),
-    "Clearing history with the option also replaces the windows"
-  );
-  ok(
-    !calls[1].includes("openWindows"),
-    "Without history the windows stay open"
-  );
-  ok(
-    !calls[2].includes("openWindows"),
-    "Without the option the windows stay open"
-  );
+  Assert.equal(calls.length, 1, "The dialog sanitized once");
+  ok(calls[0].includes("browsingHistoryAndDownloads"), "History is deleted");
+  ok(!calls[0].includes("openWindows"), "The windows stay open");
   await SpecialPowers.popPrefEnv();
 });
 
@@ -1259,10 +1296,7 @@ add_task(async function testClearOnShutdownRecordsNoTelemetry() {
 
 add_task(async function testSettingsEntryPoints() {
   let cases = [["clearSiteData", "settings_site_data"]];
-  // The redesigned Settings have no separate clear history button.
-  if (!settingsRedesignHistoryEnabled()) {
-    cases.push(["clearHistory", "settings_history"]);
-  }
+
   for (let [mode, entryPoint] of cases) {
     Services.fog.testResetFOG();
     let dh = new ClearHistoryDialogHelper({ mode });

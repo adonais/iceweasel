@@ -1,7 +1,6 @@
 [DEFAULT]
 skip-if = [
   "os == 'android'", # bug 1730213
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov",
 ]
 tags = "resistfingerprinting"
 

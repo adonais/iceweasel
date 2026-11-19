@@ -15,7 +15,6 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 AddonTestUtils.initMochitest(this);
 
 const PREF_NATIVE_THEME = "browser.theme.native-theme";
-const PREF_NOVA_ENABLED = "browser.nova.enabled";
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 const OTHER_THEME_ID = "other-theme@mozilla.org";
 
@@ -53,32 +52,11 @@ registerCleanupFunction(async () => {
   }
 });
 
-add_task(async function test_checkbox_hidden_when_nova_disabled() {
-  if (!IS_OS_LINUX) {
-    info("SKIPPED. This test is only meant to run on Linux");
-    return;
-  }
-
-  await SpecialPowers.pushPrefEnv({ set: [[PREF_NOVA_ENABLED, false]] });
-
-  const win = await loadInitialView("theme");
-  const checkbox = getNativeThemeCheckbox(win);
-  Assert.ok(
-    !BrowserTestUtils.isVisible(checkbox),
-    "native-theme-colors-checkbox should be hidden when nova is disabled"
-  );
-
-  await closeView(win);
-  await SpecialPowers.popPrefEnv();
-});
-
 add_task(async function test_checkbox_hidden_when_os_is_not_linux() {
   if (IS_OS_LINUX) {
     info("SKIPPED. This test is only meant to run on non-Linux platforms");
     return;
   }
-
-  await SpecialPowers.pushPrefEnv({ set: [[PREF_NOVA_ENABLED, true]] });
 
   const win = await loadInitialView("theme");
   const checkbox = getNativeThemeCheckbox(win);
@@ -92,7 +70,6 @@ add_task(async function test_checkbox_hidden_when_os_is_not_linux() {
   );
 
   await closeView(win);
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_checkbox_not_hidden_on_linux() {
@@ -103,7 +80,6 @@ add_task(async function test_checkbox_not_hidden_on_linux() {
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      [PREF_NOVA_ENABLED, true],
       // Set a non-default starting value (it defaults to true on Linux/GTK).
       [PREF_NATIVE_THEME, false],
     ],
@@ -203,10 +179,7 @@ add_task(async function test_checkbox_pref_changes() {
   }
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NATIVE_THEME, false],
-    ],
+    set: [[PREF_NATIVE_THEME, false]],
   });
 
   const win = await loadInitialView("theme");
@@ -262,10 +235,7 @@ add_task(async function test_checkbox_change_telemetry() {
   }
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NATIVE_THEME, false],
-    ],
+    set: [[PREF_NATIVE_THEME, false]],
   });
 
   const win = await loadInitialView("theme");

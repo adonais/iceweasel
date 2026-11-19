@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import multiprocessing
 import os
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
 from unittest import mock
@@ -19,6 +21,7 @@ except ImportError:
     psutil = None
 
 from mozsystemmonitor.resourcemonitor import (
+    FORWARD_ENV,
     SystemResourceMonitor,
     SystemResourceUsage,
     _parse_hg_source_url,
@@ -33,6 +36,23 @@ UBSAN_LINES = [
     "    #1 0x7f42401b0a33 in clone misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:100",
     f"SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior {UBSAN_FILE}:7106:33",
 ]
+
+
+# Monitors created by the tests shouldn't forward to the one running the tests
+# in automation.
+@pytest.fixture(autouse=True)
+def no_forwarding(monkeypatch):
+    monkeypatch.delenv(FORWARD_ENV, raising=False)
+
+
+def _wait_for_measurement(monitor, timeout=30):
+    """Wait for the first measurement, which takes a while when the
+    collecting process is spawned rather than forked, e.g. on macOS."""
+    deadline = time.monotonic() + timeout
+    while not monitor.measurements:
+        assert time.monotonic() < deadline, "no measurement received"
+        monitor._drain_pipe()
+        time.sleep(0.05)
 
 
 @unittest.skipIf(psutil is None, "Resource monitor requires psutil.")
@@ -121,6 +141,7 @@ class TestResourceMonitor(unittest.TestCase):
         monitor = SystemResourceMonitor(poll_interval=0.25)
 
         monitor.start()
+        _wait_for_measurement(monitor)
         time.sleep(1)
         monitor.stop()
 
@@ -1463,6 +1484,317 @@ class TestLsanLeakFrameRewrite(unittest.TestCase):
         self.assertNotIn("stack", data)
 
 
+@unittest.skipIf(psutil is None, "Resource monitor requires psutil.")
+class TestForwarding(unittest.TestCase):
+    def setUp(self):
+        fd, self.forward_path = tempfile.mkstemp()
+        os.close(fd)
+        self.addCleanup(os.unlink, self.forward_path)
+
+    def _child(self):
+        with mock.patch.dict(os.environ, {FORWARD_ENV: self.forward_path}):
+            return SystemResourceMonitor(poll_interval=0.1)
+
+    def test_forwarding(self):
+        parent = SystemResourceMonitor(poll_interval=0.1)
+        self.assertFalse(parent.forwarding)
+        parent.start()
+        parent.accept_forwarded(self.forward_path)
+
+        child = self._child()
+        self.assertTrue(child.forwarding)
+        child.start()
+        self.assertEqual(child.measurements, [])
+        child.record_event("event", data={"type": "Text", "text": "data"})
+        start = time.monotonic()
+        child.record_marker("marker", start, start + 0.1, "text")
+        with child.phase("phase"):
+            time.sleep(0.3)
+        child.forward_perfherder("suite", ["option"], "/upload")
+        child.stop()
+        parent.stop()
+
+        self.assertEqual(len(parent.events), 1)
+        self.assertEqual(
+            parent.events[0][1:], ("event", {"type": "Text", "text": "data"})
+        )
+        self.assertEqual(
+            parent.markers[0],
+            ("marker", start, start + 0.1, "text", SystemResourceMonitor.TASK_CATEGORY),
+        )
+        self.assertEqual(list(parent.phases), ["phase"])
+        self.assertEqual(len(parent.perfherder_requests), 1)
+        name, options, req_start, req_end, upload_dir, source = (
+            parent.perfherder_requests[0]
+        )
+        self.assertEqual((name, options, upload_dir), ("suite", ["option"], "/upload"))
+        self.assertEqual(req_start, child.start_time)
+        self.assertEqual(source, os.getpid())
+
+        data = parent.perfherder_data(name, options, req_start, req_end, source)
+        self.assertEqual(data["framework"], {"name": "job_resource_usage"})
+        self.assertEqual(
+            [suite["name"] for suite in data["suites"]],
+            ["suite.overall", "suite.phase"],
+        )
+        self.assertEqual(data["suites"][0]["extraOptions"], ["option"])
+
+    def test_forwarded_phase_name_conflict(self):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.start()
+        with monitor.phase("phase"):
+            pass
+        monitor._add_phase("phase", 1.0, 2.0, 1)
+        monitor._add_phase("phase", 3.0, 4.0, 2)
+        monitor.stop()
+        self.assertEqual(monitor.phases["phase (2)"], (1.0, 2.0))
+        self.assertEqual(monitor.phases["phase (3)"], (3.0, 4.0))
+
+        data = monitor.perfherder_data("suite", [], 1.0, 2.0, 1)
+        self.assertEqual(
+            [suite["name"] for suite in data["suites"]],
+            ["suite.overall", "suite.phase"],
+        )
+
+    def test_forwarded_phase_before_local_phase(self):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.start()
+        monitor._add_phase("phase", 1.0, 2.0, 1)
+        with monitor.phase("phase"):
+            pass
+        monitor.stop()
+        self.assertEqual(monitor.phases["phase"], (1.0, 2.0))
+        self.assertIn("phase (2)", monitor.phases)
+
+        data = monitor.perfherder_data("suite", [])
+        self.assertEqual(
+            [suite["name"] for suite in data["suites"]],
+            ["suite.overall", "suite.phase"],
+        )
+        self.assertNotEqual(data["suites"][1]["subtests"][0]["value"], 1.0)
+
+    def test_perfherder_data_source_phases(self):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.start()
+        start = time.monotonic()
+        monitor._add_phase("outer", start, start + 0.3, 1)
+        monitor._add_phase("inner", start + 0.1, start + 0.2, 2)
+        monitor.stop()
+
+        for source, phase in ((1, "outer"), (2, "inner")):
+            data = monitor.perfherder_data("suite", [], start, start + 0.3, source)
+            self.assertEqual(
+                [suite["name"] for suite in data["suites"]],
+                ["suite.overall", f"suite.{phase}"],
+            )
+        data = monitor.perfherder_data("suite", [])
+        self.assertEqual([suite["name"] for suite in data["suites"]], ["suite.overall"])
+
+    def test_concurrent_forwarding(self):
+        parent = SystemResourceMonitor(poll_interval=0.1)
+        parent.start()
+        parent.accept_forwarded(self.forward_path)
+        _run_forwarding_children(self.forward_path)
+        parent.stop()
+
+        self.assertEqual(len([m for m in parent.markers if m[0] == "marker"]), 2000)
+
+    def test_accept_forwarded_not_running(self):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.accept_forwarded(self.forward_path)
+        self.assertIsNone(monitor._from_children_path)
+
+    def test_forward_after_stop(self):
+        child = self._child()
+        child.start()
+        child.stop()
+        with self.assertWarns(UserWarning):
+            child.forward_perfherder("suite", [])
+
+    def test_children_forward_path(self):
+        parent = SystemResourceMonitor(poll_interval=0.1)
+        self.assertIsNone(parent.children_forward_path)
+        parent.start()
+        parent.accept_forwarded(self.forward_path)
+        self.assertEqual(parent.children_forward_path, self.forward_path)
+        parent.stop()
+
+        self.assertEqual(self._child().children_forward_path, self.forward_path)
+
+    def test_forward_to(self):
+        parent = SystemResourceMonitor(poll_interval=0.1)
+        parent.start()
+        parent.accept_forwarded(self.forward_path)
+
+        child = SystemResourceMonitor(forward_to=self.forward_path)
+        self.assertTrue(child.forwarding)
+        child.start()
+        start = time.monotonic()
+        child.record_marker("marker", start, start + 0.1, "text")
+        child.stop()
+        parent.stop()
+
+        self.assertEqual(
+            parent.markers[0],
+            ("marker", start, start + 0.1, "text", SystemResourceMonitor.TASK_CATEGORY),
+        )
+
+    @unittest.skipUnless(hasattr(os, "fork"), "Requires fork.")
+    def test_forked_child_forgets_monitor(self):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.start()
+        _wait_for_measurement(monitor)
+        pid = os.fork()
+        if pid == 0:
+            forgotten = SystemResourceMonitor.instance is None and monitor._pipe.closed
+            monitor._atexit_stop()
+            # Hold the lock as the parent's drain timer could have when forking.
+            monitor._pipe_lock.acquire()
+            monitor.stop()
+            os._exit(0 if forgotten else 1)
+        _, status = os.waitpid(pid, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), 0)
+        child_exit = time.monotonic()
+        time.sleep(0.5)
+        self.assertIs(SystemResourceMonitor.instance, monitor)
+        monitor.stop()
+        self.assertGreater(monitor.measurements[-1].end, child_exit)
+
+    def _artifact_filenames(self, monitor):
+        return sorted(
+            data["filename"] for _, name, data in monitor.events if name == "artifact"
+        )
+
+    def test_forwarded_artifacts_in_parent_upload_dir(self):
+        with tempfile.TemporaryDirectory() as upload_dir:
+            open(os.path.join(upload_dir, "file"), "w").close()
+            parent = SystemResourceMonitor(poll_interval=0.1)
+            parent.start()
+            parent.accept_forwarded(self.forward_path)
+
+            child = self._child()
+            child.start()
+            child.stop(upload_dir=upload_dir)
+            parent.stop(upload_dir=upload_dir)
+
+            self.assertEqual(self._artifact_filenames(parent), ["file"])
+
+    def test_forwarded_artifacts_in_other_upload_dir(self):
+        with tempfile.TemporaryDirectory() as upload_dir:
+            with tempfile.TemporaryDirectory() as child_upload_dir:
+                open(os.path.join(upload_dir, "parent"), "w").close()
+                open(os.path.join(child_upload_dir, "child"), "w").close()
+                parent = SystemResourceMonitor(poll_interval=0.1)
+                parent.start()
+                parent.accept_forwarded(self.forward_path)
+
+                child = self._child()
+                child.start()
+                child.stop(upload_dir=child_upload_dir)
+                parent.stop(upload_dir=upload_dir)
+
+                self.assertEqual(self._artifact_filenames(parent), ["child", "parent"])
+
+    def test_forwarded_artifacts_moved_out_of_parent_upload_dir(self):
+        with tempfile.TemporaryDirectory() as upload_dir:
+            path = os.path.join(upload_dir, "file")
+            open(path, "w").close()
+            parent = SystemResourceMonitor(poll_interval=0.1)
+            parent.start()
+            parent.accept_forwarded(self.forward_path)
+
+            child = self._child()
+            child.start()
+            child.stop(upload_dir=upload_dir)
+            os.unlink(path)
+            parent.stop(upload_dir=upload_dir)
+
+            self.assertEqual(self._artifact_filenames(parent), ["file"])
+
+    def test_forwarded_sccache_log_parsed_once(self):
+        with tempfile.TemporaryDirectory() as upload_dir:
+            open(os.path.join(upload_dir, "sccache.log"), "w").close()
+            parent = SystemResourceMonitor(poll_interval=0.1)
+            parent.start()
+            parent.accept_forwarded(self.forward_path)
+
+            with mock.patch.object(
+                SystemResourceMonitor, "_parse_sccache_log"
+            ) as parse_sccache_log:
+                child = self._child()
+                child.start()
+                child.stop(upload_dir=upload_dir)
+                parent.stop(upload_dir=upload_dir)
+
+            self.assertEqual(parse_sccache_log.call_count, 1)
+            self.assertEqual(self._artifact_filenames(parent), ["sccache.log"])
+
+    def test_partial_line(self):
+        parent = SystemResourceMonitor(poll_interval=0.1)
+        parent.start()
+        parent.accept_forwarded(self.forward_path)
+        with open(self.forward_path, "a") as fh:
+            fh.write('["event", "complete", 1.0, null]\n["event", "incompl')
+        parent._read_forwarded()
+        self.assertEqual(parent.events, [(1.0, "complete")])
+        with open(self.forward_path, "a") as fh:
+            fh.write('ete", 2.0, null]\n')
+        parent.stop()
+        self.assertEqual(parent.events, [(1.0, "complete"), (2.0, "incomplete")])
+
+    def test_perfherder_data_all_phases(self):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.start()
+        with monitor.phase("phase1"):
+            time.sleep(0.3)
+        monitor.stop()
+
+        data = monitor.perfherder_data("suite", [])
+        self.assertEqual(
+            [suite["name"] for suite in data["suites"]],
+            ["suite.overall", "suite.phase1"],
+        )
+        overall = {s["name"] for s in data["suites"][0]["subtests"]}
+        self.assertLessEqual(
+            {"io_write_bytes", "io.read_bytes", "io_write_time", "io_read_time"},
+            overall,
+        )
+
+
+def _run_forwarding_children(forward_path):
+    script = (
+        "import time\n"
+        "from mozsystemmonitor.resourcemonitor import SystemResourceMonitor\n"
+        "m = SystemResourceMonitor()\n"
+        "m.start()\n"
+        "for i in range(500):\n"
+        "    t = time.monotonic()\n"
+        "    m.record_marker('marker', t, t, 'x' * 200)\n"
+        "m.stop()\n"
+    )
+    env = dict(os.environ, **{FORWARD_ENV: forward_path})
+    env["PYTHONPATH"] = os.pathsep.join(sys.path)
+    children = [
+        subprocess.Popen([sys.executable, "-c", script], env=env) for _ in range(4)
+    ]
+    for child in children:
+        assert child.wait() == 0
+
+
+def test_concurrent_forwarding_lines(tmp_path):
+    # Forwarding children don't need psutil, so this also runs where the
+    # parent can't monitor.
+    forward_path = tmp_path / "forward.jsonl"
+    forward_path.touch()
+    _run_forwarding_children(str(forward_path))
+
+    data = forward_path.read_bytes()
+    assert data.endswith(b"\n")
+    records = [json.loads(line) for line in data.splitlines()]
+    assert len(records) == 2000
+    assert all(record[0] == "marker" for record in records)
+
+
 @pytest.mark.parametrize(
     "value,expected",
     [
@@ -1486,6 +1818,7 @@ def test_process_sampling_with_interval():
     with mock.patch.dict(os.environ, {"MOZ_PROCESS_SAMPLING": "0.5"}):
         monitor = SystemResourceMonitor(poll_interval=0.1)
         monitor.start()
+        _wait_for_measurement(monitor)
         subprocess.run([sys.executable, "-c", "import time; time.sleep(2)"], check=True)
         time.sleep(0.6)
         monitor.stop()
@@ -1503,7 +1836,7 @@ def test_process_sampling_still_running():
             monitor.start()
             # Let the monitor take its first sample, which is what it
             # considers to be running before it started.
-            time.sleep(0.5)
+            _wait_for_measurement(monitor)
             during = subprocess.Popen(sleep + ["during"])
             try:
                 time.sleep(1)
@@ -1517,6 +1850,36 @@ def test_process_sampling_still_running():
     cmds = [cmd for pid, start, end, cmd, ppid in monitor.processes]
     assert any(cmd.endswith(" during") for cmd in cmds), cmds
     assert not any(cmd.endswith(" before") for cmd in cmds), cmds
+
+
+@pytest.mark.skipif(psutil is None, reason="Resource monitor requires psutil.")
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="Linux only")
+def test_process_sampling_start_time():
+    with mock.patch.dict(os.environ, {"MOZ_PROCESS_SAMPLING": "0.1"}):
+        monitor = SystemResourceMonitor(poll_interval=0.1)
+        monitor.start()
+        _wait_for_measurement(monitor)
+        before = time.monotonic()
+        child = subprocess.Popen([
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
+            "start-time",
+        ])
+        after = time.monotonic()
+        try:
+            time.sleep(1)
+            monitor.stop()
+        finally:
+            child.kill()
+            child.wait()
+    starts = [
+        start for pid, start, end, cmd, ppid in monitor.processes if pid == child.pid
+    ]
+    assert len(starts) == 1, monitor.processes
+    # /proc/<pid>/stat has a resolution of one clock tick, usually 10ms, and
+    # converting between clocks adds a little imprecision.
+    assert before - 0.02 <= starts[0] <= after + 0.01, (before, starts[0], after)
 
 
 if __name__ == "__main__":

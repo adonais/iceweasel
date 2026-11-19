@@ -90,20 +90,26 @@ class OutstandingData {
         last_cumulative_tsn_ack_(last_cumulative_tsn_ack),
         discard_from_send_queue_(std::move(discard_from_send_queue)) {}
 
-  AckInfo HandleSack(UnwrappedTSN cumulative_tsn_ack,
+  AckInfo HandleSack(webrtc::Timestamp now,
+                     UnwrappedTSN cumulative_tsn_ack,
                      std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
                      bool is_in_fast_recovery);
 
   // Returns as many of the chunks that are eligible for fast retransmissions
-  // and that would fit in a single packet of `max_size`. The eligible chunks
-  // that didn't fit will be marked for (normal) retransmission and will not be
-  // returned if this method is called again.
+  // and that would fit in a single packet of `max_size`. Any chunks encountered
+  // that have expired at `now` are abandoned instead of being returned. The
+  // eligible chunks that didn't fit will be marked for (normal) retransmission
+  // and will not be returned if this method is called again.
   std::vector<std::pair<TSN, Data>> GetChunksToBeFastRetransmitted(
+      webrtc::Timestamp now,
       size_t max_size);
 
-  // Given `max_size` of space left in a packet, which chunks can be added to
-  // it?
-  std::vector<std::pair<TSN, Data>> GetChunksToBeRetransmitted(size_t max_size);
+  // Given `max_size` of space left in a packet, returns the chunks that can be
+  // added to it. Any chunks encountered that have expired at `now` are
+  // abandoned (along with all other fragments of the same message).
+  std::vector<std::pair<TSN, Data>> GetChunksToBeRetransmitted(
+      webrtc::Timestamp now,
+      size_t max_size);
 
   // How many inflight bytes there are, as sent on the wire as packets.
   size_t unacked_packet_bytes() const { return unacked_packet_bytes_; }
@@ -150,7 +156,7 @@ class OutstandingData {
       LifecycleId lifecycle_id = LifecycleId::NotSet());
 
   // Nacks all outstanding data.
-  void NackAll();
+  void NackAll(webrtc::Timestamp now);
 
   // Creates a FORWARD-TSN chunk.
   ForwardTsnChunk CreateForwardTsn() const;
@@ -228,9 +234,9 @@ class OutstandingData {
 
     // Nacks an item. If it has been nacked enough times, or if `retransmit_now`
     // is set, it might be marked for retransmission. If the item has reached
-    // its max retransmission value, it will instead be abandoned. The action
-    // performed is indicated as return value.
-    NackAction Nack(bool retransmit_now);
+    // its max retransmission value or has expired, it will instead be
+    // abandoned. The action performed is indicated as return value.
+    NackAction Nack(webrtc::Timestamp now, bool retransmit_now);
 
     // Prepares the item to be retransmitted. Sets it as outstanding and
     // clears all nack counters.
@@ -345,6 +351,7 @@ class OutstandingData {
   // `ack_info.highest_tsn_acked` (highest TSN newly acknowledged) are
   // nacked/retransmitted. The method will set `ack_info.has_packet_loss`.
   void NackBetweenAckBlocks(
+      webrtc::Timestamp now,
       UnwrappedTSN cumulative_tsn_ack,
       std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
       bool is_in_fast_recovery,
@@ -367,14 +374,21 @@ class OutstandingData {
   // Note that since nacking an item may result in it becoming abandoned, which
   // in turn could alter `outstanding_data_`, any iterators are invalidated
   // after having called this method.
-  bool NackItem(UnwrappedTSN tsn, bool retransmit_now, bool do_fast_retransmit);
+  bool NackItem(webrtc::Timestamp now,
+                UnwrappedTSN tsn,
+                bool retransmit_now,
+                bool do_fast_retransmit);
 
   // Given that a message fragment, `item` has been abandoned, abandon all other
   // fragments that share the same message - both never-before-sent fragments
   // that are still in the SendQueue and outstanding chunks.
   void AbandonAllFor(const OutstandingData::Item& item);
 
+  // Extracts chunks from `chunks` that can fit within `max_size` bytes. Any
+  // chunk encountered that has expired at `now` is abandoned along with all
+  // other fragments of its message.
   std::vector<std::pair<TSN, Data>> ExtractChunksThatCanFit(
+      webrtc::Timestamp now,
       std::set<UnwrappedTSN>& chunks,
       size_t max_size);
 

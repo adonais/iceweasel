@@ -329,11 +329,11 @@ TEST(YCbCrUtils, ConvertYCbCrToRGB32)
       RefPtr<layers::PlanarYCbCrImage> img =
           CreateI420Image(color, colorSpace, imgSize);
 
-      UniquePtr<uint8_t[]> BGRX = MakeUnique<uint8_t[]>(bufferSize);
+      auto BGRX = std::make_unique<uint8_t[]>(bufferSize);
       ConvertYCbCrToRGB32(*img->GetData(), gfx::SurfaceFormat::B8G8R8X8,
                           BGRX.get(), stride, nullptr);
 
-      UniquePtr<uint8_t[]> RGBX = MakeUnique<uint8_t[]>(bufferSize);
+      auto RGBX = std::make_unique<uint8_t[]>(bufferSize);
       ConvertYCbCrToRGB32(*img->GetData(), gfx::SurfaceFormat::R8G8B8X8,
                           RGBX.get(), stride, nullptr);
 
@@ -366,11 +366,11 @@ TEST(YCbCrUtils, ConvertYCbCrToRGB32WithAlpha)
       RefPtr<layers::PlanarYCbCrImage> img =
           CreateI420Image(color, colorSpace, imgSize, alpha);
 
-      UniquePtr<uint8_t[]> BGRA = MakeUnique<uint8_t[]>(bufferSize);
+      auto BGRA = std::make_unique<uint8_t[]>(bufferSize);
       ConvertYCbCrToRGB32(*img->GetData(), gfx::SurfaceFormat::B8G8R8A8,
                           BGRA.get(), stride, nullptr);
 
-      UniquePtr<uint8_t[]> RGBA = MakeUnique<uint8_t[]>(bufferSize);
+      auto RGBA = std::make_unique<uint8_t[]>(bufferSize);
       ConvertYCbCrToRGB32(*img->GetData(), gfx::SurfaceFormat::R8G8B8A8,
                           RGBA.get(), stride, nullptr);
 
@@ -393,11 +393,11 @@ TEST(YCbCrUtils, ConvertYCbCrToRGB32WithIdentityColorSpace)
     RefPtr<layers::PlanarYCbCrImage> img =
         CreateI444Image(color, gfx::YUVColorSpace::Identity, imgSize);
 
-    UniquePtr<uint8_t[]> BGRX = MakeUnique<uint8_t[]>(bufferSize);
+    auto BGRX = std::make_unique<uint8_t[]>(bufferSize);
     ConvertYCbCrToRGB32(*img->GetData(), gfx::SurfaceFormat::B8G8R8X8,
                         BGRX.get(), stride, nullptr);
 
-    UniquePtr<uint8_t[]> RGBX = MakeUnique<uint8_t[]>(bufferSize);
+    auto RGBX = std::make_unique<uint8_t[]>(bufferSize);
     ConvertYCbCrToRGB32(*img->GetData(), gfx::SurfaceFormat::R8G8B8X8,
                         RGBX.get(), stride, nullptr);
 
@@ -487,7 +487,7 @@ static const gfx::ChromaSubsampling kTestSubsamplings[] = {
 static void RunOddPicTest(const Color aColors[2][2],
                           const gfx::IntRect& aRect) {
   const int32_t stride = aRect.Width() * 4;
-  UniquePtr<uint8_t[]> output = MakeUnique<uint8_t[]>(aRect.Height() * stride);
+  auto output = std::make_unique<uint8_t[]>(aRect.Height() * stride);
   auto exp = GetExpectedConvertedRGB();
   const size_t bt709 = static_cast<size_t>(gfx::YUVColorSpace::BT709);
 

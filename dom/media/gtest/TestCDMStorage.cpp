@@ -10,14 +10,21 @@
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsCRTGlue.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsExceptionHandler.h"
 #include "nsIFile.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsIPropertyBag2.h"
 #include "nsNSSComponent.h"  //For EnsureNSSInitializedChromeOrContent
 #include "nsThreadUtils.h"
+#include "prenv.h"
 
 using namespace mozilla;
 using namespace mozilla::gmp;
@@ -1000,6 +1007,12 @@ class CDMStorageTest {
                     "retrieve pbdata"_ns);
   }
 
+  void TestCrash() {
+    AssertIsOnGMPThread();
+    CreateDecryptor(u"http://example1.com"_ns, u"http://example2.com"_ns, false,
+                    "crash"_ns);
+  }
+
 #if defined(XP_WIN)
   void TestOutputProtection() {
     Shutdown();
@@ -1346,3 +1359,77 @@ TEST(GeckoMediaPlugins, GMPOutputProtection)
   runner->DoTest(&CDMStorageTest::TestOutputProtection);
 }
 #endif  // defined(XP_WIN)
+
+class GMPCrashObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
+    props->GetPropertyAsAString(u"pluginDumpID"_ns, mDumpID);
+    mCrashed = true;
+    return NS_OK;
+  }
+
+  nsString mDumpID;
+  bool mCrashed = false;
+
+ private:
+  ~GMPCrashObserver() = default;
+};
+
+NS_IMPL_ISUPPORTS(GMPCrashObserver, nsIObserver)
+
+TEST(GeckoMediaPlugins, CDMCrashMinidump)
+{
+  if (!CrashReporter::GetEnabled()) {
+    GTEST_SKIP() << "The crash reporter is disabled";
+  }
+
+  // Keep the minidump out of the pending directory.
+  const char* noReport = PR_GetEnv("MOZ_CRASHREPORTER_NO_REPORT");
+  PR_SetEnv("MOZ_CRASHREPORTER_NO_REPORT=1");
+  auto restoreNoReport = MakeScopeExit([&] {
+    if (!noReport || !*noReport) {
+      PR_SetEnv("MOZ_CRASHREPORTER_NO_REPORT=");
+    }
+  });
+
+  // Write the minidump to a throwaway directory rather than removing it, as the
+  // crash service keeps processing it after we're notified of the crash.
+  nsAutoString originalMinidumpPath;
+  ASSERT_TRUE(CrashReporter::GetMinidumpPath(originalMinidumpPath));
+  nsCOMPtr<nsIFile> minidumpDir;
+  ASSERT_NS_SUCCEEDED(
+      NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(minidumpDir)));
+  ASSERT_NS_SUCCEEDED(minidumpDir->Append(u"gmp-crash-minidumps"_ns));
+  ASSERT_NS_SUCCEEDED(minidumpDir->CreateUnique(nsIFile::DIRECTORY_TYPE, 0700));
+  nsAutoString minidumpPath;
+  ASSERT_NS_SUCCEEDED(minidumpDir->GetPath(minidumpPath));
+  ASSERT_NS_SUCCEEDED(CrashReporter::SetMinidumpPath(minidumpPath));
+  auto restoreMinidumpPath = MakeScopeExit(
+      [&] { CrashReporter::SetMinidumpPath(originalMinidumpPath); });
+
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  RefPtr<GMPCrashObserver> observer = new GMPCrashObserver();
+  obs->AddObserver(observer, "gmp-plugin-crash", false);
+
+  EnsureNSSInitializedChromeOrContent();
+  RefPtr<CDMStorageTest> runner = new CDMStorageTest();
+  nsCOMPtr<nsIThread> thread(GetGMPThread());
+  thread->Dispatch(NewRunnableMethod("CDMStorageTest::TestCrash", runner,
+                                     &CDMStorageTest::TestCrash));
+  SpinEventLoopUntil("CDMCrashMinidump"_ns,
+                     [&]() -> bool { return observer->mCrashed; });
+  obs->RemoveObserver(observer, "gmp-plugin-crash");
+
+  ASSERT_FALSE(observer->mDumpID.IsEmpty())
+  << "No minidump was written";
+  nsCOMPtr<nsIFile> minidump;
+  ASSERT_TRUE(CrashReporter::GetMinidumpForID(observer->mDumpID,
+                                              getter_AddRefs(minidump)));
+  int64_t size = 0;
+  EXPECT_NS_SUCCEEDED(minidump->GetFileSize(&size));
+  EXPECT_GT(size, 0);
+}

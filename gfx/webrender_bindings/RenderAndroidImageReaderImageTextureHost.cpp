@@ -50,7 +50,7 @@ void RenderAndroidImageReaderImageTextureHost::SetReadFenceFd(
 }
 
 bool RenderAndroidImageReaderImageTextureHost::EnsureLockable() {
-  MOZ_ASSERT(mGL);
+  MOZ_RELEASE_ASSERT(mGL);
 
   if (!mAndroidImageConsumer) {
     auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
@@ -78,15 +78,14 @@ bool RenderAndroidImageReaderImageTextureHost::EnsureLockable() {
     const auto& gle = gl::GLContextEGL::Cast(mGL);
     const auto& egl = gle->mEgl;
 
+    // eglCreateSyncKHR takes ownership of the fd even on failure.
+    // Release it here to avoid closing the fd again.
     const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
-                              writeFenceFd.get(), LOCAL_EGL_NONE};
+                              writeFenceFd.release(), LOCAL_EGL_NONE};
 
     EGLSync sync =
         egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
     if (sync) {
-      // Release fd here, since it is owned by EGLSync
-      (void)writeFenceFd.release();
-
       if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
         egl->fWaitSync(sync, 0);
       } else {

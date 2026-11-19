@@ -161,4 +161,54 @@
     await extension.unload();
   });
 
+  async function testStructuredCloneCryptoKeyInSecureContext(legacyPref) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["extensions.webextensions.legacyStructuredCloneBehavior", legacyPref]],
+    });
+    let extension = ExtensionTestUtils.loadExtension({
+      manifest: {
+        content_scripts: [
+          {
+            "matches": ["https://example.org/"],
+            "js": ["content_script.js"]
+          },
+        ]
+      },
+      files: {
+        async "content_script.js"() {
+          browser.test.assertEq(window.isSecureContext, true, "window.isSecureContext === true");
+
+          let key = await window.crypto.subtle.generateKey(
+            { name: "AES-CBC", length: 128 },
+            false,
+            ["encrypt"]
+          );
+          let clone;
+          try {
+            clone = structuredClone(key);
+          } catch (e) {
+            browser.test.fail(`structuredClone(CryptoKey) threw: ${e}`);
+          }
+          browser.test.assertEq(Object.prototype.toString.call(clone), "[object CryptoKey]", "Content script can structuredClone a CryptoKey in a secure context");
+
+          browser.test.sendMessage("done");
+        },
+      },
+    });
+    await extension.startup();
+    const win = window.open("https://example.org/");
+    await extension.awaitMessage("done");
+    win.close();
+    await extension.unload();
+    await SpecialPowers.popPrefEnv();
+  }
+
+  add_task(async function test_contentscript_structuredClone_CryptoKey_legacy() {
+    await testStructuredCloneCryptoKeyInSecureContext(true);
+  });
+
+  add_task(async function test_contentscript_structuredClone_CryptoKey_nonlegacy() {
+    await testStructuredCloneCryptoKeyInSecureContext(false);
+  });
+
 </script>

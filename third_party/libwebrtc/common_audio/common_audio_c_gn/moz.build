@@ -43,7 +43,6 @@ SOURCES += [
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/common_audio/ring_buffer.c",
     "/third_party/libwebrtc/common_audio/signal_processing/auto_corr_to_refl_coef.c",
-    "/third_party/libwebrtc/common_audio/signal_processing/auto_correlation.c",
     "/third_party/libwebrtc/common_audio/signal_processing/copy_set_operations.c",
     "/third_party/libwebrtc/common_audio/signal_processing/cross_correlation.c",
     "/third_party/libwebrtc/common_audio/signal_processing/division_operations.c",

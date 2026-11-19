@@ -1306,21 +1306,15 @@ gfxFloat gfxTextRun::GetAdvanceWidth(
 
   // Account for all remaining spacing here. This is more efficient than
   // processing it along with the glyphs.
-  if (aProvider && (mFlags & gfx::ShapedTextFlags::TEXT_ENABLE_SPACING)) {
-    uint32_t i;
-    AutoTArray<PropertyProvider::Spacing, 200> spacingBuffer;
-    if (spacingBuffer.AppendElements(aRange.Length(), fallible)) {
-      if (GetAdjustedSpacing(this, ligatureRange, *aProvider,
-                             spacingBuffer.Elements())) {
-        for (i = 0; i < ligatureRange.Length(); ++i) {
-          PropertyProvider::Spacing* space = &spacingBuffer[i];
-          result += space->mBefore + space->mAfter;
-        }
-        if (aSpacing) {
-          aSpacing->mBefore = spacingBuffer[0].mBefore;
-          aSpacing->mAfter = spacingBuffer.LastElement().mAfter;
-        }
-      }
+  AutoTArray<PropertyProvider::Spacing, 200> spacingBuffer;
+  if (GetAdjustedSpacingArray(aRange, aProvider, ligatureRange,
+                              &spacingBuffer)) {
+    for (const PropertyProvider::Spacing& space : spacingBuffer) {
+      result += space.mBefore + space.mAfter;
+    }
+    if (aSpacing) {
+      aSpacing->mBefore = spacingBuffer[0].mBefore;
+      aSpacing->mAfter = spacingBuffer.LastElement().mAfter;
     }
   }
 
@@ -2624,7 +2618,7 @@ static const nsTHashMap<nsUint32HashKey, Script>* ScriptTagToCodeTable() {
   // "If multiple threads attempt to initialize the same static local variable
   // concurrently, the initialization occurs exactly once."
   static UniquePtr<TableT> sScriptTagToCode = []() {
-    auto tagToCode = MakeUnique<TableT>(size_t(Script::NUM_SCRIPT_CODES));
+    auto tagToCode = std::make_unique<TableT>(size_t(Script::NUM_SCRIPT_CODES));
     Script scriptCount =
         Script(std::min<int>(UnicodeProperties::GetMaxNumberOfScripts() + 1,
                              int(Script::NUM_SCRIPT_CODES)));
@@ -2768,7 +2762,7 @@ void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
       char16_t newCh = HandleNumberInChar(origCh, prevIsArabic, numOption);
       if (newCh != origCh) {
         if (!transformedString) {
-          transformedString = MakeUnique<char16_t[]>(aLength);
+          transformedString = std::make_unique<char16_t[]>(aLength);
           if constexpr (sizeof(T) == sizeof(char16_t)) {
             memcpy(transformedString.get(), aString, i * sizeof(char16_t));
           } else {

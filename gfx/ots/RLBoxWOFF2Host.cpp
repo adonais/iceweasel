@@ -52,7 +52,7 @@ tainted_woff2<BrotliDecoderResult> RLBoxBrotliDecoderDecompressCallback(
 UniquePtr<RLBoxSandboxDataBase> RLBoxWOFF2SandboxPool::CreateSandboxData(
     uint64_t aSize) {
   // Create woff2 sandbox
-  auto sandbox = MakeUnique<rlbox_sandbox_woff2>();
+  auto sandbox = std::make_unique<rlbox_sandbox_woff2>();
 
 #if defined(MOZ_WASM_SANDBOXING_WOFF2)
   const w2c_mem_capacity capacity =
@@ -64,8 +64,7 @@ UniquePtr<RLBoxSandboxDataBase> RLBoxWOFF2SandboxPool::CreateSandboxData(
 #endif
   NS_ENSURE_TRUE(createOK, nullptr);
 
-  UniquePtr<RLBoxWOFF2SandboxData> sbxData =
-      MakeUnique<RLBoxWOFF2SandboxData>(aSize, std::move(sandbox));
+  auto sbxData = std::make_unique<RLBoxWOFF2SandboxData>(aSize, std::move(sandbox));
 
   // Register brotli callback
   sbxData->mDecompressCallback = sbxData->Sandbox()->register_callback(

@@ -336,7 +336,7 @@ UniquePtr<NativeLayerRootSnapshotter> NativeLayerRootCA::CreateSnapshotter() {
                      "should exist when this is called");
 
   auto cr = NativeLayerRootSnapshotterCA::Create(
-      MakeUnique<SnapshotterDelegate>(this));
+      std::make_unique<SnapshotterDelegate>(this));
   if (cr) {
     mWeakSnapshotter = cr.get();
   }

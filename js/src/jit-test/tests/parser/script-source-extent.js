@@ -223,10 +223,8 @@ testSourceExtent(`class C { [1n] }`,
                  `          ^---^ `,
                  `^---------------`);
 testSourceExtent(`class C { field = 1 }`,
-                 `          ^--------^ `,
                  `^--------------------`);
 testSourceExtent(`class C { "field" = 1 }`,
-                 `          ^----------^ `,
                  `^----------------------`);
 testSourceExtent(`class C { 0 = 1 }`,
                  `          ^----^ `,
@@ -279,7 +277,6 @@ testSourceExtent(`class C { #field }`,
                  `          ^-----^ `,
                  `^-----------------`);
 testSourceExtent(`class C { #field = 1 }`,
-                 `          ^---------^ `,
                  `^---------------------`);
 testSourceExtent(`class C { static #field }`,
                  `                 ^-----^ `,

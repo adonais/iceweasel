@@ -40,9 +40,7 @@ registerCleanupFunction(async function () {
 async function test_popup_blocker_disabled({ disabled, locked }) {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
-      ? "about:preferences#permissionsData"
-      : "about:preferences#privacy"
+    "about:preferences#permissionsData"
   );
   await SpecialPowers.spawn(
     tab.linkedBrowser,

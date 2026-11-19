@@ -59,7 +59,7 @@ inline void IFStream::open(char16ptr_t filename, openmode mode) {
     fmode |= _O_TEXT;
   }
   int fd = _wopen(filename, fmode);
-  mFileBuf = MakeUnique<__gnu_cxx::stdio_filebuf<char>>(fd, mode);
+  mFileBuf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(fd, mode);
   std::istream::rdbuf(mFileBuf.get());
 }
 
@@ -93,7 +93,7 @@ inline void OFStream::open(char16ptr_t filename, openmode mode) {
     fmode |= _O_CREAT | _O_TRUNC;
   }
   int fd = _wopen(filename, fmode);
-  mFileBuf = MakeUnique<__gnu_cxx::stdio_filebuf<char>>(fd, mode);
+  mFileBuf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(fd, mode);
   std::ostream::rdbuf(mFileBuf.get());
 }
 

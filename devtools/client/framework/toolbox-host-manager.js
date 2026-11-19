@@ -435,6 +435,15 @@ class ToolboxHostManager {
       return;
     }
 
+    // If the event was triggered because of the "Move Section to Mini Window" feature,
+    // we don't want to reopen DevTools on the mini window, and we don't need to do
+    // anything else.
+    if (
+      newTab.documentGlobal.document.documentElement.hasAttribute("mini-window")
+    ) {
+      return;
+    }
+
     // Remove event listener before switching to the new tab.
     this.currentTab.removeEventListener("TabClose", this);
 

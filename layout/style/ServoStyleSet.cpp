@@ -551,8 +551,6 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(PseudoStyleType aType,
 
 already_AddRefed<ComputedStyle>
 ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
-  MOZ_ASSERT(aType != PseudoStyleType::MozPageContent,
-             "Use ResolvePageContentStyle for page content");
   MOZ_ASSERT(PseudoStyle::IsNonInheritingAnonBox(aType));
 
   auto type = static_cast<NonInheritingAnonBox>(aType);
@@ -581,25 +579,30 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePageContentStyle(
   if (aPageName == nsGkAtoms::_empty) {
     aPageName = nullptr;
   }
+  // Inherit from the root element, see
+  // https://drafts.csswg.org/css-page/#page-properties
+  RefPtr<const ComputedStyle> parentStyle;
+  if (Element* root = mDocument->GetRootElement()) {
+    parentStyle = Servo_Element_GetMaybeOutOfDateStyle(root);
+  }
+
   // Only use the cache when we are doing a lookup for page styles without a
-  // page-name or any pseudo classes.
-  const bool useCache = !aPageName && !aPseudo;
-  RefPtr<ComputedStyle>& cache =
-      mNonInheritingComputedStyles[NonInheritingAnonBox::MozPageContent];
-  if (useCache && cache) {
-    RefPtr<ComputedStyle> retval = cache;
-    return retval.forget();
+  // page-name or any pseudo classes, and the root element is already styled.
+  const bool useCache = !aPageName && !aPseudo && parentStyle;
+  if (useCache && mDefaultPageStyleCache) {
+    return do_AddRef(mDefaultPageStyleCache);
   }
 
   UpdateStylistIfNeeded();
 
   RefPtr<ComputedStyle> computedValues =
-      Servo_ComputedValues_GetForPageContent(mRawData.get(), aPageName, aPseudo)
+      Servo_ComputedValues_GetForPageContent(mRawData.get(), parentStyle,
+                                             aPageName, aPseudo)
           .Consume();
   MOZ_ASSERT(computedValues);
 
   if (useCache) {
-    cache = computedValues;
+    mDefaultPageStyleCache = computedValues;
   }
   return computedValues.forget();
 }
@@ -1452,7 +1455,7 @@ void ServoStyleSet::RunPostTraversalTasks() {
 
 ServoStyleRuleMap* ServoStyleSet::StyleRuleMap() {
   if (!mStyleRuleMap) {
-    mStyleRuleMap = MakeUnique<ServoStyleRuleMap>();
+    mStyleRuleMap = std::make_unique<ServoStyleRuleMap>();
   }
   mStyleRuleMap->EnsureTable(*this);
   return mStyleRuleMap.get();

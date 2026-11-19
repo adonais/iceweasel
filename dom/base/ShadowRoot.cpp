@@ -722,18 +722,33 @@ ShadowRoot::SlotInsertionPoint ShadowRoot::SlotInsertionPointFor(
     if (index != manuallyAssignedNodes.NoIndex) {
       return {slot, Some(index)};
     }
-  } else {
-    const Span assignedNodes = slot->AssignedNodes();
-    nsIContent* currentContent = GetHost()->GetFirstChild();
-    for (uint32_t i = 0; i < assignedNodes.Length(); i++) {
-      // Seek through the host's explicit children until the
-      // assigned content is found.
-      while (currentContent && currentContent != assignedNodes[i]) {
-        if (currentContent == &aContent) {
-          return {slot, Some(i)};
-        }
-        currentContent = currentContent->GetNextSibling();
+    return {slot, Nothing()};
+  }
+
+  // Named slots keep assigned nodes in tree order, so find the closest sibling
+  // of aContent assigned to the same slot.
+  const Span assignedNodes = slot->AssignedNodes();
+  if (assignedNodes.IsEmpty()) {
+    return {slot, Nothing()};
+  }
+  nsIContent* prev = aContent.GetPreviousSibling();
+  nsIContent* next = aContent.GetNextSibling();
+  while (prev || next) {
+    if (prev) {
+      if (prev->GetAssignedSlot() == slot) {
+        auto index = assignedNodes.LastIndexOf(prev);
+        MOZ_ASSERT(index != assignedNodes.npos);
+        return {slot, Some(index + 1)};
       }
+      prev = prev->GetPreviousSibling();
+    }
+    if (next) {
+      if (next->GetAssignedSlot() == slot) {
+        auto index = assignedNodes.IndexOf(next);
+        MOZ_ASSERT(index != assignedNodes.npos);
+        return {slot, Some(index)};
+      }
+      next = next->GetNextSibling();
     }
   }
 
@@ -905,7 +920,7 @@ void ShadowRoot::MaybeSlotHostChild(nsIContent& aChild) {
 
 ServoStyleRuleMap& ShadowRoot::ServoStyleRuleMap() {
   if (!mStyleRuleMap) {
-    mStyleRuleMap = MakeUnique<mozilla::ServoStyleRuleMap>();
+    mStyleRuleMap = std::make_unique<mozilla::ServoStyleRuleMap>();
   }
   mStyleRuleMap->EnsureTable(*this);
   return *mStyleRuleMap;
@@ -942,6 +957,8 @@ MOZ_CAN_RUN_SCRIPT void ShadowRoot::SetInnerHTML(
     const TrustedHTMLOrNullIsEmptyString& aInnerHTML,
     nsIPrincipal* aSubjectPrincipal, ErrorResult& aError) {
   constexpr nsLiteralString sink = u"ShadowRoot innerHTML"_ns;
+  // Bug 2072122: Trusted Types readiness experiment only, to be removed.
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aInnerHTML.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =

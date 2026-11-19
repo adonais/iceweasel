@@ -6,8 +6,8 @@
   --trustpanel-graphic-bg: light-dark(var(--color-gray-20), var(--color-gray-90));
   --trustpanel-highlight-bg: light-dark(var(--color-violet-10), var(--color-violet-90));
   --trustpanel-warning-bg: light-dark(var(--color-red-20), var(--color-red-90));
-  --trustpanel-inner-border: 1px solid var(--color-violet-20);
-  --trustpanel-inner-warning-border: 1px solid var(--color-red-10);
+  --trustpanel-inner-border: var(--border-width) solid var(--color-violet-20);
+  --trustpanel-inner-warning-border: var(--border-width) solid var(--color-red-10);
 
   @media -moz-pref("browser.nova.enabled") {
     --trustpanel-highlight-bg: light-dark(var(--color-violet-10), var(--color-violet-desaturated-70));
@@ -22,8 +22,8 @@
    and divider use a subtle wash that blends with the fill. */
 #trustpanel-popup:is([tracking-protection="enabled"], [tracking-protection="disabled"]) {
   @media -moz-pref("browser.nova.enabled") {
-    --trustpanel-card-border-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.12));
-    --trustpanel-card-divider-color: light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.12));
+    --trustpanel-card-border-color: light-dark(color-mix(in srgb, black 6%, transparent), color-mix(in srgb, white 12%, transparent));
+    --trustpanel-card-divider-color: light-dark(color-mix(in srgb, black 12%, transparent), color-mix(in srgb, white 12%, transparent));
   }
 }
 
@@ -98,7 +98,7 @@
   list-style-image: light-dark(url("chrome://global/skin/icons/EU-trust-mark.svg"), url("chrome://global/skin/icons/EU-trust-mark-inverted.svg"));
   align-self: start;
   /* The EU trust mark MUST be at least 64px wide (and 85px tall). */
-  width: 64px;
+  width: var(--size-image-large);
   margin-top: var(--space-xlarge);
   margin-inline-end: var(--space-xlarge);
 }
@@ -151,6 +151,8 @@
 }
 
 #identity-popup-security-httpsonlymode-info {
+  /* Relative to menu font; no matching font-size token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 0.85em;
   color: var(--text-color-deemphasized);
 }
@@ -223,6 +225,8 @@
 }
 
 #identity-popup-mainView > .panel-subview-body {
+  /* Shared panel chrome var; keep in sync with panelUI-shared. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-bottom: var(--panel-subview-body-padding-block);
 }
 
@@ -236,9 +240,9 @@
 }
 
 .identity-popup-section.indented {
-  /* Align with the text displayed following the lock icon, in the connection status button above.
-     16px is the icon size and 8px is the inline-start padding of the text. */
-  padding-inline: calc(var(--panel-menuitem-padding-inline) + 16px + 8px);
+  /* Align with the text displayed following the lock icon, in the connection status button above
+     (icon size plus the inline-start padding of the text). */
+  padding-inline: calc(var(--panel-menuitem-padding-inline) + var(--icon-size) + 8px);
 }
 
 .identity-popup-security-connection {
@@ -297,14 +301,16 @@
 }
 
 .identity-popup-security-connection-icon {
-  width: 16px;
-  height: 16px;
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 .identity-popup-security-connection description,
 .identity-popup-connection-secure.security-view,
 .identity-popup-connection-secure.upgraded,
 .identity-popup-connection-not-secure.security-view {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline-start: 8px;
 }
 
@@ -322,7 +328,7 @@
 }
 
 #trustpanel-popup #identity-popup-content-cert-info {
-  border-block-end: 1px solid var(--trustpanel-card-divider-color);
+  border-block-end: var(--border-width) solid var(--trustpanel-card-divider-color);
   padding-block-end: var(--space-small);
   margin-inline: calc(-1 * var(--panel-menuitem-padding-inline));
   padding-inline: var(--panel-menuitem-padding-inline);
@@ -362,6 +368,8 @@
 
   @media (-moz-platform: macos) {
     > button {
+      /* macOS native button min-height; no matching size token. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       min-height: 30px;
     }
 
@@ -394,6 +402,8 @@
 #protections-popup-cookiesView,
 #protections-popup-trackersView,
 #trustpanel-blocker-items {
+  /* Scrollable trackers list max height; no layout size token this large. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-height: calc(600px + var(--height-offset));
 }
 
@@ -410,16 +420,24 @@
   width: var(--icon-size-xxlarge);
   height: var(--icon-size-xxlarge);
   -moz-context-properties: fill;
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-bottom: 16px;
 }
 
 #protections-popup-cookiesView .protections-popup-empty-label {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: 24px;
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-block: 2px 4px;
 }
 
 .protections-popup-cookiesView-list-header {
   color: var(--text-color-deemphasized);
+  /* No matching space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin: 5px 0;
 }
 
@@ -428,11 +446,15 @@
 }
 
 .protections-popup-list {
+  /* No matching space token; rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: 5px 16px !important; /* override panelUI-shared.css */
 }
 
 .protections-popup-list-item {
   display: flex;
+  /* No matching space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin: 5px 0;
 }
 
@@ -441,18 +463,28 @@
   text-align: match-parent;
 }
 
+.protections-popup-list-count-label {
+  color: var(--text-color-deemphasized);
+}
+
 /* Special alignment for items which include a state label (e.g. "Allowed") */
 .protections-popup-list-item-with-state > label {
   margin: auto 0;
 }
-.protections-popup-list-item-with-state {
-  justify-content: space-between;
+.protections-popup-list-item-with-state > .permission-popup-permission-remove-button {
+  margin-inline-start: auto;
+}
+
+.protections-popup-list-item-with-count > .protections-popup-list-host-label {
+  margin-inline-end: var(--space-small);
 }
 
 /* Content Blocking categories */
 
 #tracking-protection-container {
   #protections-popup:not([detected]) & {
+    /* Flexible basis in em relative to menu font; no size token. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     flex: 0 1 10em;
     margin-block: var(--space-medium);
   }
@@ -466,12 +498,16 @@
   color: var(--text-color-deemphasized);
 
   :root[uidensity="compact"] & {
+    /* rem space tokens don't preserve this spacing under chrome root font-size. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     margin-block: 4px;
   }
 }
 
 #protections-popup-no-trackers-found-description {
   margin: auto 7.25em;
+  /* Relative to menu font; no matching font-size token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.1em;
   text-align: center;
   color: var(--text-color-deemphasized);
@@ -485,6 +521,7 @@
   border-radius: var(--border-radius-xsmall);
 
   &:hover {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     outline: 4px solid var(--button-background-color-ghost-hover);
   }
 }
@@ -512,7 +549,7 @@
 /* PERMISSIONS */
 
 .permission-popup-permission-item {
-  min-height: 24px;
+  min-height: var(--size-item-medium);
 }
 
 .protections-popup-category[uidisabled] {
@@ -520,6 +557,8 @@
 }
 
 #permission-popup-storage-access-permission-list-header {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline-end: 8px;
 }
 
@@ -530,6 +569,8 @@
 
 #permission-popup-permission-reload-hint,
 #permission-popup-permission-empty-hint {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-top: 8px;
 }
 
@@ -544,27 +585,33 @@
 
 #permission-popup-storage-access-permission-list-hint,
 #permission-popup-storage-access-permission-learn-more {
-  /* Matches offset for items - 16px icon + 8px margin */
-  margin-inline-start: calc(16px + 8px);
+  /* Matches offset for items - icon size plus margin.
+     rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline-start: calc(var(--icon-size) + 8px);
 }
 
 .permission-popup-permission-icon {
-  width: 16px;
-  height: 16px;
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 .permission-popup-permission-label,
 .permission-popup-permission-header-label {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: 8px;
 }
 
 .permission-popup-permission-label-subitem {
-  /* Align label with other labels with icon. */
-  /* icon width + icon inline margin + label inline margin */
-  margin-inline-start: calc(16px + 3px + 10px);
+  /* Align with labels that have an icon; remaining offsets have no matching space tokens. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline-start: calc(var(--icon-size) + 3px + 10px);
 }
 
 .permission-popup-permission-state-label {
+  /* No matching space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: 5px;
   text-align: end;
 }
@@ -573,8 +620,14 @@
   appearance: none;
   min-width: auto;
   margin: 0;
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: 2px;
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: 2px;
+  /* No matching space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline-end: 6px;
   background-color: var(--button-background-color);
   color: var(--button-text-color);
@@ -583,8 +636,8 @@
 
   > .button-box > .button-icon {
     margin: 0;
-    width: 12px;
-    height: 12px;
+    width: var(--icon-size-xsmall);
+    height: var(--icon-size-xsmall);
     list-style-image: url(chrome://global/skin/icons/close.svg);
     -moz-context-properties: fill;
     fill: currentColor;
@@ -639,6 +692,8 @@
 }
 
 .protections-popup-description > description {
+  /* No matching space token; rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin: 10px 16px;
 }
 
@@ -648,22 +703,25 @@
 }
 
 #protections-popup-milestones-content {
-  background-color: var(--panel-banner-item-background-color);
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
 }
 
 /* The padding-block for menuitems is set to 0 in compact mode which, with the
  * shield icon being bigger than a usual menuitem, makes the item look crowded
  * even for compact mode. */
 :root[uidensity="compact"] #protections-popup-milestones-content {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-block: 4px;
 }
 
 #protections-popup-milestones-content:hover {
-  background-color: var(--panel-banner-item-hover-bgcolor);
+  background-color: var(--button-background-color-hover);
 }
 
 #protections-popup-milestones-content:hover:active {
-  background-color: var(--panel-banner-item-active-bgcolor);
+  background-color: var(--button-background-color-active);
 }
 
 #protections-popup-milestones-text {
@@ -674,11 +732,15 @@
   list-style-image: url(chrome://browser/skin/controlcenter/etp-milestone.svg);
   -moz-context-properties: fill, stroke;
   margin-inline-start: var(--horizontal-padding);
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: 4px;
-  height: 40px;
-  width: 32px;
+  height: var(--size-image-xsmall);
+  width: var(--icon-size-xlarge);
 }
 
+/* Milestone illustration brand colors; no icon-color token equivalents. */
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
 #protections-popup[milestone] #protections-popup-milestones-illustration {
   fill: #45278d;
   stroke: #321c64;
@@ -713,12 +775,17 @@
   fill: #ffd567;
   stroke: #ffbd4f;
 }
+/* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
 
 .permission-popup-section {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-bottom: 12px;
 }
 
 #permission-popup-menulist {
+  /* rem space tokens don't preserve this spacing under chrome root font-size; no matching space token for the end padding. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline: 12px 6px;
   margin: 0;
 
@@ -728,7 +795,7 @@
   }
 
   &[disabled] {
-    opacity: 0.5;
+    opacity: var(--button-opacity-disabled);
     pointer-events: none;
   }
 }
@@ -753,7 +820,11 @@
 
 #blocked-popup-indicator-item,
 #geo-access-indicator-item {
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-top: -2px;
+  /* rem space tokens don't preserve this spacing under chrome root font-size. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-start: 16px;
 }
 
@@ -763,6 +834,8 @@
 }
 
 #geo-access-indicator-item {
+  /* Relative to menu font; no matching font-size token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 0.8em;
   color: var(--text-color-deemphasized);
 }
@@ -771,6 +844,8 @@
 
 .protections-popup-shim-allow-hint {
   padding: 0 2em;
+  /* No matching space token. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-block-end: 10px;
 }
 
@@ -781,19 +856,19 @@
   background-repeat: no-repeat;
   background-position: center;
 
-  fill: light-dark(#0090ed, #80ebff);
+  fill: var(--icon-color-information);
 }
 
 .protections-popup-shim-allow-hint-icon {
-  width: 24px;
-  height: 24px;
+  width: var(--icon-size-large);
+  height: var(--icon-size-large);
 
   background-size: contain;
   margin-inline-end: 0.5em;
 }
 
 .protections-popup-list-host-shim-allow-indicator {
-  width: 16px;
+  width: var(--icon-size);
 }
 
 .protections-popup-shim-allow-hint-icon {
@@ -802,7 +877,7 @@
 
 .protections-popup-list-host-shim-allow-indicator {
   margin-inline-start: 0.5em;
-  min-width: 16px;
+  min-width: var(--icon-size);
 }
 
 .protections-popup-smartblock-section {
@@ -859,7 +934,7 @@
     align-items: flex-start;
     gap: var(--space-large);
     align-self: stretch;
-    border: 1px solid var(--trustpanel-card-border-color);
+    border: var(--border-width) solid var(--trustpanel-card-border-color);
     border-radius: var(--border-radius-large);
   }
 }
@@ -898,7 +973,7 @@
   }
 
   .trustpanel-card-divided {
-    border-top: 1px solid var(--trustpanel-card-divider-color);
+    border-top: var(--border-width) solid var(--trustpanel-card-divider-color);
   }
 }
 
@@ -961,14 +1036,14 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  fill: light-dark(#0090ed, #80ebff);
+  fill: var(--icon-color-information);
 }
 
 /* Legacy graphic shows by default; the Nova graphic replaces it behind the
    pref. */
 #trustpanel-graphic-image-legacy {
-  width: 80px;
-  height: 80px;
+  width: var(--size-image-xlarge);
+  height: var(--size-image-xlarge);
   margin-inline-end: var(--space-small);
   background-image: var(--trustpanel-image-legacy);
 
@@ -1085,7 +1160,8 @@
   margin: var(--space-xsmall);
   padding: var(--space-medium);
   border-radius: var(--border-radius-medium);
-  background: light-dark(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background: light-dark(var(--color-white-alpha-60), color-mix(in srgb, white 12%, transparent));
 
   @media -moz-pref("browser.nova.enabled") {
     margin: 0;
@@ -1100,7 +1176,7 @@
 
   @media -moz-pref("browser.nova.enabled") {
     border: none;
-    border-top: 1px solid var(--trustpanel-card-divider-color);
+    border-top: var(--border-width) solid var(--trustpanel-card-divider-color);
     padding-top: var(--space-large);
   }
 }
@@ -1119,7 +1195,7 @@
 
   @media -moz-pref("browser.nova.enabled") {
     border: none;
-    border-top: 1px solid var(--trustpanel-card-divider-color);
+    border-top: var(--border-width) solid var(--trustpanel-card-divider-color);
     padding-block-start: var(--space-large);
   }
 

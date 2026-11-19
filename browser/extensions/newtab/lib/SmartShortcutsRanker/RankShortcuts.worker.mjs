@@ -7,12 +7,23 @@ import { RankShortcutsWorker } from "resource://newtab/lib/SmartShortcutsRanker/
 
 const ranker = new RankShortcutsWorker();
 
-const worker = new PromiseWorker.AbstractWorker();
-worker.dispatch = (method, args = []) => ranker[method](...args);
-worker.postMessage = (msg, ...transfers) => self.postMessage(msg, ...transfers);
-worker.close = () => self.close();
+class RankShortcutsPromiseWorker extends PromiseWorker.AbstractWorker {
+  dispatch(method, args = []) {
+    return ranker[method](...args);
+  }
+
+  postMessage(msg, ...transfers) {
+    return self.postMessage(msg, ...transfers);
+  }
+
+  close() {
+    return self.close();
+  }
+}
+
+const worker = new RankShortcutsPromiseWorker();
 
 self.addEventListener("message", msg => worker.handleMessage(msg));
 self.addEventListener("unhandledrejection", error => {
-  throw error.reason;
+  throw /** @type {PromiseRejectionEvent} */ (error).reason;
 });

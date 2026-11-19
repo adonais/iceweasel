@@ -33,6 +33,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.sys.mjs",
+  PushNotificationHelper:
+    "resource://gre/modules/PushNotificationHelper.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "profilesLocalization", () => {
@@ -1738,6 +1740,11 @@ class SelectableProfileServiceClass extends EventEmitter {
       );
     }
 
+    if (AppConstants.MOZ_PUSH_NOTIFICATION_HELPER) {
+      // The helper has to be stopped before the profile directory is removed
+      await lazy.PushNotificationHelper.stopForProfile(aProfile.path);
+    }
+
     // First attempt to remove the profile's directories. This will attempt to
     // locate the directories and so will throw an exception if the profile is
     // currently in use.
@@ -1774,6 +1781,13 @@ class SelectableProfileServiceClass extends EventEmitter {
 
     await this.currentProfile.removeDesktopShortcut();
 
+    if (AppConstants.MOZ_PUSH_NOTIFICATION_HELPER) {
+      // The helper has to be stopped before the profile directory is removed
+      await lazy.PushNotificationHelper.stopForProfile(
+        this.currentProfile.path
+      );
+    }
+
     await this.#connection.executeBeforeShutdown(
       "SelectableProfileService: deleteCurrentProfile",
       async db => {
@@ -1793,6 +1807,13 @@ class SelectableProfileServiceClass extends EventEmitter {
 
         await db.execute(
           "DELETE FROM NimbusSyncTimestamps WHERE profileId = :profileId;",
+          {
+            profileId: lazy.ExperimentAPI.profileId,
+          }
+        );
+
+        await db.execute(
+          "DELETE FROM NimbusEnrollmentStatuses WHERE profileId = :profileId;",
           {
             profileId: lazy.ExperimentAPI.profileId,
           }

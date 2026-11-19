@@ -752,23 +752,11 @@ export class TabsPanel extends TabsListBase {
     button.setAttribute("flex", "1");
     button.setAttribute("crop", "end");
 
-    let setName = tabGroupName => {
-      doc.l10n.setAttributes(
-        button,
-        "tabbrowser-manager-current-window-tab-group",
-        { tabGroupName }
-      );
-    };
-
-    if (group.label) {
-      setName(group.label);
-    } else {
-      doc.l10n
-        .formatValues([{ id: "tab-group-name-default" }])
-        .then(([msg]) => {
-          setName(msg);
-        });
-    }
+    doc.l10n.setAttributes(
+      button,
+      "tabbrowser-manager-current-window-tab-group",
+      { tabGroupName: group.label || group.defaultGroupName }
+    );
     row.appendChild(button);
     return row;
   }

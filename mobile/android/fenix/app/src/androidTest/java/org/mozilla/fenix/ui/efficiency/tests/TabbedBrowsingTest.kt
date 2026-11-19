@@ -541,8 +541,6 @@ class TabbedBrowsingTest : BaseTest() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4034516
     @Critical
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=2079797"])
-    // Leak Canary: https://github.com/square/leakcanary/issues/2781
     @Test
     fun verifyMergeTabGroupsViaSelectionListViewTest() {
         appContext.components.settings.gridTabView = false

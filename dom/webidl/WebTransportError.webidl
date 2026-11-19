@@ -7,7 +7,10 @@
 [Exposed=(Window,Worker), Serializable, SecureContext,
  Pref="network.webtransport.enabled"]
 interface WebTransportError : DOMException {
-  constructor(optional DOMString message = "", optional WebTransportErrorOptions options = {});
+  // WebTransportErrorInit is the older constructor signature, still used by
+  // upstream WPTs.
+  constructor(optional (DOMString or WebTransportErrorInit) message = "",
+              optional WebTransportErrorOptions options = {});
 
   readonly attribute WebTransportErrorSource source;
   readonly attribute unsigned long? streamErrorCode;
@@ -16,6 +19,11 @@ interface WebTransportError : DOMException {
 dictionary WebTransportErrorOptions {
   WebTransportErrorSource source = "stream";
   [Clamp] unsigned long? streamErrorCode = null;
+};
+
+dictionary WebTransportErrorInit {
+  [Clamp] unsigned long streamErrorCode;
+  DOMString message = "";
 };
 
 enum WebTransportErrorSource {

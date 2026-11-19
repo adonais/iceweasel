@@ -175,8 +175,13 @@ aboutaddons-themes-mode {
   }
 }
 
+aboutaddons-themes-pickers {
+  display: contents;
+}
+
 aboutaddons-themes-picker {
   display: block;
+  margin-block-end: var(--space-large);
 
   @media not -moz-pref("browser.nova.enabled") {
     display: none;
@@ -850,6 +855,28 @@ section:not(:empty) ~ :is(#empty-addons-message, #empty-addons-promo) {
 
 .permission-header > .addon-sitepermissions-host {
   font-weight: var(--font-weight-bold);
+}
+
+addon-list[type="theme"] > moz-card {
+  margin-block-end: var(--space-large);
+  /* Remove padding at the block start of the moz-card,
+   * visible when the accordion moz-card header is hovered */
+  --card-cover-image-padding: 0;
+
+  max-width: var(--page-main-content-width);
+}
+
+:is(addon-list[type="theme"], recommended-themes-section > moz-card) .card {
+  --card-border: var(--border-width) solid var(--border-color);
+  --card-box-shadow: none;
+  --card-box-shadow-hover: none;
+}
+
+recommended-themes-section > moz-card {
+  margin-block-end: var(--space-large);
+  /* Remove padding at the block start of the moz-card,
+   * visible when the accordion moz-card header is hovered */
+  --card-cover-image-padding: 0;
 }
 
 /* Position the badged dot in the top-end (right in ltr, left in rtl)

@@ -304,7 +304,7 @@ void WebrtcAudioConduit::OnControlConfigChange() {
 
   if (mControl.mMid.Ref() != mSendStreamConfig.rtp.mid) {
     mSendStreamConfig.rtp.mid = mControl.mMid.Ref();
-    sendStreamReconfigureNeeded = true;
+    sendStreamRecreationNeeded = true;
   }
 
   if (mControl.mRemoteSsrc.Ref() != mControl.mConfiguredRemoteSsrc) {
@@ -728,8 +728,7 @@ void WebrtcAudioConduit::OnRtcpReceived(webrtc::CopyOnWriteBuffer&& aPacket) {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
   if (mCall->Call()) {
-    mCall->Call()->Receiver()->DeliverRtcpPacket(
-        std::forward<webrtc::CopyOnWriteBuffer>(aPacket));
+    mCall->Call()->Receiver()->DeliverRtcpPacket(std::move(aPacket));
   }
 }
 

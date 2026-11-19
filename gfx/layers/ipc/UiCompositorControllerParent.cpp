@@ -191,7 +191,7 @@ UiCompositorControllerParent::RecvEnableLayerUpdateNotifications(
 }
 
 void UiCompositorControllerParent::ActorDestroy(ActorDestroyReason aWhy) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   Shutdown();
 }
 
@@ -270,12 +270,12 @@ void UiCompositorControllerParent::InitializeForSameProcess() {
 }
 
 void UiCompositorControllerParent::InitializeForOutOfProcess() {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   Initialize();
 }
 
 void UiCompositorControllerParent::Initialize() {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   LayerTreeState* state =
       CompositorBridgeParent::GetLayerTreeState(mRootLayerTreeId);
   MOZ_ASSERT(state);
@@ -288,7 +288,7 @@ void UiCompositorControllerParent::Initialize() {
 
 void UiCompositorControllerParent::Open(
     Endpoint<PUiCompositorControllerParent>&& aEndpoint) {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   if (!aEndpoint.Bind(this)) {
     // We can't recover from this.
     MOZ_CRASH("Failed to bind UiCompositorControllerParent to endpoint");
@@ -297,7 +297,7 @@ void UiCompositorControllerParent::Open(
 }
 
 void UiCompositorControllerParent::Shutdown() {
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   LayerTreeState* state =
       CompositorBridgeParent::GetLayerTreeState(mRootLayerTreeId);
   if (state) {

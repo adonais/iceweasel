@@ -52,7 +52,6 @@ struct HttpChannelOnStartRequestArgs
   bool isLastPartOfMultiPart;
   CrossOriginOpenerPolicy openerPolicy;
   bool shouldWaitForOnStartRequestSent;
-  bool dataFromSocketProcess;
   bool hasHTTPSRR;
   bool isProxyUsed;
   uint8_t redirectCount;

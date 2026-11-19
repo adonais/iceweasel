@@ -377,6 +377,47 @@ add_task(async function test_interaction_telemetry() {
 });
 
 /**
+ * Tests that we record how long it took to import each resource type that
+ * we time, keyed by the migrator.
+ */
+add_task(async function test_import_duration_telemetry() {
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+
+  let key = InternalTestingProfileMigrator.key;
+  let testingMigrator = await MigrationUtils.getMigrator(key);
+  let durationMetrics = [
+    Glean.browserMigration.bookmarksImportDuration,
+    Glean.browserMigration.historyImportDuration,
+    Glean.browserMigration.loginsImportDuration,
+    Glean.browserMigration.cardsImportDuration,
+    Glean.browserMigration.extensionsImportDuration,
+  ];
+
+  for (let metric of durationMetrics) {
+    Assert.equal(
+      metric[key].testGetValue(),
+      null,
+      "No duration should be recorded before migrating."
+    );
+  }
+
+  await testingMigrator.migrate(
+    MigrationUtils.resourceTypes.ALL,
+    false,
+    InternalTestingProfileMigrator.testProfile
+  );
+
+  for (let metric of durationMetrics) {
+    Assert.equal(
+      metric[key].testGetValue().count,
+      1,
+      "Should have recorded one duration sample per resource."
+    );
+  }
+});
+
+/**
  * Tests that when importing passwords from a CSV file using the
  * migration wizard, we set an interaction pref. This preference
  * is sent using TelemetryEnvironment.sys.mjs.

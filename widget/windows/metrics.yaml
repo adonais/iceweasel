@@ -46,6 +46,34 @@ widget:
     expires: never
     telemetry_mirror: WIDGET_IME_NAME_ON_WINDOWS_INSERTED_CRLF
 
+  jump_list_shell_call:
+    type: labeled_timing_distribution
+    description: >
+      Wall-clock time taken by each individual Windows Shell COM call made by
+      the Jump List builder, labeled by which call it was. Only calls that
+      returned are recorded; a call that never returns leaves the
+      JumpListShellCallStart crash annotation set instead.
+    time_unit: millisecond
+    labels:
+      - setup
+      - teardown
+      - clear_recents
+      - set_app_id
+      - begin_list
+      - add_user_tasks
+      - append_category
+      - commit_list
+      - abort_list
+      - delete_list
+      - append_known_category
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2073787
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2073787
+    notification_emails:
+      - daparks@mozilla.com
+    expires: 165
+
 windows.security:
   antivirus:
     type: string_list

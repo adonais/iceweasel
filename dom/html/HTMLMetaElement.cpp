@@ -146,7 +146,7 @@ void HTMLMetaElement::MetaAddedOrChanged(Document& aDoc,
   const bool hasContent = GetAttr(nsGkAtoms::content, content);
   if (aName.Equals(nsGkAtoms::viewport, eIgnoreCase)) {
     if (hasContent) {
-      aDoc.SetMetaViewportData(MakeUnique<ViewportMetaData>(content));
+      aDoc.SetMetaViewportData(std::make_unique<ViewportMetaData>(content));
     }
     return;
   }

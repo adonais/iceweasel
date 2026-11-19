@@ -290,6 +290,7 @@ export const UrlbarShared = {
     SEMANTIC_HISTORY: "semanticHistory",
     SUGGESTED_INDEX: "suggestedIndex",
     TAIL_SUGGESTION: "tailSuggestion",
+    TEMPORAL_SUGGESTION: "temporalSuggestion",
   }),
 
   // Defines provider types.
@@ -371,6 +372,14 @@ export const UrlbarShared = {
   // Size in `px` of icons in top-pick rows in the view. Should be kept in sync
   // with the `--urlbarview-top-pick-icon-size` CSS variable.
   TOP_PICK_ICON_SIZE: 58,
+
+  // Possible best-match types for results. These types map to the
+  // `top-pick-type` attribute that `UrlbarView` sets on rows.
+  BEST_MATCH_TYPE: {
+    NONE: "",
+    SMALL: "small",
+    LARGE: "large",
+  },
 
   // The number of results by which Page Up/Down move the selection.
   PAGE_UP_DOWN_DELTA: 5,
@@ -1227,9 +1236,12 @@ export const UrlbarShared = {
       case UrlbarShared.RESULT_GROUP.SEMANTIC_HISTORY: {
         return "general";
       }
-      // Group of UrlbarProviderQuickSuggest is GENERAL_PARENT.
+      // GENERAL_PARENT is the group for typical Suggest results.
       case UrlbarShared.RESULT_GROUP.GENERAL_PARENT: {
         return "suggest";
+      }
+      case UrlbarShared.RESULT_GROUP.TEMPORAL_SUGGESTION: {
+        return "temporal";
       }
       case UrlbarShared.RESULT_GROUP.ABOUT_PAGES: {
         return "about_page";

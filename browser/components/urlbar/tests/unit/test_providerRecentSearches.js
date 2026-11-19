@@ -16,12 +16,10 @@ let TEST_SEARCHES = ["Bob Vylan", "Glasgow Weather", "Joy Formidable"];
 let defaultEngine;
 
 function makeRecentSearchResult(context, engine, suggestion) {
-  let result = makeFormHistoryResult(context, {
+  return makeFormHistoryResult(context, {
     suggestion,
     engineName: engine.name,
   });
-  delete result.payload.lowerCaseSuggestion;
-  return result;
 }
 
 async function addSearches(searches = TEST_SEARCHES) {

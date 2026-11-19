@@ -291,6 +291,83 @@ add_task(
   }
 );
 
+add_task(async function temporal_hidden_without_feature_gate() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest.all", true],
+      ["browser.urlbar.temporal.featureGate", false],
+    ],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
+
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  Assert.ok(
+    BrowserTestUtils.isHidden(
+      doc.getElementById("temporalSeasonalSuggestions")
+    ),
+    "temporalSeasonalSuggestions should be hidden when the feature gate is off"
+  );
+
+  gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function temporal_seasonal_checkbox() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest.all", true],
+      ["browser.urlbar.temporal.featureGate", true],
+      ["browser.urlbar.suggest.temporal.seasonal", true],
+    ],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
+
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let allCheckbox = doc.getElementById("firefoxSuggestAll");
+  let seasonalCheckbox = doc.getElementById("temporalSeasonalSuggestions");
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(seasonalCheckbox),
+    "temporalSeasonalSuggestions should be visible"
+  );
+  Assert.ok(
+    allCheckbox.contains(seasonalCheckbox),
+    "Seasonal checkbox should be nested under the Firefox Suggest checkbox"
+  );
+  Assert.ok(seasonalCheckbox.checked, "Seasonal should be checked");
+  Assert.ok(!seasonalCheckbox.disabled, "Seasonal should be enabled");
+
+  seasonalCheckbox.click();
+  await seasonalCheckbox.updateComplete;
+  Assert.ok(
+    !Services.prefs.getBoolPref("browser.urlbar.suggest.temporal.seasonal"),
+    "suggest.temporal.seasonal should be false"
+  );
+  Assert.ok(
+    Services.prefs.getBoolPref("browser.urlbar.suggest.temporal"),
+    "suggest.temporal should be unchanged"
+  );
+
+  seasonalCheckbox.click();
+  await seasonalCheckbox.updateComplete;
+  Assert.ok(
+    Services.prefs.getBoolPref("browser.urlbar.suggest.temporal.seasonal"),
+    "suggest.temporal.seasonal should be true again"
+  );
+
+  allCheckbox.click();
+  await allCheckbox.parentElement.updateComplete;
+  Assert.ok(
+    seasonalCheckbox.disabled,
+    "Seasonal should be disabled when all suggestions are off"
+  );
+
+  gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
+});
+
 // Tests the "Restore" button for dismissed suggestions.
 add_task(async function restoreDismissedSuggestions() {
   // Start with no dismissed suggestions.

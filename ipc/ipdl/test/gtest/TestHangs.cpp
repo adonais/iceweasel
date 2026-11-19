@@ -120,13 +120,15 @@ class TestHangsParent : public PTestHangsParent {
 
 #define TEST_HANGS(mode)                                             \
   IPDL_TEST(TestHangs, mode) {                                       \
-    mActor->SendStart(                                               \
-        (uint32_t)HangMode::mode,                                    \
-        [this](bool detectedHang) {                                  \
-          EXPECT_EQ(detectedHang, HangMode::mode != HangMode::None); \
-          mActor->Close();                                           \
-        },                                                           \
-        [](auto&& reason) { FAIL() << "failed to send start"; });    \
+    mActor->SendStart((uint32_t)HangMode::mode,                      \
+                      [this](bool detectedHang) {                    \
+                        EXPECT_EQ(detectedHang,                      \
+                                  HangMode::mode != HangMode::None); \
+                        mActor->Close();                             \
+                      },                                             \
+                      []([[maybe_unused]] auto&& reason) {           \
+                        FAIL() << "failed to send start";            \
+                      });                                            \
   }
 
 TEST_HANGS(None)

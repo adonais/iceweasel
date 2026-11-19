@@ -47,6 +47,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FormAutofillPreferences:
     "resource://autofill/FormAutofillPreferences.sys.mjs",
   FormAutofillPrompter: "resource://autofill/FormAutofillPrompter.sys.mjs",
+  MIGRATION_SAFE_POINT_TOPIC: "resource://autofill/FormAutofillStorage.sys.mjs",
   PassportRecord: "resource://gre/modules/shared/PassportRecord.sys.mjs",
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
@@ -236,6 +237,37 @@ export let FormAutofillStatus = {
     this.updateStatus();
   },
 
+  /**
+   * Loads the store after startup so the saved card counts, and whether saving
+   * security codes is on, reach every metrics ping. Run from the
+   * browser-idle-startup category.
+   */
+  loadStorageOnIdle() {
+    if (FormAutofill.isAutofillTypeAvailable(AutofillDataTypes.CREDIT_CARD)) {
+      if (FormAutofill.isAutofillCreditCardCVVSupported) {
+        Glean.formautofillCreditcards.cvvSavingEnabled.set(
+          FormAutofill.isAutofillCreditCardCVVEnabled
+        );
+      }
+      return lazy.gFormAutofillStorage.initialize();
+    }
+    return undefined;
+  },
+
+  async updateSavedCreditCardCounts() {
+    if (!FormAutofill.isAutofillTypeAvailable(AutofillDataTypes.CREDIT_CARD)) {
+      return;
+    }
+    try {
+      const { total, withSecurityCode } =
+        await lazy.gFormAutofillStorage.creditCards.getSavedCounts();
+      Glean.formautofillCreditcards.savedCount.set(total);
+      Glean.formautofillCreditcards.savedCvvCount.set(withSecurityCode);
+    } catch (e) {
+      lazy.log.error("Could not count the saved credit cards", e);
+    }
+  },
+
   async observe(subject, topic, data) {
     lazy.log.debug("observe:", topic, "with data:", data);
 
@@ -276,7 +308,14 @@ export let FormAutofillStatus = {
           break;
         }
 
-        await this.updateSavedFieldNames();
+        const updates = [this.updateSavedFieldNames()];
+        if (
+          subject?.wrappedJSObject?.collectionName ===
+          AutofillDataTypes.get(AutofillDataTypes.CREDIT_CARD).collectionName
+        ) {
+          updates.push(this.updateSavedCreditCardCounts());
+        }
+        await Promise.all(updates);
         break;
       }
 
@@ -289,8 +328,9 @@ export let FormAutofillStatus = {
   },
 };
 
-// Lazily load the storage JSM to avoid disk I/O until absolutely needed.
-// Once storage is loaded we need to update saved field names and inform content processes.
+// Lazily load the storage, at the first form or on idle after startup for
+// telemetry (see loadStorageOnIdle). Once loaded, update saved field names,
+// inform content processes and report the saved card counts.
 ChromeUtils.defineLazyGetter(lazy, "gFormAutofillStorage", () => {
   let { formAutofillStorage } = ChromeUtils.importESModule(
     "resource://autofill/FormAutofillStorage.sys.mjs"
@@ -300,6 +340,7 @@ ChromeUtils.defineLazyGetter(lazy, "gFormAutofillStorage", () => {
   formAutofillStorage.initialize().then(() => {
     // Update the saved field names to compute the status and update child processes.
     FormAutofillStatus.updateSavedFieldNames();
+    FormAutofillStatus.updateSavedCreditCardCounts();
   });
 
   return formAutofillStorage;
@@ -617,6 +658,32 @@ export class FormAutofillParent extends JSWindowActorParent {
 
     await this.runMLInference(fieldDetails);
 
+    // If none of the detected fields belong to a known data type, don't
+    // set up autofill, but send the FormAutofill:onFieldsDetectedNone message
+    // to the original focused frame so that it can reset state. This
+    // optimization prevents processing fields further and adding unneeded
+    // mutation listeners.
+    if (
+      !fieldDetails.some(
+        fd => AutofillDataTypes.typeIdForFieldName(fd.fieldName) != null
+      )
+    ) {
+      const detailsByBC =
+        lazy.FormAutofillSection.groupFieldDetailsByBrowsingContext(
+          fieldDetails
+        );
+      for (const [bcId, fds] of Object.entries(detailsByBC)) {
+        if (bcId == this.browsingContext.id) {
+          FormAutofillParent.getActor(this.browsingContext).sendQuery(
+            "FormAutofill:onFieldsDetectedNone",
+            { fds }
+          );
+          break;
+        }
+      }
+      return;
+    }
+
     // Now we have collected all the fields for the form, run parsing heuristics
     // to update the field name based on surrounding fields.
     const sections = FormAutofillParent.parseAndClassifyFields(fieldDetails);
@@ -804,6 +871,10 @@ export class FormAutofillParent extends JSWindowActorParent {
         await showDoorhanger();
       }
     }
+
+    // The submission's writes, and those of any doorhanger it showed, have
+    // landed by now.
+    Services.obs.notifyObservers(null, lazy.MIGRATION_SAFE_POINT_TOPIC);
   }
 
   /**
@@ -1204,14 +1275,15 @@ export class FormAutofillParent extends JSWindowActorParent {
     this.sendAsyncMessage("FormAutofill:RepopulateAutocompletePopup");
   }
 
-  async #confirmAddressRemoval(guid) {
+  async #confirmAddressRemoval(guid, flowId) {
     // Read before awaiting: the prompt below takes focus and the actor may be
     // destroyed by the time it resolves.
     const chromeWindow = this.manager.browsingContext.topChromeWindow;
 
     const confirmed = await lazy.AutocompleteRemoveRecord.confirmRemoval(
       chromeWindow,
-      "address"
+      "address",
+      flowId
     );
     if (!confirmed) {
       return;
@@ -1221,7 +1293,7 @@ export class FormAutofillParent extends JSWindowActorParent {
     await lazy.gFormAutofillStorage.addresses.remove(guid);
   }
 
-  async #confirmCreditCardRemoval(guid) {
+  async #confirmCreditCardRemoval(guid, flowId) {
     // Read before awaiting: the prompts below take focus and the actor may be
     // destroyed by the time they resolve.
     const chromeWindow = this.manager.browsingContext.topChromeWindow;
@@ -1263,7 +1335,8 @@ export class FormAutofillParent extends JSWindowActorParent {
 
     const confirmed = await lazy.AutocompleteRemoveRecord.confirmRemoval(
       chromeWindow,
-      "payment"
+      "payment",
+      flowId
     );
     if (!confirmed) {
       return;
@@ -1277,7 +1350,7 @@ export class FormAutofillParent extends JSWindowActorParent {
    * This function is called when an autocomplete entry that is provided by
    * formautofill is selected by the user.
    */
-  async onAutoCompleteEntrySelected(message, data) {
+  async onAutoCompleteEntrySelected(message, data, { flowId } = {}) {
     switch (message) {
       case "FormAutofill:OpenPaymentPreferences": {
         lazy.FormAutofillPreferences.openPaymentPreference();
@@ -1301,7 +1374,7 @@ export class FormAutofillParent extends JSWindowActorParent {
 
       case "FormAutofill:DeleteAddress": {
         try {
-          await this.#confirmAddressRemoval(data?.guid);
+          await this.#confirmAddressRemoval(data?.guid, flowId);
         } catch (ex) {
           lazy.log.warn("Address removal flow failed:", ex);
         } finally {
@@ -1312,7 +1385,7 @@ export class FormAutofillParent extends JSWindowActorParent {
 
       case "FormAutofill:DeleteCreditCard": {
         try {
-          await this.#confirmCreditCardRemoval(data?.guid);
+          await this.#confirmCreditCardRemoval(data?.guid, flowId);
         } catch (ex) {
           lazy.log.warn("Payment method removal flow failed:", ex);
         } finally {
@@ -1347,9 +1420,9 @@ export class FormAutofillParent extends JSWindowActorParent {
     }
   }
 
-  // Credit card number will only be filled when it is same-origin with the frame that
-  // triggers the autofilling.
-  #FIELDS_FILLED_WHEN_SAME_ORIGIN = ["cc-number"];
+  // Credit card number and security code will only be filled when they are
+  // same-origin with the frame that triggers the autofilling.
+  #FIELDS_FILLED_WHEN_SAME_ORIGIN = ["cc-number", "cc-csc"];
 
   /**
    * Determines whether a field is eligible for autofill based on its origin.
@@ -1358,7 +1431,7 @@ export class FormAutofillParent extends JSWindowActorParent {
    * 1. Autofill is permitted if the field resides in a frame that shares the same origin
    *    as the field that triggered the autofill action.
    * 2. Autofill is also allowed if the field is same-origin with the top-level frame
-   *    and is not designated as a credit card number field.
+   *    and is not designated as a credit card number or security code field.
    *
    * @param {BorwsingContext} bc
    *        The browsing context the field is in.
@@ -1381,8 +1454,8 @@ export class FormAutofillParent extends JSWindowActorParent {
       return false;
     }
 
-    // Relaxed autofill restrictions: for fields other than the credit card number,
-    // if the field is in a top-level frame or in a first-party origin iframe,
+    // Relaxed autofill restrictions: for fields other than the credit card number
+    // and security code, if the field is in a top-level frame or in a first-party origin iframe,
     // autofill is allowed.
     if (this.#FIELDS_FILLED_WHEN_SAME_ORIGIN.includes(fieldDetail.fieldName)) {
       return false;
@@ -1522,6 +1595,9 @@ export class FormAutofillParent extends JSWindowActorParent {
       value.isFilledOnFieldsUpdate = false;
     });
     section.onFilled(result);
+
+    // A fill writes nothing.
+    Services.obs.notifyObservers(null, lazy.MIGRATION_SAFE_POINT_TOPIC);
 
     // For testing only
     Services.obs.notifyObservers(null, "formautofill-autofill-complete");

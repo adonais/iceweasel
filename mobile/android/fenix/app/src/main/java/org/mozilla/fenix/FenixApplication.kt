@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
 import androidx.core.content.getSystemService
-import androidx.core.net.toUri
 import androidx.core.os.UserManagerCompat
 import androidx.emoji2.text.DefaultEmojiCompatConfig
 import androidx.emoji2.text.EmojiCompat
@@ -57,7 +56,6 @@ import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.concept.push.PushProcessor
-import mozilla.components.concept.storage.FrecencyThresholdOption
 import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
 import mozilla.components.feature.addons.update.GlobalAddonDependencyProvider
 import mozilla.components.feature.autofill.AutofillUseCases
@@ -67,8 +65,6 @@ import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.feature.search.ext.waitForSelectedOrDefaultSearchEngine
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.syncedtabs.commands.GlobalSyncedTabsCommandsProvider
-import mozilla.components.feature.top.sites.TopSitesFrecencyConfig
-import mozilla.components.feature.top.sites.TopSitesProviderConfig
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.service.sync.autofill.GlobalAutofillDependencyProvider
@@ -123,12 +119,10 @@ import org.mozilla.fenix.components.startMetricsIfEnabled
 import org.mozilla.fenix.experiments.maybeFetchExperiments
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.containsQueryParameters
 import org.mozilla.fenix.ext.isCustomEngine
 import org.mozilla.fenix.ext.isKnownSearchDomain
 import org.mozilla.fenix.home.collections.migration.CollectionsToTabGroupsMigrationWorker
-import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_LIMIT
-import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_MAX_THRESHOLD
+import org.mozilla.fenix.home.topsites.getTopSitesConfig
 import org.mozilla.fenix.lifecycle.PowerSaveModeFeature
 import org.mozilla.fenix.lifecycle.StoreLifecycleObserver
 import org.mozilla.fenix.lifecycle.VisibilityLifecycleObserver
@@ -501,6 +495,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // We init these items in the visual completeness queue to avoid them initing in the critical
         // startup path, before the UI finishes drawing (i.e. visual completeness).
         queueInitStorageAndServices(queue)
+        queueMenuCustomizationWarmUp(queue)
         queueMetrics(queue)
         queueEngineWarmup(queue)
         queueIncrementNumberOfAppLaunches(queue)
@@ -541,24 +536,12 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     // database call is not expensive. However, the additional context
                     // switches delay rendering top sites when the cache is empty, which
                     // we can prevent with this.
+                    val topSitesConfig =
+                        getTopSitesConfig(settings = components.settings, store = components.core.store).invoke()
                     components.core.topSitesStorage.getTopSites(
-                        totalSites = components.settings.topSitesMaxLimit,
-                        frecencyConfig =
-                            if (FxNimbus.features.homepageHideFrecentTopSites.value().enabled) {
-                                null
-                            } else {
-                                TopSitesFrecencyConfig(
-                                    frecencyTresholdOption = FrecencyThresholdOption.SKIP_ONE_TIME_PAGES
-                                ) {
-                                    !it.url.toUri().containsQueryParameters(components.settings.frecencyFilterQuery)
-                                }
-                            },
-                        providerConfig =
-                            TopSitesProviderConfig(
-                                showProviderTopSites = components.settings.showContileFeature,
-                                limit = TOP_SITES_PROVIDER_LIMIT,
-                                maxThreshold = TOP_SITES_PROVIDER_MAX_THRESHOLD,
-                            ),
+                        targetSitesCount = topSitesConfig.targetSitesCount,
+                        frecencyConfig = topSitesConfig.frecencyConfig,
+                        providerConfig = topSitesConfig.providerConfig,
                     )
 
                     // This service uses `historyStorage`, and so we can only touch it when we know
@@ -700,6 +683,13 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             }
         }
 
+    private fun queueMenuCustomizationWarmUp(queue: RunWhenReadyQueue) =
+        runOnVisualCompleteness(queue) {
+            if (components.settings.isMenuCustomizationScreenEnabled) {
+                components.menuCustomizationRepository.warmUp()
+            }
+        }
+
     /**
      * Sets up LeakCanary based on different build variant implementations.
      *
@@ -741,8 +731,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     private fun maybeSetupIPProtection() {
-        components.ipProtection.feature.initialize()
-        components.ipProtection.storageSynchronizer.initialize()
+        components.ipProtection.initialize()
     }
 
     /**

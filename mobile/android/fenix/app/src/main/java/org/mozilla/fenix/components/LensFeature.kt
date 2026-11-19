@@ -34,8 +34,7 @@ import org.mozilla.fenix.ext.components
  * Handles Google Lens image search requests.
  * - Observes Lens requests from the AppStore.
  * - Launches the Lens camera screen.
- * - Forwards the captured image to [LensImageSearch], which uploads it and opens the result, or opens the result of an
- *   image the camera screen already uploaded.
+ * - Opens the result of the image the camera screen uploaded through [LensImageSearch].
  */
 class LensFeature(
     private val context: Context,
@@ -114,8 +113,8 @@ class LensFeature(
 
     /**
      * Routes the result of the Lens camera activity. If the result intent carries a QR scan payload (from the in-camera
-     * QR mode), dismisses the Lens flow and forwards the result to [qrScanFeature]; otherwise treats it as an image
-     * capture and delegates to [handleImageResult].
+     * QR mode), dismisses the Lens flow and forwards the result to [qrScanFeature]; otherwise treats it as an uploaded
+     * image and delegates to [handleImageResult].
      */
     fun handleCameraActivityResult(
         resultCode: Int,
@@ -137,29 +136,15 @@ class LensFeature(
      * precedes the view lifecycle's, so this runs before [start].
      */
     fun handleImageResult(resultCode: Int, data: Intent?) {
-        if (resultCode != Activity.RESULT_OK || data == null) {
+        val resultUrl = data?.getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL)
+        if (resultCode != Activity.RESULT_OK || resultUrl == null) {
             appStore.dispatch(LensAction.LensDismissed)
             return
         }
 
-        val resultUrl = data.getStringExtra(LensCameraActivity.EXTRA_LENS_RESULT_URL)
-        if (resultUrl != null) {
-            lensImageSearch.openResult(
-                resultUrl = resultUrl,
-                isPrivate = data.getBooleanExtra(LensCameraActivity.EXTRA_IS_PRIVATE, false),
-            )
-            return
-        }
-
-        val imageUri = data.data
-        if (imageUri == null) {
-            appStore.dispatch(LensAction.LensDismissed)
-            return
-        }
-
-        lensImageSearch.searchWithImage(
-            imageUri = imageUri,
-            source = data.getStringExtra(LensCameraActivity.EXTRA_IMAGE_SOURCE) ?: LensImageSearch.SOURCE_UNKNOWN,
+        lensImageSearch.openResult(
+            resultUrl = resultUrl,
+            isPrivate = data.getBooleanExtra(LensCameraActivity.EXTRA_IS_PRIVATE, false),
         )
     }
 

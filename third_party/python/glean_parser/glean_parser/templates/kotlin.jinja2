@@ -289,6 +289,10 @@ import {{ glean_namespace }}.private.{{ obj_type }} // ktlint-disable import-ord
 {% endfor %}
 {% if has_labeled_metrics %}
 import {{ glean_namespace }}.private.LabeledMetricType // ktlint-disable import-ordering
+import {{ glean_namespace }}.private.CommonLabeledMetricData // ktlint-disable import-ordering no-unused-imports
+import {{ glean_namespace }}.private.CustomDistributionLabeledMetricData // ktlint-disable import-ordering no-unused-imports
+import {{ glean_namespace }}.private.MemoryDistributionLabeledMetricData // ktlint-disable import-ordering no-unused-imports
+import {{ glean_namespace }}.private.TimingDistributionLabeledMetricData // ktlint-disable import-ordering no-unused-imports
 {% endif %}
 {% if has_object_metrics %}
 import {{ glean_namespace }}.private.intoSerializedObject
@@ -344,12 +348,59 @@ internal object {{ category_name|Camelize }} {
      */
     val {{ obj.name|camelize }}: LabeledMetricType<{{ obj|type_name }}> by lazy { // generated from {{ obj.identifier() }}
         LabeledMetricType(
-            category = {{ obj.category|kotlin }},
-            name = {{ obj.name|kotlin }},
+            {% if obj.type == "labeled_custom_distribution" %}
+            CustomDistributionLabeledMetricData(
+                cmd = CommonMetricData(
+                    category = {{ obj.category|kotlin }},
+                    name = {{ obj.name|kotlin }},
+                    disabled = {{ obj.is_disabled()|kotlin }},
+                    lifetime = {{ obj.lifetime|kotlin }},
+                    sendInPings = {{ obj.send_in_pings|kotlin }}
+                )
+                {%- for arg_name in extra_metric_args if obj[arg_name] is defined -%}
+                , {{ arg_name|camelize }} = {{ obj[arg_name]|kotlin }}
+                {%- endfor -%}
+            ),
+            {% elif obj.type == "labeled_memory_distribution" %}
+            MemoryDistributionLabeledMetricData(
+                cmd = CommonMetricData(
+                    category = {{ obj.category|kotlin }},
+                    name = {{ obj.name|kotlin }},
+                    disabled = {{ obj.is_disabled()|kotlin }},
+                    lifetime = {{ obj.lifetime|kotlin }},
+                    sendInPings = {{ obj.send_in_pings|kotlin }}
+                )
+                {%- for arg_name in extra_metric_args if obj[arg_name] is defined -%}
+                , {{ arg_name|camelize }} = {{ obj[arg_name]|kotlin }}
+                {%- endfor -%}
+            ),
+            {% elif obj.type == "labeled_timing_distribution" %}
+            TimingDistributionLabeledMetricData(
+                cmd = CommonMetricData(
+                    category = {{ obj.category|kotlin }},
+                    name = {{ obj.name|kotlin }},
+                    disabled = {{ obj.is_disabled()|kotlin }},
+                    lifetime = {{ obj.lifetime|kotlin }},
+                    sendInPings = {{ obj.send_in_pings|kotlin }}
+                )
+                {%- for arg_name in extra_metric_args if obj[arg_name] is defined -%}
+                , {{ arg_name|camelize }} = {{ obj[arg_name]|kotlin }}
+                {%- endfor -%}
+            ),
+            {% elif obj.labeled %}
+            CommonLabeledMetricData(
+                cmd = CommonMetricData(
+                    category = {{ obj.category|kotlin }},
+                    name = {{ obj.name|kotlin }},
+                    disabled = {{ obj.is_disabled()|kotlin }},
+                    lifetime = {{ obj.lifetime|kotlin }},
+                    sendInPings = {{ obj.send_in_pings|kotlin }}
+                )
+            ),
+            {% else %}
+            UNKNOWN
+            {% endif %}
             subMetric = {{ obj.name|camelize }}Label,
-            disabled = {{ obj.is_disabled()|kotlin }},
-            lifetime = {{ obj.lifetime|kotlin }},
-            sendInPings = {{ obj.send_in_pings|kotlin }},
             labels = {{ obj.labels|kotlin }}
         )
     }

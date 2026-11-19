@@ -529,6 +529,11 @@ class NetworkBench(BasePythonSupport):
 
         self.start_iperf3(tcp_port)
 
+    def modify_env(self, env, test):
+        # HTTP/3 connections never complete with Remote Settings disabled
+        # (bug 2082771).
+        env.pop("MOZ_REMOTE_SETTINGS_DISABLED", None)
+
     def modify_command(self, cmd, test):
         if not self._is_chrome:
             cmd += [

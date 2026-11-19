@@ -173,7 +173,7 @@ MFBT_API void EnsureBufferForMainThreadAddMarker() {
     MOZ_ASSERT(!sBufferForMainThreadAddMarker);
     sBufferForMainThreadAddMarker = new ProfileChunkedBuffer(
         ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
-        MakeUnique<ProfileBufferChunkManagerSingle>(
+        std::make_unique<ProfileBufferChunkManagerSingle>(
             ProfileBufferChunkManager::scExpectedMaximumStackSize));
     MOZ_ASSERT(sBufferForMainThreadAddMarker);
     MOZ_ASSERT(sBufferForMainThreadAddMarker->IsInSession());

@@ -632,7 +632,7 @@ add_task(function test_deserializeDateLocalValueInvalidValues() {
 add_task(function test_deserializeLocalValuesInvalidType() {
   const realm = new Realm();
 
-  const invalidTypes = [undefined, null, false, 42, {}];
+  const invalidTypes = [undefined, null, false, 42, {}, "foo"];
 
   for (const invalidType of invalidTypes) {
     info(`Checking type: '${invalidType}'`);

@@ -20,6 +20,9 @@ interface SVGScriptElement : SVGElement {
   attribute DOMString? crossOrigin;
   [Pref="network.fetchpriority.enabled"]
   attribute DOMString fetchPriority;
+  // See https://github.com/w3c/svgwg/issues/1171
+  [SetterThrows]
+  attribute DOMString referrerPolicy;
 };
 
 SVGScriptElement includes SVGURIReference;

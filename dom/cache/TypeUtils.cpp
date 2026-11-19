@@ -288,9 +288,8 @@ already_AddRefed<Response> TypeUtils::ToResponse(const CacheResponse& aIn) {
 
   ir->InitChannelInfo(aIn.securityInfo());
   if (aIn.principalInfo().isSome()) {
-    UniquePtr<mozilla::ipc::PrincipalInfo> info =
-        std::make_unique<mozilla::ipc::PrincipalInfo>(
-            aIn.principalInfo().ref());
+    auto info = std::make_unique<mozilla::ipc::PrincipalInfo>(
+        aIn.principalInfo().ref());
     ir->SetPrincipalInfo(std::move(info));
   }
 

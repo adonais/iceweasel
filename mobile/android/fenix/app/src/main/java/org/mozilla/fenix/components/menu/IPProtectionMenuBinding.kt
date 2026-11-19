@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.map
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.UsageQuota
 import mozilla.components.feature.ipprotection.store.state.ipProtectionStatus
-import mozilla.components.feature.ipprotection.store.state.maxDataGb
 import mozilla.components.lib.state.helpers.AbstractBinding
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 
@@ -46,5 +46,5 @@ class IPProtectionMenuBinding(
 internal fun IPProtectionState.toMenuState() =
     IPProtectionMenuState(
         status = ipProtectionStatus,
-        dataLimitGb = if (maxDataBytes > 0) maxDataGb.toInt() else -1,
+        dataLimit = (usageQuota as? UsageQuota.Metered)?.max,
     )

@@ -5,6 +5,8 @@
 #include <android/api-level.h>
 #include <pthread.h>
 
+#include <memory>
+
 #include "GeckoProfiler.h"
 #include "base/message_loop.h"
 #include "mozilla/Atomics.h"
@@ -16,7 +18,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/java/GeckoThreadWrappers.h"
 #include "nsThread.h"
 #include "nsThreadManager.h"
@@ -29,8 +30,9 @@ namespace {
 class AndroidUiThread;
 class AndroidUiTask;
 
-StaticAutoPtr<LinkedList<AndroidUiTask> > sTaskQueue;
 StaticAutoPtr<mozilla::Mutex> sTaskQueueLock;
+StaticAutoPtr<LinkedList<AndroidUiTask> > sTaskQueue
+    MOZ_GUARDED_BY(sTaskQueueLock);
 StaticRefPtr<AndroidUiThread> sThread;
 static bool sThreadDestroyed;
 static MessageLoop* sMessageLoop;
@@ -56,9 +58,9 @@ class AndroidUiThread : public nsThread {
  public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(AndroidUiThread, nsThread)
   AndroidUiThread()
-      : nsThread(
-            MakeNotNull<ThreadEventQueue*>(MakeUnique<mozilla::EventQueue>()),
-            nsThread::NOT_MAIN_THREAD, {.stackSize = 0}) {}
+      : nsThread(MakeNotNull<ThreadEventQueue*>(
+                     std::make_unique<mozilla::EventQueue>()),
+                 nsThread::NOT_MAIN_THREAD, {.stackSize = 0}) {}
 
   nsresult Dispatch(already_AddRefed<nsIRunnable> aEvent,
                     DispatchFlags aFlags) override;
@@ -190,13 +192,13 @@ class DestroyOnUiThread : public Runnable {
   NS_IMETHOD Run() override {
     MOZ_ASSERT(!sThreadDestroyed);
     MOZ_ASSERT(sMessageLoopAccessMonitor);
-    MOZ_ASSERT(sTaskQueue);
     MonitorAutoLock lock(*sMessageLoopAccessMonitor);
     sThreadDestroyed = true;
 
     {
       // Flush the queue
       MutexAutoLock lock(*sTaskQueueLock);
+      MOZ_ASSERT(sTaskQueue);
       while (AndroidUiTask* task = sTaskQueue->getFirst()) {
         delete task;
       }
@@ -238,10 +240,10 @@ void EnqueueTask(already_AddRefed<nsIRunnable> aTask, int aDelayMs) {
 
   bool headOfList = false;
   {
-    MOZ_ASSERT(sTaskQueue);
     MOZ_ASSERT(sTaskQueueLock);
     MutexAutoLock lock(*sTaskQueueLock);
 
+    MOZ_ASSERT(sTaskQueue);
     AndroidUiTask* task = sTaskQueue->getFirst();
 
     while (task) {
@@ -273,7 +275,10 @@ namespace mozilla {
 void CreateAndroidUiThread() {
   MOZ_ASSERT(!sThread);
   MOZ_ASSERT(!sMessageLoopAccessMonitor);
+  // No lock needed.
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   sTaskQueue = new LinkedList<AndroidUiTask>();
+  MOZ_POP_THREAD_SAFETY
   sTaskQueueLock = new Mutex("AndroidUiThreadTaskQueueLock");
   sMessageLoopAccessMonitor =
       new Monitor("AndroidUiThreadMessageLoopAccessMonitor");

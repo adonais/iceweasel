@@ -12,6 +12,18 @@ const REMOTE_SETTINGS_RESULTS = [
     keywords: ["fra", "frab"],
     full_keywords: [["frab", 2]],
   }),
+  QuickSuggestTestUtils.ampRemoteSettings({
+    keywords: ["0.3"],
+    full_keywords: [["0.3", 2]],
+    score: 0.3,
+    url: "https://example.com/amp/0.3",
+  }),
+  QuickSuggestTestUtils.ampRemoteSettings({
+    keywords: ["1.0"],
+    full_keywords: [["1.0", 2]],
+    score: 1.0,
+    url: "https://example.com/amp/1.0",
+  }),
   QuickSuggestTestUtils.wikipediaRemoteSettings(),
 ];
 
@@ -37,8 +49,7 @@ const MERINO_DYNAMIC_WIKIPEDIA_SUGGESTION = {
 };
 
 // Expected AMP icon sizes.
-const AMP_ICON_SIZE_TOP_PICK_LARGE_NOVA = 58;
-const AMP_ICON_SIZE_TOP_PICK_LARGE_PROTON = 52;
+const AMP_ICON_SIZE_TOP_PICK_LARGE = 58;
 const AMP_ICON_SIZE_TOP_PICK_SMALL = 28;
 const AMP_ICON_SIZE_NON_TOP_PICK = 16;
 
@@ -109,6 +120,7 @@ add_task(async function sponsoredPriority() {
     index: 1,
     isSponsored: true,
     isBestMatch: true,
+    bestMatchType: UrlbarShared.BEST_MATCH_TYPE.SMALL,
     url: "https://example.com/amp",
   });
 
@@ -178,6 +190,7 @@ add_task(async function ampTopPickCharThreshold_meetsThreshold() {
     index: 1,
     isSponsored: true,
     isBestMatch: true,
+    bestMatchType: UrlbarShared.BEST_MATCH_TYPE.SMALL,
     url: "https://example.com/amp",
   });
 
@@ -318,88 +331,130 @@ add_task(async function resultMenu_learn_more_sponsored() {
   await UrlbarTestUtils.promisePopupClose(window);
 });
 
-// Tests icon size for AMP suggestion.
-add_task(async function ampIconSize() {
+// Tests `quicksuggest.ampTopPickScoreForLargeIcon` (Nimbus variable
+// `quickSuggestAmpTopPickScoreForLargeIcon`).
+add_task(async function ampTopPickScoreForLargeIcon() {
   const TEST_DATA = [
     {
       topPick: true,
-      useNovaIconSize: true,
+      scoreForLargeIcon: "1.0",
+      query: "0.3",
+      expected: {
+        bestMatchType: UrlbarShared.BEST_MATCH_TYPE.SMALL,
+        url: "https://example.com/amp/0.3",
+      },
     },
+
     {
       topPick: true,
-      useNovaIconSize: false,
+      scoreForLargeIcon: "1.0",
+      query: "1.0",
+      expected: {
+        bestMatchType: UrlbarShared.BEST_MATCH_TYPE.LARGE,
+        url: "https://example.com/amp/1.0",
+      },
     },
+
+    {
+      topPick: true,
+      scoreForLargeIcon: "",
+      query: "1.0",
+      expected: {
+        bestMatchType: UrlbarShared.BEST_MATCH_TYPE.SMALL,
+        url: "https://example.com/amp/1.0",
+      },
+    },
+
     {
       topPick: false,
-      useNovaIconSize: true,
+      scoreForLargeIcon: "1.0",
+      query: "1.0",
+      expected: {
+        bestMatchType: UrlbarShared.BEST_MATCH_TYPE.NONE,
+        url: "https://example.com/amp/1.0",
+      },
     },
+
     {
       topPick: false,
-      useNovaIconSize: false,
+      scoreForLargeIcon: "",
+      query: "1.0",
+      expected: {
+        bestMatchType: UrlbarShared.BEST_MATCH_TYPE.NONE,
+        url: "https://example.com/amp/1.0",
+      },
     },
   ];
 
-  for (let { topPick, useNovaIconSize } of TEST_DATA) {
-    if (topPick) {
-      UrlbarPrefs.set("quicksuggest.ampTopPickCharThreshold", 1);
-    }
-
+  for (let { topPick, scoreForLargeIcon, query, expected } of TEST_DATA) {
     const cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature({
-      quickSuggestAmpTopPickUseNovaIconSize: useNovaIconSize,
+      quickSuggestAmpTopPickScoreForLargeIcon: scoreForLargeIcon,
     });
-
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: "fra",
-    });
-
-    await QuickSuggestTestUtils.assertIsQuickSuggest({
-      window,
-      index: 1,
-      isSponsored: true,
-      isBestMatch: topPick,
-      url: REMOTE_SETTINGS_RESULTS[0].url,
-    });
-
-    let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
-    let icon = row.querySelector(".urlbarView-favicon");
-
-    let expectedSize;
-    if (!topPick) {
-      expectedSize = AMP_ICON_SIZE_NON_TOP_PICK;
-    } else if (!useNovaIconSize) {
-      expectedSize = AMP_ICON_SIZE_TOP_PICK_SMALL;
-    } else if (Services.prefs.getBoolPref("browser.nova.enabled")) {
-      expectedSize = AMP_ICON_SIZE_TOP_PICK_LARGE_NOVA;
-    } else {
-      expectedSize = AMP_ICON_SIZE_TOP_PICK_LARGE_PROTON;
-    }
-
-    // The `icon-size` attribute is set in both Nova and Proton, but Nova
-    // doesn't use it, and when Nova is enabled it's set to 52 instead of the
-    // correct 58. We should stop setting it when Proton is removed.
-    if (!Services.prefs.getBoolPref("browser.nova.enabled")) {
-      Assert.equal(
-        icon.getAttribute("icon-size"),
-        expectedSize.toString(),
-        "icon-size attribute should have expected value"
-      );
-    }
-
-    let { width, height } = window.getComputedStyle(icon);
-    Assert.equal(
-      width,
-      `${expectedSize}px`,
-      "style.width should have expected value"
-    );
-    Assert.equal(
-      height,
-      `${expectedSize}px`,
-      "style.height should have expected value"
-    );
-
-    await UrlbarTestUtils.promisePopupClose(window);
+    await doTopPickTest({ topPick, query, expected });
     await cleanUpNimbus();
-    UrlbarPrefs.clear("quicksuggest.ampTopPickCharThreshold");
   }
 });
+
+async function doTopPickTest({ query, topPick, expected }) {
+  if (topPick) {
+    UrlbarPrefs.set("quicksuggest.ampTopPickCharThreshold", 1);
+  }
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: query,
+  });
+
+  await QuickSuggestTestUtils.assertIsQuickSuggest({
+    window,
+    index: 1,
+    isSponsored: true,
+    isBestMatch: topPick,
+    bestMatchType: expected.bestMatchType,
+    url: expected.url,
+  });
+
+  let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
+  let icon = row.querySelector(".urlbarView-favicon");
+
+  let expectedSize;
+  switch (expected.bestMatchType) {
+    case UrlbarShared.BEST_MATCH_TYPE.NONE:
+      expectedSize = AMP_ICON_SIZE_NON_TOP_PICK;
+      break;
+    case UrlbarShared.BEST_MATCH_TYPE.SMALL:
+      expectedSize = AMP_ICON_SIZE_TOP_PICK_SMALL;
+      break;
+    case UrlbarShared.BEST_MATCH_TYPE.LARGE:
+      expectedSize = AMP_ICON_SIZE_TOP_PICK_LARGE;
+      break;
+  }
+
+  let { width, height } = window.getComputedStyle(icon);
+  Assert.equal(
+    width,
+    `${expectedSize}px`,
+    "style.width should have expected value"
+  );
+  Assert.equal(
+    height,
+    `${expectedSize}px`,
+    "style.height should have expected value"
+  );
+
+  // Check the bounding rect too for good measure.
+  let iconRect = icon.getBoundingClientRect();
+  Assert.equal(
+    iconRect.width,
+    expectedSize,
+    "Icon bounding width should have expected value"
+  );
+  Assert.equal(
+    iconRect.height,
+    expectedSize,
+    "Icon bounding height should have expected value"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  UrlbarPrefs.clear("quicksuggest.ampTopPickCharThreshold");
+}

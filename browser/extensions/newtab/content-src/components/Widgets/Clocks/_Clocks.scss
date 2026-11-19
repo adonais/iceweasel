@@ -141,6 +141,17 @@
     }
   }
 
+  .clocks-search-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-small);
+
+    .clocks-location-wrapper {
+      flex: 1;
+      min-inline-size: 0;
+    }
+  }
+
   .clocks-location-wrapper {
     position: relative;
   }
@@ -153,26 +164,7 @@
   }
 
   .clocks-search-results {
-    position: absolute;
-    inset-block-start: calc(100% + var(--space-xxsmall));
-    inset-inline: 0;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xxsmall);
-    // 180px fits ~4–5 results before scrolling; no design token for this size.
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    max-block-size: 180px;
-    overflow-y: auto;
-    padding: var(--space-xsmall);
-    background: var(--newtab-background-color-secondary);
-    border: var(--border-width) solid var(--border-color);
-    border-radius: var(--border-radius-medium);
-    box-shadow: var(--box-shadow-level-4);
-
-    @media (prefers-contrast) {
-      background-color: var(--background-color-box);
-    }
+    @include widget-search-results;
   }
 
   .clocks-search-no-results {
@@ -182,7 +174,10 @@
     padding-block: var(--space-xsmall);
   }
 
+  .clocks-custom-city-input,
   .clocks-nickname-input {
+    --input-border-radius: var(--input-search-border-radius);
+
     min-inline-size: 0;
     inline-size: 100%;
   }
@@ -327,40 +322,7 @@
   }
 
   .clocks-search-result {
-    display: flex;
-    align-items: center;
-    gap: var(--space-small);
-    padding-inline: var(--space-small);
-    padding-block: var(--space-xsmall);
-    background: transparent;
-    border: none;
-    border-radius: var(--border-radius-small);
-    color: var(--text-color);
-    font: inherit;
-    text-align: start;
-    cursor: default;
-
-    &:hover,
-    &:focus {
-      background: var(--button-background-color-hover);
-    }
-
-    &:focus-visible {
-      outline: var(--focus-outline);
-      outline-offset: var(--focus-outline-offset);
-    }
-  }
-
-  .clocks-search-result-city,
-  .clocks-search-result-timezone {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .clocks-search-result-timezone {
-    color: var(--text-color-deemphasized);
-    font-size: var(--font-size-small);
+    @include widget-search-result('.clocks-search-result-city', '.clocks-search-result-timezone');
   }
 
   .clocks-list {

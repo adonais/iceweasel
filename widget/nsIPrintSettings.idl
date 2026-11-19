@@ -5,6 +5,7 @@
 #include "nsISupports.idl"
 
 %{ C++
+#include "mozilla/gfx/Point.h"
 #include "nsMargin.h"
 #include "nsTArray.h"
 
@@ -395,6 +396,11 @@ interface nsIPrintSettings : nsISupports
   [notxpcom, nostdcall] PrintSettingsInitializer getSettingsInitializer();
 
 %{C++
+  /**
+   * Like GetEffectiveSheetSize, but in points, rounded up.
+   */
+  mozilla::gfx::IntSize GetEffectiveSheetSizeInPoints();
+
   static bool IsPageSkipped(int32_t aPageNum, const nsTArray<int32_t>& aRanges);
 %}
 };

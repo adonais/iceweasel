@@ -96,7 +96,7 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
     mNativeMenuItem = [[NSMenuItem separatorItem] retain];
   } else {
     NSString* newCocoaLabelString =
-        nsMenuUtilsX::GetTruncatedCocoaLabel(aLabel);
+        nsMenuUtilsX::GetTruncatedCocoaLabel(aLabel, mContent);
     mNativeMenuItem = [[GeckoNSMenuItem alloc] initWithTitle:newCocoaLabelString
                                                       action:nil
                                                keyEquivalent:@""];
@@ -110,7 +110,7 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
     SetTooltip();
   }
 
-  mIcon = MakeUnique<nsMenuItemIconX>(this);
+  mIcon = std::make_unique<nsMenuItemIconX>(this);
 
   mIsVisible = !nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent);
 
@@ -212,6 +212,8 @@ void nsMenuItemX::DetachFromGroupOwner() {
     }
     if (mKeyElement) {
       mMenuGroupOwner->UnregisterForContentChanges(mKeyElement);
+      mMenuGroupOwner->UnregisterKeyElement(mKeyElement, this);
+      mKeyElement = nullptr;
     }
     if (mImageElement) {
       mMenuGroupOwner->UnregisterForContentChanges(mImageElement);
@@ -330,23 +332,31 @@ void nsMenuItemX::SetKeyEquiv() {
     if (mMenuGroupOwner) {
       if (mKeyElement) {
         mMenuGroupOwner->UnregisterForContentChanges(mKeyElement);
+        mMenuGroupOwner->UnregisterKeyElement(mKeyElement, this);
       }
       if (keyContent) {
         mMenuGroupOwner->RegisterForContentChanges(keyContent, this);
+        mMenuGroupOwner->RegisterKeyElement(keyContent, this);
       }
     }
     mKeyElement = keyContent;
   }
 
+  NSString* keyEquivalent = @"";
+  NSEventModifierFlags macModifiers = 0;
   if (keyContent) {
-    nsAutoString keyChar;
-    bool hasKey = keyContent->GetAttr(nsGkAtoms::key, keyChar);
+    // The native item carries the built-in shortcut. A shortcut the user
+    // assigned in System Settings is applied on top of it by AppKit, and
+    // taken away again by AppKit when the user removes it.
+    nsMenuGroupOwnerX::KeyElementAttributes attributes =
+        nsMenuGroupOwnerX::BuiltInKeyElementAttributes(keyContent);
 
-    if (!hasKey || keyChar.IsEmpty()) {
-      nsAutoString keyCodeName;
-      keyContent->GetAttr(nsGkAtoms::keycode, keyCodeName);
-      uint32_t charCode =
-          nsCocoaUtils::ConvertGeckoNameToMacCharCode(keyCodeName);
+    nsAutoString keyChar;
+    if (attributes.mKey && !attributes.mKey->IsEmpty()) {
+      keyChar = *attributes.mKey;
+    } else {
+      uint32_t charCode = nsCocoaUtils::ConvertGeckoNameToMacCharCode(
+          attributes.mKeyCode.valueOr(EmptyString()));
       if (charCode) {
         keyChar.Assign(charCode);
       } else {
@@ -354,30 +364,26 @@ void nsMenuItemX::SetKeyEquiv() {
       }
     }
 
-    nsAutoString modifiersStr;
-    keyContent->GetAttr(nsGkAtoms::modifiers, modifiersStr);
-    uint8_t modifiers =
-        nsMenuUtilsX::GeckoModifiersForNodeAttribute(modifiersStr);
+    uint8_t modifiers = nsMenuUtilsX::GeckoModifiersForNodeAttribute(
+        attributes.mModifiers.valueOr(EmptyString()));
+    macModifiers = nsMenuUtilsX::MacModifiersForGeckoModifiers(modifiers);
 
-    unsigned int macModifiers =
-        nsMenuUtilsX::MacModifiersForGeckoModifiers(modifiers);
-    mNativeMenuItem.keyEquivalentModifierMask = macModifiers;
-
-    NSString* keyEquivalent =
+    keyEquivalent =
         [[NSString stringWithCharacters:(unichar*)keyChar.get()
                                  length:keyChar.Length()] lowercaseString];
     if ([keyEquivalent isEqualToString:@" "]) {
-      mNativeMenuItem.keyEquivalent = @"";
-    } else {
-      mNativeMenuItem.keyEquivalent = keyEquivalent;
+      keyEquivalent = @"";
     }
-
-    return;
   }
 
-  // if the key was removed, clear the key
-  mNativeMenuItem.keyEquivalentModifierMask = 0;
-  mNativeMenuItem.keyEquivalent = @"";
+  // Setting these posts NSMenuDidChangeItemNotification, so only touch what
+  // changed.
+  if (mNativeMenuItem.keyEquivalentModifierMask != macModifiers) {
+    mNativeMenuItem.keyEquivalentModifierMask = macModifiers;
+  }
+  if (![mNativeMenuItem.keyEquivalent isEqualToString:keyEquivalent]) {
+    mNativeMenuItem.keyEquivalent = keyEquivalent;
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -392,8 +398,7 @@ void nsMenuItemX::SetBadge() {
       return;
     }
     mNativeMenuItem.badge = [[[NSMenuItemBadge alloc]
-        initWithString:nsMenuUtilsX::GetTruncatedCocoaLabel(badgeValue)]
-        autorelease];
+        initWithString:nsCocoaUtils::ToNSString(badgeValue)] autorelease];
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -404,9 +409,40 @@ void nsMenuItemX::SetTitle() {
 
   nsAutoString newLabel;
   mContent->AsElement()->GetAttr(nsGkAtoms::label, newLabel);
-  mNativeMenuItem.title = nsMenuUtilsX::GetTruncatedCocoaLabel(newLabel);
+  mNativeMenuItem.title =
+      nsMenuUtilsX::GetTruncatedCocoaLabel(newLabel, mContent);
 
   SetAttributedTitle();
+  // System Settings assigns shortcuts by title.
+  CopyUserKeyEquivalentToKeyElement();
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuItemX::CopyUserKeyEquivalentToKeyElement() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (mType == eSeparatorMenuItemType) {
+    return;
+  }
+  if (!mNativeMenuItem.menu) {
+    // A visible item gets here again once it is inserted, but a hidden item
+    // is not in its menu. AppKit applies the assigned shortcut when the item
+    // is added to a menu, and the item keeps it once removed, so add a hidden
+    // item to its menu for a moment. It has to be its own menu, as System
+    // Settings can name the item by its menu path.
+    NSMenu* parentMenu = mMenuParent ? mMenuParent->NativeNSMenu() : nil;
+    if (!mKeyElement || !parentMenu ||
+        !nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent)) {
+      return;
+    }
+    mNativeMenuItem.hidden = YES;
+    [parentMenu addItem:mNativeMenuItem];
+    [parentMenu removeItem:mNativeMenuItem];
+    mNativeMenuItem.hidden = NO;
+  }
+  nsMenuGroupOwnerX::CopyUserKeyEquivalentToKeyElement(mNativeMenuItem,
+                                                       mContent->AsElement());
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -490,7 +526,7 @@ void nsMenuItemX::SetTooltip() {
     return;
   }
 
-  mNativeMenuItem.toolTip = nsMenuUtilsX::GetTruncatedCocoaLabel(tooltip);
+  mNativeMenuItem.toolTip = nsCocoaUtils::ToNSString(tooltip);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -547,6 +583,7 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
       SetBadge();
     } else if (aAttribute == nsGkAtoms::key) {
       SetKeyEquiv();
+      CopyUserKeyEquivalentToKeyElement();
     } else if (aAttribute == nsGkAtoms::disabled) {
       SetEnabled();
     } else if (aAttribute == nsGkAtoms::indented) {
@@ -572,7 +609,11 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
     }
   } else if (aContent == mKeyElement) {
     if (aAttribute == nsGkAtoms::key || aAttribute == nsGkAtoms::keycode ||
-        aAttribute == nsGkAtoms::modifiers) {
+        aAttribute == nsGkAtoms::modifiers ||
+        aAttribute == nsGkAtoms::databuiltinkey ||
+        aAttribute == nsGkAtoms::databuiltinkeycode ||
+        aAttribute == nsGkAtoms::databuiltinmodifiers ||
+        aAttribute == nsGkAtoms::datahassystemshortcut) {
       SetKeyEquiv();
     }
   } else if (aContent == mImageElement && aAttribute == nsGkAtoms::srcset) {

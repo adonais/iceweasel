@@ -295,26 +295,10 @@
         }
       },
       "menu": {
-        "disabled": {
+        "@base": {
           "value": {
-            "light": "{button.text.color.ghost.disabled}",
-            "dark": "{button.text.color.disabled}",
-            "forcedColors": "{button.text.color.disabled}"
-          }
-        },
-        "hover": {
-          "value": {
-            "light": "{button.text.color.ghost.hover}",
-            "dark": "{button.text.color.hover}",
-            "forcedColors": "-moz-menuhovertext"
-          }
-        },
-        "selected": {
-          "value": {
-            "nativeTheme": "currentColor",
-            "light": "{button.text.color.ghost.selected}",
-            "dark": "{button.text.color.selected}",
-            "forcedColors": "{button.text.color.primary.selected}"
+            "default": "{button.text.color.ghost.@base}",
+            "forcedColors": "MenuText"
           }
         }
       },

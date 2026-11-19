@@ -50,7 +50,6 @@ CertVerifier::CertificateTransparencyMode GetCertificateTransparencyMode();
 bool EnsureNSSInitializedChromeOrContent();
 bool HandleTLSPrefChange(const nsCString& aPref);
 void SetValidationOptionsCommon();
-void PrepareForShutdownInSocketProcess();
 
 // RAII helper class to indicate that gecko is searching for certificates. Will
 // automatically stop indicating that a search is happening when it goes out of
@@ -65,10 +64,10 @@ class AutoSearchingForCertificates {
 };
 
 // Similarly, but just for client authentication certificates.
-// osclientcerts (or ipcclientcerts, in the socket process) will call
-// IsGeckoSearchingForClientAuthCertificates() to determine if gecko is
-// searching for client auth certificates. If so, the module knows to refresh
-// its list of certificates and keys (which can be costly).
+// osclientcerts will call IsGeckoSearchingForClientAuthCertificates() to
+// determine if gecko is searching for client auth certificates. If so, the
+// module knows to refresh its list of certificates and keys (which can be
+// costly).
 class AutoSearchingForClientAuthCertificates {
  public:
   AutoSearchingForClientAuthCertificates();

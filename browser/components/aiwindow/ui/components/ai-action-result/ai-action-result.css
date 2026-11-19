@@ -186,12 +186,11 @@
      the next dot. Starts at the first dot (no line up to the removed icon). */
   &:not(:last-child)::after {
     background: var(--ai-action-connector-background-color);
-    bottom: calc(-1 * var(--space-small));
-    content: "";
     /* Center on the dot: 1px margin + half the 8px dot width. */
     inset-inline-start: calc(1px + var(--space-small) / 2 - var(--ai-action-connector-width) / 2);
+    inset-block: calc(var(--icon-size) + var(--space-xxsmall)) calc(-1 * var(--space-small));
+    content: "";
     position: absolute;
-    top: calc(var(--icon-size) + var(--space-xxsmall));
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: var(--ai-action-connector-width);
   }

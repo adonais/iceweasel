@@ -204,7 +204,13 @@ class JS_PUBLIC_API JSTracer {
   // Buffers have no TraceKind of their own and so are not covered by
   // the macro above. Tracers that care about buffer edges should override
   // this. The default behavior is to ignore these edges.
-  virtual bool onBufferEdge(void** bufferp, const char* name) { return true; }
+  struct TraceBufferResult {
+    bool liveOrNull;  // For consistency with other trace methods.
+    void* buffer;     // The buffer traced, read from |bufferp|.
+  };
+  virtual TraceBufferResult onBufferEdge(void** bufferp, const char* name) {
+    return {true, *bufferp};
+  }
 
  protected:
   JSTracer(JSRuntime* rt, JS::TracerKind kind,

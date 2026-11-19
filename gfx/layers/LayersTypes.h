@@ -543,7 +543,8 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
     DMABuf,
     MacIOSurface,
     DcompSurface,
-    AndroidImageReaderImage
+    AndroidImageReaderImage,
+    AndroidSurfaceTexture
 ));
 // clang-format on
 

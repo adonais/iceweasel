@@ -37,8 +37,7 @@ using namespace mozilla::dom;
 
 nsTextControlFrame* NS_NewTextControlFrame(PresShell* aPresShell,
                                            ComputedStyle* aStyle) {
-  return new (aPresShell)
-      nsTextControlFrame(aStyle, aPresShell->GetPresContext());
+  return new nsTextControlFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsTextControlFrame)
@@ -296,6 +295,15 @@ void nsTextControlFrame::ElementStateChanged(dom::ElementState aStates) {
   if (aStates.HasAtLeastOneOfStates(dom::ElementState::READONLY |
                                     dom::ElementState::DISABLED)) {
     HandleReadonlyOrDisabledChange();
+  }
+  // When the control loses focus, do not let a pending selection scroll scroll
+  // the ancestors. Do not revoke it, because it can also scroll the caret into
+  // view inside the control.
+  if (aStates.HasState(dom::ElementState::FOCUS) &&
+      !ControlElement()->State().HasState(dom::ElementState::FOCUS)) {
+    if (nsFrameSelection* frameSelection = GetOwnedFrameSelection()) {
+      frameSelection->NormalSelection().LimitPendingScrollToFirstAncestor();
+    }
   }
   return ScrollContainerFrame::ElementStateChanged(aStates);
 }

@@ -148,6 +148,23 @@ search:
         Feature gate for highlight to search, the actions menu shown when text
         is selected on a page. Does not affect the user's own settings for the
         menu or its individual actions.
+    highlightToSearchIgnoredSites:
+      type: string
+      setPref:
+        branch: default
+        pref: browser.highlightToSearch.ignoredSites
+      description: >-
+        Comma-separated sites where the highlight to search actions menu is not
+        shown, because the page has its own menu for selected text. A site also
+        matches its subdomains.
+    highlightToSearchDetectPageMenus:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.highlightToSearch.detectPageMenus
+      description: >-
+        Whether the highlight to search actions menu is not shown, or is hidden,
+        when the page shows its own floating menu next to the selected text.
 
 searchConfiguration:
   description: >-
@@ -457,14 +474,16 @@ urlbar:
         picks. If the user's query matches an AMP suggestion and the query is at
         least this many characters long, the suggestion will be shown as a top
         pick. Set to zero to disable.
-    quickSuggestAmpTopPickUseNovaIconSize:
-      type: boolean
+    quickSuggestAmpTopPickScoreForLargeIcon:
+      type: string
       setPref:
         branch: default
-        pref: browser.urlbar.quicksuggest.ampTopPickUseNovaIconSize
+        pref: browser.urlbar.quicksuggest.ampTopPickScoreForLargeIcon
       description: >-
-        Whether or not use the Nova icon size for AMP suggestion.
-        Otherwise, use standard rich-suggestion size.
+        The minimum score a top-pick AMP suggestion must have to be shown with
+        the large-icon UI treatment used for other top picks, as a decimal
+        string (e.g., "1.0"). If it's an empty string or otherwise can't be
+        parsed with parseFloat, the small-icon UI treatment will be used.
     quickSuggestDynamicSuggestionTypes:
       type: string
       setPref:
@@ -715,6 +734,16 @@ urlbar:
         '[["FR",["en-*","fr-*"]],["*",["fr-*"]]]' means France in English or
         French, or a French locale anywhere. An empty value disables
         multilingual embeddings everywhere.
+    semanticHistoryDomainScopedSearch:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.urlbar.suggest.semanticHistory.domainScopedSearch
+      description: >-
+        Whether a semantic history search starting with an origin or URL, like
+        "example.com some topic" or "https://example.com/some-topic", only
+        returns pages from that domain and its subdomains, using the rest of
+        the search string as the query. Off by default.
     semanticHistoryInSeparateGroup:
       type: boolean
       setPref:
@@ -753,6 +782,14 @@ urlbar:
       description: >-
         Whether or not to show calculator results when a user types a valid
         calculation string into the urlbar.
+    temporalFeatureGate:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.urlbar.temporal.featureGate
+      description: >-
+        Feature gate that controls whether all aspects of the temporal search
+        suggestions feature are exposed to the user.
     trackerCountFeatureGate:
       type: boolean
       fallbackPref: browser.urlbar.trackerCount.featureGate
@@ -3347,30 +3384,6 @@ networking:
       setPref:
         branch: default
         pref: "network.preconnect"
-    http3CCalgorithm:
-      description: The congestion control algorithm with which to configure neqo. 0 for NewReno, 1 for Cubic
-      type: int
-      setPref:
-        branch: default
-        pref: "network.http.http3.cc_algorithm"
-    http3SlowStartAlgorithm:
-      description: The slow start algorithm with which to configure neqo. Use 0 for Classic, 1 for HyStart++, 2 for SEARCH.
-      type: int
-      setPref:
-        branch: default
-        pref: "network.http.http3.slow_start_algorithm"
-    http3HyStartAlternativeCssBaseline:
-      description: Whether the HyStart++ alternative CSS baseline value should be used. Has no effect if HyStart++ is not used.
-      type: boolean
-      setPref:
-        branch: default
-        pref: "network.http.http3.hystart_alternative_css_baseline"
-    http3SpuriousRecovery:
-      description: Whether Spurious Congestion Event Recovery is turned on.
-      type: boolean
-      setPref:
-        branch: default
-        pref: "network.http.http3.spurious_recovery"
     enableOffMainThreadStreamDecompression:
       description: Whether to enable decompression of network streams off-main-thread
       type: boolean
@@ -3383,18 +3396,6 @@ networking:
       setPref:
         branch: default
         pref: "network.decompression_off_mainthread_min_size"
-    dnsGracePeriod:
-      description: The grace period allows the DNS cache to use expired entries, while kicking off a revalidation in the background.
-      type: int
-      setPref:
-        branch: default
-        pref: "network.dnsCacheExpirationGracePeriod"
-    dnsNegativeCacheExpiration:
-      description: Lifetime (in seconds) of a negative (failed/empty) DNS cache entry.
-      type: int
-      setPref:
-        branch: default
-        pref: "network.dnsNegativeCacheExpiration"
     http3UseNSPRForIO:
       description: true by default using legacy UDP IO via NSPR. When set to false, uses new UDP IO via Fast UDP for Firefox project.
       type: boolean
@@ -3449,6 +3450,60 @@ networkingDNS:
       setPref:
         branch: default
         pref: "network.dnsCacheEntries"
+    dnsGracePeriod:
+      description: The grace period allows the DNS cache to use expired entries, while kicking off a revalidation in the background.
+      type: int
+      setPref:
+        branch: default
+        pref: "network.dnsCacheExpirationGracePeriod"
+    dnsNegativeCacheExpiration:
+      description: Lifetime (in seconds) of a negative (failed/empty) DNS cache entry.
+      type: int
+      setPref:
+        branch: default
+        pref: "network.dnsNegativeCacheExpiration"
+
+networkingCongestionControl:
+  description: "Networking (Necko) HTTP/3 congestion control"
+  owner: omansfeld@mozilla.com
+  hasExposure: false
+  variables:
+    http3CCalgorithm:
+      description: The congestion control algorithm with which to configure neqo. 0 for NewReno, 1 for Cubic
+      type: int
+      setPref:
+        branch: default
+        pref: "network.http.http3.cc_algorithm"
+    http3SlowStartAlgorithm:
+      description: The slow start algorithm with which to configure neqo. Use 0 for Classic, 1 for HyStart++, 2 for SEARCH.
+      type: int
+      setPref:
+        branch: default
+        pref: "network.http.http3.slow_start_algorithm"
+    http3HyStartAlternativeCssBaseline:
+      description: Whether the HyStart++ alternative CSS baseline value should be used. Has no effect if HyStart++ is not used.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.http.http3.hystart_alternative_css_baseline"
+    http3SpuriousRecovery:
+      description: Whether Spurious Congestion Event Recovery is turned on.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.http.http3.spurious_recovery"
+    http3Abe:
+      description: Whether Alternative Backoff with ECN (RFC 8511) is turned on. Has no effect unless network.http.http3.cc_algorithm is 1 (Cubic) and network.http.http3.ecn_mark is true.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.http.http3.abe"
+    http3EcnMark:
+      description: Whether to set ECN marks on outgoing HTTP/3 datagrams and react to ECN-CE feedback from the peer.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.http.http3.ecn_mark"
 
 networkingConnections:
   description: "Networking (Necko) Connections"
@@ -5099,6 +5154,12 @@ nimbusTelemetry:
         Configuration for the nimbus_targeting_environment telemetry category.
       type: json
 
+    reducedEnrollmentStatusTelemetryEnabled:
+      description: >
+        Whether or not the client should submit reduced enrollment status
+        telemetry.
+      type: boolean
+
   schema:
     uri: resource://nimbus/schemas/NimbusTelemetryFeature.schema.json
     path: toolkit/components/nimbus/schemas/NimbusTelemetryFeature.schema.json
@@ -5441,6 +5502,18 @@ linkPreviews:
         The prefs to set under browser.ml.linkPreview.* with object keys as the
         sub-pref and values objects indicating the desired branch and value
         defaulting to clearing the user branch value.
+
+resourceMonitor:
+  description: Resource Monitor sidebar panel
+  owner: tthorne@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: user
+        pref: browser.resourceMonitor.enabled
+      description: If true, the Resource Monitor sidebar panel is available.
 
 sidebar:
   description: Sidebar feature configuration
@@ -6141,12 +6214,6 @@ ipc:
       setPref:
         branch: user
         pref: "dom.ipc.processPrelaunch.fission.number"
-    preallocated_lowmem_mb:
-      description: Limit preallocated processes below this memory size (in MB).
-      type: int
-      setPref:
-        branch: user
-        pref: "dom.ipc.processPrelaunch.lowmem_mb"
     priority_manager_enabled:
       description: Determines whether Firefox uses the Process Priority Manager to adjust CPU priority based on importance.
       type: boolean
@@ -6282,6 +6349,29 @@ smartWindow:
         Enables Smart Page creation entries in the page, tab, and tab group
         context menus. Existing Smart Window and AI Tab eligibility checks
         still apply.
+    authImpl:
+      type: string
+      enum:
+        - ""
+        - guest
+        - fxa
+      description: >-
+        The Smart Window auth provider: "" to use a guest token until the user
+        signs in to a Mozilla account, "guest" to always use a guest token, or
+        "fxa" to require a Mozilla account. Written to
+        browser.smartwindow.auth.impl, replacing any value it has. Not reset
+        on unenrollment: the guest token fallback switches back to FxA.
+    guestMode:
+      type: string
+      setPref:
+        branch: user
+        pref: browser.smartwindow.auth.guest.mode
+      enum:
+        - fetch
+        - tab
+      description: >-
+        How Smart Window obtains a guest token: "fetch" requests it in the
+        background, "tab" opens the guest verification page in a tab.
 
 smartWindowAgentWatch:
   description: >-
@@ -6566,3 +6656,20 @@ nova:
         branch: default
         pref: browser.nova.enabled
       description: Whether Nova is enabled.
+
+# Bug 2072122: Trusted Types readiness experiment only, to be removed.
+trustedTypesReadinessTelemetry:
+  description: >-
+    Recording of the security.trusted_types_readiness Glean metric, which
+    measures per document how ready pages are to adopt Trusted Types.
+  owner: fbraun@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: dom.security.trusted_types.readiness_telemetry.enabled
+      description: >-
+        Whether the security.trusted_types_readiness metric is recorded at
+        document destruction.

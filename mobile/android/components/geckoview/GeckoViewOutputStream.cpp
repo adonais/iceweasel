@@ -16,7 +16,7 @@ GeckoViewOutputStream::Close() {
 }
 
 NS_IMETHODIMP
-GeckoViewOutputStream::Flush() { return NS_ERROR_NOT_IMPLEMENTED; }
+GeckoViewOutputStream::Flush() { return NS_OK; }
 
 NS_IMETHODIMP
 GeckoViewOutputStream::StreamStatus() {

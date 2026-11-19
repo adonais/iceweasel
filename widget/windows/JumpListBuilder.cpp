@@ -13,14 +13,19 @@
 // clang-format on
 
 #include "WinUtils.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WindowsJumpListShortcutDescriptionBinding.h"
-#include "mozilla/mscom/EnsureMTA.h"
+#include "mozilla/glean/WidgetWindowsMetrics.h"
+#include "mozilla/mscom/Utils.h"
+#include "nsExceptionHandler.h"
 #include "nsIFile.h"
 #include "nsIObserverService.h"
+#include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 using mozilla::dom::Promise;
 using mozilla::dom::WindowsJumpListShortcutDescription;
@@ -32,12 +37,36 @@ NS_IMPL_ISUPPORTS(JumpListBuilder, nsIJumpListBuilder, nsIObserver)
 
 #define TOPIC_PROFILE_BEFORE_CHANGE "profile-before-change"
 #define TOPIC_CLEAR_PRIVATE_DATA "clear-private-data"
-
-// The amount of time, in milliseconds, that our IO thread will stay alive after
-// the last event it processes.
-#define DEFAULT_THREAD_TIMEOUT_MS 30000
+#define TOPIC_XPCOM_SHUTDOWN_THREADS "xpcom-shutdown-threads"
 
 const char kPrefTaskbarEnabled[] = "browser.taskbar.lists.enabled";
+
+using ShellCallOp = glean::widget::JumpListShellCallLabel;
+
+// Bounds a single call into the Windows Shell: times it, and notes in the
+// crash report that it is in flight.
+//
+// jump_list_shell_call only gets a sample once a call returns, so a call that
+// never returns is invisible to it. In that case, a crash report will still
+// carry this annotation, and CrashTime minus the recorded value is
+// how long the call had been blocked. Both exist in the crash ping.
+class MOZ_RAII AutoShellCall {
+ public:
+  explicit AutoShellCall(ShellCallOp aOp)
+      : mTimer(glean::widget::jump_list_shell_call.EnumGet(aOp).Measure()) {
+    // Use `time` to get time, mirroring the crash reporter.
+    CrashReporter::RecordAnnotationNSCString(
+        CrashReporter::Annotation::JumpListShellCallStart,
+        nsPrintfCString("%lld", static_cast<long long>(time(nullptr))));
+  }
+  ~AutoShellCall() {
+    CrashReporter::UnrecordAnnotation(
+        CrashReporter::Annotation::JumpListShellCallStart);
+  }
+
+ private:
+  glean::impl::TimingDistributionMetric::AutoTimer mTimer;
+};
 
 /**
  * A wrapper around a ICustomDestinationList that implements the JumpListBackend
@@ -45,116 +74,156 @@ const char kPrefTaskbarEnabled[] = "browser.taskbar.lists.enabled";
  * items to appear in a Windows jump list.
  */
 class NativeJumpListBackend : public JumpListBackend {
-  // We use NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET because this
-  // class might be destroyed on a different thread than the one it
-  // was created on, since it's maintained by a LazyIdleThread.
-  //
-  // This is a workaround for bug 1648031.
+  // We use NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET so that a stray reference
+  // released on another thread still destroys this object on the thread that
+  // owns it. mWindowsDestList is apartment-bound and must be released in the
+  // STA it was created in.
   NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET(JumpListBackend, override)
 
   NativeJumpListBackend() {
+    // Must run on the owning JumpListBuilder's STA thread.
     MOZ_ASSERT(!NS_IsMainThread());
+    MOZ_ASSERT(!mscom::IsCurrentThreadMTA());
 
-    mscom::EnsureMTA([&]() {
-      RefPtr<ICustomDestinationList> destList;
-      HRESULT hr = ::CoCreateInstance(
-          CLSID_DestinationList, nullptr, CLSCTX_INPROC_SERVER,
-          IID_ICustomDestinationList, getter_AddRefs(destList));
-      if (FAILED(hr)) {
-        return;
-      }
+    AutoShellCall shellCall(ShellCallOp::eSetup);
 
-      mWindowsDestList = destList;
-    });
+    RefPtr<ICustomDestinationList> destList;
+    HRESULT hr = ::CoCreateInstance(
+        CLSID_DestinationList, nullptr, CLSCTX_INPROC_SERVER,
+        IID_ICustomDestinationList, getter_AddRefs(destList));
+    if (FAILED(hr)) {
+      return;
+    }
+
+    mWindowsDestList = destList;
   }
 
   virtual bool IsAvailable() override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     return mWindowsDestList != nullptr;
   }
 
   virtual HRESULT SetAppID(LPCWSTR pszAppID) override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eSetAppId);
     return mWindowsDestList->SetAppID(pszAppID);
   }
 
   virtual HRESULT BeginList(UINT* pcMinSlots, REFIID riid,
                             void** ppv) override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eBeginList);
     return mWindowsDestList->BeginList(pcMinSlots, riid, ppv);
   }
 
   virtual HRESULT AddUserTasks(IObjectArray* poa) override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eAddUserTasks);
     return mWindowsDestList->AddUserTasks(poa);
   }
 
   virtual HRESULT AppendCategory(LPCWSTR pszCategory,
                                  IObjectArray* poa) override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eAppendCategory);
     return mWindowsDestList->AppendCategory(pszCategory, poa);
   }
 
   virtual HRESULT CommitList() override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eCommitList);
     return mWindowsDestList->CommitList();
   }
 
   virtual HRESULT AbortList() override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eAbortList);
     return mWindowsDestList->AbortList();
   }
 
   virtual HRESULT DeleteList(LPCWSTR pszAppID) override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eDeleteList);
     return mWindowsDestList->DeleteList(pszAppID);
   }
 
   virtual HRESULT AppendKnownCategory(KNOWNDESTCATEGORY category) override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    NS_ASSERT_OWNINGTHREAD(NativeJumpListBackend);
     MOZ_ASSERT(mWindowsDestList);
 
+    AutoShellCall shellCall(ShellCallOp::eAppendKnownCategory);
     return mWindowsDestList->AppendKnownCategory(category);
   }
 
  protected:
-  virtual ~NativeJumpListBackend() override = default;
+  virtual ~NativeJumpListBackend() override {
+    if (!mWindowsDestList) {
+      return;
+    }
+
+    AutoShellCall shellCall(ShellCallOp::eTeardown);
+    mWindowsDestList = nullptr;
+  }
 
  private:
   RefPtr<ICustomDestinationList> mWindowsDestList;
 };
 
 JumpListBuilder::JumpListBuilder(const nsAString& aAppUserModelId,
+                                 bool aPrivateBrowsing,
                                  RefPtr<JumpListBackend> aTestingBackend) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
 
   mAppUserModelId.Assign(aAppUserModelId);
 
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
+    return;
+  }
+
   Preferences::AddStrongObserver(this, kPrefTaskbarEnabled);
 
-  // Make a lazy thread for any IO.
-  mIOThread = new LazyIdleThread(DEFAULT_THREAD_TIMEOUT_MS, "Jump List",
-                                 LazyIdleThread::ManualShutdown);
+  // A dedicated thread that lives in its own single-threaded apartment for as
+  // long as this builder does. It has to be persistent rather than pooled
+  // because the shell objects we create are apartment-bound: they belong to
+  // the thread that entered the apartment, and cannot outlive it.
+  //
+  // isUiThread gives the thread a native message pump, which is required for
+  // a functional STA.
+  nsCOMPtr<nsIRunnable> enterApartment = NewRunnableMethod(
+      "EnterApartment", this, &JumpListBuilder::DoEnterApartment);
+  nsresult rv;
+  if (aPrivateBrowsing) {
+    rv = NS_NewNamedThread("Jump List (PB)", getter_AddRefs(mIOThread),
+                           enterApartment, {.isUiThread = true});
+  } else {
+    rv = NS_NewNamedThread("Jump List", getter_AddRefs(mIOThread),
+                           enterApartment, {.isUiThread = true});
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mIOThread = nullptr;
+    return;
+  }
 
   nsCOMPtr<nsIObserverService> observerService =
       do_GetService("@mozilla.org/observer-service;1");
   if (observerService) {
     observerService->AddObserver(this, TOPIC_PROFILE_BEFORE_CHANGE, false);
     observerService->AddObserver(this, TOPIC_CLEAR_PRIVATE_DATA, false);
+    observerService->AddObserver(this, TOPIC_XPCOM_SHUTDOWN_THREADS, false);
   }
 
   nsCOMPtr<nsIRunnable> runnable;
@@ -188,28 +257,51 @@ JumpListBuilder::JumpListBuilder(const nsAString& aAppUserModelId,
 }
 
 JumpListBuilder::~JumpListBuilder() {
+  AssertIsOnMainThread();
   Preferences::RemoveObserver(this, kPrefTaskbarEnabled);
+  ShutdownIOThread();
+}
+
+void JumpListBuilder::AssertIsOnIOThread() const {
+  MOZ_ASSERT(mIOThreadForAssertions &&
+             mIOThreadForAssertions->IsOnCurrentThread());
+}
+
+void JumpListBuilder::DoEnterApartment() {
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(!mIOThreadForAssertions);
+  MOZ_ASSERT(!mApartment);
+
+  mIOThreadForAssertions = GetCurrentSerialEventTarget();
+  mApartment = std::make_unique<mscom::STARegion>();
+  if (NS_WARN_IF(!*mApartment)) {
+    NS_WARNING("Failed to enter an STA on the Jump List thread");
+    mApartment = nullptr;
+  }
+}
+
+void JumpListBuilder::DoTeardown() {
+  AssertIsOnIOThread();
+  // The backend holds apartment-bound interfaces, so it has to go before we
+  // leave the apartment.
+  mJumpListBackend = nullptr;
+  mApartment = nullptr;
 }
 
 void JumpListBuilder::DoSetupTestingBackend(
     RefPtr<JumpListBackend> aTestingBackend) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
   mJumpListBackend = aTestingBackend;
 }
 
 void JumpListBuilder::DoSetupBackend() {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
   MOZ_ASSERT(!mJumpListBackend);
   mJumpListBackend = new NativeJumpListBackend();
 }
 
-void JumpListBuilder::DoShutdownBackend() {
-  MOZ_ASSERT(!NS_IsMainThread());
-  mJumpListBackend = nullptr;
-}
-
 void JumpListBuilder::DoSetAppIDIfAvailable(nsString aAppUserModelID) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
   MOZ_ASSERT(mJumpListBackend);
 
   if (mJumpListBackend->IsAvailable()) {
@@ -220,7 +312,7 @@ void JumpListBuilder::DoSetAppIDIfAvailable(nsString aAppUserModelID) {
 NS_IMETHODIMP
 JumpListBuilder::ObtainAndCacheFavicon(nsIURI* aFaviconURI,
                                        nsAString& aCachedIconPath) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   nsString iconFilePath;
   nsresult rv = mozilla::widget::FaviconHelper::ObtainCachedIconFile(
       aFaviconURI, iconFilePath, mIOThread, false);
@@ -233,9 +325,12 @@ JumpListBuilder::ObtainAndCacheFavicon(nsIURI* aFaviconURI,
 NS_IMETHODIMP
 JumpListBuilder::ObtainAndCacheFaviconAsync(nsIURI* aFaviconURI, JSContext* aCx,
                                             Promise** aPromise) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   MOZ_ASSERT(aPromise);
   MOZ_ASSERT(mIOThread);
+  if (NS_WARN_IF(!mIOThread)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   ErrorResult result;
   RefPtr<Promise> promise =
@@ -267,9 +362,12 @@ JumpListBuilder::ObtainAndCacheFaviconAsync(nsIURI* aFaviconURI, JSContext* aCx,
 
 NS_IMETHODIMP
 JumpListBuilder::IsAvailable(JSContext* aCx, Promise** aPromise) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   MOZ_ASSERT(aPromise);
   MOZ_ASSERT(mIOThread);
+  if (NS_WARN_IF(!mIOThread)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   ErrorResult result;
   RefPtr<Promise> promise =
@@ -298,9 +396,12 @@ JumpListBuilder::IsAvailable(JSContext* aCx, Promise** aPromise) {
 
 NS_IMETHODIMP
 JumpListBuilder::CheckForRemovals(JSContext* aCx, Promise** aPromise) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   MOZ_ASSERT(aPromise);
   MOZ_ASSERT(mIOThread);
+  if (NS_WARN_IF(!mIOThread)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   ErrorResult result;
   RefPtr<Promise> promise =
@@ -334,9 +435,12 @@ JumpListBuilder::PopulateJumpList(JS::Handle<JS::Value> aTaskDescriptions,
                                   const nsAString& aCustomTitle,
                                   JS::Handle<JS::Value> aCustomDescriptions,
                                   JSContext* aCx, Promise** aPromise) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   MOZ_ASSERT(aPromise);
   MOZ_ASSERT(mIOThread);
+  if (NS_WARN_IF(!mIOThread)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   if (!aTaskDescriptions.isObject() || !aCustomDescriptions.isObject()) {
     return NS_ERROR_INVALID_ARG;
@@ -433,12 +537,17 @@ JumpListBuilder::PopulateJumpList(JS::Handle<JS::Value> aTaskDescriptions,
 
 NS_IMETHODIMP
 JumpListBuilder::ClearRecentsList() {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   MOZ_ASSERT(mIOThread);
+  if (NS_WARN_IF(!mIOThread)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
   return mIOThread->Dispatch(
       NS_NewRunnableFunction(
           "ClearRecentsList",
           [appUserModelId = mAppUserModelId]() {
+            AutoShellCall shellCall(ShellCallOp::eClearRecents);
+
             RefPtr<IApplicationDestinations> destinations;
             if (SUCCEEDED(CoCreateInstance(CLSID_ApplicationDestinations,
                                            nullptr, CLSCTX_INPROC_SERVER,
@@ -458,9 +567,12 @@ JumpListBuilder::ClearRecentsList() {
 
 NS_IMETHODIMP
 JumpListBuilder::ClearJumpList(JSContext* aCx, Promise** aPromise) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   MOZ_ASSERT(aPromise);
   MOZ_ASSERT(mIOThread);
+  if (NS_WARN_IF(!mIOThread)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   ErrorResult result;
   RefPtr<Promise> promise =
@@ -489,7 +601,7 @@ JumpListBuilder::ClearJumpList(JSContext* aCx, Promise** aPromise) {
 
 void JumpListBuilder::DoIsAvailable(
     const nsMainThreadPtrHandle<Promise>& aPromiseHolder) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
   MOZ_ASSERT(aPromiseHolder);
 
   if (!mJumpListBackend) {
@@ -511,7 +623,7 @@ void JumpListBuilder::DoIsAvailable(
 
 void JumpListBuilder::DoCheckForRemovals(
     const nsMainThreadPtrHandle<Promise>& aPromiseHolder) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
   MOZ_ASSERT(aPromiseHolder);
 
   nsresult rv = NS_ERROR_UNEXPECTED;
@@ -565,7 +677,7 @@ void JumpListBuilder::DoPopulateJumpList(
     const nsAString& aCustomTitle,
     const nsTArray<WindowsJumpListShortcutDescription>&& aCustomDescriptions,
     const nsMainThreadPtrHandle<Promise>& aPromiseHolder) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
   MOZ_ASSERT(aPromiseHolder);
 
   nsresult rv = NS_ERROR_UNEXPECTED;
@@ -708,7 +820,7 @@ void JumpListBuilder::DoPopulateJumpList(
 
 void JumpListBuilder::DoClearJumpList(
     const nsMainThreadPtrHandle<Promise>& aPromiseHolder) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
   MOZ_ASSERT(aPromiseHolder);
 
   if (!mJumpListBackend) {
@@ -738,7 +850,7 @@ void JumpListBuilder::DoClearJumpList(
 // url param to a list of URLs to be removed from the places database.
 void JumpListBuilder::RemoveIconCacheAndGetJumplistShortcutURIs(
     IObjectArray* aObjArray, nsTArray<nsString>& aURISpecs) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
 
   // Early return here just in case some versions of Windows don't populate this
   if (!aObjArray) {
@@ -801,7 +913,7 @@ void JumpListBuilder::RemoveIconCacheAndGetJumplistShortcutURIs(
 }
 
 void JumpListBuilder::DeleteIconFromDisk(const nsAString& aPath) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
 
   // Check that we aren't deleting some arbitrary file that is not an icon
   if (StringTail(aPath, 4).LowerCaseEqualsASCII(".ico")) {
@@ -820,7 +932,7 @@ void JumpListBuilder::DeleteIconFromDisk(const nsAString& aPath) {
 nsresult JumpListBuilder::GetShellLinkFromDescription(
     const WindowsJumpListShortcutDescription& aDesc,
     RefPtr<IShellLinkW>& aShellLink) {
-  MOZ_ASSERT(!NS_IsMainThread());
+  AssertIsOnIOThread();
 
   HRESULT hr;
   IShellLinkW* psl;
@@ -908,33 +1020,44 @@ nsresult JumpListBuilder::GetShellLinkFromDescription(
   return NS_OK;
 }
 
+void JumpListBuilder::ShutdownIOThread() {
+  AssertIsOnMainThread();
+  if (!mIOThread) {
+    return;
+  }
+
+  nsCOMPtr<nsIThread> thread = mIOThread.forget();
+  thread->Dispatch(NewNonOwningRunnableMethod("Teardown", this,
+                                              &JumpListBuilder::DoTeardown),
+                   NS_DISPATCH_NORMAL);
+  thread->Shutdown();
+}
+
 NS_IMETHODIMP
 JumpListBuilder::Observe(nsISupports* aSubject, const char* aTopic,
                          const char16_t* aData) {
-  MOZ_ASSERT(NS_IsMainThread());
+  AssertIsOnMainThread();
   NS_ENSURE_ARG_POINTER(aTopic);
-  if (strcmp(aTopic, TOPIC_PROFILE_BEFORE_CHANGE) == 0) {
+  if (strcmp(aTopic, TOPIC_PROFILE_BEFORE_CHANGE) == 0 ||
+      strcmp(aTopic, TOPIC_XPCOM_SHUTDOWN_THREADS) == 0) {
     nsCOMPtr<nsIObserverService> observerService =
         do_GetService("@mozilla.org/observer-service;1");
     if (observerService) {
       observerService->RemoveObserver(this, TOPIC_PROFILE_BEFORE_CHANGE);
       observerService->RemoveObserver(this, TOPIC_CLEAR_PRIVATE_DATA);
+      observerService->RemoveObserver(this, TOPIC_XPCOM_SHUTDOWN_THREADS);
     }
 
-    mIOThread->Dispatch(NewRunnableMethod("ShutdownBackend", this,
-                                          &JumpListBuilder::DoShutdownBackend),
-                        NS_DISPATCH_NORMAL);
-
-    mIOThread->Shutdown();
+    ShutdownIOThread();
   } else if (strcmp(aTopic, "nsPref:changed") == 0 &&
              nsDependentString(aData).EqualsASCII(kPrefTaskbarEnabled)) {
     bool enabled = Preferences::GetBool(kPrefTaskbarEnabled, true);
-    if (!enabled) {
+    if (!enabled && mIOThread) {
       nsCOMPtr<nsIRunnable> event =
           new mozilla::widget::AsyncDeleteAllFaviconsFromDisk();
       mIOThread->Dispatch(event, NS_DISPATCH_NORMAL);
     }
-  } else if (strcmp(aTopic, TOPIC_CLEAR_PRIVATE_DATA) == 0) {
+  } else if (strcmp(aTopic, TOPIC_CLEAR_PRIVATE_DATA) == 0 && mIOThread) {
     // Delete JumpListCache icons from Disk, if any.
     nsCOMPtr<nsIRunnable> event =
         new mozilla::widget::AsyncDeleteAllFaviconsFromDisk(false);

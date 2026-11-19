@@ -46,21 +46,8 @@ class LensImageUploader(
     )
 
     /**
-     * Decodes, scales, compresses, and uploads the image at [imageUri] to Google Lens.
-     *
-     * @param imageUri The content URI of the image to upload.
-     * @param isPrivate When true, the upload runs in GeckoView's private cookie context so the returned Lens session
-     *   matches the private tab the result is opened in.
-     */
-    suspend fun upload(imageUri: Uri, isPrivate: Boolean): UploadResult =
-        withContext(Dispatchers.IO) {
-            val bitmap = decodeBitmap(imageUri) ?: return@withContext UploadResult(resultUrl = null)
-            uploadBitmap(bitmap, isPrivate, recycleSource = true)
-        }
-
-    /**
-     * Decodes the image at [imageUri] upright and subsampled to the upload size, for callers that display the image
-     * before passing it to [uploadImage]. The caller owns the returned bitmap.
+     * Decodes the image at [imageUri] upright and subsampled to the upload size, so it can be displayed before it is
+     * passed to [uploadImage]. The caller owns the returned bitmap.
      *
      * @param imageUri The content URI of the image to decode.
      * @return The decoded bitmap, or null if the image could not be read.
@@ -68,8 +55,8 @@ class LensImageUploader(
     suspend fun decodeImage(imageUri: Uri): Bitmap? = withContext(Dispatchers.IO) { decodeBitmap(imageUri) }
 
     /**
-     * Scales, compresses, and uploads [bitmap] to Google Lens. Unlike [upload], [bitmap] is left untouched so the
-     * caller can keep drawing it.
+     * Scales, compresses, and uploads [bitmap] to Google Lens. [bitmap] is left untouched so the caller can keep
+     * drawing it.
      *
      * @param bitmap The image to upload, typically from [decodeImage].
      * @param isPrivate When true, the upload runs in GeckoView's private cookie context so the returned Lens session

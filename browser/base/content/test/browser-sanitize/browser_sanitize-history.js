@@ -154,9 +154,10 @@ add_task(async function keepsHistoryWhenWindowsCannotClose() {
   let originalCanCloseWindow = window.CanCloseWindow;
   window.CanCloseWindow = () => false;
   let completed = TestUtils.topicObserved("sanitizer-sanitization-complete");
+  let progress = {};
   try {
     await Assert.rejects(
-      Sanitizer.sanitize(["openWindows", "history"]),
+      Sanitizer.sanitize(["openWindows", "history"], { progress }),
       /could not close windows/,
       "Sanitizing fails when a window refuses to close"
     );
@@ -165,8 +166,8 @@ add_task(async function keepsHistoryWhenWindowsCannotClose() {
     delete window.skipNextCanClose;
   }
 
-  let [, data] = await completed;
-  Assert.equal(data, "aborted", "The completion notification says why");
+  await completed;
+  Assert.equal(progress.openWindows, "aborted", "The progress says why");
   Assert.ok(
     await PlacesUtils.history.hasVisits(URL),
     "History was not cleared"

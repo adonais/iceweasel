@@ -65,6 +65,7 @@ SOURCE_HEADERS += [
     "logging.h",
     "m_cpp_utils.h",
     "mediapacket.h",
+    "MediaTransportTypes.h",
     "nr_socket_proxy_config.h",
     "nr_socket_prsock.h",
     "nr_socket_tcp.h",

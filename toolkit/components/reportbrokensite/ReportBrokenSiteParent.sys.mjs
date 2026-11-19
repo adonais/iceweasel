@@ -6,6 +6,8 @@ import { Troubleshoot } from "resource://gre/modules/Troubleshoot.sys.mjs";
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
+import { getMozRemoteImageURL } from "moz-src:///toolkit/modules/FaviconUtils.sys.mjs";
+
 import { ReportBrokenSiteHelpers as Helpers } from "./ReportBrokenSiteHelpers.mjs";
 
 export class ReportBrokenSiteParent extends JSWindowActorParent {
@@ -75,7 +77,12 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
 
     let favicon;
     try {
-      favicon = this.browsingContext.topFrameElement?.mIconURL;
+      const faviconUrl = this.browsingContext.topFrameElement?.mIconURL;
+      favicon = faviconUrl
+        ? getMozRemoteImageURL(faviconUrl, {
+            size: 16,
+          })
+        : undefined;
     } catch (err) {
       console.error("Report Broken Site: failed to get favicon", err);
     }

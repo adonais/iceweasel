@@ -30,7 +30,7 @@ struct UniqueOfUniqueOrNonOwningSelector<T[N]>;
 
 }  // namespace detail
 
-// `mozilla::MakeUnique` equivalent, with the same set of advantages.
+// `std::make_unique` equivalent, with the same set of advantages.
 // Non-owning case doesn't need this since there's no allocation.
 // See below as to why only SingleObject case is supported.
 template <typename T, typename... Args>

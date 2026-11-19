@@ -218,7 +218,7 @@ UniquePtr<uint8_t[]> nsPKCS12Blob::stringToBigEndianBytes(
 
   uint32_t wideLength = uni.Length() + 1;  // +1 for the null terminator.
   bytesLength = wideLength * 2;
-  auto buffer = MakeUnique<uint8_t[]>(bytesLength);
+  auto buffer = std::make_unique<uint8_t[]>(bytesLength);
 
   // We have to use a cast here because on Windows, uni.get() returns
   // char16ptr_t instead of char16_t*.

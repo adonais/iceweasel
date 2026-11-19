@@ -744,8 +744,6 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_environment(
     ): Int
-    external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_store_config(
-    ): Int
     external fun uniffi_ads_client_checksum_method_mozadsclientbuilder_telemetry(
     ): Int
     external fun uniffi_ads_client_checksum_constructor_mozadsclientbuilder_new(
@@ -814,8 +812,6 @@ internal object UniffiLib {
     external fun uniffi_ads_client_fn_method_mozadsclientbuilder_cache_config(`ptr`: Long,`cacheConfig`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ads_client_fn_method_mozadsclientbuilder_environment(`ptr`: Long,`environment`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): Long
-    external fun uniffi_ads_client_fn_method_mozadsclientbuilder_store_config(`ptr`: Long,`storeConfig`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ads_client_fn_method_mozadsclientbuilder_telemetry(`ptr`: Long,`telemetry`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
@@ -1370,29 +1366,72 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 //
 
 
+/**
+ * Requests ads from MARS and records their clicks, impressions and reports.
+ * Build it with [`MozAdsClientBuilder`], ideally once per app.
+ */
 public interface MozAdsClientInterface {
     
+    /**
+     * Deletes everything in the HTTP cache.
+     */
     fun `clearCache`()
     
+    /**
+     * Records a click on an ad, from its `callbacks.click` URL.
+     */
     fun `recordClick`(`clickUrl`: kotlin.String, `options`: MozAdsCallbackOptions? = null)
     
+    /**
+     * Records an impression of an ad, from its `callbacks.impression` URL.
+     */
     fun `recordImpression`(`impressionUrl`: kotlin.String, `options`: MozAdsCallbackOptions? = null)
     
+    /**
+     * Reports an ad, from its `callbacks.report` URL.
+     */
     fun `reportAd`(`reportUrl`: kotlin.String, `reason`: MozAdsReportReason, `options`: MozAdsCallbackOptions? = null)
     
+    /**
+     * Requests one image ad per placement. The result is keyed by
+     * `placement_id` and leaves out placements with no ad.
+     */
     fun `requestImageAds`(`mozAdRequests`: List<MozAdsPlacementRequest>, `options`: MozAdsRequestOptions? = null): Map<kotlin.String, MozAdsImage>
     
+    /**
+     * Requests `count` spocs per placement. The result is keyed by
+     * `placement_id` and leaves out placements with no ad.
+     */
     fun `requestSpocAds`(`mozAdRequests`: List<MozAdsPlacementRequestWithCount>, `options`: MozAdsRequestOptions? = null): Map<kotlin.String, List<MozAdsSpoc>>
     
+    /**
+     * Requests `count` ads per placement, for placements that can return
+     * either spocs or image ads. The result is keyed by `placement_id` and
+     * leaves out placements with no ad.
+     */
     fun `requestSpocOrImageAds`(`mozAdRequests`: List<MozAdsPlacementRequestWithCount>, `options`: MozAdsRequestOptions? = null): Map<kotlin.String, List<MozAdsImageOrSpoc>>
     
+    /**
+     * Requests one tile ad per placement. The result is keyed by
+     * `placement_id` and leaves out placements with no ad.
+     */
     fun `requestTileAds`(`mozAdRequests`: List<MozAdsPlacementRequest>, `options`: MozAdsRequestOptions? = null): Map<kotlin.String, MozAdsTile>
     
+    /**
+     * Allows the ads-client to unload some references and prepare for a safe shutdown.
+     * Other methods should not be called after this one.
+     * Currently, we shutdown (with no expected errors).
+     * However, future shutdowns may require an error to be logged, so we keep the Result.
+     */
     fun `shutdown`()
     
     companion object
 }
 
+/**
+ * Requests ads from MARS and records their clicks, impressions and reports.
+ * Build it with [`MozAdsClientBuilder`], ideally once per app.
+ */
 open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
 {
 
@@ -1495,6 +1534,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     }
 
     
+    /**
+     * Deletes everything in the HTTP cache.
+     */
     @Throws(MozAdsClientApiException::class)override fun `clearCache`()
         = 
     callWithHandle {
@@ -1508,6 +1550,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Records a click on an ad, from its `callbacks.click` URL.
+     */
     @Throws(MozAdsClientApiException::class)override fun `recordClick`(`clickUrl`: kotlin.String, `options`: MozAdsCallbackOptions?)
         = 
     callWithHandle {
@@ -1523,6 +1568,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Records an impression of an ad, from its `callbacks.impression` URL.
+     */
     @Throws(MozAdsClientApiException::class)override fun `recordImpression`(`impressionUrl`: kotlin.String, `options`: MozAdsCallbackOptions?)
         = 
     callWithHandle {
@@ -1538,6 +1586,9 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Reports an ad, from its `callbacks.report` URL.
+     */
     @Throws(MozAdsClientApiException::class)override fun `reportAd`(`reportUrl`: kotlin.String, `reason`: MozAdsReportReason, `options`: MozAdsCallbackOptions?)
         = 
     callWithHandle {
@@ -1554,6 +1605,10 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Requests one image ad per placement. The result is keyed by
+     * `placement_id` and leaves out placements with no ad.
+     */
     @Throws(MozAdsClientApiException::class)override fun `requestImageAds`(`mozAdRequests`: List<MozAdsPlacementRequest>, `options`: MozAdsRequestOptions?): Map<kotlin.String, MozAdsImage> {
             return FfiConverterMapStringTypeMozAdsImage.lift(
     callWithHandle {
@@ -1570,6 +1625,10 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Requests `count` spocs per placement. The result is keyed by
+     * `placement_id` and leaves out placements with no ad.
+     */
     @Throws(MozAdsClientApiException::class)override fun `requestSpocAds`(`mozAdRequests`: List<MozAdsPlacementRequestWithCount>, `options`: MozAdsRequestOptions?): Map<kotlin.String, List<MozAdsSpoc>> {
             return FfiConverterMapStringSequenceTypeMozAdsSpoc.lift(
     callWithHandle {
@@ -1586,6 +1645,11 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Requests `count` ads per placement, for placements that can return
+     * either spocs or image ads. The result is keyed by `placement_id` and
+     * leaves out placements with no ad.
+     */
     @Throws(MozAdsClientApiException::class)override fun `requestSpocOrImageAds`(`mozAdRequests`: List<MozAdsPlacementRequestWithCount>, `options`: MozAdsRequestOptions?): Map<kotlin.String, List<MozAdsImageOrSpoc>> {
             return FfiConverterMapStringSequenceTypeMozAdsImageOrSpoc.lift(
     callWithHandle {
@@ -1602,6 +1666,10 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Requests one tile ad per placement. The result is keyed by
+     * `placement_id` and leaves out placements with no ad.
+     */
     @Throws(MozAdsClientApiException::class)override fun `requestTileAds`(`mozAdRequests`: List<MozAdsPlacementRequest>, `options`: MozAdsRequestOptions?): Map<kotlin.String, MozAdsTile> {
             return FfiConverterMapStringTypeMozAdsTile.lift(
     callWithHandle {
@@ -1618,6 +1686,12 @@ open class MozAdsClient: Disposable, AutoCloseable, MozAdsClientInterface
     
 
     
+    /**
+     * Allows the ads-client to unload some references and prepare for a safe shutdown.
+     * Other methods should not be called after this one.
+     * Currently, we shutdown (with no expected errors).
+     * However, future shutdowns may require an error to be logged, so we keep the Result.
+     */
     @Throws(MozAdsClientApiException::class)override fun `shutdown`()
         = 
     callWithHandle {
@@ -1764,21 +1838,40 @@ public object FfiConverterTypeMozAdsClient: FfiConverter<MozAdsClient, Long> {
 //
 
 
+/**
+ * Configures and builds a [`MozAdsClient`].
+ */
 public interface MozAdsClientBuilderInterface {
     
+    /**
+     * Builds the client. A telemetry instance set on the builder becomes the
+     * destination of every client's metrics in the process.
+     */
     fun `build`(): MozAdsClient
     
+    /**
+     * Enables the HTTP cache with this configuration. Without it, nothing is
+     * cached.
+     */
     fun `cacheConfig`(`cacheConfig`: MozAdsCacheConfig): MozAdsClientBuilder
     
+    /**
+     * The MARS environment to send requests to. Defaults to production.
+     */
     fun `environment`(`environment`: MozAdsEnvironment): MozAdsClientBuilder
     
-    fun `storeConfig`(`storeConfig`: MozAdsStoreConfig): MozAdsClientBuilder
-    
+    /**
+     * Where the client records its metrics. Telemetry is process-wide: see
+     * [`MozAdsTelemetry`].
+     */
     fun `telemetry`(`telemetry`: MozAdsTelemetry): MozAdsClientBuilder
     
     companion object
 }
 
+/**
+ * Configures and builds a [`MozAdsClient`].
+ */
 open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderInterface
 {
 
@@ -1803,6 +1896,10 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
         this.handle = 0
         this.cleanable = null
     }
+    /**
+     * A builder with the defaults: the production environment, no cache and
+     * no telemetry.
+     */
     constructor() :
         this(UniffiWithHandle, 
     uniffiRustCall() { _status ->
@@ -1888,7 +1985,11 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
         }
     }
 
-    override fun `build`(): MozAdsClient {
+    
+    /**
+     * Builds the client. A telemetry instance set on the builder becomes the
+     * destination of every client's metrics in the process.
+     */override fun `build`(): MozAdsClient {
             return FfiConverterTypeMozAdsClient.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -1901,7 +2002,11 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
     }
     
 
-    override fun `cacheConfig`(`cacheConfig`: MozAdsCacheConfig): MozAdsClientBuilder {
+    
+    /**
+     * Enables the HTTP cache with this configuration. Without it, nothing is
+     * cached.
+     */override fun `cacheConfig`(`cacheConfig`: MozAdsCacheConfig): MozAdsClientBuilder {
             return FfiConverterTypeMozAdsClientBuilder.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -1915,7 +2020,10 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
     }
     
 
-    override fun `environment`(`environment`: MozAdsEnvironment): MozAdsClientBuilder {
+    
+    /**
+     * The MARS environment to send requests to. Defaults to production.
+     */override fun `environment`(`environment`: MozAdsEnvironment): MozAdsClientBuilder {
             return FfiConverterTypeMozAdsClientBuilder.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -1929,21 +2037,11 @@ open class MozAdsClientBuilder: Disposable, AutoCloseable, MozAdsClientBuilderIn
     }
     
 
-    override fun `storeConfig`(`storeConfig`: MozAdsStoreConfig): MozAdsClientBuilder {
-            return FfiConverterTypeMozAdsClientBuilder.lift(
-    callWithHandle {
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_ads_client_fn_method_mozadsclientbuilder_store_config(
-        it,
-        
-        FfiConverterTypeMozAdsStoreConfig.lower(`storeConfig`),_status)
-}
-    }
-    )
-    }
     
-
-    override fun `telemetry`(`telemetry`: MozAdsTelemetry): MozAdsClientBuilder {
+    /**
+     * Where the client records its metrics. Telemetry is process-wide: see
+     * [`MozAdsTelemetry`].
+     */override fun `telemetry`(`telemetry`: MozAdsTelemetry): MozAdsClientBuilder {
             return FfiConverterTypeMozAdsClientBuilder.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -1997,6 +2095,10 @@ public object FfiConverterTypeMozAdsClientBuilder: FfiConverter<MozAdsClientBuil
 
 
 
+/**
+ * The on-disk HTTP cache. `default_cache_ttl_seconds` defaults to 300 and
+ * `max_size_mib` to 10.
+ */
 data class MozAdsCacheConfig (
     var `dbPath`: kotlin.String
     , 
@@ -2040,6 +2142,10 @@ public object FfiConverterTypeMozAdsCacheConfig: FfiConverterRustBuffer<MozAdsCa
 
 
 
+/**
+ * How one request uses the cache. `ttl_seconds` overrides the client's
+ * default TTL; `0` does not cache the response.
+ */
 data class MozAdsCachePolicy (
     var `mode`: MozAdsCacheMode
     , 
@@ -2078,6 +2184,9 @@ public object FfiConverterTypeMozAdsCachePolicy: FfiConverterRustBuffer<MozAdsCa
 
 
 
+/**
+ * Options for a callback request (click, impression or report).
+ */
 data class MozAdsCallbackOptions (
     var `ohttp`: kotlin.Boolean = false 
     
@@ -2111,6 +2220,10 @@ public object FfiConverterTypeMozAdsCallbackOptions: FfiConverterRustBuffer<MozA
 
 
 
+/**
+ * The callback URLs of an ad: pass them to `record_click`,
+ * `record_impression` and `report_ad`.
+ */
 data class MozAdsCallbacks (
     var `click`: AdsClientUrl
     , 
@@ -2154,6 +2267,9 @@ public object FfiConverterTypeMozAdsCallbacks: FfiConverterRustBuffer<MozAdsCall
 
 
 
+/**
+ * IAB content categories, in one taxonomy version.
+ */
 data class MozAdsContentCategory (
     var `categories`: List<kotlin.String>
     , 
@@ -2192,6 +2308,9 @@ public object FfiConverterTypeMozAdsContentCategory: FfiConverterRustBuffer<MozA
 
 
 
+/**
+ * The IAB content classification of a placement, for targeting.
+ */
 data class MozAdsIabContent (
     var `categoryIds`: List<kotlin.String>
     , 
@@ -2230,6 +2349,9 @@ public object FfiConverterTypeMozAdsIABContent: FfiConverterRustBuffer<MozAdsIab
 
 
 
+/**
+ * An image ad returned by MARS.
+ */
 data class MozAdsImage (
     var `altText`: kotlin.String?
     , 
@@ -2288,6 +2410,10 @@ public object FfiConverterTypeMozAdsImage: FfiConverterRustBuffer<MozAdsImage> {
 
 
 
+/**
+ * One placement to request a single ad for. `placement_id` must be unique
+ * within one request.
+ */
 data class MozAdsPlacementRequest (
     var `iabContent`: MozAdsIabContent? = null 
     , 
@@ -2326,6 +2452,10 @@ public object FfiConverterTypeMozAdsPlacementRequest: FfiConverterRustBuffer<Moz
 
 
 
+/**
+ * One placement to request `count` ads for. `placement_id` must be unique
+ * within one request.
+ */
 data class MozAdsPlacementRequestWithCount (
     var `count`: kotlin.UInt
     , 
@@ -2369,10 +2499,13 @@ public object FfiConverterTypeMozAdsPlacementRequestWithCount: FfiConverterRustB
 
 
 
+/**
+ * Options for one ad request. Every field has a default.
+ */
 data class MozAdsRequestOptions (
     var `blocks`: List<kotlin.String> = listOf() 
     , 
-    var `cachePolicy`: MozAdsCachePolicy?
+    var `cachePolicy`: MozAdsCachePolicy? = null 
     , 
     var `flags`: Map<kotlin.String, kotlin.Boolean> = mapOf() 
     , 
@@ -2422,6 +2555,9 @@ public object FfiConverterTypeMozAdsRequestOptions: FfiConverterRustBuffer<MozAd
 
 
 
+/**
+ * A sponsored content (spoc) ad returned by MARS.
+ */
 data class MozAdsSpoc (
     var `blockKey`: kotlin.String
     , 
@@ -2510,6 +2646,9 @@ public object FfiConverterTypeMozAdsSpoc: FfiConverterRustBuffer<MozAdsSpoc> {
 
 
 
+/**
+ * Frequency capping information for a spoc.
+ */
 data class MozAdsSpocFrequencyCaps (
     var `capKey`: kotlin.String
     , 
@@ -2548,6 +2687,9 @@ public object FfiConverterTypeMozAdsSpocFrequencyCaps: FfiConverterRustBuffer<Mo
 
 
 
+/**
+ * Ranking and personalization information for a spoc.
+ */
 data class MozAdsSpocRanking (
     var `itemScore`: kotlin.Double
     , 
@@ -2591,6 +2733,9 @@ public object FfiConverterTypeMozAdsSpocRanking: FfiConverterRustBuffer<MozAdsSp
 
 
 
+/**
+ * The SQLite database the stateful client keeps its ads in.
+ */
 data class MozAdsStoreConfig (
     var `dbPath`: kotlin.String
     
@@ -2624,6 +2769,9 @@ public object FfiConverterTypeMozAdsStoreConfig: FfiConverterRustBuffer<MozAdsSt
 
 
 
+/**
+ * A tile ad returned by MARS.
+ */
 data class MozAdsTile (
     var `blockKey`: kotlin.String
     , 
@@ -2682,6 +2830,9 @@ public object FfiConverterTypeMozAdsTile: FfiConverterRustBuffer<MozAdsTile> {
 
 
 
+/**
+ * Whether a request reads the cache before the network.
+ */
 
 enum class MozAdsCacheMode {
     
@@ -2718,6 +2869,9 @@ public object FfiConverterTypeMozAdsCacheMode: FfiConverterRustBuffer<MozAdsCach
 
 
 
+/**
+ * The error every ads client method can throw.
+ */
 sealed class MozAdsClientApiException: kotlin.Exception() {
     
     class Other(
@@ -2778,6 +2932,12 @@ public object FfiConverterTypeMozAdsClientApiError : FfiConverterRustBuffer<MozA
 
 
 
+/**
+ * The MARS environment the client sends requests to. Defaults to `Prod`.
+ *
+ * Variants are deliberately unsorted: UniFFI encodes them by index, and
+ * this mirrors `Environment`.
+ */
 sealed class MozAdsEnvironment {
     
     object Prod : MozAdsEnvironment()
@@ -2865,6 +3025,9 @@ public object FfiConverterTypeMozAdsEnvironment : FfiConverterRustBuffer<MozAdsE
 
 
 
+/**
+ * The version of the IAB Content Taxonomy that category ids refer to.
+ */
 
 enum class MozAdsIabContentTaxonomy {
     
@@ -2902,6 +3065,9 @@ public object FfiConverterTypeMozAdsIABContentTaxonomy: FfiConverterRustBuffer<M
 
 
 
+/**
+ * An ad from a placement that can return either an image or a spoc.
+ */
 sealed class MozAdsImageOrSpoc {
     
     data class Image(
@@ -2985,12 +3151,18 @@ public object FfiConverterTypeMozAdsImageOrSpoc : FfiConverterRustBuffer<MozAdsI
 
 
 
+/**
+ * Why the user reported an ad.
+ */
 
 enum class MozAdsReportReason {
     
     INAPPROPRIATE,
     NOT_INTERESTED,
-    SEEN_TOO_MANY_TIMES;
+    SEEN_TOO_MANY_TIMES,
+    SCAM,
+    MISLEADING,
+    OFFENSIVE;
 
     
 
@@ -3027,14 +3199,30 @@ public object FfiConverterTypeMozAdsReportReason: FfiConverterRustBuffer<MozAdsR
  */
 public interface MozAdsTelemetry {
     
+    /**
+     * The HTTP cache could not be built (`ads_client.build_cache_error`).
+     */
     fun `recordBuildCacheError`(`label`: kotlin.String, `value`: kotlin.String)
     
+    /**
+     * A client operation failed (`ads_client.client_error`).
+     */
     fun `recordClientError`(`label`: kotlin.String, `value`: kotlin.String)
     
+    /**
+     * A client operation was attempted (`ads_client.client_operation_total`).
+     */
     fun `recordClientOperationTotal`(`label`: kotlin.String)
     
+    /**
+     * An ad in a MARS response could not be parsed and was skipped
+     * (`ads_client.deserialization_error`).
+     */
     fun `recordDeserializationError`(`label`: kotlin.String, `value`: kotlin.String)
     
+    /**
+     * The outcome of a read from the HTTP cache (`ads_client.http_cache_outcome`).
+     */
     fun `recordHttpCacheOutcome`(`label`: kotlin.String, `value`: kotlin.String)
     
     companion object

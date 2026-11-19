@@ -21,7 +21,7 @@
 
 class APZCTreeManagerTester : public APZCTesterBase {
  protected:
-  APZCTreeManagerTester() : mHitTester(MakeUnique<WRHitTester>()) {}
+  APZCTreeManagerTester() : mHitTester(std::make_unique<WRHitTester>()) {}
 
   virtual void SetUp() {
     APZCTesterBase::SetUp();
@@ -91,7 +91,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
   }
 
   void CreateMockHitTester() {
-    mHitTester = MakeUnique<MockHitTester>();
+    mHitTester = std::make_unique<MockHitTester>();
     // Save a pointer in a separate variable, because SetUp() will
     // move the value out of mHitTester.
     mMockHitTester = static_cast<MockHitTester*>(mHitTester.get());

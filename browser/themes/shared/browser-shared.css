@@ -588,6 +588,142 @@ body {
   stroke: var(--menu-profiles-theme-fg);
 }
 
+/* Toolbar edge padding
+ *
+ * The distance between the window edge and the hover state of the first and
+ * last items in the tab strip and the navigation toolbar. Edges next to window
+ * controls or titlebar spacers don't get any extra padding. */
+
+#TabsToolbar,
+#nav-bar {
+  /* Edge padding is specific to the window layout and shouldn't change if underlying token sizes change. */
+  --toolbar-edge-padding: 4px;
+}
+
+/* There are no titlebar spacers or window controls before the tabs. Maximized
+ * and fullscreen windows leave the first tab at the screen edge, so that the
+ * edge stays clickable. */
+:root[sizemode="normal"]:not([customtitlebar]) #TabsToolbar {
+  padding-inline-start: calc(var(--toolbar-edge-padding) - var(--tab-margin-overflow-clip));
+}
+
+/* Add space to the end of the tab strip and make that space click its last
+ * visible item: the last item of the customization target, or the private
+ * browsing and content analysis indicators that follow it. In Smart Window, the
+ * app menu button follows all of them. Edges next to the window controls keep
+ * their existing spacing, so these conditions mirror the window controls'
+ * placement and visibility (see .titlebar-buttonbox-container). */
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens -- edge padding isn't a design token, see --toolbar-edge-padding. */
+:root:not([ai-window], [privatebrowsingmode="temporary"], [contentanalysisactive])
+  #TabsToolbar-customization-target
+  > :is(toolbarbutton, toolbaritem):nth-last-child(1 of :not([hidden])),
+:root:not([ai-window], [privatebrowsingmode="temporary"], [contentanalysisactive])
+  #TabsToolbar-customization-target
+  > toolbarpaletteitem:nth-last-child(1 of :not([hidden]))
+  > :is(toolbarbutton, toolbaritem),
+:root[privatebrowsingmode="temporary"]:not([ai-window], [contentanalysisactive]) #TabsToolbar > .private-browsing-indicator-button,
+:root[contentanalysisactive]:not([ai-window]) #TabsToolbar > .content-analysis-indicator,
+:root[ai-window] #TabsToolbar > #PanelUI-button > #PanelUI-menu-button {
+  :root:not([customtitlebar], [inFullscreen]) & {
+    padding-inline-end: var(--toolbar-edge-padding);
+  }
+
+  @media (-moz-platform: macos) {
+    :root[inFullscreen] & {
+      padding-inline-end: var(--toolbar-edge-padding);
+    }
+  }
+
+  @media (-moz-platform: macos) and (not (-moz-mac-rtl)) {
+    &:-moz-locale-dir(ltr) {
+      padding-inline-end: var(--toolbar-edge-padding);
+    }
+  }
+
+  @media (-moz-mac-rtl) {
+    &:-moz-locale-dir(rtl) {
+      padding-inline-end: var(--toolbar-edge-padding);
+    }
+  }
+
+  @media (-moz-gtk-csd-reversed-placement) {
+    padding-inline-end: var(--toolbar-edge-padding);
+  }
+}
+/* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+
+#nav-bar {
+  --toolbar-start-edge-padding: var(--toolbar-edge-padding);
+  --toolbar-end-edge-padding: var(--toolbar-edge-padding);
+
+  /* Line up the first or last button's icon with the sidebar launcher icons,
+   * depending on which side the launcher is on. */
+  @media -moz-pref("sidebar.verticalTabs") {
+    /* The launcher icon's distance from the window edge (launcher padding plus
+     * the space around the icon in a launcher button), minus the toolbar
+     * button's own inner padding. */
+    --toolbar-launcher-edge-padding: calc(
+      var(--sidebar-launcher-button-padding-inline) + (var(--tab-min-height) - var(--icon-size-small)) / 2 - var(--toolbarbutton-padding-inner)
+    );
+    /* The edge away from the launcher has nothing to line up with. Like
+     * --toolbar-edge-padding, these values come from the UX spec and are
+     * specific to the window layout, so they aren't tokens. */
+    --toolbar-opposite-launcher-edge-padding: 6px;
+
+    :root[uidensity="compact"] & {
+      --toolbar-opposite-launcher-edge-padding: 3px;
+    }
+
+    @media -moz-pref("sidebar.position_start") {
+      --toolbar-start-edge-padding: var(--toolbar-launcher-edge-padding);
+      --toolbar-end-edge-padding: var(--toolbar-opposite-launcher-edge-padding);
+    }
+
+    @media not -moz-pref("sidebar.position_start") {
+      --toolbar-start-edge-padding: var(--toolbar-opposite-launcher-edge-padding);
+      --toolbar-end-edge-padding: var(--toolbar-launcher-edge-padding);
+    }
+  }
+
+  /* The navigation toolbar has the window controls when the tab strip is
+   * hidden. Keep the existing spacing next to them. These conditions mirror
+   * the window controls' placement and visibility (see
+   * .titlebar-buttonbox-container). */
+  #navigator-toolbox[tabs-hidden] > & {
+    @media (-moz-platform: macos) and (not (-moz-mac-rtl)) {
+      :root[customtitlebar]:not([inFullscreen]) &:-moz-locale-dir(ltr) {
+        --toolbar-start-edge-padding: var(--toolbar-padding-inline);
+      }
+
+      :root[customtitlebar]:not([inFullscreen]) &:-moz-locale-dir(rtl) {
+        --toolbar-end-edge-padding: var(--toolbar-padding-inline);
+      }
+    }
+
+    @media (-moz-mac-rtl) {
+      :root[customtitlebar]:not([inFullscreen]) &:-moz-locale-dir(rtl) {
+        --toolbar-start-edge-padding: var(--toolbar-padding-inline);
+      }
+
+      :root[customtitlebar]:not([inFullscreen]) &:-moz-locale-dir(ltr) {
+        --toolbar-end-edge-padding: var(--toolbar-padding-inline);
+      }
+    }
+
+    @media (-moz-gtk-csd-reversed-placement) {
+      :root:is([customtitlebar], [inFullscreen]) & {
+        --toolbar-start-edge-padding: var(--toolbar-padding-inline);
+      }
+    }
+
+    @media not ((-moz-platform: macos) or (-moz-gtk-csd-reversed-placement)) {
+      :root:is([customtitlebar], [inFullscreen]) & {
+        --toolbar-end-edge-padding: var(--toolbar-padding-inline);
+      }
+    }
+  }
+}
+
 /* Navigation toolbar */
 
 #nav-bar {
@@ -620,7 +756,7 @@ body {
   /* Add space to beginning of toolbar and make that space click the first <toolbarbutton> */
   > :is(toolbarbutton, toolbaritem):first-child,
   > toolbarpaletteitem:first-child > :is(toolbarbutton, toolbaritem) {
-    padding-inline-start: var(--toolbar-padding-inline);
+    padding-inline-start: var(--toolbar-start-edge-padding);
   }
 }
 
@@ -1501,11 +1637,6 @@ popupnotificationcontent {
   :root[ai-window] & {
     list-style-image: url("chrome://browser/skin/smart-window-simplified.svg");
   }
-
-  /* Smart Window toggle in Classic Window */
-  :root:not([ai-window]) & {
-    padding-inline-end: var(--toolbarbutton-padding-inner);
-  }
 }
 
 #ai-window-switch-classic,
@@ -1597,9 +1728,12 @@ popupnotificationcontent {
   margin-inline-start: auto;
 }
 
-/* Smart Window Toolbar styling. */
-:root[ai-window] #nav-bar {
-  padding-inline-end: var(--toolbar-padding-inline);
+/* Smart Window Toolbar styling. With vertical tabs, the app menu button
+ * follows the ask button and provides the end padding instead. */
+@media not -moz-pref("sidebar.verticalTabs") {
+  :root[ai-window] #nav-bar {
+    padding-inline-end: var(--toolbar-end-edge-padding);
+  }
 }
 
 /* AI window: hide nav bar on firstrun only; the address bar is shown at all

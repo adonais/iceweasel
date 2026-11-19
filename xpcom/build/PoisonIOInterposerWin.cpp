@@ -448,7 +448,7 @@ void InitPoisonIOInterposer() {
   sIOPoisoned = true;
 
   MOZ_RELEASE_ASSERT(!sHandleToFilenameCache);
-  sHandleToFilenameCache = mozilla::MakeUnique<HandleToFilenameCache>();
+  sHandleToFilenameCache = std::make_unique<HandleToFilenameCache>();
   mozilla::RunOnShutdown([]() {
     // The interposer may still be active after the final shutdown phase
     // (especially since ClearPoisonIOInterposer() is never called, see bug

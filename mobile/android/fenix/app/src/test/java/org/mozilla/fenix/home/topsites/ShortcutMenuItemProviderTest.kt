@@ -4,10 +4,7 @@
 
 package org.mozilla.fenix.home.topsites
 
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -15,7 +12,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -42,7 +38,7 @@ import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.fake.FakeMenuHost
 import org.mozilla.fenix.components.menu.fake.reachableEvents
 import org.mozilla.fenix.components.menu.store.MenuAction
-import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_MAX_COUNT
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -54,8 +50,6 @@ class ShortcutMenuItemProviderTest {
         every { removeTopSites } returns removeTopSite
     }
     private val appStore: AppStore = mockk(relaxed = true)
-    private val settings: Settings = mockk { every { topSitesMaxLimit } returns TOP_SITES_MAX_LIMIT }
-    private val materialAlertDialogBuilder: MaterialAlertDialogBuilder = mockk(relaxed = true)
     private val menu = FakeMenuHost()
 
     @Test
@@ -63,7 +57,7 @@ class ShortcutMenuItemProviderTest {
         runTest {
             val provider = provider(pinnedSiteStorage = storageWith(shortcut = null))
 
-            assertEquals(addShortcutItem, provider.itemFlow.value)
+            assertEquals(addShortcutItem, provider.itemsFlow.value.single())
         }
 
     @Test
@@ -72,11 +66,11 @@ class ShortcutMenuItemProviderTest {
             val provider = provider(pinnedSiteStorage = storageWith(shortcut = shortcut))
 
             // Adding the page is offered before reading from disk, removing it once it is known to be a shortcut.
-            assertEquals(addShortcutItem, provider.itemFlow.value)
+            assertEquals(addShortcutItem, provider.itemsFlow.value.single())
 
             runCurrent()
 
-            assertEquals(removeShortcutItem, provider.itemFlow.value)
+            assertEquals(removeShortcutItem, provider.itemsFlow.value.single())
         }
 
     @Test
@@ -87,7 +81,7 @@ class ShortcutMenuItemProviderTest {
 
             runCurrent()
 
-            assertEquals(addShortcutItem, provider.itemFlow.value)
+            assertEquals(addShortcutItem, provider.itemsFlow.value.single())
         }
 
     @Test
@@ -96,7 +90,7 @@ class ShortcutMenuItemProviderTest {
 
         runCurrent()
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -105,7 +99,7 @@ class ShortcutMenuItemProviderTest {
 
         runCurrent()
 
-        assertNull(provider.itemFlow.value)
+        assertTrue(provider.itemsFlow.value.isEmpty())
     }
 
     @Test
@@ -119,6 +113,7 @@ class ShortcutMenuItemProviderTest {
         verify {
             appStore.dispatch(
                 ShortcutAction.ShortcutAdded(
+                    url = TEST_URL,
                     source = AddShortcutSource.MANUAL,
                     entryPoint = AddShortcutEntryPoint.PAGE_MENU,
                 )
@@ -128,42 +123,33 @@ class ShortcutMenuItemProviderTest {
     }
 
     @Test
-    fun `GIVEN as many shortcuts as allowed WHEN adding another one THEN tell the user about the limit instead`() =
+    fun `GIVEN there are TOP_SITES_MAX_COUNT number of pinned sites WHEN adding another one THEN still pin it`() =
         runTest {
-            every { settings.topSitesMaxLimit } returns 1
-            val alertDialog: AlertDialog = mockk(relaxed = true)
-            every { materialAlertDialogBuilder.create() } returns alertDialog
-            every { alertDialog.findViewById<TextView>(any()) } returns mockk(relaxed = true)
-            val provider = provider(pinnedSiteStorage = storageWith(shortcut = otherShortcut))
-
-            provider.onEvent(MenuAction.AddShortcut, menu)
-            runCurrent()
-
-            verify { materialAlertDialogBuilder.setTitle(R.string.shortcut_max_limit_title) }
-            coVerify(exactly = 0) { addPinnedSite(any(), any(), any()) }
-            assertTrue(menu.isDismissed)
-        }
-
-    @Test
-    fun `GIVEN shortcuts the user cannot remove WHEN adding another one THEN don't count them towards the limit`() =
-        runTest {
-            every { settings.topSitesMaxLimit } returns 1
-            val providedShortcut =
-                TopSite.Provided(
-                    id = 2,
-                    title = null,
-                    url = "https://example.org",
-                    clickUrl = "",
-                    imageUrl = "",
-                    impressionUrl = "",
-                    createdAt = 0,
-                )
-            val provider = provider(pinnedSiteStorage = storageWith(shortcut = providedShortcut))
+            val shortcuts =
+                List(TOP_SITES_MAX_COUNT) { index ->
+                    TopSite.Pinned(
+                        id = index.toLong(),
+                        title = "Example",
+                        url = "https://example.org/$index",
+                        createdAt = 0,
+                    )
+                }
+            val provider = provider(pinnedSiteStorage = mockk { coEvery { getPinnedSites() } returns shortcuts })
 
             provider.onEvent(MenuAction.AddShortcut, menu)
             runCurrent()
 
             coVerify { addPinnedSite(title = TEST_TITLE, url = TEST_URL) }
+            verify {
+                appStore.dispatch(
+                    ShortcutAction.ShortcutAdded(
+                        url = TEST_URL,
+                        source = AddShortcutSource.MANUAL,
+                        entryPoint = AddShortcutEntryPoint.PAGE_MENU,
+                    )
+                )
+            }
+            assertTrue(menu.isDismissed)
         }
 
     @Test
@@ -193,7 +179,7 @@ class ShortcutMenuItemProviderTest {
             val provider = provider(pinnedSiteStorage = storageWith(shortcut = shortcut))
             runCurrent()
 
-            val events = requireNotNull(provider.itemFlow.value).reachableEvents()
+            val events = provider.itemsFlow.value.single().reachableEvents()
 
             assertTrue(events.all { provider.handles(it) }, "Not all of $events are handled")
             assertFalse(provider.handles(MenuAction.AddBookmark))
@@ -213,8 +199,6 @@ class ShortcutMenuItemProviderTest {
             areShortcutsEnabled = areShortcutsEnabled,
             topSitesUseCases = topSitesUseCases,
             appStore = appStore,
-            settings = settings,
-            materialAlertDialogBuilder = materialAlertDialogBuilder,
             // The shortcuts are read and changed on this scope, which runTest runs and then cancels.
             scope = this,
             applicationScope = this,
@@ -237,10 +221,7 @@ class ShortcutMenuItemProviderTest {
         const val TEST_TITLE = "Mozilla"
         const val TAB_ID = "tab1"
 
-        const val TOP_SITES_MAX_LIMIT = 16
-
         val shortcut = TopSite.Pinned(id = 1, title = TEST_TITLE, url = TEST_URL, createdAt = 0)
-        val otherShortcut = TopSite.Pinned(id = 2, title = "Example", url = "https://example.org", createdAt = 0)
 
         val addShortcutItem =
             StandardMenuItem(

@@ -211,7 +211,7 @@ add_task(async function filterSuggestions() {
     makeSuggestion(
       makeData({ engines: [engine.id], query: "invalid", type: "x" })
     ),
-    ...makeQueries(5).map(query =>
+    ...makeQueries(7).map(query =>
       makeSuggestion(makeData({ engines: [engine.id], query }))
     ),
     makeSuggestion(
@@ -221,7 +221,7 @@ add_task(async function filterSuggestions() {
   let filtered = await gFeature.filterSuggestions(suggestions);
   Assert.deepEqual(
     filtered.map(s => s.data.query),
-    ["q1", "q2", "q3"],
+    ["q1", "q2", "q3", "q4", "q5"],
     "rowCount queries of the first eligible group are picked"
   );
   for (let s of filtered) {
@@ -234,7 +234,7 @@ add_task(async function filterSuggestions() {
   filtered = await gFeature.filterSuggestions(suggestions);
   Assert.deepEqual(
     filtered.map(s => s.data.query),
-    ["q4"],
+    ["q6"],
     "rowCount is respected and the picked queries are skipped"
   );
   UrlbarPrefs.clear("temporal.rowCount");

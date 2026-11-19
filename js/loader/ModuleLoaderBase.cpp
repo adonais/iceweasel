@@ -38,7 +38,6 @@
 using mozilla::AutoSlowOperation;
 using mozilla::CycleCollectedJSContext;
 using mozilla::Err;
-using mozilla::MakeUnique;
 using mozilla::MicroTaskRunnable;
 using mozilla::Preferences;
 using mozilla::UniquePtr;
@@ -850,7 +849,14 @@ void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
   // queue and invoke ProcessDynamicImport. To account for this behavior,
   // we perform the fetching of submodules in the host layer instead.
   if (aRequest->IsTopLevel() || aRequest->IsDynamicImport()) {
-    StartFetchingModuleDependencies(aRequest);
+    if (aRequest->IsSourcePhaseRequest()) {
+      if (!aRequest->IsCanceled()) {
+        aRequest->SetReady();
+        aRequest->LoadFinished();
+      }
+    } else {
+      StartFetchingModuleDependencies(aRequest);
+    }
   } else {
     MOZ_ASSERT(!aRequest->IsDynamicImport());
     AutoJSAPI jsapi;
@@ -1155,7 +1161,7 @@ ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
 ResolvedModuleSet* ModuleLoaderBase::GetResolvedModuleSet() {
   MOZ_ASSERT(ImportMap::IsMultipleImportMapsSupported());
   if (!mResolvedModuleSet) {
-    mResolvedModuleSet = MakeUnique<ResolvedModuleSet>();
+    mResolvedModuleSet = std::make_unique<ResolvedModuleSet>();
   }
 
   return mResolvedModuleSet.get();
@@ -1857,6 +1863,25 @@ void ModuleLoaderBase::CancelAndClearDynamicImports() {
   }
 }
 
+static void ReportImportMapParseErrorWhenSafe(
+    JSContext* aCx, nsIGlobalObject* aGlobal,
+    const JS::ExceptionStack& aExnStack) {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "ReportImportMapParseErrorWhenSafe",
+      [global = nsCOMPtr<nsIGlobalObject>(aGlobal),
+       exception = JS::PersistentRooted<JS::Value>(aCx, aExnStack.exception()),
+       stack = JS::PersistentRooted<JSObject*>(aCx, aExnStack.stack())]() {
+        AutoJSAPI jsapi;
+        if (!jsapi.Init(global)) {
+          return;
+        }
+        JS::ExceptionStack exnStack(jsapi.cx(), exception, stack);
+        JS::SetPendingExceptionStack(jsapi.cx(), exnStack);
+        jsapi.ReportException();
+      }));
+}
+
 UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
     ScriptLoadRequest* aRequest) {
   AutoJSAPI jsapi;
@@ -1891,8 +1916,18 @@ UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
   // while registering an import map. Currently only inline import-maps are
   // supported, therefore parsing and registering import-maps will be executed
   // consecutively. To simplify the implementation, we didn't create the 'error
-  // to rethow' item and report the exception immediately(done in ~AutoJSAPI).
-  return ImportMap::ParseString(jsapi.cx(), text, aRequest->BaseURL(), warning);
+  // to rethow' item. Reporting the exception can run script, so it is reported
+  // once it is safe to run script.
+  UniquePtr<ImportMap> importMap =
+      ImportMap::ParseString(jsapi.cx(), text, aRequest->BaseURL(), warning);
+  if (!importMap) {
+    JS::ExceptionStack exnStack(jsapi.cx());
+    if (jsapi.HasException() && jsapi.StealExceptionAndStack(&exnStack)) {
+      ReportImportMapParseErrorWhenSafe(jsapi.cx(), GetGlobalObject(),
+                                        exnStack);
+    }
+  }
+  return importMap;
 }
 
 void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,

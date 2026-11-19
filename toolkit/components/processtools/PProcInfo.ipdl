@@ -1,0 +1,28 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+using struct mozilla::ThreadInfo from "mozilla/ProcInfoIPCUtils.h";
+
+namespace mozilla {
+
+struct RemoteProcInfo {
+  uint64_t memory;
+  uint64_t cpuTime;
+  uint64_t cpuCycleCount;
+  ThreadInfo[] threads;
+};
+
+// Allows the parent process to request system info from child processes whose
+// info cannot be read from the parent, e.g. Android isolated processes. The
+// parent actor lives on the main thread. The child actor lives on a background
+// task queue so that it can respond even if the child's main thread is busy.
+// Note that as the information is self-reported from the child process it
+// cannot be trusted, and must be used accordingly.
+[NeedsOtherPid, ParentProc=Parent, ChildProc=anychild]
+protocol PProcInfo {
+child:
+  async GetProcInfo() returns (RemoteProcInfo? info);
+};
+
+} // namespace mozilla

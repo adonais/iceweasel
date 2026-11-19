@@ -30,7 +30,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifdef USE_TURN
 
 #include <csi_platform.h>
 #include <stdio.h>
@@ -192,4 +191,3 @@ int nr_socket_turn_set_ctx(nr_socket *sock, nr_turn_client_ctx *ctx)
   return 0;
 }
 
-#endif /* USE_TURN */

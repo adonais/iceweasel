@@ -253,7 +253,10 @@ class CustomTabsTest {
     fun verifyPDFViewerInACustomTabTest() {
         val customTabPage = mockWebServer.getGenericAsset(3)
         val pdfFormResource = mockWebServer.pdfFormAsset
+        // Bug 2071966 will improve the naming situation
+        val pdfTitle = "Untitled document - pdfForm.pdf"
 
+        composeTestRule.activityRule.applySettingsExceptions { it.isPdfToolsEnabled = true }
         intentReceiverActivityTestRule.launchActivity(createCustomTabIntent(customTabPage.url.toString()))
 
         customTabScreen(composeTestRule) {
@@ -263,9 +266,16 @@ class CustomTabsTest {
             verifyPDFReaderToolbarItems()
             verifyCustomTabCloseButton()
             verifyCustomTabsSiteInfoButton()
-            verifyCustomTabToolbarTitle("Untitled document - pdfForm.pdf")
+            verifyCustomTabToolbarTitle(pdfTitle)
             verifyCustomTabUrl(pdfFormResource.url.toString())
             verifyMainMenuButton()
+        }
+        browserScreen(composeTestRule) {}
+            .clickDownloadPDFButton {
+                verifyDownloadCompleteSnackbar(fileName = pdfTitle)
+                waitUntilDownloadSnackbarGone()
+            }
+        customTabScreen(composeTestRule) {
             clickCustomTabCloseButton()
         }
         homeScreen(composeTestRule) {

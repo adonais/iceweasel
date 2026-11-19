@@ -34,18 +34,20 @@ class MoveToNormalTabsMenuItemProvider(
     private val target: MenuTarget,
     private val migratePrivateTab: TabsUseCases.MigratePrivateTabUseCase,
 ) : MenuItemProvider {
-    override val itemFlow: StateFlow<MenuItem?> =
-        MutableStateFlow(
-            if (target.browserSessionFrom(browserStore.state)?.content?.private == true) {
-                StandardMenuItem(
-                    title = MenuItemTitle(Text.Resource(R.string.browser_menu_move_to_non_private_tab)),
-                    icon = MenuItemIconRes(iconsR.drawable.mozac_ic_external_link_24),
-                    onClickEvent = MenuAction.MoveToNonPrivateTab,
+    override val itemsFlow: StateFlow<List<MenuItem>> =
+        if (target == MenuTarget.CustomizeMenu) {
+            MutableStateFlow(listOf(DEFAULT_MENU_ITEM))
+        } else {
+            MutableStateFlow(
+                listOfNotNull(
+                    if (target.browserSessionFrom(browserStore.state)?.content?.private == true) {
+                        DEFAULT_MENU_ITEM.copy(onClickEvent = MenuAction.MoveToNonPrivateTab)
+                    } else {
+                        null
+                    }
                 )
-            } else {
-                null
-            }
-        )
+            )
+        }
 
     override fun handles(event: MenuEvent) = event == MenuAction.MoveToNonPrivateTab
 
@@ -54,5 +56,13 @@ class MoveToNormalTabsMenuItemProvider(
 
         menu.dismiss()
         migratePrivateTab(tabId)
+    }
+
+    companion object {
+        private val DEFAULT_MENU_ITEM =
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_move_to_non_private_tab)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_external_link_24),
+            )
     }
 }

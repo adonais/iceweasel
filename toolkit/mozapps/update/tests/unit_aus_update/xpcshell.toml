@@ -6,7 +6,6 @@ tags = "appupdate"
 head = "head_update.js"
 skip-if = [
   "msix", # Our updater is disabled in MSIX builds
-  "os == 'win' && ccov",
 ]
 prefs = [
   "app.update.staging.enabled=false",
@@ -42,42 +41,25 @@ reason = "Testing mechanism is Windows-only as it relies on CreateFileW"
 ["cleanupSuccessLogsFIFO.js"]
 
 ["disableBackgroundUpdatesBackgroundTask.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["disableBackgroundUpdatesNonBackgroundTask.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["downloadExtrasFirefox.js"]
 firefox-appdir = "browser"
 skip-if = [
   "appname != 'firefox'",
-  "socketprocess_networking", # Bug 1759035
 ]
 
 ["downloadExtrasNotFirefox.js"]
 skip-if = [
   "appname == 'firefox'",
-  "socketprocess_networking", # Bug 1759035
 ]
 
 ["downloadInterruptedNoRecovery.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["downloadInterruptedOffline.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["downloadInterruptedRecovery.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["downloadResumeForSameAppVersion.js"]
 
@@ -92,28 +74,21 @@ reason = "Feature is Firefox-specific and Windows-specific."
 ["initialStateValidation.js"]
 
 ["languagePackUpdates.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 requesttimeoutfactor = 3 # Staging runs the updater in a separate process.
 
 ["mixedUnsupported.js"]
 
 ["multiUpdate.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["onlyDownloadUpdatesThisSession.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]
 
 ["perInstallationPrefs.js"]
 
 ["remoteUpdateXML.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
+
+["servicePrefTelemetry.js"]
+run-if = [
+  "os == 'win'",
 ]
 
 ["statusErrorCodeTelemetry.js"]
@@ -149,6 +124,3 @@ reason = "Update directory migration is currently Windows only"
 ["updateSyncManager.js"]
 
 ["urlConstruction.js"]
-skip-if = [
-  "socketprocess_networking", # Bug 1759035
-]

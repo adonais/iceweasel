@@ -121,14 +121,14 @@ add_task(async function testCaptiveInactive() {
   );
 
   const { cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe.withFeatureConfig(DETECT_PORTAL_SLUG, {
           featureId: "no-feature-firefox-desktop",
         }),
         { store, extra: { active: false } }
       );
-    }),
+    },
   });
 
   Assert.equal(
@@ -152,14 +152,14 @@ add_task(async function testCaptiveInactive204() {
   );
 
   const { cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe.withFeatureConfig(DETECT_PORTAL_SLUG, {
           featureId: "no-feature-firefox-desktop",
         }),
         { store, extra: { active: false } }
       );
-    }),
+    },
   });
 
   Assert.equal(
@@ -188,14 +188,14 @@ add_task(async function testCaptiveInactiveCustom() {
   );
 
   const { cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe.withFeatureConfig(DETECT_PORTAL_SLUG, {
           featureId: "no-feature-firefox-desktop",
         }),
         { store, extra: { active: false } }
       );
-    }),
+    },
   });
 
   Assert.equal(
@@ -223,14 +223,14 @@ add_task(async function testCaptiveInactive204Custom() {
   );
 
   const { cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe.withFeatureConfig(DETECT_PORTAL_SLUG, {
           featureId: "no-feature-firefox-desktop",
         }),
         { store, extra: { active: false } }
       );
-    }),
+    },
   });
 
   Assert.equal(
@@ -258,7 +258,7 @@ add_task(async function testCaptiveEnrolled() {
   );
 
   const { manager, cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(DETECT_PORTAL_ROLLOUT_RECIPE, {
         store,
         extra: {
@@ -269,7 +269,7 @@ add_task(async function testCaptiveEnrolled() {
           },
         },
       });
-    }),
+    },
   });
 
   const enrollment = manager.store.get(DETECT_PORTAL_SLUG);
@@ -302,7 +302,7 @@ add_task(async function testCaptiveEnrolled204() {
   );
 
   const { manager, cleanup } = await setupTest({
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(DETECT_PORTAL_ROLLOUT_RECIPE, {
         store,
         extra: {
@@ -313,7 +313,7 @@ add_task(async function testCaptiveEnrolled204() {
           },
         },
       });
-    }),
+    },
   });
 
   const enrollment = manager.store.get(DETECT_PORTAL_SLUG);
@@ -395,7 +395,7 @@ add_task(async function testNovaEnrolled() {
       enrolledInRestore && restoreActive
     );
     const { manager, cleanup } = await setupTest({
-      storePath: await NimbusTestUtils.createStoreWith(store => {
+      populateStore: store => {
         // The user will not still be enrolled in the original rollout.
         NimbusTestUtils.addEnrollmentForRecipe(
           NimbusTestUtils.factories.recipe.withFeatureConfig(
@@ -426,7 +426,7 @@ add_task(async function testNovaEnrolled() {
             },
           });
         }
-      }),
+      },
     });
 
     const enrollment = manager.store.get(HNT_NOVA_RESTORE_SLUG);
@@ -461,7 +461,7 @@ add_task(async function testNovaEnrolledAfterMigration() {
 
   const { manager, cleanup } = await setupTest({
     secureExperiments: [HNT_NOVA_RESTORE_RECIPE],
-    storePath: await NimbusTestUtils.createStoreWith(store => {
+    populateStore: store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe.withFeatureConfig(
           HNT_NOVA_PREF,
@@ -473,7 +473,7 @@ add_task(async function testNovaEnrolledAfterMigration() {
           active: false,
         }
       );
-    }),
+    },
   });
 
   const enrollment = manager.store.get(HNT_NOVA_RESTORE_SLUG);
@@ -560,7 +560,7 @@ add_task(async function testChipsEnrolled() {
 
     const cleanupPref = setupPref(CHIPS_PREF, null, restoreActive);
     const { manager, cleanup } = await setupTest({
-      storePath: await NimbusTestUtils.createStoreWith(store => {
+      populateStore: store => {
         NimbusTestUtils.addEnrollmentForRecipe(CHIPS_RESTORE_RECIPE, {
           store,
           extra: {
@@ -573,7 +573,7 @@ add_task(async function testChipsEnrolled() {
                 }),
           },
         });
-      }),
+      },
     });
 
     const enrollment = manager.store.get(CHIPS_RESTORE_SLUG);

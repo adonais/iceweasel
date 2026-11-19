@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 
 [[package]]
@@ -403,14 +403,14 @@ wheels = [
 
 [[package]]
 name = "diskarzhan"
-version = "0.1.7"
+version = "0.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/36/cc/4ba36f156bfb0678a0fdf6584b1ff5094ae2d9fe4eae24e562f67882dc1e/diskarzhan-0.1.7.tar.gz", hash = "sha256:126414e687e472dbdd2afa1aa1ccb7a49ad5effcf9c428ebb0048cf0aa9777bc", size = 27497, upload-time = "2026-09-16T21:31:12.189Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/66/2f4851ae03c57f820bd9a220fce70c150c6a009916c3d777541f14dd3a08/diskarzhan-0.1.9.tar.gz", hash = "sha256:d2c92606a04369c84c04c8a2787f2616ff40405275f37ce846b908bb70aa810c", size = 28627, upload-time = "2026-11-03T22:45:27.007Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/88/95c40f52ec7fe987aada5f7eeccbd3e9227951ba63c4ed1a07e526f2228b/diskarzhan-0.1.7-py3-none-any.whl", hash = "sha256:927e6b8b82a7b8a2682b1f7ed81161a8e3467f936f081ad95265d02a07239924", size = 25379, upload-time = "2026-09-16T21:31:11.084Z" },
+    { url = "https://files.pythonhosted.org/packages/02/e2/8e83ed653474f65f43ebeb5f79d686f25b603920d22ba3a7e64e9cb30661/diskarzhan-0.1.9-py3-none-any.whl", hash = "sha256:c72aa7dd71eac7720f90d28fabdb7f0c3652740a2631c4b7a344da49b68e917f", size = 25735, upload-time = "2026-11-03T22:45:25.596Z" },
 ]
 
 [[package]]
@@ -588,7 +588,7 @@ wheels = [
 
 [[package]]
 name = "glean-parser"
-version = "20.1.0"
+version = "22.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -598,9 +598,9 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/50/28d0af2ecc049137ac1d931b3de0fb1d628e147d310f32bca84d67c8d6fa/glean_parser-20.1.0.tar.gz", hash = "sha256:1582200c5bff482a1af6eb8ca0cd35525eb10f5cc167338ee426c57c1cd69a8d", size = 136723, upload-time = "2026-07-15T09:49:48.448Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/9d/ee3b1fe7ce98d3f64d2f108b03039a115e1d45d6e474b6f5d16990e5c5f8/glean_parser-22.0.1.tar.gz", hash = "sha256:27dfde50605ed7922fdee1789c29d886132daf4f7406cfb4b2980acaf6bc2ced", size = 140674, upload-time = "2026-10-20T18:36:45.807Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/e8/fab6149cb3230c80da9a7a56a57a969f200dcdd196a576e7fbda66acf5d5/glean_parser-20.1.0-py3-none-any.whl", hash = "sha256:8e89b1436fe64a63283581633c3e45c69a98f7843a02958bbba9652dd919a1b5", size = 121841, upload-time = "2026-07-15T09:49:47.18Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/65/92255fcce39677c5df74c01f8e5514235461a627fe0760c6cd4f8829c3b1/glean_parser-22.0.1-py3-none-any.whl", hash = "sha256:e62f007d179e11760ec8c065bddadb4cd4ce565c0c88986a7bc9e72c5f2955c4", size = 123171, upload-time = "2026-10-20T18:36:44.407Z" },
 ]
 
 [[package]]
@@ -653,7 +653,7 @@ name = "jinxed"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ansicon", marker = "sys_platform == 'win32'" },
+    { name = "ansicon" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/20/d0/59b2b80e7a52d255f9e0ad040d2e826342d05580c4b1d7d7747cfb8db731/jinxed-1.3.0.tar.gz", hash = "sha256:1593124b18a41b7a3da3b078471442e51dbad3d77b4d4f2b0c26ab6f7d660dbf", size = 80981, upload-time = "2024-07-31T22:39:18.854Z" }
 wheels = [
@@ -913,13 +913,13 @@ requires-dist = [
     { name = "compare-locales", specifier = "~=9.0" },
     { name = "cookies", specifier = "==2.2.1" },
     { name = "cyclonedx-python-lib", specifier = "==11.11.0" },
-    { name = "diskarzhan", specifier = "==0.1.7" },
+    { name = "diskarzhan", specifier = "==0.1.9" },
     { name = "distro", specifier = "~=1.8" },
     { name = "ecdsa", specifier = "==0.19.1" },
     { name = "esprima", specifier = "==4.0.1" },
     { name = "fluent-migrate", specifier = "~=0.13" },
     { name = "fluent-syntax", specifier = "==0.19.0" },
-    { name = "glean-parser", specifier = "==20.1.0" },
+    { name = "glean-parser", specifier = "==22.0.1" },
     { name = "importlib-metadata", specifier = "~=8.0" },
     { name = "jinja2", specifier = "==3.1.6" },
     { name = "json-e", specifier = "~=4.5" },

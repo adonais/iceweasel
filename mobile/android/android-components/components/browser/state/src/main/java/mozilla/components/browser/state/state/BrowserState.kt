@@ -6,6 +6,7 @@ package mozilla.components.browser.state.state
 
 import java.util.Locale
 import mozilla.components.browser.state.state.content.DownloadState
+import mozilla.components.browser.state.state.extension.PendingExtensionUpdate
 import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -23,6 +24,8 @@ import mozilla.components.lib.state.State
  * @property extensions A map of extension IDs and web extensions of all installed web extensions. The extensions here
  *   represent the default values for all [BrowserState.extensions] and can be overridden per [SessionState].
  * @property webExtensionPromptRequest the actual active web extension prompt request.
+ * @property pendingExtensionUpdates Extension updates waiting for the user to grant new permissions, by extension ID.
+ * @property pendingExtensionUpdateReviewRequest The ID of the extension whose pending update the user asked to review.
  * @property activeWebExtensionTabId the ID of the tab that is marked active for web extensions to support
  *   tabs.query({active: true}).
  * @property search the state of search for this browser state.
@@ -47,6 +50,8 @@ data class BrowserState(
     val containers: Map<String, ContainerState> = emptyMap(),
     val extensions: Map<String, WebExtensionState> = emptyMap(),
     val webExtensionPromptRequest: WebExtensionPromptRequest? = null,
+    val pendingExtensionUpdates: Map<String, PendingExtensionUpdate> = emptyMap(),
+    val pendingExtensionUpdateReviewRequest: String? = null,
     val activeWebExtensionTabId: String? = null,
     val downloads: Map<String, DownloadState> = emptyMap(),
     val search: SearchState = SearchState(),

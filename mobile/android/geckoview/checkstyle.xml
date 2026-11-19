@@ -30,6 +30,7 @@
         <module name="JavadocMethod">
           <property name="id" value="checkstyle:javadocmethod"/>
           <property name="scope" value="public"/>
+          <property name="allowMissingReturnTag" value="true"/>
         </module>
 
         <module name="MemberName">

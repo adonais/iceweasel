@@ -69,7 +69,7 @@ TEST(LocalStreamLimitsTest, StreamIdAllocation)
   auto extractLimitFromEncoder = [](CapsuleEncoder& encoder) -> uint64_t {
     auto buffer = encoder.GetBuffer();
     RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-    UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+    auto parser = std::make_unique<CapsuleParser>(listener);
     parser->ProcessCapsuleData(buffer.Elements(), buffer.Length());
     nsTArray<Capsule> parsed = listener->GetParsedCapsules();
     WebTransportStreamsBlockedCapsule blocked =
@@ -204,7 +204,7 @@ TEST(RemoteStreamLimitsTest, HandlesStreamLimitLogicWithRawIds)
   auto extractLimitFromEncoder = [](CapsuleEncoder& encoder) -> uint64_t {
     auto buffer = encoder.GetBuffer();
     RefPtr<CapsuleParserListener> listener = new CapsuleParserListener();
-    UniquePtr<CapsuleParser> parser = MakeUnique<CapsuleParser>(listener);
+    auto parser = std::make_unique<CapsuleParser>(listener);
     parser->ProcessCapsuleData(buffer.Elements(), buffer.Length());
     nsTArray<Capsule> parsed = listener->GetParsedCapsules();
     WebTransportMaxStreamsCapsule maxStreams =

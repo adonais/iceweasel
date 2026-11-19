@@ -29,10 +29,6 @@ add_setup(async function () {
   Services.fog.initializeFOG();
   Region._setHomeRegion("US", false);
 
-  // Force settings redesign to false, so that `hideOneOffButton` will correctly
-  // work for the time being.
-  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
-
   let policies = Cc["@mozilla.org/enterprisepolicies;1"].getService(
     Ci.nsIObserver
   );
@@ -198,64 +194,5 @@ add_task(async function test_hidden_engine_moves_to_disabled() {
       hidden: { disabled: 1 },
     },
     "after hiding addon engine"
-  );
-});
-
-add_task(async function test_hide_one_off_stays_in_type_bucket() {
-  SearchService.getEngineByName("user").hideOneOffButton = true;
-
-  // The user engine should remain counted in its type bucket while also
-  // incrementing the oneOff hidden count.
-  await assertCounts(
-    {
-      totals: {
-        appProvidedConfig: 1,
-        policy: 1,
-        userInstalledConfig: 1,
-        addon: 0,
-        openSearch: 1,
-        user: 1,
-      },
-      hidden: { disabled: 1, oneOff: 1 },
-    },
-    "after hiding user engine from one-offs"
-  );
-});
-
-add_task(async function test_unhide_returns_to_type_bucket() {
-  SearchService.getEngineByName("Addon Engine").hidden = false;
-
-  await assertCounts(
-    {
-      totals: {
-        appProvidedConfig: 1,
-        policy: 1,
-        userInstalledConfig: 1,
-        addon: 1,
-        openSearch: 1,
-        user: 1,
-      },
-      hidden: { disabled: 0, oneOff: 1 },
-    },
-    "after unhiding addon engine"
-  );
-});
-
-add_task(async function test_remove_engine() {
-  await SearchService.removeEngine(SearchService.getEngineByName("user"));
-
-  await assertCounts(
-    {
-      totals: {
-        appProvidedConfig: 1,
-        policy: 1,
-        userInstalledConfig: 1,
-        addon: 1,
-        openSearch: 1,
-        user: 0,
-      },
-      hidden: { disabled: 0, oneOff: 0 },
-    },
-    "after removing user engine"
   );
 });

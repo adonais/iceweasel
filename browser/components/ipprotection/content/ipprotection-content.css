@@ -150,7 +150,7 @@ ipprotection-status-card {
 }
 
 #unauthenticated-site-rules::before {
-  background-image: url("chrome://browser/skin/permissions.svg");
+  background-image: url("chrome://browser/content/ipprotection/assets/vpn-website-rules-icon.svg");
 }
 
 #unauthenticated-choose-location::before {

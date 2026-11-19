@@ -372,7 +372,7 @@ nsresult CacheFileChunk::Read(CacheFileHandle* aHandle, uint32_t aLen,
     readOffset = static_cast<int64_t>(mIndex) *
                  (kChunkSize + CacheCrypto::kBlockOverhead);
     readLen = aLen + CacheCrypto::kBlockOverhead;
-    mEncryptedReadBuf = MakeUnique<uint8_t[]>(readLen);
+    mEncryptedReadBuf = std::make_unique<uint8_t[]>(readLen);
     readBuf = reinterpret_cast<char*>(mEncryptedReadBuf.get());
   }
 
@@ -413,7 +413,7 @@ nsresult CacheFileChunk::Write(CacheFileHandle* aHandle,
   nsresult rv;
 
   mState = WRITING;
-  mWritingStateHandle = MakeUnique<CacheFileChunkReadHandle>(mBuf);
+  mWritingStateHandle = std::make_unique<CacheFileChunkReadHandle>(mBuf);
 
   const char* writeBuf = mWritingStateHandle->Buf();
   uint32_t writeLen = mWritingStateHandle->DataSize();
@@ -432,7 +432,7 @@ nsresult CacheFileChunk::Write(CacheFileHandle* aHandle,
       return mStatus;
     }
     uint32_t blockLen = writeLen + CacheCrypto::kBlockOverhead;
-    mEncryptedWriteBuf = MakeUnique<uint8_t[]>(blockLen);
+    mEncryptedWriteBuf = std::make_unique<uint8_t[]>(blockLen);
     rv =
         crypto->EncryptBlock(mIndex, reinterpret_cast<const uint8_t*>(writeBuf),
                              writeLen, mEncryptedWriteBuf.get());

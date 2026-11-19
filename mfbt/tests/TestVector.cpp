@@ -9,7 +9,6 @@
 #include "mozilla/Vector.h"
 
 using mozilla::IntegerRange;
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 using mozilla::Vector;
 using mozilla::detail::VectorTesting;
@@ -120,7 +119,9 @@ struct S {
     destructCount = 0;
   }
 
-  S(size_t j, size_t k) : j(j), k(MakeUnique<size_t>(k)) { constructCount++; }
+  S(size_t j, size_t k) : j(j), k(std::make_unique<size_t>(k)) {
+    constructCount++;
+  }
 
   S(S&& rhs) : j(rhs.j), k(std::move(rhs.k)) {
     rhs.j = 0;
@@ -187,7 +188,7 @@ void mozilla::detail::VectorTesting::testReverse() {
   // Reverse an odd number of elements.
 
   for (uint8_t i = 0; i < 5; i++) {
-    auto p = MakeUnique<uint8_t>(i);
+    auto p = std::make_unique<uint8_t>(i);
     MOZ_RELEASE_ASSERT(p);
     MOZ_RELEASE_ASSERT(vec.append(std::move(p)));
   }
@@ -221,7 +222,7 @@ void mozilla::detail::VectorTesting::testReverse() {
 
   Vector<UniquePtr<uint8_t>, 5> vec2;
   for (uint8_t i = 0; i < 5; i++) {
-    auto p = MakeUnique<uint8_t>(i);
+    auto p = std::make_unique<uint8_t>(i);
     MOZ_RELEASE_ASSERT(p);
     MOZ_RELEASE_ASSERT(vec2.append(std::move(p)));
   }
@@ -667,12 +668,12 @@ void mozilla::detail::VectorTesting::testAppend() {
   // Test moving append/appendAll with a move-only type
   Vector<UniquePtr<int>> bv;
   for (const int val : IntegerRange<int>(0, 3)) {
-    MOZ_RELEASE_ASSERT(bv.append(MakeUnique<int>(val)));
+    MOZ_RELEASE_ASSERT(bv.append(std::make_unique<int>(val)));
   }
 
   Vector<UniquePtr<int>> otherbv;
   for (const int val : IntegerRange<int>(3, 8)) {
-    MOZ_RELEASE_ASSERT(otherbv.append(MakeUnique<int>(val)));
+    MOZ_RELEASE_ASSERT(otherbv.append(std::make_unique<int>(val)));
   }
   MOZ_RELEASE_ASSERT(bv.appendAll(std::move(otherbv)));
 

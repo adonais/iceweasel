@@ -51,5 +51,20 @@
         </intent>
     </queries>
 
+    <application>
+        <!-- Serves the bytes Firefox put on the system clipboard via URI-
+             backed ClipData items. Its primary consumer is the W3C Async
+             Clipboard API web custom format protocol, but the provider
+             itself is MIME-agnostic. Exported so other Android apps
+             (Chrome, etc.) can read the data Firefox copied. -->
+        <provider
+                android:name="org.mozilla.gecko.GeckoClipboardContentProvider"
+                android:authorities="${applicationId}.clipboard"
+                android:exported="false"
+                android:grantUriPermissions="true"
+                tools:ignore="ExportedContentProvider">
+        </provider>
+    </application>
+
     <!-- See AndroidManifest_overlay.jinja for <service> definitions -->
 </manifest>

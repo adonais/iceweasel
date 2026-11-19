@@ -253,6 +253,7 @@ var SidebarController = {
         menuL10nId: "menu-view-resource-monitor",
         revampL10nId: "sidebar-menu-resource-monitor-label",
         iconUrl: "chrome://browser/skin/lightning-bolt.svg",
+        appendOpenType: true,
       }
     );
 
@@ -1190,7 +1191,7 @@ var SidebarController = {
       let commandID = this._state.command;
 
       if (wasOpen && commandID && this.sidebars.has(commandID)) {
-        this.showInitially(commandID);
+        this.showInitially(commandID, "restored");
       } else {
         this._box.removeAttribute("checked");
         // Update the state, because the element it
@@ -1957,12 +1958,12 @@ var SidebarController = {
     if (switcherMenu) {
       updateAttributes(switcherMenu, sidebar);
     }
-    if (this.panelHeader) {
-      this.panelHeader.heading = label;
-    }
     if (this.initialized && this.currentID === commandID) {
       // Update the sidebar title if this extension is the current sidebar.
       this.title = label;
+      if (this.panelHeader) {
+        this.panelHeader.heading = label;
+      }
       if (this.isOpen && needsRefresh) {
         this.show(commandID);
       }
@@ -2088,12 +2089,14 @@ var SidebarController = {
     if (!this._canShow(commandID)) {
       return false;
     }
-    return this._show(commandID).then(() => {
+    // show() is the user-launch path, so any entry point records as sidebar_launch.
+    return this._show(commandID, "sidebar_launch").then(() => {
       this._loadSidebarExtension(commandID);
 
       if (triggerNode) {
         updateToggleControlLabel(triggerNode);
       }
+      this._panelTriggerNode = triggerNode;
       this.updateToolbarButton();
       this.dismissSidebarBadge(commandID);
 
@@ -2108,9 +2111,11 @@ var SidebarController = {
    * when a window opens (not triggered by user interaction).
    *
    * @param {string} commandID ID of the sidebar.
+   * @param {string} [openType] Why the sidebar is being shown, see _show().
+   *   Defaults to "other": most callers aren't restoring a panel.
    * @returns {Promise<boolean>}
    */
-  async showInitially(commandID) {
+  async showInitially(commandID, openType = "other") {
     if (this.inSingleTabWindow) {
       return false;
     }
@@ -2119,7 +2124,7 @@ var SidebarController = {
     if (!this._canShow(commandID)) {
       return false;
     }
-    return this._show(commandID).then(() => {
+    return this._show(commandID, openType).then(() => {
       this._loadSidebarExtension(commandID);
       return true;
     });
@@ -2130,9 +2135,11 @@ var SidebarController = {
    * when a window is opened and we don't want to ping telemetry.
    *
    * @param {string} commandID ID of the sidebar.
+   * @param {string} [openType] Why the sidebar is being shown. Appended to
+   *   the URL of panels registered with appendOpenType; others ignore it.
    * @returns {Promise<void>}
    */
-  _show(commandID) {
+  _show(commandID, openType) {
     return new Promise(resolve => {
       const willShowEvent = new CustomEvent("SidebarWillShow");
       this.browser.contentWindow?.dispatchEvent(willShowEvent);
@@ -2153,8 +2160,11 @@ var SidebarController = {
       this._box.setAttribute("checked", "true");
       this._state.command = commandID;
 
-      let { iconUrl, url, title, sourceL10nEl, contextMenuId } =
+      let { iconUrl, url, title, sourceL10nEl, contextMenuId, appendOpenType } =
         this.sidebars.get(commandID);
+      if (appendOpenType && openType) {
+        url += `${url.includes("?") ? "&" : "?"}openType=${openType}`;
+      }
       if (iconUrl) {
         this._switcherTarget.style.setProperty(
           "--webextension-menuitem-image",
@@ -2234,9 +2244,14 @@ var SidebarController = {
    * @param {object} options - Parameter object.
    * @param {DOMNode} options.triggerNode - Node, usually a button, that triggered the
    *                                        hiding of the sidebar.
-   * @param {boolean} options.dismissPanel -Only close the panel or close the whole sidebar (the default.)
+   * @param {boolean} options.dismissPanel - Only close the panel or close the whole sidebar (the default.)
+   * @param {boolean} options.restoreFocus - Return focus to the control that opened the panel.
    */
-  hide({ triggerNode, dismissPanel = this.sidebarRevampEnabled } = {}) {
+  hide({
+    triggerNode,
+    dismissPanel = this.sidebarRevampEnabled,
+    restoreFocus = false,
+  } = {}) {
     if (!this.isOpen) {
       return;
     }
@@ -2277,11 +2292,25 @@ var SidebarController = {
     this._box.hidden = this._splitter.hidden = true;
     this._splitterAriaUpdateTask.arm();
 
-    let selBrowser = gBrowser.selectedBrowser;
-    selBrowser.focus();
+    let isFocusRestored = false;
+    if (restoreFocus) {
+      if (this._panelTriggerNode?.isConnected) {
+        this._panelTriggerNode.focus();
+        isFocusRestored =
+          this._panelTriggerNode.getRootNode().activeElement ===
+          this._panelTriggerNode;
+      }
+      if (!isFocusRestored && this.launcherVisible) {
+        isFocusRestored = this.sidebarMain.focusButtonGroup();
+      }
+    }
+    if (!isFocusRestored) {
+      gBrowser.selectedBrowser.focus();
+    }
     if (triggerNode) {
       updateToggleControlLabel(triggerNode);
     }
+    this._panelTriggerNode = null;
     this.updateToolbarButton();
   },
 
@@ -2463,6 +2492,7 @@ var SidebarController = {
     let previousID = this.currentID;
     let wasLauncherVisible = this._state.launcherVisible;
     let wasLauncherExpanded = this._state.launcherExpanded;
+    let wasContentCornerRounded = this._isContentCornerRounded();
     let transition = document.startViewTransition({
       types,
       update: async () => {
@@ -2493,6 +2523,25 @@ var SidebarController = {
         } else if (this.isOpen && this.currentID != previousID) {
           transition.types.add("panel-switch");
         }
+        let contentCornerRounded = this._isContentCornerRounded();
+        if (contentCornerRounded != wasContentCornerRounded) {
+          transition.types.add(
+            contentCornerRounded
+              ? "content-corner-round"
+              : "content-corner-square"
+          );
+          if (this._isOppositeContentCornerRounded()) {
+            transition.types.add("content-corner-opposite-round");
+          }
+          // The view transition pseudo-elements inherit from the root, while
+          // themes such as the Smart Window one set the separator color lower.
+          document.documentElement.style.setProperty(
+            "--sidebar-content-separator-color",
+            getComputedStyle(this.contentArea).getPropertyValue(
+              "--chrome-content-separator-color"
+            )
+          );
+        }
         await this.sidebarMain.updateComplete;
       },
     });
@@ -2502,11 +2551,45 @@ var SidebarController = {
     return transition.finished.finally(() => {
       if (this._activeViewTransition == transition) {
         this._activeViewTransition = null;
+        document.documentElement.style.removeProperty(
+          "--sidebar-content-separator-color"
+        );
         if (document.documentElement.hasAttribute("sidebar-expand-on-hover")) {
           this._reconcileHoverState();
         }
       }
     });
+  },
+
+  /**
+   * Whether content-area.css rounds the corner of the content area that faces
+   * the sidebar, which it does while the launcher or a panel is next to it.
+   * An open AI window sidebar also keeps the end corner rounded. Split view
+   * panels are always rounded.
+   *
+   * @returns {boolean}
+   */
+  _isContentCornerRounded() {
+    const contentArea = document.getElementById("tabbrowser-tabbox");
+    return (
+      contentArea.hasAttribute("sidebar-shown") ||
+      contentArea.hasAttribute("sidebar-panel-open") ||
+      (contentArea.hasAttribute("sidebar-positionend") &&
+        contentArea.hasAttribute("ai-window-open")) ||
+      !!gBrowser.selectedBrowser.closest(".split-view-panel")
+    );
+  },
+
+  /**
+   * Whether content-area.css rounds the corner of the content area opposite
+   * the sidebar, which it does while the AI window sidebar is docked there.
+   *
+   * @returns {boolean}
+   */
+  _isOppositeContentCornerRounded() {
+    return document
+      .getElementById("tabbrowser-tabbox")
+      .hasAttribute("ai-window-open");
   },
 
   debouncedMouseEnter() {

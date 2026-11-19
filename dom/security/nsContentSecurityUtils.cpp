@@ -1486,6 +1486,19 @@ static nsLiteralCString sFrameSrcHttpsHostAllowList[] = {
     "about:home"_ns,
     "about:newtab"_ns,
 };
+// frame-src https://*.example.org
+//  Wildcard host sources are normally forbidden. This is a narrow exception,
+//  agreed with the security team, so that New Tab framed widgets can load from
+//  any Merino-served subdomain. Only the exact sources in
+//  sFrameSrcWildcardHostSources are allowed, and only on these pages.
+static nsLiteralCString sFrameSrcWildcardHostAllowList[] = {
+    "about:home"_ns,
+    "about:newtab"_ns,
+};
+static nsLiteralString sFrameSrcWildcardHostSources[] = {
+    u"https://*.merino.nonprod.webservices.mozgcp.net"_ns,
+    u"https://*.merino.prod.webservices.mozgcp.net"_ns,
+};
 // frame-src moz-extension:
 static nsLiteralCString sFrameSrcMozExtensionAllowList[] = {
     "about:home"_ns,
@@ -1763,6 +1776,16 @@ class FrameSrcVisitor : public AllowBuiltinSrcVisitor {
   }
 
   bool visitHostSrc(const nsCSPHostSrc& src) override {
+    if (CheckAllowList(Span(sFrameSrcWildcardHostAllowList))) {
+      nsAutoString str;
+      src.toString(str);
+      for (const nsLiteralString& allowed : sFrameSrcWildcardHostSources) {
+        if (str.Equals(allowed)) {
+          return true;
+        }
+      }
+    }
+
     return VisitHostSrcWithWildcardAndHttpsHostAllowLists(
         src, nullptr, sFrameSrcHttpsHostAllowList);
   }

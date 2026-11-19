@@ -695,7 +695,8 @@ void WebMDemuxer::NotifyDataRemoved() {
 }
 
 UniquePtr<EncryptionInfo> WebMDemuxer::GetCrypto() {
-  return mCrypto.IsEncrypted() ? MakeUnique<EncryptionInfo>(mCrypto) : nullptr;
+  return mCrypto.IsEncrypted() ? std::make_unique<EncryptionInfo>(mCrypto)
+                               : nullptr;
 }
 
 CryptoTrack WebMDemuxer::GetTrackCrypto(TrackInfo::TrackType aType,

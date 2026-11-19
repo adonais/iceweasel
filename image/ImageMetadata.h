@@ -19,6 +19,10 @@
 
 namespace mozilla::image {
 
+// The color space of JPEG data that other formats (like PDF) can embed as-is.
+// That is, 8-bit Huffman-coded JPEG data in one of these color spaces.
+enum class EmbeddableJPEGColorSpace : uint8_t { Grayscale, YCbCr };
+
 // The metadata about an image that decoders accumulate as they decode.
 class ImageMetadata {
  public:
@@ -84,6 +88,13 @@ class ImageMetadata {
   void SetHasAnimation() { mHasAnimation = true; }
   bool HasAnimation() const { return mHasAnimation; }
 
+  void SetEmbeddableJPEGColorSpace(EmbeddableJPEGColorSpace aColorSpace) {
+    mEmbeddableJPEGColorSpace = Some(aColorSpace);
+  }
+  Maybe<EmbeddableJPEGColorSpace> GetEmbeddableJPEGColorSpace() const {
+    return mEmbeddableJPEGColorSpace;
+  }
+
  private:
   /// The hotspot found on cursors, if present.
   Maybe<gfx::IntPoint> mHotspot;
@@ -112,6 +123,9 @@ class ImageMetadata {
 
   // Sizes the image can natively decode to.
   CopyableTArray<OrientedIntSize> mNativeSizes;
+
+  // Set for JPEG images whose data can be embedded as-is in other formats.
+  Maybe<EmbeddableJPEGColorSpace> mEmbeddableJPEGColorSpace;
 
   bool mHasAnimation = false;
 };

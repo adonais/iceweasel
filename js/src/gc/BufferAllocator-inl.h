@@ -106,8 +106,8 @@ inline void FreeBuffer(JS::Zone* zone, void* alloc) {
   return zone->bufferAllocator.free(alloc);
 }
 
-inline bool IsBufferAlloc(void* alloc) {
-  return BufferAllocator::IsBufferAlloc(alloc);
+inline bool IsGCPointerBufferAlloc(void* alloc) {
+  return BufferAllocator::IsGCPointerBufferAlloc(alloc);
 }
 
 #ifdef DEBUG

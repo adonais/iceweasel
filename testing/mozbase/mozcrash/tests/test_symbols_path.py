@@ -58,6 +58,50 @@ def test_symbols_path_url(check_for_crashes, minidump_files):
     assert data["retrieved"]
 
 
+def test_symbols_path_list(check_for_crashes, minidump_files, tmpdir, capsys):
+    """Test that passing a list of URLs and paths as symbols_path fetches all
+    URLs and passes all paths to the stackwalker."""
+    retrieved = []
+
+    def make_get_symbols(name):
+        def get_symbols(req):
+            retrieved.append(name)
+            zdata = BytesIO()
+            with zipfile.ZipFile(zdata, "w") as z:
+                z.writestr(f"{name}.txt", "abc/xyz")
+            return (200, {}, zdata.getvalue())
+
+        return get_symbols
+
+    names = ("symbols", "gtest-symbols")
+    httpd = mozhttpd.MozHttpd(
+        port=0,
+        urlhandlers=[
+            {"method": "GET", "path": f"/{name}", "function": make_get_symbols(name)}
+            for name in names
+        ],
+    )
+    httpd.start()
+    host, port = httpd.httpd.server_address
+    urls = [
+        urlunsplit((
+            "http",
+            f"{host}:{port}",
+            f"/{name}",
+            "",
+            "",
+        ))
+        for name in names
+    ]
+    local_path = str(tmpdir.mkdir("local-symbols"))
+
+    assert 1 == check_for_crashes(symbols_path=urls + [local_path], quiet=False)
+    assert sorted(retrieved) == ["gtest-symbols", "symbols"]
+
+    out, _ = capsys.readouterr()
+    assert local_path in out
+
+
 def test_symbols_retry(check_for_crashes, minidump_files):
     """Test that passing a URL as symbols_path succeeds on retry after temporary HTTP failure."""
     data = {"retrieved": False}

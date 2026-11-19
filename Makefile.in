@@ -132,12 +132,19 @@ symbolsfullarchive: prepsymbolsarchive
 	$(call py_action,symbols_archive $(SYMBOL_FULL_ARCHIVE_BASENAME).tar.zst,'$(DIST)/$(PKG_PATH)$(SYMBOL_FULL_ARCHIVE_BASENAME).tar.zst' \
                                      $(abspath $(DIST)/crashreporter-symbols) \
                                      --full-archive)
+	$(RM) '$(DIST)/$(PKG_PATH)$(SYMBOL_GTEST_FULL_ARCHIVE_BASENAME).tar.zst'
+	$(call py_action,symbols_archive $(SYMBOL_GTEST_FULL_ARCHIVE_BASENAME).tar.zst,'$(DIST)/$(PKG_PATH)$(SYMBOL_GTEST_FULL_ARCHIVE_BASENAME).tar.zst' \
+                                     $(abspath $(DIST)/crashreporter-symbols-gtest) \
+                                     --full-archive --test-only)
 
 .PHONY: symbolsarchive
 symbolsarchive: prepsymbolsarchive
 	$(RM) '$(DIST)/$(PKG_PATH)$(SYMBOL_ARCHIVE_BASENAME).zip'
 	$(call py_action,symbols_archive $(SYMBOL_ARCHIVE_BASENAME).zip,'$(DIST)/$(PKG_PATH)$(SYMBOL_ARCHIVE_BASENAME).zip' \
                                      $(abspath $(DIST)/crashreporter-symbols))
+	$(RM) '$(DIST)/$(PKG_PATH)$(SYMBOL_GTEST_ARCHIVE_BASENAME).zip'
+	$(call py_action,symbols_archive $(SYMBOL_GTEST_ARCHIVE_BASENAME).zip,'$(DIST)/$(PKG_PATH)$(SYMBOL_GTEST_ARCHIVE_BASENAME).zip' \
+                                     $(abspath $(DIST)/crashreporter-symbols-gtest))
 
 # Set MOZ_ENABLE_FULL_SYMBOLS to enable generation and upload of the full
 # crashreporter symbols archives

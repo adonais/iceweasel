@@ -69,7 +69,7 @@ static bool PingsEnabled(int32_t* aMaxPerLink, bool* aRequireSameHost) {
 // We wait this many milliseconds before killing the ping channel...
 #define PING_TIMEOUT 10000
 
-static void OnPingTimeout(nsITimer* aTimer, void* aClosure) {
+static void OnPingTimeout(nsITimer* /*aTimer*/, void* aClosure) {
   nsILoadGroup* loadGroup = static_cast<nsILoadGroup*>(aClosure);
   if (loadGroup) {
     loadGroup->Cancel(NS_ERROR_ABORT);
@@ -327,17 +327,18 @@ nsresult nsPingListener::StartTimeout(DocGroup* aDocGroup) {
 }
 
 NS_IMETHODIMP
-nsPingListener::OnStartRequest(nsIRequest* aRequest) { return NS_OK; }
+nsPingListener::OnStartRequest(nsIRequest* /*aRequest*/) { return NS_OK; }
 
 NS_IMETHODIMP
-nsPingListener::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream,
-                                uint64_t aOffset, uint32_t aCount) {
+nsPingListener::OnDataAvailable(nsIRequest* /*aRequest*/,
+                                nsIInputStream* aStream, uint64_t /*aOffset*/,
+                                uint32_t aCount) {
   uint32_t result;
   return aStream->ReadSegments(NS_DiscardSegment, nullptr, aCount, &result);
 }
 
 NS_IMETHODIMP
-nsPingListener::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
+nsPingListener::OnStopRequest(nsIRequest* /*aRequest*/, nsresult /*aStatus*/) {
   mLoadGroup = nullptr;
 
   if (mTimer) {

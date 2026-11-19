@@ -24,7 +24,8 @@ RefPtr<FixedBufferOutputStream> FixedBufferOutputStream::Create(
     size_t aLength) {
   MOZ_ASSERT(aLength);
 
-  return MakeRefPtr<FixedBufferOutputStream>(MakeUnique<BufferSink>(aLength));
+  return MakeRefPtr<FixedBufferOutputStream>(
+      std::make_unique<BufferSink>(aLength));
 }
 
 // static
@@ -45,7 +46,7 @@ RefPtr<FixedBufferOutputStream> FixedBufferOutputStream::Create(
 RefPtr<FixedBufferOutputStream> FixedBufferOutputStream::Create(
     mozilla::Span<char> aBuffer) {
   return MakeRefPtr<FixedBufferOutputStream>(
-      MakeUnique<nsBorrowedSink>(aBuffer));
+      std::make_unique<nsBorrowedSink>(aBuffer));
 }
 
 // static

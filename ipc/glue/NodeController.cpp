@@ -54,7 +54,7 @@ static LazyLogModule gNodeControllerLog{"NodeController"};
 NodeController::NodeController(const NodeName& aName,
                                const IPC::Channel::ChannelKind* aChannelKind)
     : mName(aName),
-      mNode(MakeUnique<Node>(aName, this)),
+      mNode(std::make_unique<Node>(aName, this)),
       mChannelKind(aChannelKind) {}
 
 NodeController::~NodeController() {
@@ -145,7 +145,7 @@ bool NodeController::GetMessage(const PortRef& aPort,
 
 bool NodeController::SendUserMessage(const PortRef& aPort,
                                      UniquePtr<IPC::Message> aMessage) {
-  auto messageEvent = MakeUnique<UserMessageEvent>(0);
+  auto messageEvent = std::make_unique<UserMessageEvent>(0);
   messageEvent->AttachMessage(std::move(aMessage));
 
   int rv = mNode->SendUserMessage(aPort, std::move(messageEvent));
@@ -171,7 +171,8 @@ auto NodeController::SerializeEventMessage(UniquePtr<Event> aEvent,
     message = static_cast<UserMessageEvent*>(aEvent.get())
                   ->TakeMessage<IPC::Message>();
   } else {
-    message = MakeUnique<IPC::Message>(MSG_ROUTING_CONTROL, EVENT_MESSAGE_TYPE);
+    message =
+        std::make_unique<IPC::Message>(MSG_ROUTING_CONTROL, EVENT_MESSAGE_TYPE);
   }
 
   message->set_relay(aRelayTarget != nullptr);

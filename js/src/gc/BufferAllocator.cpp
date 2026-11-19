@@ -859,7 +859,7 @@ void BufferAllocator::free(void* alloc) {
 }
 
 /* static */
-bool BufferAllocator::IsBufferAlloc(void* alloc) {
+bool BufferAllocator::IsGCPointerBufferAlloc(void* alloc) {
   // Precondition: |alloc| is a pointer to a buffer allocation, a GC thing or a
   // direct nursery allocation returned by Nursery::allocateBuffer.
 
@@ -873,7 +873,7 @@ bool BufferAllocator::IsBufferAlloc(void* alloc) {
 
 #ifdef DEBUG
 bool BufferAllocator::hasAlloc(void* alloc) {
-  MOZ_ASSERT(IsBufferAlloc(alloc));
+  AssertIsBufferAlloc(alloc);
 
   if (IsLargeAlloc(alloc)) {
     MaybeLock lock;
@@ -1049,8 +1049,9 @@ bool BufferAllocator::isMarkedBlack(void* alloc) {
 }
 
 /* static */
-bool BufferAllocator::MarkBuffer(JSTracer* trc, void** bufferp,
-                                 const char* name) {
+JSTracer::TraceBufferResult BufferAllocator::MarkBuffer(JSTracer* trc,
+                                                        void** bufferp,
+                                                        const char* name) {
   MOZ_ASSERT(bufferp);
 
   void* buffer;
@@ -1061,18 +1062,19 @@ bool BufferAllocator::MarkBuffer(JSTracer* trc, void** bufferp,
   buffer = *bufferp;
 #endif
 
+  JSTracer::TraceBufferResult result = {true, buffer};
   if (!buffer) {
-    return true;
+    return result;
   }
 
   if (!IsLargeAlloc(buffer) &&
       js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
     // JSObject slots and elements can be allocated in the nursery and this is
     // handled separately.
-    return true;
+    return result;
   }
 
-  MOZ_ASSERT(IsBufferAlloc(buffer));
+  AssertIsBufferAlloc(buffer);
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
     LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
@@ -1080,13 +1082,13 @@ bool BufferAllocator::MarkBuffer(JSTracer* trc, void** bufferp,
     if (zone->isGCMarking() && !largeBuffer->isNurseryOwned) {
       zone->bufferAllocator.markLargeTenuredBuffer(largeBuffer);
     }
-    return true;
+    return result;
   }
 
   BufferChunk* chunk = BufferChunk::from(buffer);
   Zone* zone = chunk->zone;
   if (!zone->isGCMarking()) {
-    return true;
+    return result;
   }
 
   if (IsSmallAlloc(buffer)) {
@@ -1094,34 +1096,36 @@ bool BufferAllocator::MarkBuffer(JSTracer* trc, void** bufferp,
     if (!region->isNurseryOwned(buffer)) {
       zone->bufferAllocator.markSmallTenuredAlloc(buffer);
     }
-    return true;
+    return result;
   }
 
   if (!chunk->isNurseryOwned(buffer)) {
     zone->bufferAllocator.markMediumTenuredAlloc(buffer);
   }
-  return true;
+  return result;
 }
 
 /* static */
-bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
-                                    const char* name,
-                                    mozilla::Maybe<bool> nurseryOwned) {
+JSTracer::TraceBufferResult BufferAllocator::PromoteBuffer(
+    JSTracer* trc, void** bufferp, const char* name,
+    mozilla::Maybe<bool> nurseryOwned) {
   MOZ_ASSERT(bufferp);
 
   void* buffer = *bufferp;
   if (!buffer) {
-    return true;
+    return {true, nullptr};
   }
+
+  JSTracer::TraceBufferResult result = {true, buffer};
 
   if (!IsLargeAlloc(buffer) &&
       js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
     // JSObject slots and elements can be allocated in the nursery and this is
     // handled separately.
-    return true;
+    return result;
   }
 
-  MOZ_ASSERT(IsBufferAlloc(buffer));
+  AssertIsBufferAlloc(buffer);
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
     LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
@@ -1130,7 +1134,7 @@ bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
       zone->bufferAllocator.promoteLargeNurseryOwnedBuffer(
           largeBuffer, nurseryOwned.value());
     }
-    return true;
+    return result;
   }
 
   BufferChunk* chunk = BufferChunk::from(buffer);
@@ -1142,14 +1146,14 @@ bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
       zone->bufferAllocator.promoteSmallNurseryOwnedBuffer(
           buffer, nurseryOwned.value());
     }
-    return true;
+    return result;
   }
 
   if (chunk->isNurseryOwned(buffer)) {
     zone->bufferAllocator.promoteMediumNurseryOwnedBuffer(buffer,
                                                           nurseryOwned.value());
   }
-  return true;
+  return result;
 }
 
 /* static */
@@ -2188,7 +2192,7 @@ bool BufferAllocator::allocNewSmallRegion(bool nurseryOwned, bool inGC) {
 
 /* static */
 bool BufferAllocator::IsSmallAlloc(void* alloc) {
-  MOZ_ASSERT(IsBufferAlloc(alloc));
+  AssertIsBufferAlloc(alloc);
 
   // Test for large buffers before calling this so we can assume |alloc| is
   // inside a chunk.
@@ -3509,7 +3513,7 @@ inline size_t BufferAllocator::SizeClassBytes(size_t sizeClass) {
 
 /* static */
 bool BufferAllocator::IsMediumAlloc(void* alloc) {
-  MOZ_ASSERT(IsBufferAlloc(alloc));
+  AssertIsBufferAlloc(alloc);
 
   // Test for large buffers before calling this so we can assume |alloc| is
   // inside a chunk.

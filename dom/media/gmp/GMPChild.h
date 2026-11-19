@@ -71,6 +71,11 @@ class GMPChild : public PGMPChild {
   mozilla::ipc::IPCResult RecvInitProfiler(
       Endpoint<mozilla::PProfilerChild>&& aEndpoint);
 
+#ifdef MOZ_WIDGET_ANDROID
+  mozilla::ipc::IPCResult RecvInitProcInfo(
+      Endpoint<mozilla::PProcInfoChild>&& aEndpoint);
+#endif
+
   mozilla::ipc::IPCResult RecvPreferenceUpdate(const Pref& aPref);
 
   mozilla::ipc::IPCResult RecvShutdown(ShutdownResolver&& aResolver);

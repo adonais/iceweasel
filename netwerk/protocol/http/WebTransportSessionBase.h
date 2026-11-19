@@ -63,6 +63,10 @@ class WebTransportSessionBase {
                                         nsTArray<uint8_t>& aKeyingMaterial) = 0;
   virtual void GetNegotiatedProtocol(nsACString& aProtocol) = 0;
   virtual void GetStats() = 0;
+  virtual void SetAnticipatedConcurrentIncomingUnidirectionalStreams(
+      uint16_t aValue) = 0;
+  virtual void SetAnticipatedConcurrentIncomingBidirectionalStreams(
+      uint16_t aValue) = 0;
   // aTimestamp is when the datagram was written, for outgoingMaxAge.
   virtual void SendDatagram(nsTArray<uint8_t>&& aData, uint64_t aTrackingId,
                             uint64_t aSendGroupId, int64_t aSendOrder,

@@ -425,14 +425,6 @@ static bool IsNonNativePopover(Accessible* aAccessible) {
     }
   }
 
-  if (mRole == roles::FORM) {
-    roleAtom = [self ARIARole];
-
-    if (roleAtom == nsGkAtoms::form) {
-      return @"AXLandmarkForm";
-    }
-  }
-
   // `macSubrole` may be the literal `nil` specified in RoleMap. We cast it to
   // NSString* before dispatching on it because `nil` expands to `nullptr`
   // during macro substitution, per a typedef in the SDK. The compiler won't

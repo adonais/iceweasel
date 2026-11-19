@@ -1192,8 +1192,8 @@ static int linsolve_wiener(int n, int64_t *A, int stride, int64_t *b,
       // Use floating-point arithmetic.
       for (int i = k; i < n - 1; i++) {
         if (A[k * stride + k] == 0) return 0;
-        const double c = A[(i + 1) * stride + k];
-        const double cd = A[k * stride + k];
+        const double c = (double)A[(i + 1) * stride + k];
+        const double cd = (double)A[k * stride + k];
         for (int j = 0; j < n; j++) {
           A[(i + 1) * stride + j] -= (int64_t)(A[k * stride + j] * c / cd);
         }

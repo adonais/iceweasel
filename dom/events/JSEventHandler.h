@@ -5,6 +5,8 @@
 #ifndef mozilla_JSEventHandler_h_
 #define mozilla_JSEventHandler_h_
 
+#include <memory>
+
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/EventHandlerBinding.h"
@@ -198,8 +200,8 @@ class JSEventHandler : public nsIDOMEventListener {
   };
 
   void SetPendingSource(const nsAString& aBody, int32_t aNameSpaceID) {
-    mPendingSource =
-        MakeUnique<PendingSource>(PendingSource{nsString(aBody), aNameSpaceID});
+    mPendingSource = std::make_unique<PendingSource>(
+        PendingSource{nsString(aBody), aNameSpaceID});
   }
   UniquePtr<PendingSource> TakePendingSource() {
     return std::move(mPendingSource);

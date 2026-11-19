@@ -9,7 +9,7 @@
 #include "mozilla/RefPtr.h"     // RefPtr, mozilla::MakeRefPtr
 #include "mozilla/Span.h"       // mozilla::Span
 #include "mozilla/Sprintf.h"    // SprintfLiteral
-#include "mozilla/UniquePtr.h"  // mozilla::UniquePtr, mozilla::MakeUnique
+#include "mozilla/UniquePtr.h"  // mozilla::UniquePtr, std::make_unique
 
 #include "jsfriendapi.h"
 #include "LoadContextBase.h"  // LoadContextBase
@@ -212,7 +212,7 @@ void LoadedScript::SetSRIMetadata(
     return;
   }
 
-  mSRIMetadata = mozilla::MakeUnique<mozilla::dom::SRIMetadata>(aSRIMetadata);
+  mSRIMetadata = std::make_unique<mozilla::dom::SRIMetadata>(aSRIMetadata);
 }
 
 bool LoadedScript::IsSRIMetadataReusableBy(
@@ -263,7 +263,13 @@ bool LoadedScript::ReadFromEncodingHeader(const EncodingHeader* aHeader) {
   mDependsOnClassicScriptHintEncoding =
       aHeader->mDependsOnClassicScriptHintEncoding;
 
-  size_t encodingStringLen = strlen(aHeader->mClassicScriptEncoding);
+  size_t encodingStringLen =
+      strnlen(aHeader->mClassicScriptEncoding,
+              EncodingHeader::ClassicScriptEncodingMaxLength);
+  if (encodingStringLen == EncodingHeader::ClassicScriptEncodingMaxLength) {
+    return false;
+  }
+
   if (encodingStringLen == 0) {
     mClassicScriptEncoding = nullptr;
     return true;
@@ -376,7 +382,7 @@ void ModuleScript::SetHadImportMap(bool aValue) { mHadImportMap = aValue; }
 
 ResolvedModuleSet* ModuleScript::GetPreloadedResolvedSet() {
   if (!mPreloadedResolvedSet) {
-    mPreloadedResolvedSet = mozilla::MakeUnique<ResolvedModuleSet>();
+    mPreloadedResolvedSet = std::make_unique<ResolvedModuleSet>();
   }
 
   return mPreloadedResolvedSet.get();

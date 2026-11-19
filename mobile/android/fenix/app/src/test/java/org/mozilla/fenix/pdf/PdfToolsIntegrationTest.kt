@@ -18,7 +18,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlin.test.assertIs
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
@@ -26,9 +26,11 @@ import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.ShareResourceAction
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.EngineState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.content.ShareResourceState
+import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
@@ -58,6 +60,8 @@ class PdfToolsIntegrationTest {
 
     private val container = CoordinatorLayout(activity)
 
+    private val testDispatcher = StandardTestDispatcher()
+
     private val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
 
     // The tools are only shown on a PDF, so the tab is set up as one.
@@ -66,9 +70,9 @@ class PdfToolsIntegrationTest {
             it.copy(content = it.content.copy(isPdf = true))
         }
 
-    private fun storeOf(tab: TabSessionState) =
+    private fun storeOf(tab: TabSessionState, customTabs: List<CustomTabSessionState> = emptyList()) =
         BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab), selectedTabId = tab.id),
+            initialState = BrowserState(tabs = listOf(tab), customTabs = customTabs, selectedTabId = tab.id),
             middleware =
                 listOf(captureActionsMiddleware) + EngineMiddleware.create(engine = mockk(), scope = TestScope()),
         )
@@ -78,15 +82,28 @@ class PdfToolsIntegrationTest {
     private fun pdfTabWith(engineSession: EngineSession) =
         pdfTab.copy(engineState = EngineState(engineSession = engineSession))
 
+    private val customTabId = "custom"
+
+    private fun customPdfTabWith(engineSession: EngineSession? = null) =
+        createCustomTab(url = "https://mozilla.org/custom.pdf", id = customTabId, engineSession = engineSession).let {
+            it.copy(content = it.content.copy(isPdf = true))
+        }
+
+    // The selected tab is a PDF too, so the tools must tell the two apart.
+    private fun storeWithCustomTab(customTab: CustomTabSessionState = customPdfTabWith()) =
+        storeOf(pdfTab, customTabs = listOf(customTab))
+
     private fun integration(
         isAddressBarAtBottom: Boolean = true,
         store: BrowserStore = browserStore,
+        customTabSessionId: String? = null,
     ) =
         PdfToolsIntegration(
             container = container,
             browserStore = store,
             isAddressBarAtBottom = isAddressBarAtBottom,
-            mainDispatcher = Dispatchers.Unconfined,
+            customTabSessionId = customTabSessionId,
+            mainDispatcher = testDispatcher,
         )
 
     @Before
@@ -178,6 +195,69 @@ class PdfToolsIntegrationTest {
         onResult.captured()
 
         assertFalse(integration.signatureState.isSigning)
+    }
+
+    @Test
+    fun `WHEN add is activated again before or after the engine responds THEN the signature is handed over once`() {
+        val engineSession = mockk<EngineSession>()
+        val onResult = slot<() -> Unit>()
+        every { engineSession.addSignatureToPdf(any(), capture(onResult), any()) } returns Unit
+        val integration = integration(store = storeOf(pdfTabWith(engineSession)))
+        integration.handleSignClick()
+        integration.signatureState.signature.setTextAndPlaceCursorAtEnd("Test User")
+
+        integration.handleSignAddClick()
+        integration.handleSignAddClick()
+        onResult.captured()
+        integration.handleSignAddClick()
+
+        verify(exactly = 1) { engineSession.addSignatureToPdf(any(), any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN a signature is being added WHEN the dialog is closed and reopened THEN the signature is kept until the engine responds`() {
+        val engineSession = mockk<EngineSession>()
+        val onResult = slot<() -> Unit>()
+        every { engineSession.addSignatureToPdf(any(), capture(onResult), any()) } returns Unit
+        val integration = integration(store = storeOf(pdfTabWith(engineSession)))
+        integration.handleSignClick()
+        integration.signatureState.signature.setTextAndPlaceCursorAtEnd("Test User")
+        integration.handleSignAddClick()
+
+        integration.handleSignCloseClick()
+        integration.handleSignClick()
+
+        assertTrue(integration.signatureState.isAddingSignature)
+        assertEquals("Test User", integration.signatureState.signature.text.toString())
+
+        onResult.captured()
+
+        assertFalse(integration.signatureState.isSigning)
+        assertEquals("", integration.signatureState.signature.text.toString())
+    }
+
+    @Test
+    fun `GIVEN an answered signature WHEN the next signature gets no response THEN only the next one times out`() {
+        val engineSession = mockk<EngineSession>()
+        val onResult = slot<() -> Unit>()
+        every { engineSession.addSignatureToPdf(any(), capture(onResult), any()) } returns Unit
+        val integration = integration(store = storeOf(pdfTabWith(engineSession)))
+        integration.start()
+        integration.handleSignClick()
+        integration.handleSignAddClick()
+        onResult.captured()
+        integration.handleSignClick()
+        integration.signatureState.signature.setTextAndPlaceCursorAtEnd("Test User")
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("An answered signature does not time out.", integration.signatureState.isSigning)
+
+        integration.handleSignAddClick()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(integration.signatureState.isSigning)
+        assertFalse(integration.signatureState.isAddingSignature)
     }
 
     @Test
@@ -285,26 +365,96 @@ class PdfToolsIntegrationTest {
         integration.handleSignClick()
 
         browserStore.dispatch(ContentAction.ExitedPdfViewer(tabId))
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(integration.signatureState.isSigning)
     }
 
     @Test
-    fun `WHEN the feature is started THEN the overlays are traversed between the address bar and the page`() {
+    fun `GIVEN a custom tab WHEN download, print, and share are activated THEN each acts on the custom tab`() {
+        val integration = integration(store = storeWithCustomTab(), customTabSessionId = customTabId)
+
+        integration.handleDownloadClick()
+        integration.handlePrintClick()
+        integration.handleShareClick()
+
+        captureActionsMiddleware.assertFirstAction(EngineAction.SaveToPdfAction::class) {
+            assertEquals(customTabId, it.tabId)
+        }
+        captureActionsMiddleware.assertFirstAction(EngineAction.PrintContentAction::class) {
+            assertEquals(customTabId, it.tabId)
+        }
+        captureActionsMiddleware.assertFirstAction(ShareResourceAction.AddShareAction::class) {
+            assertEquals(customTabId, it.tabId)
+        }
+    }
+
+    @Test
+    fun `GIVEN a custom tab WHEN a signature is added THEN the custom tab gets the signature`() {
+        val engineSession = mockk<EngineSession>(relaxed = true)
+        val integration =
+            integration(store = storeWithCustomTab(customPdfTabWith(engineSession)), customTabSessionId = customTabId)
+        integration.handleSignClick()
+        integration.signatureState.signature.setTextAndPlaceCursorAtEnd("Test User")
+
+        integration.handleSignAddClick()
+
+        verify { engineSession.addSignatureToPdf(eq("Test User"), any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN a signature is in progress on a custom tab WHEN the selected tab and then the custom tab leave the PDF viewer THEN only the custom tab abandons it`() {
+        val store = storeWithCustomTab()
+        val integration = integration(store = store, customTabSessionId = customTabId)
+        integration.start()
+        shadowOf(Looper.getMainLooper()).idle()
+        integration.handleSignClick()
+
+        store.dispatch(ContentAction.ExitedPdfViewer(tabId))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue("The selected tab leaving does not affect the custom tab.", integration.signatureState.isSigning)
+
+        store.dispatch(ContentAction.ExitedPdfViewer(customTabId))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(integration.signatureState.isSigning)
+    }
+
+    @Test
+    fun `GIVEN the address bar is at the top WHEN the feature is started THEN the overlays are traversed between the address bar and the page`() {
         // Test for Bug 2066197
         val addressBar = View(activity).apply { id = R.id.composable_toolbar }
         val content = View(activity).apply { id = R.id.engineView }
         container.addView(addressBar)
         container.addView(content)
 
-        integration().start()
+        integration(isAddressBarAtBottom = false).start()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val tools = container.children.elementAt(2)
+        val dialog = (container.children.elementAt(3) as ViewGroup).getChildAt(0)
+        assertEquals(addressBar.id, tools.accessibilityTraversalAfter)
+        assertEquals(tools.id, dialog.accessibilityTraversalAfter)
+        assertEquals(dialog.id, content.accessibilityTraversalAfter)
+    }
+
+    @Test
+    fun `GIVEN the address bar is at the bottom WHEN the feature is started THEN the overlays are traversed between the page and the address bar`() {
+        // Test for Bug 2085012
+        val addressBar = View(activity).apply { id = R.id.composable_toolbar }
+        val content = View(activity).apply { id = R.id.engineView }
+        container.addView(addressBar)
+        container.addView(content)
+
+        integration(isAddressBarAtBottom = true).start()
         shadowOf(Looper.getMainLooper()).idle()
 
         val tools = container.children.elementAt(2)
         val dialog = container.children.elementAt(3)
-        assertEquals(addressBar.id, tools.accessibilityTraversalAfter)
+        assertEquals(content.id, tools.accessibilityTraversalAfter)
         assertEquals(tools.id, dialog.accessibilityTraversalAfter)
-        assertEquals(dialog.id, content.accessibilityTraversalAfter)
+        assertEquals(dialog.id, addressBar.accessibilityTraversalAfter)
     }
 
     /** Stands in for the browser toolbar, which removes the navigation bar as its composition is created. */

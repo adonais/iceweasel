@@ -54,6 +54,7 @@ Bookmarks.prototype = {
            )
            SELECT id, parent_id, is_folder, title, url FROM bookmark WHERE id`
         );
+        this.available = rows.length;
 
         for (let row of rows) {
           let id = parseInt(row.getResultByName("id"), 10);

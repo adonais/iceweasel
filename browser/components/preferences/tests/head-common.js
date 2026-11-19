@@ -49,6 +49,28 @@ function is_element_hidden(aElement, aMsg) {
   ok(BrowserTestUtils.isHidden(aElement), aMsg);
 }
 
+/**
+ * Asserts that an element exposes the given accessible role and a non-empty
+ * accessible name.
+ *
+ * @param {Element} el
+ * @param {number} role Expected `Ci.nsIAccessibleRole` value.
+ */
+async function assertAccessibleRoleAndName(el, role) {
+  ok(el.getAttribute("aria-label"), "Element has a non-empty aria-label");
+
+  let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+    Ci.nsIAccessibilityService
+  );
+  let accessible;
+  await TestUtils.waitForCondition(() => {
+    accessible = accService.getAccessibleFor(el);
+    return accessible && accessible.role == role;
+  }, "Accessible reflects the expected role");
+  is(accessible.role, role, "Accessible has the expected role");
+  ok(accessible.name, "Accessible has a non-empty name");
+}
+
 async function assertRadioGroupAccessibleName(radioGroup) {
   ok(radioGroup, "Radio group exists");
 
@@ -61,32 +83,69 @@ async function assertRadioGroupAccessibleName(radioGroup) {
 
   let innerFieldset = radioGroup.fieldset.shadowRoot.querySelector("fieldset");
   ok(innerFieldset, "Radio group has an inner fieldset");
-  ok(
-    innerFieldset.getAttribute("aria-label"),
-    "Inner fieldset has a non-empty aria-label"
+  is(
+    innerFieldset.getAttribute("role"),
+    "radiogroup",
+    "Inner fieldset has the radiogroup role"
   );
+  await assertAccessibleRoleAndName(
+    innerFieldset,
+    Ci.nsIAccessibleRole.ROLE_RADIO_GROUP
+  );
+}
+
+/**
+ * Asserts that a moz-box-group exposes a listbox with a localized
+ * accessible name.
+ *
+ * @param {Element} boxGroup
+ */
+async function assertBoxGroupHasListboxAccessibleName(boxGroup) {
+  ok(boxGroup, "Box group exists");
+
+  let doc = boxGroup.ownerDocument;
+  await doc.l10n.ready;
+
+  await doc.l10n.translateFragment(boxGroup);
+  await boxGroup.updateComplete;
+
+  let listbox = boxGroup.shadowRoot.querySelector("[role='listbox']");
+  ok(listbox, "Box group has an inner listbox");
+  await assertAccessibleRoleAndName(listbox, Ci.nsIAccessibleRole.ROLE_LISTBOX);
+}
+
+async function assertReorderableListAccessibleName(boxGroup) {
+  Assert.ok(boxGroup, "Production box group exists");
+  Assert.ok(
+    BrowserTestUtils.isVisible(boxGroup),
+    "Production box group is visible"
+  );
+
+  await boxGroup.updateComplete;
+  Assert.equal(boxGroup.type, "reorderable-list", "Group is reorderable");
+  await boxGroup.reorderableList.updateComplete;
+
+  let list = boxGroup.shadowRoot.querySelector("ol");
+  Assert.ok(list, "Production group renders an inner ordered list");
+  Assert.ok(BrowserTestUtils.isVisible(list), "Inner list is visible");
 
   let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService
   );
   let accessible;
   await TestUtils.waitForCondition(() => {
-    accessible = accService.getAccessibleFor(innerFieldset);
-    return (
-      accessible && accessible.role == Ci.nsIAccessibleRole.ROLE_RADIO_GROUP
-    );
-  }, "Accessible reflects the localized radio group role");
-  is(
-    innerFieldset.getAttribute("role"),
-    "radiogroup",
-    "Inner fieldset has the radiogroup role"
+    accessible = accService.getAccessibleFor(list);
+    return !!accessible;
+  }, `${boxGroup.id}: list accessible exists`);
+
+  Assert.ok(
+    list.getAttribute("aria-label")?.trim(),
+    `${boxGroup.id}: inner list has a nonempty aria-label`
   );
-  is(
-    accessible.role,
-    Ci.nsIAccessibleRole.ROLE_RADIO_GROUP,
-    "Accessible has the radiogroup role"
+  Assert.ok(
+    accessible.name?.trim(),
+    `${boxGroup.id}: accessible has a nonempty name`
   );
-  ok(accessible.name, "Radio group has a non-empty accessible name");
 }
 
 /**

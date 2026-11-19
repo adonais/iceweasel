@@ -418,6 +418,8 @@ tryselect = ExperimentalOverride(
         # on autoland.
         "skip-unless-backstop": Alias("bugbug-reduced"),
         "skip-unless-expanded": Alias("bugbug-reduced"),
+        "perf-cadence-backstop": Alias("bugbug-reduced"),
+        "perf-cadence-expanded": Alias("bugbug-reduced"),
         "test-verify": "base:test",
         "upload-symbols": Alias("always"),
         "reprocess-symbols": Alias("always"),

@@ -98,6 +98,8 @@ skip-if = [
 
 ["browser_smartwindow_abort_on_tab_close.js"]
 
+["browser_smartwindow_aitab_callout.js"]
+
 ["browser_smartwindow_assistant_ui_errors.js"]
 
 ["browser_smartwindow_beta_badge.js"]
@@ -151,6 +153,8 @@ skip-if = [
 skip-if = [
   "debug && standalone", # Bug 2025711
 ]
+
+["browser_smartwindow_manage_tabs_fullpage_chat.js"]
 
 ["browser_smartwindow_manage_tabs_tool.js"]
 

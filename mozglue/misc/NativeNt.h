@@ -336,7 +336,7 @@ class MemorySectionNameOnHeap {
 
   MemorySectionNameOnHeap() = default;
   explicit MemorySectionNameOnHeap(size_t aBufferLen)
-      : mBuffer(MakeUnique<uint8_t[]>(aBufferLen)) {}
+      : mBuffer(std::make_unique<uint8_t[]>(aBufferLen)) {}
 
  public:
   static MemorySectionNameOnHeap GetBackingFilePath(HANDLE aProcess,

@@ -36,8 +36,8 @@ class MediaConstraints {
  public:
   struct Constraint {
     Constraint() {}
-    Constraint(const std::string& key, const std::string value)
-        : key(key), value(value) {}
+    Constraint(std::string key, std::string value)
+        : key(std::move(key)), value(std::move(value)) {}
     std::string key;
     std::string value;
   };

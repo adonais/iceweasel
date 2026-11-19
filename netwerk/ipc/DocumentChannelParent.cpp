@@ -44,7 +44,7 @@ bool DocumentChannelParent::Init(dom::CanonicalBrowsingContext* aContext,
   RefPtr<DocumentLoadListener::OpenPromise> promise;
   mDocumentLoadListener = loadState->TakeSpeculativeListener();
   if (mDocumentLoadListener) {
-    promise = mDocumentLoadListener->ClaimParentLoad(Some(aArgs.channelId()));
+    promise = mDocumentLoadListener->ClaimParentLoad();
   } else {
     bool isDocumentLoad =
         aArgs.elementCreationArgs().type() ==

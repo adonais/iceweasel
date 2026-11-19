@@ -436,7 +436,7 @@ MP4SampleIndex::MP4SampleIndex(const IndiceWrapper& aIndices,
     : mSource(aSource), mIsAudio(aIsAudio) {
   if (!aIndices.Length()) {
     mMoofParser =
-        MakeUnique<MoofParser>(aSource, AsVariant(aTrackId), aIsAudio);
+        std::make_unique<MoofParser>(aSource, AsVariant(aTrackId), aIsAudio);
   } else {
     if (!mIndex.SetCapacity(aIndices.Length(), fallible)) {
       // OOM.

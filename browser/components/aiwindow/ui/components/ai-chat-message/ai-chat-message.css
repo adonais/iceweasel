@@ -97,7 +97,7 @@ ai-chat-grid::part(row) {
 }
 
 [part~="row"]:first-child {
-  padding-top: 0;
+  padding-block-start: 0;
 }
 
 ai-chat-grid::part(favicon) {

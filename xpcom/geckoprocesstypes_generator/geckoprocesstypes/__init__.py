@@ -157,17 +157,6 @@ process_types = [
         True,
     ),
     GeckoProcessType(
-        8,
-        "Socket",
-        "socket",
-        "Socket",
-        "Self",
-        "Socket",
-        "Socket",
-        "SOCKET",
-        True,
-    ),
-    GeckoProcessType(
         10,
         "ForkServer",
         "forkserver",

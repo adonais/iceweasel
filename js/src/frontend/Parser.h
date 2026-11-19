@@ -1281,11 +1281,11 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
     // The number of instance class private accessors.
     size_t privateAccessors = 0;
 
-    // Checks if every instance field is 0.
-    bool hasOnlyInlinableZeroFields = true;
-    Vector<InlinedZeroField, MemberInitializers::MaxInlinedZeroFields,
+    // Checks if every instance field is a number literal, optionally negated.
+    bool hasOnlyInlinableFields = true;
+    Vector<InlinedField, MemberInitializers::MaxInlinedFields,
            SystemAllocPolicy>
-        inlinableZeroFields;
+        inlinableFields;
 
     bool hasPrivateBrand() const {
       return privateMethods > 0 || privateAccessors > 0;

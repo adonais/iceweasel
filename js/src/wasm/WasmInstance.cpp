@@ -2481,7 +2481,8 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
       ieeeMxcsr_(0),
       wasmMxcsr_(0),
 #endif
-      allocationMetadataBuilder_(nullptr),
+      hasAllocationMetadataBuilder_(
+          cx->realm()->hasAllocationMetadataBuilder()),
       addressOfLastBufferedWholeCell_(
           cx->runtime()->gc.addressOfLastBufferedWholeCell()) {
   std::fill(std::begin(baselineScratchWords_), std::end(baselineScratchWords_),
@@ -3378,9 +3379,33 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
                                uint8_t* nextPC,
                                uintptr_t highestByteVisitedInPrevFrame) {
   const StackMap* map = code().lookupStackMap(nextPC);
+#ifdef DEBUG
+  if (maybeDebug_) {
+    // Every frame of a function compiled by the baseline compiler in debug
+    // mode should have a stackmap here, with two exceptions:
+    //
+    // * Import-function wrappers aren't compiled by the baseline compiler, and
+    //   have no stackmaps.
+    //
+    // * A frame at a ReturnStub call site has no stackmap.  It is the hidden
+    //   frame that MacroAssembler::wasmCollapseFrameSlow creates for a
+    //   return call to an import or to a function in another instance, and
+    //   it stays on the stack while the callee runs, so a GC can see it.  But
+    //   it holds only a wasm::Frame, the instance fields, shadow stack space
+    //   and alignment padding; there are no GC pointers in it.
+    const CodeRange* range = code().lookupFuncRange(nextPC);
+    CallSite site;
+    bool atReturnStub = code().lookupCallSite(nextPC, &site) &&
+                        site.kind() == CallSiteKind::ReturnStub;
+    MOZ_ASSERT_IF(
+        range && !codeMeta().funcIsImport(range->funcIndex()) && !atReturnStub,
+        map);
+  }
+#endif
   if (!map) {
     return 0;
   }
+
   Frame* frame = wfi.frame();
   uintptr_t* stackWords =
       GetFrameScanStartForStackMap(frame, map, &highestByteVisitedInPrevFrame);

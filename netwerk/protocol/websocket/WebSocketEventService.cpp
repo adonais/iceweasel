@@ -380,7 +380,7 @@ WebSocketEventService::AddListener(uint64_t aInnerWindowID,
       .LookupOrInsertWith(
           aInnerWindowID,
           [&] {
-            auto listener = MakeUnique<WindowListener>();
+            auto listener = std::make_unique<WindowListener>();
 
             if (IsChildProcess()) {
               PWebSocketEventListenerChild* actor =

@@ -46,6 +46,19 @@ class GL_CONTEXT_PROVIDER_NAME {
   static already_AddRefed<GLContext> CreateHeadless(
       const GLContextCreateDesc&, nsACString* const out_failureId);
 
+#if defined(MOZ_WIDGET_ANDROID) && defined(GL_CONTEXT_PROVIDER_EGL)
+  // Create a compositor context without a window using a dedicated ANGLE
+  // WebRender display.
+  static already_AddRefed<GLContext> CreateForCompositorANGLE(
+      bool aHardwareWebRender, nsACString* const out_failureId);
+
+  // Create a headless context using Android's system EGL/GLES libraries,
+  // independently of the default EGL implementation. FORBID_HARDWARE is not
+  // supported. The Android system may itself select ANGLE as its GLES driver.
+  static already_AddRefed<GLContext> CreateHeadlessNative(
+      const GLContextCreateDesc&, nsACString* const out_failureId);
+#endif
+
   /**
    * Get a pointer to the global context, creating it if it doesn't exist.
    */

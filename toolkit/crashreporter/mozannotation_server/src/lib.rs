@@ -6,7 +6,7 @@ pub mod errors;
 
 use crate::errors::*;
 #[cfg(any(target_os = "linux", target_os = "android"))]
-use memoffset::offset_of;
+use std::mem::offset_of;
 use process_reader::error::ProcessReaderError;
 use process_reader::ProcessReader;
 

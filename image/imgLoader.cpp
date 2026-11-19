@@ -113,7 +113,7 @@ class imgMemoryReporter final : public nsIMemoryReporter {
         [=](layers::SharedSurfacesMemoryReport aReport) {
           self->FinishCollectReports(handleReport, data, aAnonymize, aReport);
         },
-        [=](mozilla::ipc::ResponseRejectReason&& aReason) {
+        [=](mozilla::ipc::ResponseRejectReason&& /*aReason*/) {
           layers::SharedSurfacesMemoryReport sharedSurfaces;
           self->FinishCollectReports(handleReport, data, aAnonymize,
                                      sharedSurfaces);
@@ -1171,7 +1171,7 @@ imgCacheQueue::const_iterator imgCacheQueue::end() const {
 
 nsresult imgLoader::CreateNewProxyForRequest(
     imgRequest* aRequest, nsIURI* aURI, nsILoadGroup* aLoadGroup,
-    Document* aLoadingDocument, imgINotificationObserver* aObserver,
+    Document* /*aLoadingDocument*/, imgINotificationObserver* aObserver,
     nsLoadFlags aLoadFlags, imgRequestProxy** _retval) {
   LOG_SCOPE_WITH_PARAM(gImgLog, "imgLoader::CreateNewProxyForRequest",
                        "imgRequest", aRequest);
@@ -1344,7 +1344,7 @@ nsresult imgLoader::InitCache() {
   os->AddObserver(this, "profile-before-change", false);
   os->AddObserver(this, "xpcom-shutdown", false);
 
-  mCacheTracker = MakeUnique<imgCacheExpirationTracker>();
+  mCacheTracker = std::make_unique<imgCacheExpirationTracker>();
 
   return NS_OK;
 }
@@ -1362,8 +1362,8 @@ imgLoader::RespectPrivacyNotifications() {
 }
 
 NS_IMETHODIMP
-imgLoader::Observe(nsISupports* aSubject, const char* aTopic,
-                   const char16_t* aData) {
+imgLoader::Observe(nsISupports* /*aSubject*/, const char* aTopic,
+                   const char16_t* /*aData*/) {
   if (strcmp(aTopic, "memory-pressure") == 0) {
     MinimizeCache();
   } else if (strcmp(aTopic, "chrome-flush-caches") == 0) {
@@ -2316,7 +2316,7 @@ nsresult imgLoader::LoadImage(
     nsIPrincipal* aTriggeringPrincipal, uint64_t aRequestContextID,
     nsILoadGroup* aLoadGroup, imgINotificationObserver* aObserver,
     nsINode* aContext, Document* aLoadingDocument, nsLoadFlags aLoadFlags,
-    nsISupports* aCacheKey, nsContentPolicyType aContentPolicyType,
+    nsISupports* /*aCacheKey*/, nsContentPolicyType aContentPolicyType,
     const nsAString& initiatorType, bool aUseUrgentStartForChannel,
     bool aLinkPreload, uint64_t aEarlyHintPreloaderId,
     FetchPriority aFetchPriority, imgRequestProxy** _retval) {

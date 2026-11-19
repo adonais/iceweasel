@@ -19,6 +19,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
   formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
+  FormAutofillPreferences:
+    "resource://autofill/FormAutofillPreferences.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
 });
 
@@ -36,6 +38,20 @@ const l10n = new Localization(
 );
 
 let CONTENT = {};
+
+// The card details message for each combination of the details a card has.
+const CARD_DETAILS_L10N_IDS = {
+  name: "credit-card-doorhanger-card-details-name",
+  expiration: "credit-card-doorhanger-card-details-expiration",
+  "security-code": "credit-card-doorhanger-card-details-security-code",
+  "name-expiration": "credit-card-doorhanger-card-details-name-expiration",
+  "name-security-code":
+    "credit-card-doorhanger-card-details-name-security-code",
+  "expiration-security-code":
+    "credit-card-doorhanger-card-details-expiration-security-code",
+  "name-expiration-security-code":
+    "credit-card-doorhanger-card-details-name-expiration-security-code",
+};
 
 /**
  * `AutofillDoorhanger` provides a base for both address capture and credit card
@@ -241,6 +257,13 @@ export class AutofillDoorhanger {
     }
   }
 
+  /**
+   * Called when the user clicks one of the doorhanger's buttons.
+   *
+   * @param {string} _state The callbackState of the clicked button
+   */
+  onAction(_state) {}
+
   onEventCallback(state) {
     lazy.log.debug(`Doorhanger receives event callback: ${state}`);
 
@@ -342,6 +365,7 @@ export class AutofillDoorhanger {
         this.constructor.telemetryObject,
         this.flowId
       );
+      this.onAction(mainActionParams.callbackState);
 
       this.resolve(mainActionParams.callbackState);
     };
@@ -362,6 +386,7 @@ export class AutofillDoorhanger {
             this.constructor.telemetryObject,
             this.flowId
           );
+          this.onAction(params.callbackState);
 
           this.resolve(params.callbackState);
         },
@@ -877,11 +902,63 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
 
   static dataType = AutofillDataTypes.CREDIT_CARD;
   static telemetryObject = "capture_doorhanger";
+  static securityCodeToggleSource = "save_prompt";
 
   static spotlightURL = "about:preferences#privacy-credit-card-autofill";
 
+  // The cvv_prompt_action action recorded for each button's callbackState.
+  static cvvPromptActions = {
+    new_card: { create: "save", cancel: "not_now", disable: "never_save" },
+    existing_card: {
+      update: "save",
+      create: "save_new",
+      cancel: "no_thanks",
+      disable: "never_save",
+    },
+  };
+
   constructor(browser, oldRecord, newRecord, flowId) {
     super(browser, oldRecord, newRecord, flowId);
+  }
+
+  /**
+   * The prompt_type recorded by the cvv_prompt_* events, or null when the
+   * doorhanger doesn't offer to save a security code the user entered.
+   *
+   * @type {string|null}
+   */
+  get cvvPromptType() {
+    return this.hasSubmittedSecurityCode ? "new_card" : null;
+  }
+
+  #respondedToCvvPrompt = false;
+
+  #recordCvvPromptAction(action) {
+    this.#respondedToCvvPrompt = true;
+    AutofillTelemetry.recordCvvPromptAction({
+      promptType: this.cvvPromptType,
+      action,
+      savingEnabled: FormAutofill.isAutofillCreditCardCVVEnabled,
+      flowId: this.flowId,
+    });
+  }
+
+  async show() {
+    if (this.cvvPromptType) {
+      AutofillTelemetry.recordCvvPromptShown({
+        promptType: this.cvvPromptType,
+        flowId: this.flowId,
+      });
+    }
+    return super.show();
+  }
+
+  onAction(state) {
+    const actions =
+      CreditCardSaveDoorhanger.cvvPromptActions[this.cvvPromptType];
+    if (actions?.[state]) {
+      this.#recordCvvPromptAction(actions[state]);
+    }
   }
 
   /**
@@ -893,6 +970,22 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
    */
   get hasSubmittedSecurityCode() {
     return !!this.newRecord["cc-csc"];
+  }
+
+  get savesSecurityCode() {
+    return (
+      this.hasSubmittedSecurityCode &&
+      FormAutofill.isAutofillCreditCardCVVEnabled
+    );
+  }
+
+  /**
+   * Whether the card details note a security code.
+   *
+   * @returns {boolean}
+   */
+  get showsSecurityCode() {
+    return this.savesSecurityCode;
   }
 
   /**
@@ -944,7 +1037,8 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     const docFragment = this.doc.createDocumentFragment();
 
     const label = this.doc.createXULElement("label");
-    this.doc.l10n.setAttributes(label, this.ui.description.l10nId);
+    label.className = "payments-doorhanger-message";
+    this.updateDescription(label);
     docFragment.appendChild(label);
 
     const descriptionWrapper = this.doc.createXULElement("hbox");
@@ -988,6 +1082,17 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     this.content.appendChild(docFragment);
   }
 
+  updateDescription(label) {
+    const id = this.ui.description.l10nId;
+    label.hidden = !id;
+    if (id) {
+      this.doc.l10n.setAttributes(label, id);
+    } else {
+      label.removeAttribute("data-l10n-id");
+      label.textContent = "";
+    }
+  }
+
   appendCardDetails(line, name) {
     const parts = [];
     const args = {};
@@ -1004,38 +1109,70 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
       args.year = String(year).slice(-2);
     }
 
-    if (this.hasSubmittedSecurityCode) {
-      parts.push("cvv");
+    if (this.showsSecurityCode) {
+      parts.push("security-code");
+      args.securityCode = lazy.CreditCard.formatSecurityCodeName(
+        this.newRecord
+      );
     }
 
     if (!parts.length) {
+      line.removeAttribute("data-l10n-id");
+      line.removeAttribute("data-l10n-args");
+      line.textContent = "";
       return;
     }
 
-    this.doc.l10n.setAttributes(
-      line,
-      `credit-card-doorhanger-details-${parts.join("-")}`,
-      args
+    const key = parts.join("-");
+    const l10nId = CARD_DETAILS_L10N_IDS[key];
+    if (!l10nId) {
+      lazy.log.error(`No card details message for "${key}"`);
+      return;
+    }
+    this.doc.l10n.setAttributes(line, l10nId, args);
+  }
+
+  appendSecurityCodeToggle() {
+    const toggle = this.doc.createElement("moz-toggle");
+    const updateLabel = () => {
+      this.doc.l10n.setAttributes(
+        toggle,
+        toggle.pressed
+          ? "credit-card-doorhanger-always-save-security-codes-toggle"
+          : "credit-card-doorhanger-dont-save-security-codes-toggle"
+      );
+    };
+    toggle.pressed = Services.prefs.getBoolPref(
+      FormAutofill.ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF
+    );
+    updateLabel();
+    toggle.addEventListener("toggle", () => {
+      Services.prefs.setBoolPref(
+        FormAutofill.ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
+        toggle.pressed
+      );
+      updateLabel();
+      this.onSecurityCodeToggled();
+      lazy.FormAutofillPreferences.recordCvvSavingToggled(
+        toggle.pressed,
+        this.constructor.securityCodeToggleSource
+      );
+    });
+    this.content.appendChild(toggle);
+  }
+
+  onSecurityCodeToggled() {
+    this.updateDescription(
+      this.content.querySelector(".payments-doorhanger-message")
+    );
+    this.appendCardDetails(
+      this.content.querySelector(".line-two"),
+      this.newRecord["cc-name"]
     );
   }
 
-  appendSecurityCodeCheckbox() {
-    const checkbox = this.doc.createElement("moz-checkbox");
-    checkbox.checked = Services.prefs.getBoolPref(
-      FormAutofill.ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF
-    );
-    checkbox.setAttribute("support-page", "credit-card-autofill");
-    this.doc.l10n.setAttributes(
-      checkbox,
-      "credit-card-doorhanger-save-security-codes-checkbox"
-    );
-    checkbox.addEventListener("change", () => {
-      Services.prefs.setBoolPref(
-        FormAutofill.ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
-        checkbox.checked
-      );
-    });
-    this.content.appendChild(checkbox);
+  appendSecurityCodeControl() {
+    this.appendSecurityCodeToggle();
   }
 
   createPrivacyPanelButton() {
@@ -1079,7 +1216,7 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     // Offered whenever security codes are supported, so a user who turned
     // saving them off can turn it back on from here.
     if (FormAutofill.isAutofillCreditCardCVVSupported) {
-      this.appendSecurityCodeCheckbox();
+      this.appendSecurityCodeControl();
     }
   }
 
@@ -1091,10 +1228,19 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     } else if (state == "shown") {
       this.addCheckboxListener();
     }
+
+    if (
+      (state == "removed" || state == "dismissed") &&
+      this.cvvPromptType &&
+      !this.#respondedToCvvPrompt
+    ) {
+      this.#recordCvvPromptAction("closed");
+    }
   }
 
   // The record to be saved by this doorhanger. The security code is left out
-  // when the user unchecks the checkbox, so that an update keeps the stored one.
+  // when the user turns saving security codes off, so that an update keeps the
+  // stored one.
   recordToSave() {
     if (FormAutofill.isAutofillCreditCardCVVEnabled) {
       return this.newRecord;
@@ -1111,6 +1257,124 @@ export class CreditCardUpdateDoorhanger extends CreditCardSaveDoorhanger {
 
   constructor(browser, oldRecord, newRecord, flowId) {
     super(browser, oldRecord, newRecord, flowId);
+  }
+
+  get showsSecurityCode() {
+    return !!this.oldRecord["cc-csc"];
+  }
+
+  get cvvPromptType() {
+    return null;
+  }
+
+  appendSecurityCodeControl() {}
+
+  // A form submitted without a security code would otherwise clear the stored
+  // one.
+  recordToSave() {
+    const record = { ...super.recordToSave() };
+    if (!record["cc-csc"]) {
+      delete record["cc-csc"];
+    }
+    return record;
+  }
+}
+
+/**
+ * The update doorhanger for a saved card submitted with a new or changed
+ * security code. Turning saving security codes off switches it to the plain
+ * update content, and updating then keeps the stored security code.
+ */
+export class CreditCardSecurityCodeUpdateDoorhanger extends CreditCardUpdateDoorhanger {
+  static securityCodeToggleSource = "update_prompt";
+
+  static isNeeded(oldRecord, newRecord) {
+    return (
+      FormAutofill.isAutofillCreditCardCVVSupported &&
+      !!newRecord["cc-csc"] &&
+      newRecord["cc-csc"] != oldRecord["cc-csc"]
+    );
+  }
+
+  get showsSecurityCode() {
+    return this.savesSecurityCode;
+  }
+
+  get cvvPromptType() {
+    return "existing_card";
+  }
+
+  appendSecurityCodeControl() {
+    this.appendSecurityCodeToggle();
+  }
+
+  onSecurityCodeToggled() {
+    super.onSecurityCodeToggled();
+    this.updateNotification();
+  }
+
+  onEventCallback(state) {
+    super.onEventCallback(state);
+    // "showing" comes before PopupNotifications refreshes the panel from the
+    // notification, so every open, including a reopen, uses the current state.
+    if (state == "showing") {
+      this.updateNotification();
+    }
+  }
+
+  /**
+   * The secondary actions the notification was shown with. The "Never save
+   * cards" action is left out while saving security codes is off, which also
+   * hides the dropdown.
+   *
+   * @type {Array<object>|null}
+   */
+  #secondaryActions = null;
+
+  // The header and buttons are formatted once when the doorhanger is shown, so
+  // follow the toggle by updating the notification, which PopupNotifications
+  // applies whenever the panel opens, and the panel if it's already open.
+  updateNotification() {
+    const notification = this.chromeWin.PopupNotifications.getNotification(
+      this.ui.id,
+      this.browser
+    );
+    if (!notification) {
+      return;
+    }
+
+    const formatButton = l10nId => {
+      const [{ attributes }] = l10n.formatMessagesSync([{ id: l10nId }]);
+      const value = name => attributes.find(attr => attr.name == name).value;
+      return { label: value("label"), accessKey: value("accessKey") };
+    };
+    const { mainAction, secondaryActions } = this.ui.footer;
+    const enabled = FormAutofill.isAutofillCreditCardCVVEnabled;
+
+    this.#secondaryActions ??= notification.secondaryActions;
+    notification.message = this.getNotificationHeader();
+    Object.assign(notification.mainAction, formatButton(mainAction.l10nId));
+    Object.assign(
+      this.#secondaryActions[0],
+      formatButton(secondaryActions[0].l10nId)
+    );
+    notification.secondaryActions = enabled
+      ? this.#secondaryActions
+      : this.#secondaryActions.slice(0, 1);
+
+    const { panel } = this;
+    if (panel?.notification != notification) {
+      return;
+    }
+    panel.setAttribute("label", notification.message);
+    panel.setAttribute("buttonlabel", notification.mainAction.label);
+    panel.setAttribute("buttonaccesskey", notification.mainAction.accessKey);
+    panel.setAttribute("secondarybuttonlabel", this.#secondaryActions[0].label);
+    panel.setAttribute(
+      "secondarybuttonaccesskey",
+      this.#secondaryActions[0].accessKey
+    );
+    panel.toggleAttribute("dropmarkerhidden", !enabled);
   }
 }
 
@@ -1445,12 +1709,16 @@ CONTENT = {
       tooltiptext: l10n.formatValueSync("autofill-message-tooltip"),
     },
     header: {
-      l10nId: "credit-card-save-doorhanger-header",
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVSupported
+          ? "credit-card-save-payment-method-doorhanger-header"
+          : "credit-card-save-doorhanger-header";
+      },
     },
     description: {
       get l10nId() {
-        return FormAutofill.isAutofillCreditCardCVVEnabled
-          ? "credit-card-save-doorhanger-description-security-code"
+        return FormAutofill.isAutofillCreditCardCVVSupported
+          ? "credit-card-save-payment-method-doorhanger-description"
           : "credit-card-save-doorhanger-description";
       },
     },
@@ -1462,11 +1730,15 @@ CONTENT = {
       },
       secondaryActions: [
         {
-          l10nId: "credit-card-capture-cancel-button",
+          get l10nId() {
+            return FormAutofill.isAutofillCreditCardCVVSupported
+              ? "credit-card-capture-dismiss-button"
+              : "credit-card-capture-cancel-button";
+          },
           callbackState: "cancel",
         },
         {
-          l10nId: "credit-card-capture-never-save-button",
+          l10nId: "credit-card-capture-never-save-payment-methods-button",
           callbackState: "disable",
         },
       ],
@@ -1508,25 +1780,94 @@ CONTENT = {
       tooltiptext: l10n.formatValueSync("autofill-message-tooltip"),
     },
     header: {
-      l10nId: "credit-card-update-doorhanger-header",
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVSupported
+          ? "credit-card-update-saved-payment-method-doorhanger-header"
+          : "credit-card-update-doorhanger-header";
+      },
     },
     description: {
       get l10nId() {
-        return FormAutofill.isAutofillCreditCardCVVEnabled
-          ? "credit-card-save-doorhanger-description-security-code"
+        return FormAutofill.isAutofillCreditCardCVVSupported
+          ? null
           : "credit-card-update-doorhanger-description";
       },
     },
     content: {},
     footer: {
       mainAction: {
-        l10nId: "credit-card-capture-update-button",
+        get l10nId() {
+          return FormAutofill.isAutofillCreditCardCVVSupported
+            ? "credit-card-capture-update-payment-method-button"
+            : "credit-card-capture-update-button";
+        },
         callbackState: "update",
       },
       secondaryActions: [
         {
-          l10nId: "credit-card-capture-save-new-button",
+          get l10nId() {
+            return FormAutofill.isAutofillCreditCardCVVSupported
+              ? "credit-card-capture-save-as-new-payment-method-button"
+              : "credit-card-capture-save-new-button";
+          },
           callbackState: "create",
+        },
+      ],
+    },
+    options: {
+      persistWhileVisible: true,
+      hideClose: true,
+      popupIconURL: "chrome://global/skin/icons/security.svg",
+    },
+  },
+
+  [CreditCardSecurityCodeUpdateDoorhanger.name]: {
+    id: "credit-card-save-update",
+    anchor: {
+      id: "autofill-credit-card-notification-icon",
+      URL: "chrome://formautofill/content/formfill-anchor.svg",
+      tooltiptext: l10n.formatValueSync("autofill-message-tooltip"),
+    },
+    header: {
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVEnabled
+          ? "credit-card-save-security-code-doorhanger-header"
+          : "credit-card-update-saved-payment-method-doorhanger-header";
+      },
+    },
+    description: {
+      get l10nId() {
+        return FormAutofill.isAutofillCreditCardCVVEnabled
+          ? "credit-card-save-payment-method-doorhanger-description"
+          : null;
+      },
+    },
+    content: {},
+    footer: {
+      mainAction: {
+        get l10nId() {
+          return FormAutofill.isAutofillCreditCardCVVEnabled
+            ? "credit-card-capture-save-button"
+            : "credit-card-capture-update-payment-method-button";
+        },
+        callbackState: "update",
+      },
+      secondaryActions: [
+        {
+          get l10nId() {
+            return FormAutofill.isAutofillCreditCardCVVEnabled
+              ? "credit-card-capture-dismiss-button"
+              : "credit-card-capture-save-as-new-payment-method-button";
+          },
+          get callbackState() {
+            return FormAutofill.isAutofillCreditCardCVVEnabled
+              ? "cancel"
+              : "create";
+          },
+        },
+        {
+          l10nId: "credit-card-capture-never-save-payment-methods-button",
+          callbackState: "disable",
         },
       ],
     },
@@ -1663,11 +2004,12 @@ const SAVE_PROMPT_CONFIG = {
   [AutofillDataTypes.CREDIT_CARD]: {
     saveDoorhanger: CreditCardSaveDoorhanger,
     updateDoorhanger: CreditCardUpdateDoorhanger,
+    securityCodeUpdateDoorhanger: CreditCardSecurityCodeUpdateDoorhanger,
     ftls: ["toolkit/formautofill/formAutofill.ftl"],
     requiresAuth: true,
     confirmationHint: {
-      created: "confirmation-hint-credit-card-created",
-      updated: "confirmation-hint-credit-card-updated",
+      created: "confirmation-hint-payment-method-saved",
+      updated: "confirmation-hint-payment-method-updated",
     },
   },
   [AutofillDataTypes.PASSPORT]: {
@@ -1721,11 +2063,18 @@ export let FormAutofillPrompter = {
       win.MozXULElement.insertFTLIfNeeded(ftl);
     }
 
+    const updateDoorhanger = config.securityCodeUpdateDoorhanger?.isNeeded(
+      oldRecord,
+      newRecord
+    )
+      ? config.securityCodeUpdateDoorhanger
+      : config.updateDoorhanger;
+
     let doorhanger;
     let action;
     while (true) {
       doorhanger = showUpdateDoorhanger
-        ? new config.updateDoorhanger(browser, oldRecord, newRecord, flowId)
+        ? new updateDoorhanger(browser, oldRecord, newRecord, flowId)
         : new config.saveDoorhanger(browser, oldRecord, newRecord, flowId);
       action = await doorhanger.show();
 
@@ -1779,7 +2128,7 @@ export let FormAutofillPrompter = {
     // mode); otherwise add a new record.
     const isUpdate = showUpdateDoorhanger && action != "create";
 
-    this._updateStorageAfterInteractWithPrompt(
+    await this._updateStorageAfterInteractWithPrompt(
       browser,
       storage,
       config.confirmationHint,

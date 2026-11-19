@@ -610,11 +610,13 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
       mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
       int32_t* out_format, gfx::IntSize* out_imageSize) override;
 
-  void OnShutdown();
+  void OnShutdown() override;
 
   bool IsContextLost() const { return mIsContextLost; }
-  void OnRemoteCanvasLost();
-  void OnRemoteCanvasRestored();
+  void OnRemoteCanvasLost() override;
+  void OnRemoteCanvasRestored() override;
+  void OnRemoteCanvasReset(
+      const nsTArray<layers::RemoteTextureOwnerId>& aOwnerIds) override;
 
   /**
    * Update CurrentState().filter with the filter description for
@@ -642,13 +644,15 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   nsresult GetImageDataArray(JSContext* aCx, int32_t aX, int32_t aY,
                              uint32_t aWidth, uint32_t aHeight,
+                             PredefinedColorSpace aColorSpace,
                              nsIPrincipal& aSubjectPrincipal,
                              JSObject** aRetval);
 
   void PutImageData_explicit(int32_t aX, int32_t aY, ImageData&,
                              bool aHasDirtyRect, int32_t aDirtyX,
                              int32_t aDirtyY, int32_t aDirtyWidth,
-                             int32_t aDirtyHeight, ErrorResult&);
+                             int32_t aDirtyHeight,
+                             PredefinedColorSpace aColorSpace, ErrorResult&);
 
   bool CopyBufferProvider(layers::PersistentBufferProvider& aOld,
                           gfx::DrawTarget& aTarget, gfx::IntRect aCopyRect);
@@ -931,8 +935,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   // Which context properties apply to an SVG when calling drawImage.
   CanvasContextProperties mContextProperties = CanvasContextProperties::None;
 
-  bool AddShutdownObserver();
-  void RemoveShutdownObserver();
   bool AlreadyShutDown() const { return mHasShutdown; }
 
   /**
@@ -1025,14 +1027,16 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   }
 
   /**
-   * Calls UpdateFilter if the canvas's WriteOnly state has changed between the
-   * last call to UpdateFilter and now.
+   * Calls UpdateFilter if the filter description hasn't been built for the
+   * current filter chain yet, or if the canvas's WriteOnly state has changed
+   * between the last call to UpdateFilter and now.
    */
   const gfx::FilterDescription& EnsureUpdatedFilter() {
     bool isWriteOnly = IsWriteOnly() ||
                        (mCanvasElement && mCanvasElement->IsWriteOnly()) ||
                        (mOffscreenCanvas && mOffscreenCanvas->IsWriteOnly());
-    if (CurrentState().filterSourceGraphicTainted != isWriteOnly) {
+    if (!CurrentState().filterDescriptionUpToDate ||
+        CurrentState().filterSourceGraphicTainted != isWriteOnly) {
       // Do not flush here: this runs inside drawing operations that hold raw
       // references to mPath/state, and a flush can run script that resets the
       // context, leading to UAF. Flush already happened at SetFilter() time.
@@ -1179,6 +1183,8 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     // We keep track of this to ensure that if this gets out of sync with the
     // tainted state of the canvas itself, we update our filters accordingly.
     bool filterSourceGraphicTainted = false;
+    // Whether |filter| has been built for |filterChain| by UpdateFilter().
+    bool filterDescriptionUpToDate = false;
     bool imageSmoothingEnabled = true;
 
     // Whether resolvedFontLang was an explicitly-specified lang or inferred.

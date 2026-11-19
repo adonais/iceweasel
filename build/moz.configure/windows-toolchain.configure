@@ -352,6 +352,44 @@ def vc_path(target_windows_abi, host_windows_abi, vc_toolchain_search_path):
     return os.path.normpath(result)
 
 
+# Flags that tell clang-cl (`cl`) and clang targeting msvc (`clang`) where to
+# find the MSVC and Windows SDK headers and libraries.
+@depends(winsysroot, vc_compiler_path, valid_windows_sdk_dir, when=vc_compiler_path)
+@imports("os")
+def msvc_sysroot_flags(winsysroot, vc_compiler_path, windows_sdk_dir):
+    if not windows_sdk_dir:
+        return
+    if winsysroot:
+        root = normalize_path(winsysroot)
+        return namespace(
+            cl=["-winsysroot", root],
+            clang=["-Xmicrosoft-windows-sys-root", root],
+        )
+    vc_path = normalize_path(
+        os.path.dirname(os.path.dirname(os.path.dirname(vc_compiler_path[0])))
+    )
+    sdk_path = normalize_path(windows_sdk_dir.path)
+    sdk_version = os.path.basename(windows_sdk_dir.include)
+    return namespace(
+        cl=[
+            "-vctoolsdir",
+            vc_path,
+            "-winsdkdir",
+            sdk_path,
+            "-winsdkversion",
+            sdk_version,
+        ],
+        clang=[
+            "-Xmicrosoft-visualc-tools-root",
+            vc_path,
+            "-Xmicrosoft-windows-sdk-root",
+            sdk_path,
+            "-Xmicrosoft-windows-sdk-version",
+            sdk_version,
+        ],
+    )
+
+
 with only_when(target_is_windows):
 
     @depends(target)

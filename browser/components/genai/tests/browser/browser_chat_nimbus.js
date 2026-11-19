@@ -1,6 +1,9 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+const { GenAI } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/genai/GenAI.sys.mjs"
+);
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
@@ -208,4 +211,66 @@ add_task(async function test_nimbus_minimum_version() {
   await cleanup();
   Services.prefs.clearUserPref(nimbus);
   Services.prefs.clearUserPref(foo);
+});
+
+/**
+ * Check that the search feature's ignored sites variable sets the default pref,
+ * that the list follows it, and that both go back when the enrollment ends.
+ */
+add_task(async function test_nimbus_ignored_sites() {
+  const pref = "browser.highlightToSearch.ignoredSites";
+  const original = Services.prefs.getStringPref(pref);
+
+  const cleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "search",
+    value: { highlightToSearchIgnoredSites: "example.com" },
+  });
+  Assert.equal(
+    Services.prefs.getStringPref(pref),
+    "example.com",
+    "Enrolling sets the ignored sites pref"
+  );
+  Assert.deepEqual(
+    GenAI.ignoredSites,
+    ["example.com"],
+    "The ignored sites follow the pref"
+  );
+
+  await cleanup();
+  Assert.equal(
+    Services.prefs.getStringPref(pref),
+    original,
+    "The pref goes back when the enrollment ends"
+  );
+  Assert.deepEqual(
+    GenAI.ignoredSites,
+    original.split(","),
+    "The ignored sites go back too"
+  );
+});
+
+/**
+ * Check that the search feature's page menu detection variable sets the
+ * default pref, and that the pref goes back when the enrollment ends.
+ */
+add_task(async function test_nimbus_detect_page_menus() {
+  const pref = "browser.highlightToSearch.detectPageMenus";
+  const original = Services.prefs.getBoolPref(pref);
+
+  const cleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "search",
+    value: { highlightToSearchDetectPageMenus: !original },
+  });
+  Assert.equal(
+    Services.prefs.getBoolPref(pref),
+    !original,
+    "Enrolling sets the detection pref"
+  );
+
+  await cleanup();
+  Assert.equal(
+    Services.prefs.getBoolPref(pref),
+    original,
+    "The pref goes back when the enrollment ends"
+  );
 });

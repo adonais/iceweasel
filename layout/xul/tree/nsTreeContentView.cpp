@@ -1050,7 +1050,7 @@ void nsTreeContentView::SerializeItem(Element* aContent, int32_t aParentIndex,
     return;
   }
 
-  aRows.AppendElement(MakeUnique<Row>(aContent, aParentIndex));
+  aRows.AppendElement(std::make_unique<Row>(aContent, aParentIndex));
   Row* row = aRows.LastElement().get();
 
   if (aContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::container,
@@ -1085,7 +1085,7 @@ void nsTreeContentView::SerializeSeparator(Element* aContent,
     return;
   }
 
-  auto row = MakeUnique<Row>(aContent, aParentIndex);
+  auto row = std::make_unique<Row>(aContent, aParentIndex);
   row->SetSeparator(true);
   aRows.AppendElement(std::move(row));
 }

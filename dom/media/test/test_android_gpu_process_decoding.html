@@ -1,0 +1,119 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test remote decoding process selection on Android</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+<script type="application/javascript">
+
+/**
+ * This test checks that video decoding prefers the GPU process on Android,
+ * that we fallback to the RDD process when the GPU process, or decoding in it,
+ * is disabled, that only platform decoding is performed in the GPU process and
+ * only software decoding is performed in the RDD process otherwise, and that
+ * audio decoding without a CDM never happens in the GPU process. It only
+ * applies to the MediaCodec NDK decoders via ffvpx, not the Java decoders.
+ */
+
+const USING_JAVA_DECODERS = SpecialPowers.getBoolPref(
+  "media.android-media-codec.enabled"
+);
+
+const PLATFORM_DECODING_PROCESS =
+  SpecialPowers.getBoolPref("layers.gpu-process.enabled") &&
+  SpecialPowers.getBoolPref("media.gpu-process-decoder")
+    ? "GPU"
+    : "RDD";
+
+add_task(async function testPlatformDecodingProcess() {
+  if (USING_JAVA_DECODERS) {
+    ok(true, "Skipped because the Java decoders are used");
+    return;
+  }
+  const video = await createAndPlayVideo("gizmo.mp4");
+  const debugInfo = await getReaderDebugInfo(video);
+  assertDecoder(
+    debugInfo.videoDecoderName,
+    "ffvpx video decoder",
+    PLATFORM_DECODING_PROCESS
+  );
+  assertDecoder(
+    debugInfo.audioDecoderName,
+    "ffvpx audio decoder",
+    "Utility Generic"
+  );
+  removeVideo(video);
+});
+
+add_task(async function testHardwareDecodingProcess() {
+  if (USING_JAVA_DECODERS) {
+    ok(true, "Skipped because the Java decoders are used");
+    return;
+  }
+  for (const file of [
+    "gizmo.mp4",
+    "bipbop_short_vp8.webm",
+    "vp9.webm",
+    "av1.mp4",
+  ]) {
+    const video = await createAndPlayVideo(file);
+    const debugInfo = await getReaderDebugInfo(video);
+    const name = debugInfo.videoDecoderName;
+    const hw = debugInfo.videoHardwareAccelerated;
+    if (name.endsWith("(GPU remote)")) {
+      ok(hw, `${file}: '${name}' must be hardware accelerated`);
+    } else if (PLATFORM_DECODING_PROCESS == "GPU") {
+      ok(
+        name.endsWith("(RDD remote)"),
+        `${file}: '${name}' must be in the GPU or RDD process`
+      );
+      ok(!hw, `${file}: '${name}' must not be hardware accelerated`);
+    } else {
+      ok(true, `${file}: '${name}' decoded with GPU process unavailable`);
+    }
+    removeVideo(video);
+  }
+});
+
+async function createAndPlayVideo(fileUrl) {
+  const video = document.createElement("video");
+  document.body.appendChild(video);
+  video.src = fileUrl;
+  video.loop = true;
+  ok(
+    await video.play().then(
+      () => true,
+      () => false
+    ),
+    `${fileUrl} started playing`
+  );
+  return video;
+}
+
+function removeVideo(video) {
+  video.removeAttribute("src");
+  video.load();
+  video.remove();
+}
+
+async function getReaderDebugInfo(video) {
+  const debugInfo = await SpecialPowers.wrap(video).mozRequestDebugInfo();
+  return debugInfo.decoder.reader;
+}
+
+function assertDecoder(decoderName, expectedDecoder, expectedProcess) {
+  ok(
+    decoderName.startsWith(expectedDecoder),
+    `Decoder '${decoderName}', expected '${expectedDecoder}'`
+  );
+  ok(
+    decoderName.endsWith(`(${expectedProcess} remote)`),
+    `Decoder '${decoderName}', expected process '${expectedProcess}'`
+  );
+}
+
+</script>
+</head>
+<body>
+</body>
+</html>

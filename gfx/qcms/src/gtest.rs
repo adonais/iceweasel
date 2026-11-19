@@ -921,6 +921,37 @@ mod test {
     }
 
     #[test]
+    fn description_v2() {
+        let p = profile_from_path("B2A0-ident.icc");
+        assert_eq!(
+            p.description(),
+            Some("XL2420T #1 2020-11-16 21-48 D6500 2.2 VF-S XYZLUT+MTX")
+        );
+    }
+
+    #[test]
+    fn description_v4() {
+        let p = profile_from_path("lcms_thinkpad_w540.icc");
+        assert_eq!(p.description(), Some("ThinkPad W540"));
+    }
+
+    #[test]
+    fn malformed_description_keeps_profile() {
+        use std::io::Read;
+        let mut path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("profiles");
+        path.push("B2A0-ident.icc");
+        let mut data = Vec::new();
+        std::fs::File::open(path).unwrap().read_to_end(&mut data).unwrap();
+        // The desc tag is at offset 276; make its ASCII count overrun the buffer.
+        const DESC_OFFSET: usize = 276;
+        assert_eq!(&data[DESC_OFFSET..DESC_OFFSET + 4], b"desc");
+        data[DESC_OFFSET + 8..DESC_OFFSET + 12].copy_from_slice(&u32::MAX.to_be_bytes());
+        let p = Profile::new_from_slice(&data, false).unwrap();
+        assert_eq!(p.description(), None);
+    }
+
+    #[test]
     fn parametric_threshold() {
         let src = profile_from_path("parametric-thresh.icc");
         let dst = crate::Profile::new_sRGB();

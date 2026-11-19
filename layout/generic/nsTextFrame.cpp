@@ -1094,7 +1094,7 @@ static void CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun) {
   observers->SetCapacity(observers->Length() +
                          fontsWithAnimatedGlyphs.Length());
   for (auto font : fontsWithAnimatedGlyphs) {
-    observers->AppendElement(MakeUnique<GlyphObserver>(font, aTextRun));
+    observers->AppendElement(std::make_unique<GlyphObserver>(font, aTextRun));
   }
 }
 
@@ -1786,53 +1786,61 @@ bool BuildTextRunsScanner::IsTextRunValidForMappedFlows(
 void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
                                        bool aSuppressTrailingBreak) {
   RefPtr<gfxTextRun> textRun;
-  if (!mMappedFlows.IsEmpty()) {
-    if (!mSkipIncompleteTextRuns && mCurrentFramesAllSameTextRun &&
-        !!(mCurrentFramesAllSameTextRun->GetFlags2() &
-           nsTextFrameUtils::Flags::IncomingWhitespace) ==
-            !!(mCurrentRunContextInfo &
-               nsTextFrameUtils::INCOMING_WHITESPACE) &&
-        !!(mCurrentFramesAllSameTextRun->GetFlags() &
-           gfx::ShapedTextFlags::TEXT_INCOMING_ARABICCHAR) ==
-            !!(mCurrentRunContextInfo &
-               nsTextFrameUtils::INCOMING_ARABICCHAR) &&
-        IsTextRunValidForMappedFlows(mCurrentFramesAllSameTextRun)) {
-      // Optimization: We do not need to (re)build the textrun.
-      textRun = mCurrentFramesAllSameTextRun;
 
-      if (mDoLineBreaking) {
-        // Feed this run's text into the linebreaker to provide context.
-        if (!SetupLineBreakerContext(textRun)) {
-          return;
+  // Single-iteration do-while to allow `break` to jump to finalization code in
+  // case of allocation failure in SetupLineBreakerContext or AppendElements.
+  do {
+    if (!mMappedFlows.IsEmpty()) {
+      if (!mSkipIncompleteTextRuns && mCurrentFramesAllSameTextRun &&
+          !!(mCurrentFramesAllSameTextRun->GetFlags2() &
+             nsTextFrameUtils::Flags::IncomingWhitespace) ==
+              !!(mCurrentRunContextInfo &
+                 nsTextFrameUtils::INCOMING_WHITESPACE) &&
+          !!(mCurrentFramesAllSameTextRun->GetFlags() &
+             gfx::ShapedTextFlags::TEXT_INCOMING_ARABICCHAR) ==
+              !!(mCurrentRunContextInfo &
+                 nsTextFrameUtils::INCOMING_ARABICCHAR) &&
+          IsTextRunValidForMappedFlows(mCurrentFramesAllSameTextRun)) {
+        // Optimization: We do not need to (re)build the textrun.
+        textRun = mCurrentFramesAllSameTextRun;
+
+        if (mDoLineBreaking) {
+          // Feed this run's text into the linebreaker to provide context.
+          // Note that SetupLineBreakerContext returns false in case of an
+          // internal allocation failure.
+          if (!SetupLineBreakerContext(textRun)) {
+            break;
+          }
         }
-      }
 
-      // Update mNextRunContextInfo appropriately
-      mNextRunContextInfo = nsTextFrameUtils::INCOMING_NONE;
-      if (textRun->GetFlags2() & nsTextFrameUtils::Flags::TrailingWhitespace) {
-        mNextRunContextInfo |= nsTextFrameUtils::INCOMING_WHITESPACE;
-      }
-      if (textRun->GetFlags() &
-          gfx::ShapedTextFlags::TEXT_TRAILING_ARABICCHAR) {
-        mNextRunContextInfo |= nsTextFrameUtils::INCOMING_ARABICCHAR;
-      }
-    } else {
-      AutoTArray<uint8_t, BIG_TEXT_NODE_SIZE> buffer;
-      uint32_t bufferSize = mMaxTextLength * (mDoubleByteText ? 2 : 1);
-      if (bufferSize < mMaxTextLength || bufferSize == UINT32_MAX ||
-          !buffer.AppendElements(bufferSize, fallible)) {
-        return;
-      }
-      textRun = BuildTextRunForFrames(buffer.Elements());
-      if (textRun) {
-        if (gfxPlatform::GetPlatform()->OpenTypeSVGEnabled()) {
-          // Record the textrun for call to CreateObserversForAnimatedGlyphs,
-          // done after line-breaking etc is complete.
-          mCreatedTextRuns.AppendElement(textRun);
+        // Update mNextRunContextInfo appropriately
+        mNextRunContextInfo = nsTextFrameUtils::INCOMING_NONE;
+        if (textRun->GetFlags2() &
+            nsTextFrameUtils::Flags::TrailingWhitespace) {
+          mNextRunContextInfo |= nsTextFrameUtils::INCOMING_WHITESPACE;
+        }
+        if (textRun->GetFlags() &
+            gfx::ShapedTextFlags::TEXT_TRAILING_ARABICCHAR) {
+          mNextRunContextInfo |= nsTextFrameUtils::INCOMING_ARABICCHAR;
+        }
+      } else {
+        AutoTArray<uint8_t, BIG_TEXT_NODE_SIZE> buffer;
+        uint32_t bufferSize = mMaxTextLength * (mDoubleByteText ? 2 : 1);
+        if (bufferSize < mMaxTextLength || bufferSize == UINT32_MAX ||
+            !buffer.AppendElements(bufferSize, fallible)) {
+          break;
+        }
+        textRun = BuildTextRunForFrames(buffer.Elements());
+        if (textRun) {
+          if (gfxPlatform::GetPlatform()->OpenTypeSVGEnabled()) {
+            // Record the textrun for call to CreateObserversForAnimatedGlyphs,
+            // done after line-breaking etc is complete.
+            mCreatedTextRuns.AppendElement(textRun);
+          }
         }
       }
     }
-  }
+  } while (false);
 
   if (aFlushLineBreaks) {
     FlushLineBreaks(aSuppressTrailingBreak ? nullptr : textRun.get());
@@ -2641,11 +2649,11 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
     }
     char16_t maskChar =
         needsToMaskPassword ? 0 : textStyle->TextSecurityMaskChar();
-    transformingFactory = MakeUnique<nsCaseTransformTextRunFactory>(
+    transformingFactory = std::make_unique<nsCaseTransformTextRunFactory>(
         std::move(transformingFactory), false, useCapitalEsZett, maskChar);
   }
   if (anyMathMLStyling) {
-    transformingFactory = MakeUnique<MathMLTextRunFactory>(
+    transformingFactory = std::make_unique<MathMLTextRunFactory>(
         std::move(transformingFactory), mathFlags, sstyScriptLevel,
         fontInflation);
   }
@@ -2957,7 +2965,7 @@ void BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
                              mappedFlow->mStartFrame->GetContentOffset());
 
     UniquePtr<BreakSink>* breakSink = mBreakSinks.AppendElement(
-        MakeUnique<BreakSink>(aTextRun, mDrawTarget, offset));
+        std::make_unique<BreakSink>(aTextRun, mDrawTarget, offset));
 
     uint32_t length = iterNext.GetSkippedOffset() - offset;
     uint32_t flags = 0;
@@ -4612,7 +4620,8 @@ void nsTextFrame::PropertyProvider::InitTextAutospace() {
   const auto styleTextAutospace = mTextStyle->EffectiveTextAutospace();
   if (TextAutospace::Enabled(styleTextAutospace, mFrame)) {
     mTextAutospace.emplace(styleTextAutospace,
-                           GetFontMetrics()->InterScriptSpacingWidth());
+                           GetFontMetrics()->InterScriptSpacingWidth(
+                               mTextStyle->EffectiveTextAutospaceSize()));
   }
 }
 
@@ -4952,15 +4961,14 @@ static void VerifyNotDirty(nsFrameState state) {
 #endif
 
 nsIFrame* NS_NewTextFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell) nsTextFrame(aStyle, aPresShell->GetPresContext());
+  return new nsTextFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsTextFrame)
 
 nsIFrame* NS_NewContinuingTextFrame(PresShell* aPresShell,
                                     ComputedStyle* aStyle) {
-  return new (aPresShell)
-      nsContinuingTextFrame(aStyle, aPresShell->GetPresContext());
+  return new nsContinuingTextFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsContinuingTextFrame)

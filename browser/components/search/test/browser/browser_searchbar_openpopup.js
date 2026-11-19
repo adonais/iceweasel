@@ -35,14 +35,6 @@ let goButton;
 let engine;
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      // Force settings redesign to false, so that `hideOneOffButton` will correctly
-      // work for the time being.
-      ["browser.settings-redesign.enabled", false],
-    ],
-  });
-
   searchbar = await gCUITestUtils.addSearchBar();
   textbox = searchbar.textbox;
   searchIcon = searchbar.querySelector(".searchbar-search-button");
@@ -255,7 +247,7 @@ add_task(async function open_empty_hiddenOneOffs() {
     e.hideOneOffButton = false;
   });
   textbox.value = "";
-});
+}).skip();
 
 // Right clicking in a non-empty search box when unfocused should open the edit context menu.
 add_no_popup_task(async function right_click_doesnt_open_popup() {

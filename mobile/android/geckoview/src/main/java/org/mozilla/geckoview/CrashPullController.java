@@ -23,6 +23,9 @@ import org.mozilla.gecko.util.GeckoBundle;
  * of the handling, i.e., notifying the user to ask for those crash submission.
  */
 public class CrashPullController {
+  /** Public constructor for CrashPullController. */
+  public CrashPullController() {}
+
   private static final String LOGTAG = "CrashPull";
 
   /**

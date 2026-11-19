@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<style>
+#target {
+  width: 100px;
+  height: 100px;
+}
+#scroll-container {
+  overflow: scroll;
+  #scroll-content {
+    height: 2000px;
+  }
+}
+</style>
+<body onload="run()">
+<div id="target"></div>
+<div id="scroll-container">
+<div id="scroll-content">
+</body>
+<script>
+function run() {
+  const scrollContainer = document.getElementById("scroll-container");
+  scrollContainer.style.contentVisibility = "hidden";
+  scrollContainer.scrollTo({top: 1870, behavior: "smooth"});
+  target.animate([{opacity: "0"}], {timeline:
+    new ScrollTimeline({source: scrollContainer})
+  });
+}
+</script>

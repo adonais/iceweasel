@@ -19,6 +19,7 @@
 #include "vm/SelfHosting.h"
 
 #include "vm/JSObject-inl.h"
+#include "vm/NativeObject-inl.h"
 
 using namespace js;
 
@@ -688,4 +689,76 @@ bool js::OptimizeWeakSetPrototypeAddFuse::checkInvariant(JSContext* cx) {
   }
   return ObjectHasDataPropertyFunction(proto, NameToId(cx->names().add),
                                        WeakSetObject::add);
+}
+
+static bool ProtoHasNoIndexedProps(NativeObject* proto) {
+  return proto->getDenseInitializedLength() == 0 &&
+         proto->getDenseCapacity() == 0 && !proto->isIndexed();
+}
+
+bool js::ObjectProtoHasNoIndexedPropsFuse::checkInvariant(JSContext* cx) {
+  auto* objectProto = &cx->global()->getObjectPrototype().as<NativeObject>();
+  MOZ_ASSERT(objectProto->staticPrototype() == nullptr,
+             "Object.prototype has an immutable null [[Prototype]]");
+  return ProtoHasNoIndexedProps(objectProto);
+}
+
+void js::ObjectProtoHasNoIndexedPropsFuse::popFuse(JSContext* cx,
+                                                   RealmFuses& realmFuses) {
+  InvalidatingRealmFuse::popFuse(cx, realmFuses);
+  realmFuses.arrayProtoHasNoIndexedPropsFuse.popFuse(cx, realmFuses);
+  realmFuses.stringProtoHasNoIndexedPropsFuse.popFuse(cx, realmFuses);
+}
+
+bool js::ArrayProtoHasNoIndexedPropsFuse::checkInvariant(JSContext* cx) {
+  NativeObject* arrayProto = cx->global()->maybeGetArrayPrototype();
+  if (!arrayProto) {
+    return true;
+  }
+  auto* objectProto = &cx->global()->getObjectPrototype().as<NativeObject>();
+  return ProtoHasNoIndexedProps(arrayProto) &&
+         arrayProto->staticPrototype() == objectProto &&
+         cx->realm()->realmFuses.objectProtoHasNoIndexedPropsFuse.intact();
+}
+
+bool js::StringProtoHasNoIndexedPropsFuse::checkInvariant(JSContext* cx) {
+  auto* stringProto =
+      cx->global()->maybeGetPrototype<NativeObject>(JSProto_String);
+  if (!stringProto) {
+    return true;
+  }
+  auto* objectProto = &cx->global()->getObjectPrototype().as<NativeObject>();
+  return ProtoHasNoIndexedProps(stringProto) &&
+         stringProto->staticPrototype() == objectProto &&
+         cx->realm()->realmFuses.objectProtoHasNoIndexedPropsFuse.intact();
+}
+
+mozilla::Maybe<RealmFuses::FuseIndex> js::MaybeGetHasNoIndexedPropsFuseIndex(
+    GlobalObject* global, JSObject* proto) {
+  if (!proto) {
+    return mozilla::Nothing();
+  }
+  if (proto == global->maybeGetPrototype(JSProto_Object)) {
+    return mozilla::Some(
+        RealmFuses::FuseIndex::ObjectProtoHasNoIndexedPropsFuse);
+  }
+  if (proto == global->maybeGetArrayPrototype()) {
+    return mozilla::Some(
+        RealmFuses::FuseIndex::ArrayProtoHasNoIndexedPropsFuse);
+  }
+  if (proto == global->maybeGetPrototype(JSProto_String)) {
+    return mozilla::Some(
+        RealmFuses::FuseIndex::StringProtoHasNoIndexedPropsFuse);
+  }
+  return mozilla::Nothing();
+}
+
+InvalidatingRealmFuse* js::MaybeGetHasNoIndexedPropsFuse(NativeObject* proto) {
+  auto index = MaybeGetHasNoIndexedPropsFuseIndex(&proto->global(), proto);
+  if (index.isNothing()) {
+    return nullptr;
+  }
+  MOZ_ASSERT(RealmFuses::isInvalidatingFuse(*index));
+  GuardFuse* fuse = proto->realm()->realmFuses.getFuseByIndex(*index);
+  return static_cast<InvalidatingRealmFuse*>(fuse);
 }

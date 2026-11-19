@@ -564,9 +564,6 @@ skip-if = [
 ]
 
 ["test_ext_proxy_socks.js"]
-skip-if = [
-  "socketprocess_networking",
-]
 run-sequentially = ["true"] # TCPServerSocket fails otherwise
 
 ["test_ext_proxy_speculative.js"]

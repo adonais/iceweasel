@@ -8,6 +8,10 @@
 // mousemove event.
 const TIME_BEFORE_SORTING_AGAIN = 5000;
 
+// How long a row's unload/reload button ignores further clicks, so a
+// double-click doesn't act twice.
+const ACTION_REPEAT_DELAY_MS = 500;
+
 // How long we should wait between samples.
 const MINIMUM_INTERVAL_BETWEEN_SAMPLES_MS = 1000;
 
@@ -47,6 +51,13 @@ ChromeUtils.defineLazyGetter(this, "ProfilerPopupBackground", function () {
 });
 
 const { WebExtensionPolicy } = Cu.getGlobalForObject(Services);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "IDNService",
+  "@mozilla.org/network/idn-service;1",
+  Ci.nsIIDNService
+);
 
 const SHOW_THREADS = Services.prefs.getBoolPref(
   "toolkit.aboutProcesses.showThreads"
@@ -155,6 +166,29 @@ function* iterateBrowsingContexts(browsingContext) {
   }
 }
 
+// Host-less URIs group under their scheme, except about: pages, which group
+// per page ignoring the query (about:reader?url=...).
+function getSiteKey(uri) {
+  try {
+    return Services.eTLD.getSchemelessSite(uri) || uri.scheme;
+  } catch (e) {
+    return uri.schemeIs("about") ? uri.prePath + uri.filePath : uri.scheme;
+  }
+}
+
+// Shown in place of the key: punycode decoded under the address bar's
+// spoofing rules, and an extension's name rather than its UUID.
+function getSiteLabel(uri, siteKey) {
+  if (uri.schemeIs("moz-extension")) {
+    return WebExtensionPolicy.getByHostname(uri.host)?.name ?? siteKey;
+  }
+  try {
+    return IDNService.convertToDisplayIDN(siteKey);
+  } catch (e) {
+    return siteKey;
+  }
+}
+
 /**
  * Attributes per-process resource usage (from `State.getCounters()`) to the
  * individual tabs that share each process, weighted by how much of that
@@ -164,6 +198,9 @@ class TabAttribution {
   // Set once by init(); read synchronously after that since core count
   // doesn't change at runtime.
   _cpuCount = 1;
+  // Keyed by <tab>: a reloading tab shows its initial about:blank until the
+  // load commits, and keeps its last real URI meanwhile.
+  _lastURIs = new WeakMap();
 
   async init() {
     try {
@@ -205,6 +242,15 @@ class TabAttribution {
         // currentURI/contentTitle are lazy getters backed by SessionStore's
         // lazy tab data, so they stay meaningful with no content process.
         let uri = browser.currentURI;
+        let windowGlobal = browser.browsingContext?.currentWindowGlobal;
+        if (
+          browser.isConnected &&
+          (!windowGlobal || windowGlobal.isInitialDocument)
+        ) {
+          uri = this._lastURIs.get(tab) ?? uri;
+        } else {
+          this._lastURIs.set(tab, uri);
+        }
         if (!uri || uri.schemeIs("chrome")) {
           continue;
         }
@@ -214,8 +260,9 @@ class TabAttribution {
           browser,
           uri,
           title: tab.label || browser.contentTitle || "",
-          // No content process -- discarded or never loaded.
-          discarded: !browser.outerWindowID,
+          // Discarded or never loaded. Not !outerWindowID, which stays unset
+          // for a moment after a reload re-inserts the browser.
+          discarded: !browser.isConnected,
         });
       }
     }
@@ -255,7 +302,8 @@ class TabAttribution {
   }
 
   // `slopeCpuOfTotal` is a fraction of total CPU capacity, not one core, so
-  // entries across tabs are summable.
+  // entries across tabs are summable. It's null until each of the tab's
+  // processes has two samples.
   getTabCounters(counters) {
     let tabs = this._getTopLevelTabs();
     let { tabWeights, weightsByPid } = this._computeFrameWeights(tabs);
@@ -264,7 +312,7 @@ class TabAttribution {
     let cpuByPid = new Map();
     for (let process of counters) {
       ramByPid.set(process.pid, process.totalRamSize);
-      cpuByPid.set(process.pid, process.slopeCpu ?? 0);
+      cpuByPid.set(process.pid, process.slopeCpu);
     }
 
     return tabs.map(tab => {
@@ -281,20 +329,28 @@ class TabAttribution {
           hasUsageData = true;
           let share = weight / totalWeight;
           totalRamSize += (ramByPid.get(pid) ?? 0) * share;
-          slopeCpuOneCore += (cpuByPid.get(pid) ?? 0) * share;
+          let slopeCpu = cpuByPid.get(pid);
+          slopeCpuOneCore =
+            slopeCpu == null || slopeCpuOneCore == null
+              ? null
+              : slopeCpuOneCore + slopeCpu * share;
         }
       }
+      let siteKey = getSiteKey(tab.uri);
       return {
         tab: tab.tab,
         tabbrowser: tab.tabbrowser,
         uri: tab.uri,
         title: tab.title,
+        siteKey,
+        siteLabel: getSiteLabel(tab.uri, siteKey),
         discarded: tab.discarded,
         // False for discarded/never-loaded tabs and ones whose process
         // isn't in `counters` at all -- shown as "—", not a misleading 0.
         hasUsageData,
         totalRamSize,
-        slopeCpuOfTotal: slopeCpuOneCore / this._cpuCount,
+        slopeCpuOfTotal:
+          slopeCpuOneCore == null ? null : slopeCpuOneCore / this._cpuCount,
       };
     });
   }
@@ -509,6 +565,10 @@ class RowSet {
   _rowsById = new Map();
   _orderedRows = [];
 
+  getRow(rowId) {
+    return this._rowsById.get(rowId);
+  }
+
   _getOrCreateRow(rowId, createRow) {
     let row = this._rowsById.get(rowId);
     if (!row) {
@@ -703,9 +763,6 @@ class ProcessesView extends RowSet {
         break;
       case "rdd":
         fluentName = "about-processes-rdd-process";
-        break;
-      case "socket":
-        fluentName = "about-processes-socket-process";
         break;
       case "forkServer":
         fluentName = "about-processes-fork-server-process";
@@ -1228,6 +1285,11 @@ class ProcessesView extends RowSet {
   }
 }
 
+function updateTriStateCheckbox(checkbox, selectedCount, total) {
+  checkbox.checked = !!selectedCount && selectedCount == total;
+  checkbox.indeterminate = !!selectedCount && selectedCount < total;
+}
+
 // Shared by both view/controller pairs below (ProcessesView and
 // ProcessesTabView), so neither needs to reach into the other's instance.
 function fillCell(elt, { classes, fluentName, fluentArgs }) {
@@ -1274,6 +1336,17 @@ function formatMemory(value) {
   return {
     unit: "B",
     amount: value,
+  };
+}
+
+// Rounded to the units telemetry reports: MB and hundredths of a percent.
+function summarizeTabCounters(tabCounters) {
+  let { totalRamSize, slopeCpuOfTotal } = sumTabCounters(tabCounters);
+  return {
+    totalTabCount: tabCounters.length,
+    totalRamMb: Math.round(totalRamSize / ONE_MEGA),
+    totalCpuHundredths:
+      slopeCpuOfTotal == null ? null : Math.round(slopeCpuOfTotal * 10000),
   };
 }
 
@@ -1776,15 +1849,12 @@ class ProcessesController {
         childRow = childRow.nextSibling
       ) {
         childRow.classList.add("killing");
-        let win = childRow.win;
+        const win = childRow.win;
         if (win) {
           this._view._killedRecently.push({ pid: win.outerWindowId });
-          if (win.tab && win.tab.tabbrowser) {
-            win.tab.tabbrowser.discardBrowser(
-              win.tab.tab,
-              /* aForceDiscard = */ true
-            );
-          }
+          win.tab?.tabbrowser?.discardBrowser(win.tab.tab, {
+            forceDiscard: true,
+          });
         }
       }
 
@@ -1869,28 +1939,33 @@ class ProcessesController {
   }
 }
 
-// A tab's CPU share below this reads as "< 0.1%" rather than a percent that
-// would round to "0%" and look identical to genuinely idle.
-const TAB_CPU_NEGLIGIBLE_THRESHOLD = 0.001;
+// Below this share of total capacity (0.005%) the value would display as
+// "0.00%", indistinguishable from idle.
+const TAB_CPU_ROUNDS_TO_ZERO_THRESHOLD = 0.00005;
 
-// slopeCpuOfTotal is summable across tabs (see TabAttribution.getTabCounters).
+// slopeCpuOfTotal is summable across tabs (see TabAttribution.getTabCounters),
+// and null if any tab's is still null.
 function sumTabCounters(tabCounters) {
   let totalRamSize = 0;
   let slopeCpuOfTotal = 0;
   for (let tabData of tabCounters) {
     totalRamSize += tabData.totalRamSize;
-    slopeCpuOfTotal += tabData.slopeCpuOfTotal;
+    slopeCpuOfTotal =
+      tabData.slopeCpuOfTotal == null || slopeCpuOfTotal == null
+        ? null
+        : slopeCpuOfTotal + tabData.slopeCpuOfTotal;
   }
   return { totalRamSize, slopeCpuOfTotal };
 }
 
-// For tabs with no process to attribute usage from. Clears the l10n
-// attributes so a locale-change re-translation can't overwrite the dash.
-function fillNoDataCell(cell, className) {
+// "—" for tabs with no process to attribute usage from, "…" for CPU not yet
+// measured. Clears the l10n attributes so a locale-change re-translation
+// can't overwrite the text.
+function fillNoDataCell(cell, className, text = "—") {
   cell.className = className;
   cell.removeAttribute("data-l10n-id");
   cell.removeAttribute("data-l10n-args");
-  cell.textContent = "—";
+  cell.textContent = text;
 }
 
 function fillTabMemoryCell(cell, totalRamSize, hasUsageData = true) {
@@ -1901,7 +1976,10 @@ function fillTabMemoryCell(cell, totalRamSize, hasUsageData = true) {
   let formatted = formatMemory(totalRamSize);
   fillCell(cell, {
     classes: ["memory"],
-    fluentName: "about-processes-total-memory-size-no-change",
+    fluentName:
+      formatted.unit == "GB"
+        ? "about-processes-tab-memory-gb"
+        : "about-processes-total-memory-size-no-change",
     fluentArgs: {
       total: formatted.amount,
       totalUnit: gLocalizedUnits.memory[formatted.unit],
@@ -1914,13 +1992,17 @@ function fillTabCpuCell(cell, slopeCpuOfTotal, hasUsageData = true) {
     fillNoDataCell(cell, "cpu");
     return;
   }
-  let fluentName = "about-processes-tab-cpu";
+  if (slopeCpuOfTotal == null) {
+    fillNoDataCell(cell, "cpu", "…");
+    return;
+  }
+  let fluentName = "about-processes-tab-cpu2";
   let fluentArgs = { percent: slopeCpuOfTotal };
   if (slopeCpuOfTotal == 0) {
     fluentName = "about-processes-tab-cpu-fully-idle";
     fluentArgs = undefined;
-  } else if (slopeCpuOfTotal < TAB_CPU_NEGLIGIBLE_THRESHOLD) {
-    fluentName = "about-processes-tab-cpu-almost-idle";
+  } else if (slopeCpuOfTotal < TAB_CPU_ROUNDS_TO_ZERO_THRESHOLD) {
+    fluentName = "about-processes-tab-cpu-almost-idle2";
     fluentArgs = undefined;
   }
   fillCell(cell, { classes: ["cpu"], fluentName, fluentArgs });
@@ -1932,10 +2014,49 @@ function fillTabCpuCell(cell, slopeCpuOfTotal, hasUsageData = true) {
  * is its own, since the two views show different columns.
  */
 class ProcessesTabView extends RowSet {
-  commit(tabCounters, { reorder = true } = {}) {
-    for (let tabData of tabCounters) {
-      let row = this._getOrCreateRow(tabData.tab, () => this._createRow());
-      this._updateRow(row, tabData);
+  #nextRowId = 0;
+  #searching = false;
+
+  // groups drives the rows; tabCounters is only for the flat totals-bar sum.
+  // During a search, rows outside group.shownTabs are hidden, not removed, so
+  // they keep their state. Like row order, that changes only on a reorder.
+  commit(tabCounters, groups, { reorder = true, searching = false } = {}) {
+    this.#searching = searching;
+    let setShown = (row, shown) => {
+      if (reorder || !row.parentNode) {
+        row.hidden = !shown;
+      }
+    };
+    for (let group of groups) {
+      let shownTabs = new Set(group.shownTabs);
+      // A new group waits for the reorder, so no row shifts under the cursor.
+      if (group.solo || (!reorder && !this.getRow(group.siteKey))) {
+        for (let tabData of group.tabs) {
+          let row = this._getOrCreateTabRow(tabData);
+          row.classList.remove("child-row", "collapsed");
+          setShown(row, shownTabs.has(tabData));
+        }
+        continue;
+      }
+      let headerRow = this._getOrCreateRow(group.siteKey, () =>
+        // A solo tab gaining a sibling opens its new group, so the tab being
+        // looked at doesn't disappear.
+        this._createHeaderRow(
+          group.tabs.some(tabData => {
+            let row = this.getRow(tabData.tab);
+            return row && !row.classList.contains("child-row");
+          })
+        )
+      );
+      setShown(headerRow, shownTabs.size);
+      for (let tabData of group.tabs) {
+        let row = this._getOrCreateTabRow(tabData);
+        row.classList.add("child-row");
+        setShown(row, shownTabs.has(tabData));
+      }
+      this._updateHeaderRow(headerRow, group);
+      this.setSiteExpanded(headerRow, headerRow.classList.contains("expanded"));
+      this.updateHeaderSelection(headerRow);
     }
     if (reorder) {
       this._commitOrder();
@@ -1945,79 +2066,223 @@ class ProcessesTabView extends RowSet {
     this._updateTotals(tabCounters);
   }
 
+  _getOrCreateTabRow(tabData) {
+    let row = this._getOrCreateRow(tabData.tab, () => this._createTabRow());
+    this._updateRow(row, tabData);
+    return row;
+  }
+
+  // labelId names the row's checkbox.
+  _createRow(className, labelId) {
+    const cellCount = 5;
+    let row = document.createElement("tr");
+    row.className = className;
+    while (row.children.length < cellCount) {
+      row.appendChild(document.createElement("td"));
+    }
+
+    let selectCell = row.children[0];
+    selectCell.className = "select-cell";
+    let checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "select-checkbox";
+    checkbox.setAttribute("aria-labelledby", labelId);
+    selectCell.appendChild(checkbox);
+    row.checkbox = checkbox;
+
+    let unloadButton = document.createElement("button");
+    unloadButton.className = "action-icon unload-icon";
+    row.children[4].appendChild(unloadButton);
+    row.unloadButton = unloadButton;
+
+    return row;
+  }
+
+  // Discarded rows stay listed, dimmed, with a reload button in place of
+  // unload.
+  _updateUnloadButton(row, discarded, fluentId, fluentArgs) {
+    row.classList.toggle("killed", discarded);
+    row.unloadButton.classList.toggle("unload-icon", !discarded);
+    row.unloadButton.classList.toggle("reload-icon", discarded);
+    document.l10n.setAttributes(row.unloadButton, fluentId, fluentArgs);
+  }
+
+  _createHeaderRow(expanded) {
+    let label = document.createElement("span");
+    label.className = "site-label";
+    label.id = `site-label-${this.#nextRowId++}`;
+
+    let row = this._createRow("site-header-row", label.id);
+    row.classList.toggle("expanded", expanded);
+    row.label = label;
+    let nameCell = row.children[1];
+
+    let caret = document.createElement("button");
+    caret.className = "caret-icon ghost-button icon-button";
+    caret.setAttribute("aria-labelledby", label.id);
+    nameCell.appendChild(caret);
+    row.caret = caret;
+
+    let favicon = document.createElement("span");
+    favicon.className = "site-favicon";
+    nameCell.appendChild(favicon);
+    row.favicon = favicon;
+
+    nameCell.appendChild(label);
+
+    let tabCount = document.createElement("span");
+    tabCount.className = "site-tab-count";
+    // l10n fills the count asynchronously, and an empty span can't be clicked.
+    tabCount.textContent = " ";
+    nameCell.appendChild(tabCount);
+    row.tabCount = tabCount;
+
+    return row;
+  }
+
+  // The header row's .expanded class is the group's expanded state. Every
+  // group shows expanded during a search, without changing that state.
+  setSiteExpanded(row, expanded) {
+    row.classList.toggle("expanded", expanded);
+    let shownExpanded = expanded || this.#searching;
+    row.caret.disabled = this.#searching;
+    row.caret.setAttribute("aria-expanded", shownExpanded);
+    document.l10n.setAttributes(
+      row.caret,
+      shownExpanded
+        ? "about-processes-collapse-site"
+        : "about-processes-expand-site"
+    );
+    for (let tabData of row.group.tabs) {
+      this.getRow(tabData.tab).classList.toggle("collapsed", !shownExpanded);
+    }
+  }
+
+  getShownChildRows(row) {
+    return row.group.tabs
+      .map(tabData => this.getRow(tabData.tab))
+      .filter(childRow => !childRow.hidden);
+  }
+
+  // Any selected child highlights the header; there is no partial shade.
+  updateHeaderSelection(row) {
+    let rows = this.getShownChildRows(row);
+    let selectedCount = rows.filter(
+      childRow => childRow.checkbox.checked
+    ).length;
+    updateTriStateCheckbox(row.checkbox, selectedCount, rows.length);
+    row.toggleAttribute("selected", !!selectedCount);
+  }
+
+  _updateHeaderRow(row, group) {
+    row.group = group;
+    row.classList.remove("departed");
+    row.inert = false;
+    let tabs = this.getShownChildRows(row).map(childRow => childRow.tabData);
+    let allDiscarded = tabs.every(tabData => tabData.discarded);
+    this._updateUnloadButton(
+      row,
+      allDiscarded,
+      allDiscarded
+        ? "about-processes-reload-site"
+        : "about-processes-unload-site",
+      { site: group.siteLabel }
+    );
+    let [, nameCell, memoryCell, cpuCell] = row.children;
+    nameCell.className = "name";
+    // The group's first tab stands in for the site; a real element rather than
+    // td.favicon's background, which leaves no room for the caret.
+    let image = group.tabs[0].tab.getAttribute("image");
+    row.favicon.style.backgroundImage = image ? `url('${image}')` : "";
+    row.label.textContent = group.siteLabel;
+    document.l10n.setAttributes(
+      row.tabCount,
+      "about-processes-site-tab-count",
+      { count: tabs.length }
+    );
+    // A fully-discarded group has nothing to sum, which reads as "—", not "0B".
+    let hasUsageData = tabs.some(tabData => tabData.hasUsageData);
+    let { totalRamSize, slopeCpuOfTotal } = sumTabCounters(tabs);
+    fillTabMemoryCell(memoryCell, totalRamSize, hasUsageData);
+    fillTabCpuCell(cpuCell, slopeCpuOfTotal, hasUsageData);
+  }
+
   _updateTotals(tabCounters) {
     let [countCell, memoryCell, cpuCell] = document.querySelector(
-      "#process-tfoot > tr"
+      "#process-tfoot > tr.totals-row"
     ).children;
     document.l10n.setAttributes(countCell, "about-processes-tab-count", {
       count: tabCounters.length,
     });
     let { totalRamSize, slopeCpuOfTotal } = sumTabCounters(tabCounters);
-    fillTabMemoryCell(memoryCell, totalRamSize);
-    fillTabCpuCell(cpuCell, slopeCpuOfTotal);
+    let hasUsageData = tabCounters.some(tabData => tabData.hasUsageData);
+    fillTabMemoryCell(memoryCell, totalRamSize, hasUsageData);
+    fillTabCpuCell(cpuCell, slopeCpuOfTotal, hasUsageData);
   }
 
-  // Unlike ProcessesView.discardUpdate(), appends new rows immediately so a
-  // freshly opened tab isn't invisible for the freeze window -- existing
-  // rows' DOM position stays untouched either way.
+  // Unlike ProcessesView.discardUpdate(), appends new rows immediately (no
+  // invisible freeze window). Rows that would leave stay in place, dimmed and
+  // inert, so nothing shifts under the cursor; the next reorder removes them.
   _discardOrder() {
     let tbody = document.getElementById("process-tbody");
-    for (let row of this._orderedRows) {
-      if (!row.parentNode) {
+    let live = new Set(this._orderedRows);
+    for (let row of tbody.children) {
+      if (!live.has(row)) {
+        this.setRowSelected(row, false);
+        row.classList.add("departed");
+        row.inert = true;
+      }
+    }
+    // A new tab in an existing group joins it instead of the end of the list.
+    let rows = this._orderedRows;
+    for (let [i, row] of rows.entries()) {
+      if (row.parentNode) {
+        continue;
+      }
+      if (row.classList.contains("child-row")) {
+        rows[i - 1].after(row);
+      } else {
         tbody.appendChild(row);
       }
     }
     this._orderedRows = [];
   }
 
-  _createRow() {
-    const cellCount = 4;
-    let row = document.createElement("tr");
-    row.className = "tab-row";
-    while (row.children.length < cellCount) {
-      row.appendChild(document.createElement("td"));
-    }
+  _createTabRow() {
+    let nameLink = document.createElement("button");
+    nameLink.className = "name-link text-link";
+    nameLink.id = `tab-name-${this.#nextRowId++}`;
 
-    // The unload button, not the row, is the Tab stop -- same as the
-    // default view's kill button; rows here don't carry their own
-    // tabindex.
-    let actionCell = row.children[3];
-    let unloadButton = document.createElement("span");
-    unloadButton.className = "action-icon unload-icon";
-    unloadButton.setAttribute("role", "button");
-    unloadButton.setAttribute("tabindex", "0");
-    document.l10n.setAttributes(unloadButton, "about-processes-unload-tab");
-    actionCell.appendChild(unloadButton);
-    row.unloadButton = unloadButton;
-
+    let row = this._createRow("tab-row", nameLink.id);
+    row.children[1].appendChild(nameLink);
+    row.nameLink = nameLink;
     return row;
+  }
+
+  setRowSelected(row, isSelected) {
+    row.toggleAttribute("selected", isSelected);
+    row.checkbox.checked = isSelected;
   }
 
   _updateRow(row, tabData) {
     row.tabData = tabData;
+    row.classList.remove("departed");
+    row.inert = false;
 
-    // Keep discarded tabs in the list, shown asleep rather than removed.
-    row.classList.toggle("killed", !!tabData.discarded);
     if (tabData.discarded) {
       row.classList.remove("killing");
-      row.removeAttribute("aria-busy");
     }
-    // Kept visible and focusable rather than hidden, so a discarded row
-    // still has a keyboard-reachable way back. Selecting a discarded tab
-    // already triggers Firefox's own restore-on-select, so this navigates
-    // there rather than claiming to reload in place.
-    row.unloadButton.classList.toggle("unload-icon", !tabData.discarded);
-    row.unloadButton.classList.toggle("go-to-tab-icon", !!tabData.discarded);
-    document.l10n.setAttributes(
-      row.unloadButton,
+    this._updateUnloadButton(
+      row,
+      !!tabData.discarded,
       tabData.discarded
-        ? "about-processes-go-to-tab"
+        ? "about-processes-reload-tab"
         : "about-processes-unload-tab"
     );
 
-    let [nameCell, memoryCell, cpuCell] = row.children;
+    let [, nameCell, memoryCell, cpuCell] = row.children;
     nameCell.className = "name favicon";
-    nameCell.textContent = tabData.title || tabData.uri?.spec || "";
+    row.nameLink.textContent = tabData.title || tabData.uri?.spec || "";
     // Rows are reused across polls, so a stale image needs clearing, not
     // just skipping, when the current tab has none.
     let image = tabData.tab.getAttribute("image");
@@ -2036,6 +2301,14 @@ class ProcessesTabController {
   _sortAscendent = false;
   _lastTabCounters = null;
   _lastMouseEvent = 0;
+  _panelOpenedRecorded = false;
+  // From the openType URL param SidebarController appends; absent means the
+  // page was reached without the sidebar.
+  _openType = "direct_nav";
+  // Trimmed, original casing (echoed in the no-results message); "" means no
+  // filter.
+  _searchQuery = "";
+  _noResultsQuery = "";
 
   constructor(view) {
     this._view = view;
@@ -2043,6 +2316,11 @@ class ProcessesTabController {
   }
 
   init() {
+    let openType = new URLSearchParams(location.search).get("openType");
+    if (["sidebar_launch", "restored", "other"].includes(openType)) {
+      this._openType = openType;
+    }
+
     // Prefetch localizations: this view's entry point doesn't go through
     // ProcessesController.init(), so gLocalizedUnits isn't populated yet.
     this._promiseLocalizations = promiseLocalizations();
@@ -2063,34 +2341,76 @@ class ProcessesTabController {
       "about-processes-column-memory-resident-tab"
     );
 
-    let tbody = document.getElementById("process-tbody");
-
-    // Single click, and Enter/Space keypress: close a tab. One delegate at
-    // the tbody level, matching ProcessesController.init()'s own pattern,
-    // rather than a listener per row.
-    tbody.addEventListener("click", event => {
-      this._lastMouseEvent = Date.now();
-      this._handleActivate(event.target);
-    });
-    tbody.addEventListener("keypress", event => {
-      if (event.key === "Enter" || event.key === " ") {
-        // Matches the click handler -- else keyboard-only users never get
-        // the freeze below, and a poll can reorder focus out from under them.
-        this._lastMouseEvent = Date.now();
-        this._handleActivate(event.target);
-      }
+    this._selectAllCheckbox = document.getElementById("select-all-checkbox");
+    this._selectAllCheckbox.addEventListener("click", () => {
+      this._setRowsSelected(
+        this._getDisplayedRows(),
+        this._selectAllCheckbox.checked
+      );
     });
 
-    // Double click: navigate to the tab. Not when the action button itself
-    // was double-clicked -- its own click handler already acted on the tab,
-    // and navigating too would immediately reload it right back.
-    tbody.addEventListener("dblclick", event => {
-      if (event.target.closest(".action-icon")) {
+    this._bulkUnloadButton = document.getElementById("bulk-unload-button");
+    this._bulkReloadButton = document.getElementById("bulk-reload-button");
+    this._bulkUnloadButton.addEventListener("click", () =>
+      this._unloadOrReloadSelectedTabs(false)
+    );
+    this._bulkReloadButton.addEventListener("click", () =>
+      this._unloadOrReloadSelectedTabs(true)
+    );
+    document
+      .getElementById("bulk-close-button")
+      .addEventListener("click", () => this._closeSelectedTabs());
+    document
+      .getElementById("bulk-cancel-button")
+      .addEventListener("click", () => this._clearSelection());
+
+    this._expandAllButton = document.getElementById("expand-all-button");
+    this._expandAllButton.addEventListener("click", () =>
+      this._toggleAllSites()
+    );
+
+    let searchInput = document.getElementById("tab-search-input");
+    searchInput.addEventListener("MozInputSearch:search", event => {
+      let query = event.detail.query.trim();
+      if (query == this._searchQuery) {
         return;
       }
+      this._searchQuery = query;
+      if (this._lastTabCounters) {
+        this._commitView(this._lastTabCounters, { force: true });
+      }
+    });
+
+    let tbody = document.getElementById("process-tbody");
+
+    // One delegate at the tbody level, matching ProcessesController.init()'s
+    // own pattern, rather than a listener per row. Every control is a native
+    // button or checkbox, so keyboard activation arrives here as a click too,
+    // and starts the mouse freeze the same way.
+    tbody.addEventListener("click", event => {
+      this._lastMouseEvent = Date.now();
+      let headerRow = event.target.closest("tr.site-header-row");
+      if (headerRow) {
+        // The label and count are mouse-only; the caret is the keyboard path.
+        if (event.target.closest(".caret-icon, .site-label, .site-tab-count")) {
+          if (!headerRow.caret.disabled) {
+            this._toggleSite(headerRow);
+          }
+          return;
+        }
+        this._handleActivate(event.target);
+        if (event.target.closest(".select-checkbox")) {
+          this._setRowsSelected(
+            this._view.getShownChildRows(headerRow),
+            event.target.checked
+          );
+        }
+        return;
+      }
+      this._handleActivate(event.target);
       let row = event.target.closest("tr.tab-row");
       if (row) {
-        this._navigateToTab(row);
+        this._handleRowClick(event, row);
       }
     });
 
@@ -2098,17 +2418,25 @@ class ProcessesTabController {
       this._lastMouseEvent = Date.now();
     });
 
+    // Escape doesn't fire keypress, so it needs its own listener to clear a selection.
+    document.addEventListener("keydown", event => {
+      // Escape in the search box is for the search, not the selection.
+      if (
+        event.key === "Escape" &&
+        this._getSelectedTabData().length &&
+        !event.target.closest("moz-input-search")
+      ) {
+        event.preventDefault();
+        this._clearSelection();
+      }
+    });
+
     // State already re-polls every interval tick regardless of
     // document.hidden, so re-derive tab counters from it here instead of
     // forcing another ProcInfo snapshot on resume.
     window.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
-        let tabCounters = this._tabAttribution.getTabCounters(
-          State.getCounters()
-        );
-        this._lastTabCounters = tabCounters;
-        this._sortTabCounters(tabCounters);
-        this._commitView(tabCounters, { force: true });
+        this._rerender({ force: true });
       }
     });
 
@@ -2150,39 +2478,246 @@ class ProcessesTabController {
   }
 
   _handleActivate(target) {
-    // Not .unload-icon: that class is swapped for .go-to-tab-icon once
+    // Not .unload-icon: that class is swapped for .reload-icon once
     // discarded, but the button itself is still the only activation target.
     if (!target.classList.contains("action-icon")) {
       return;
     }
-    let row = target.closest("tr.tab-row");
-    if (row.tabData.discarded) {
-      this._navigateToTab(row);
-    } else {
-      this._unloadRow(row);
+    let headerRow = target.closest("tr.site-header-row");
+    if (headerRow) {
+      this._runRowAction(headerRow, () =>
+        this._unloadOrReloadSiteRow(
+          headerRow,
+          this._view
+            .getShownChildRows(headerRow)
+            .every(row => row.tabData.discarded)
+        )
+      );
+      return;
     }
+    let row = target.closest("tr.tab-row");
+    this._runRowAction(row, () =>
+      row.tabData.discarded ? this._reloadRow(row) : this._unloadRow(row)
+    );
   }
 
   _navigateToTab(row) {
+    this._recordTabAction([row.tabData], "navigate", "tab_row");
     let { tab, tabbrowser } = row.tabData;
     tabbrowser.selectedTab = tab;
     tabbrowser.documentGlobal.focus();
   }
 
-  // Unloads rather than closes, then dims the row for feedback until the
-  // next poll confirms the discard. Not removeTab(): the tab stays open,
-  // just asleep, and reload-on-reselect brings it back.
+  _handleRowClick(event, row) {
+    if (event.target.closest(".select-checkbox")) {
+      this._setRowsSelected([row], event.target.checked);
+      return;
+    }
+    if (event.target.closest(".name-link")) {
+      this._navigateToTab(row);
+    }
+  }
+
+  // Shown rows of tabs from the last poll. Rows outlive polls, so their
+  // checkboxes hold the selection.
+  _getDisplayedRows() {
+    return (this._lastTabCounters || [])
+      .map(tabData => this._view.getRow(tabData.tab))
+      .filter(row => !row.hidden);
+  }
+
+  _getSelectedTabData() {
+    return this._getDisplayedRows()
+      .filter(row => row.checkbox.checked)
+      .map(row => row.tabData);
+  }
+
+  _setRowsSelected(rows, selected) {
+    for (let row of rows) {
+      this._view.setRowSelected(row, selected);
+    }
+    this._updateSelectAllCheckbox();
+    for (let headerRow of this._getHeaderRows()) {
+      this._view.updateHeaderSelection(headerRow);
+    }
+    this._updateBulkActionBar();
+  }
+
+  _updateSelectAllCheckbox() {
+    let rows = this._getDisplayedRows();
+    updateTriStateCheckbox(
+      this._selectAllCheckbox,
+      rows.filter(row => row.checkbox.checked).length,
+      rows.length
+    );
+  }
+
+  _clearSelection() {
+    this._setRowsSelected(this._getDisplayedRows(), false);
+  }
+
+  _updateBulkActionBar() {
+    let selectedTabData = this._getSelectedTabData();
+    let selectedCount = selectedTabData.length;
+    document.body.classList.toggle("bulk-action-visible", !!selectedCount);
+    if (!selectedCount) {
+      return;
+    }
+
+    this._bulkUnloadButton.hidden = selectedTabData.every(
+      tabData => tabData.discarded
+    );
+
+    let [, countCell, memoryCell, cpuCell] = document.querySelector(
+      "#process-tfoot > tr.bulk-summary-row"
+    ).children;
+    document.l10n.setAttributes(
+      countCell,
+      "about-processes-bulk-selected-count",
+      { count: selectedCount }
+    );
+    let { totalRamSize, slopeCpuOfTotal } = sumTabCounters(selectedTabData);
+    let hasUsageData = selectedTabData.some(tabData => tabData.hasUsageData);
+    fillTabMemoryCell(memoryCell, totalRamSize, hasUsageData);
+    fillTabCpuCell(cpuCell, slopeCpuOfTotal, hasUsageData);
+  }
+
+  // Tab actions are per-tabbrowser, so cross-window selections must be grouped.
+  _groupTabsByTabbrowser(tabDataList) {
+    let groups = new Map();
+    for (let { tab, tabbrowser } of tabDataList) {
+      let tabs = groups.get(tabbrowser);
+      if (!tabs) {
+        tabs = [];
+        groups.set(tabbrowser, tabs);
+      }
+      tabs.push(tab);
+    }
+    return groups;
+  }
+
+  async _unloadOrReloadTabs(tabDataList, reload) {
+    for (let [tabbrowser, tabs] of this._groupTabsByTabbrowser(tabDataList)) {
+      if (reload) {
+        tabbrowser.reloadTabs(tabs);
+      } else {
+        await tabbrowser.explicitUnloadTabs(tabs);
+      }
+    }
+  }
+
+  async _unloadOrReloadSelectedTabs(reload) {
+    let eligible = this._getSelectedTabData();
+    if (!reload) {
+      eligible = eligible.filter(tabData => !tabData.discarded);
+    }
+    if (eligible.length) {
+      this._recordTabAction(eligible, reload ? "reload" : "unload", "bulk_bar");
+    }
+    this._clearSelection();
+    await this._unloadOrReloadTabs(eligible, reload);
+    this._rerender({ force: true });
+  }
+
+  async _closeSelectedTabs() {
+    // Warns from this panel's own window, even for a cross-window selection.
+    let ownTabbrowser = window.browsingContext.topChromeWindow.gBrowser;
+    let selectedTabData = this._getSelectedTabData();
+    if (
+      !ownTabbrowser.warnAboutClosingTabs(
+        selectedTabData.length,
+        ownTabbrowser.constructor.closingTabsEnum.MULTI_SELECTED
+      )
+    ) {
+      return;
+    }
+    this._recordTabAction(selectedTabData, "close", "bulk_bar");
+    for (let [tabbrowser, tabs] of this._groupTabsByTabbrowser(
+      selectedTabData
+    )) {
+      // animate: false so tabs are gone before the eager refresh below runs.
+      tabbrowser.removeTabs(tabs, { animate: false });
+    }
+    this._clearSelection();
+    // Forced: the selection's rows go now, rather than dimming out the freeze.
+    this._rerender({ force: true });
+  }
+
+  // Unloads rather than closes, then dims the row and confirms via an
+  // eager refresh. Not removeTab(): reload-on-reselect brings it back.
   async _unloadRow(row) {
+    this._recordTabAction([row.tabData], "unload", "tab_row");
     row.classList.add("killing");
-    row.setAttribute("aria-busy", "true");
     let { tab, tabbrowser } = row.tabData;
     await tabbrowser.explicitUnloadTabs([tab]);
     if (!tab.hasAttribute("discarded")) {
-      // The tab was ineligible for unload (e.g. a non-remote tab) -- don't
-      // leave it looking busy forever.
+      // The tab was ineligible for unload -- don't leave it looking busy.
       row.classList.remove("killing");
+    }
+    this._rerender();
+  }
+
+  _reloadRow(row) {
+    this._recordTabAction([row.tabData], "reload", "tab_row");
+    row.tabData.tabbrowser.reloadTab(row.tabData.tab);
+    this._rerender();
+  }
+
+  // Ignores repeat activations, like a double-click, until the action has
+  // finished and ACTION_REPEAT_DELAY_MS has passed.
+  async _runRowAction(row, action) {
+    if (row.hasAttribute("aria-busy")) {
+      return;
+    }
+    row.setAttribute("aria-busy", "true");
+    try {
+      await Promise.all([
+        action(),
+        new Promise(resolve => setTimeout(resolve, ACTION_REPEAT_DELAY_MS)),
+      ]);
+    } finally {
       row.removeAttribute("aria-busy");
     }
+  }
+
+  // Doesn't skip the active tab, matching per-row and bulk-bar unload.
+  async _unloadOrReloadSiteRow(row, reload) {
+    let eligible = this._view
+      .getShownChildRows(row)
+      .map(childRow => childRow.tabData)
+      .filter(tabData => !!tabData.discarded == reload);
+    if (eligible.length) {
+      this._recordTabAction(
+        eligible,
+        reload ? "reload" : "unload",
+        "site_header"
+      );
+    }
+    await this._unloadOrReloadTabs(eligible, reload);
+    this._rerender();
+  }
+
+  _recordTabAction(tabDataList, actionType, actionSource) {
+    let affected = summarizeTabCounters(tabDataList);
+    let all = summarizeTabCounters(this._lastTabCounters);
+    Glean.resourceMonitor.tabActionTaken.record({
+      tab_count: affected.totalTabCount,
+      action_type: actionType,
+      tab_ram_mb: affected.totalRamMb,
+      tab_cpu_hundredths: affected.totalCpuHundredths,
+      total_tab_count: all.totalTabCount,
+      total_ram_mb: all.totalRamMb,
+      total_cpu_hundredths: all.totalCpuHundredths,
+      action_source: actionSource,
+    });
+  }
+
+  // Re-reads tab state (closed, discarded, titles) against the last sample.
+  _rerender({ force = false } = {}) {
+    let tabCounters = this._tabAttribution.getTabCounters(State.getCounters());
+    this._lastTabCounters = tabCounters;
+    this._sortTabCounters(tabCounters);
+    this._commitView(tabCounters, { force });
   }
 
   // Re-sorts/re-renders from the last sample rather than update(): resampling
@@ -2197,24 +2732,138 @@ class ProcessesTabController {
     this._commitView(this._lastTabCounters, { force: true });
   }
 
-  _sortTabCounters(tabCounters) {
-    let order;
+  // Also ranks groups, whose aggregates share tabData's field names.
+  _getSortOrder() {
     switch (this._sortColumn) {
       case "column-name":
-        order = (a, b) =>
+        return (a, b) =>
           (a.title || "").localeCompare(b.title || "") ||
           (a.uri?.spec ?? "").localeCompare(b.uri?.spec ?? "");
-        break;
       case "column-cpu-total":
-        order = (a, b) => a.slopeCpuOfTotal - b.slopeCpuOfTotal;
-        break;
+        return (a, b) => a.slopeCpuOfTotal - b.slopeCpuOfTotal;
       case "column-memory-resident":
-        order = (a, b) => a.totalRamSize - b.totalRamSize;
-        break;
+        return (a, b) => a.totalRamSize - b.totalRamSize;
       default:
         throw new Error("Unsupported order: " + this._sortColumn);
     }
+  }
+
+  _sortTabCounters(tabCounters) {
+    let order = this._getSortOrder();
     tabCounters.sort(this._sortAscendent ? order : (a, b) => order(b, a));
+  }
+
+  // Groups the sorted tabCounters by site, keeping each site's tabs in order,
+  // then ranks the groups by the same column, by their displayed name.
+  _groupTabsBySite(tabCounters, reorder) {
+    let displayedGroups = new Map();
+    if (!reorder) {
+      for (let row of this._getHeaderRows()) {
+        for (let { tab } of row.group.tabs) {
+          displayedGroups.set(tab, row.group);
+        }
+      }
+    }
+    let groups = [];
+    for (let [siteKey, tabs] of Map.groupBy(
+      tabCounters,
+      tabData =>
+        displayedGroups.get(tabData.tab)?.siteKey ??
+        (!reorder && this._view.getRow(tabData.tab)
+          ? tabData.tab
+          : tabData.siteKey)
+    )) {
+      let displayedGroup = !reorder && this._view.getRow(siteKey)?.group;
+      let solo = !displayedGroup && tabs.length == 1;
+      // Selected tabs stay shown, so bulk actions only act on shown tabs.
+      let shownTabs = this._searchQuery
+        ? tabs.filter(
+            tabData =>
+              this._matchesSearch(tabData) ||
+              this._view.getRow(tabData.tab)?.checkbox.checked
+          )
+        : tabs;
+      let { totalRamSize, slopeCpuOfTotal } = sumTabCounters(shownTabs);
+      let siteLabel = displayedGroup?.siteLabel ?? tabs[0].siteLabel;
+      groups.push({
+        siteKey,
+        siteLabel,
+        tabs,
+        shownTabs,
+        solo,
+        title: solo ? tabs[0].title || tabs[0].uri?.spec : siteLabel,
+        totalRamSize,
+        slopeCpuOfTotal,
+      });
+    }
+    let order = this._getSortOrder();
+    groups.sort(this._sortAscendent ? order : (a, b) => order(b, a));
+    return groups;
+  }
+
+  // Matches what the row shows: the title, or the URL without one, or the
+  // site's label.
+  _matchesSearch(tabData) {
+    let query = this._searchQuery.toLowerCase();
+    return [tabData.title || tabData.uri?.spec || "", tabData.siteLabel].some(
+      text => text.toLowerCase().includes(query)
+    );
+  }
+
+  // Only on change: the message is a live region, announced on each update.
+  _updateNoResults(tabCounters) {
+    let query = tabCounters.some(tabData => this._matchesSearch(tabData))
+      ? ""
+      : this._searchQuery;
+    if (query == this._noResultsQuery) {
+      return;
+    }
+    this._noResultsQuery = query;
+    let message = document.getElementById("tab-search-no-results");
+    if (query) {
+      document.l10n.setAttributes(
+        message,
+        "about-processes-search-no-results",
+        { query }
+      );
+    } else {
+      message.removeAttribute("data-l10n-id");
+      message.removeAttribute("data-l10n-args");
+      message.textContent = "";
+    }
+  }
+
+  _getHeaderRows() {
+    return document.querySelectorAll("#process-tbody > tr.site-header-row");
+  }
+
+  _updateExpandAllButton() {
+    let headerRows = [...this._getHeaderRows()].filter(row => !row.hidden);
+    let allExpanded =
+      !!headerRows.length &&
+      headerRows.every(row => row.classList.contains("expanded"));
+    this._expandAllButton.classList.toggle("expanded", allExpanded);
+    // Every group shows expanded during a search.
+    this._expandAllButton.disabled = !headerRows.length || !!this._searchQuery;
+    document.l10n.setAttributes(
+      this._expandAllButton,
+      allExpanded
+        ? "about-processes-collapse-all-sites"
+        : "about-processes-expand-all-sites"
+    );
+  }
+
+  _toggleSite(row) {
+    this._view.setSiteExpanded(row, !row.classList.contains("expanded"));
+    this._updateExpandAllButton();
+  }
+
+  _toggleAllSites() {
+    let expanded = !this._expandAllButton.classList.contains("expanded");
+    for (let row of this._getHeaderRows()) {
+      this._view.setSiteExpanded(row, expanded);
+    }
+    this._updateExpandAllButton();
   }
 
   _commitView(tabCounters, { force = false } = {}) {
@@ -2223,7 +2872,15 @@ class ProcessesTabController {
     // to click its unload button. Matches ProcessesController._updateDisplay.
     let reorder =
       force || Date.now() - this._lastMouseEvent >= TIME_BEFORE_SORTING_AGAIN;
-    this._view.commit(tabCounters, { reorder });
+    let groups = this._groupTabsBySite(tabCounters, reorder);
+    this._view.commit(tabCounters, groups, {
+      reorder,
+      searching: !!this._searchQuery,
+    });
+    this._updateExpandAllButton();
+    this._updateNoResults(tabCounters);
+    this._updateSelectAllCheckbox();
+    this._updateBulkActionBar();
     document.dispatchEvent(new CustomEvent("AboutProcessesUpdated"));
   }
 
@@ -2247,11 +2904,22 @@ class ProcessesTabController {
       await this._promiseCpuCount;
       this._promiseCpuCount = null;
     }
-    let counters = State.getCounters();
-    let tabCounters = this._tabAttribution.getTabCounters(counters);
-    this._lastTabCounters = tabCounters;
-    this._sortTabCounters(tabCounters);
-    this._commitView(tabCounters);
+    this._rerender();
+
+    // Once CPU is known, which takes a second sample.
+    if (
+      !this._panelOpenedRecorded &&
+      sumTabCounters(this._lastTabCounters).slopeCpuOfTotal != null
+    ) {
+      this._panelOpenedRecorded = true;
+      let all = summarizeTabCounters(this._lastTabCounters);
+      Glean.resourceMonitor.panelOpened.record({
+        total_tab_count: all.totalTabCount,
+        total_ram_mb: all.totalRamMb,
+        total_cpu_hundredths: all.totalCpuHundredths,
+        open_type: this._openType,
+      });
+    }
   }
 }
 

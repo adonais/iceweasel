@@ -15,7 +15,9 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mozilla.components.browser.state.search.SearchAccessPoint
 import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.browser.state.search.accessPoint
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.GleanMetrics.Events
@@ -45,6 +47,7 @@ object MetricsUtils {
         SUGGESTION,
         TOPSITE,
         WIDGET,
+        CONTEXT,
         DIGITAL_ASSISTANT,
         NONE,
     }
@@ -63,13 +66,15 @@ object MetricsUtils {
         searchAccessPoint: Source,
         nimbusEventStore: NimbusEventStore,
     ) {
+        val telemetrySuffix =
+            engine.accessPoint(searchAccessPoint.toSearchAccessPoint())?.telemetrySuffix ?: engine.telemetrySuffix
         val telemetryId =
             if (engine.type == SearchEngine.Type.CUSTOM) {
                 "custom"
             } else {
                 val baseId = engine.id.lowercase()
-                if (!engine.telemetrySuffix.isNullOrEmpty()) {
-                    "$baseId-${engine.telemetrySuffix}"
+                if (!telemetrySuffix.isNullOrEmpty()) {
+                    "$baseId-$telemetrySuffix"
                 } else {
                     baseId
                 }
@@ -258,3 +263,21 @@ object MetricsUtils {
         BROWSER_MENU,
     }
 }
+
+/**
+ * Maps a [MetricsUtils.Source] onto a search-config-v3 search access point name, for selecting the partner code and
+ * telemetry suffix that apply to a search from that source.
+ *
+ * [MetricsUtils.Source.DIGITAL_ASSISTANT] has no access point of its own, so it takes the default one.
+ */
+fun MetricsUtils.Source.toSearchAccessPoint(): String =
+    when (this) {
+        MetricsUtils.Source.CONTEXT -> SearchAccessPoint.CONTEXT
+        MetricsUtils.Source.TOPSITE -> SearchAccessPoint.TOPSITE
+        MetricsUtils.Source.WIDGET -> SearchAccessPoint.WIDGET
+        MetricsUtils.Source.ACTION,
+        MetricsUtils.Source.SHORTCUT,
+        MetricsUtils.Source.SUGGESTION,
+        MetricsUtils.Source.DIGITAL_ASSISTANT,
+        MetricsUtils.Source.NONE -> SearchAccessPoint.DEFAULT
+    }

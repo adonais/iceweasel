@@ -82,8 +82,7 @@ void LoaderObserver::OnEndDllLoad(void* aContext, NTSTATUS aNtStatus,
     mModuleLoads = new ModuleLoadInfoVec();
   }
 
-  (void)mModuleLoads->emplaceBack(
-      std::forward<ModuleLoadInfo>(aModuleLoadInfo));
+  (void)mModuleLoads->emplaceBack(std::move(aModuleLoadInfo));
 }
 
 void LoaderObserver::Forward(nt::LoaderObserver* aNext) {

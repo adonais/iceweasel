@@ -16,7 +16,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/StructuredCloneHolderBinding.h"
@@ -153,6 +152,8 @@ bool StructuredCloneBlob::Holder::ReadStructuredCloneInternal(
     JSContext* aCx, JSStructuredCloneReader* aReader,
     StructuredCloneHolder* aHolder) {
   uint32_t length;
+  // The written version is no longer used, but is still read to preserve the
+  // on-wire format of already-persisted data.
   uint32_t version;
   if (!JS_ReadUint32Pair(aReader, &length, &version)) {
     return false;
@@ -186,9 +187,9 @@ bool StructuredCloneBlob::Holder::ReadStructuredCloneInternal(
     length -= size;
   }
 
-  mBuffer = MakeUnique<JSAutoStructuredCloneBuffer>(
-      mStructuredCloneScope, &StructuredCloneHolder::sCallbacks, this);
-  mBuffer->adopt(std::move(data), version, &StructuredCloneHolder::sCallbacks);
+  mData.emplace(std::move(data));
+  mData->setCallbacks(&StructuredCloneHolder::sCallbacks, nullptr,
+                      OwnTransferablePolicy::OwnsTransferablesIfAny);
 
   return true;
 }
@@ -212,8 +213,8 @@ bool StructuredCloneBlob::WriteStructuredClone(JSContext* aCx,
 bool StructuredCloneBlob::Holder::WriteStructuredClone(
     JSContext* aCx, JSStructuredCloneWriter* aWriter,
     StructuredCloneHolder* aHolder) {
-  auto& data = mBuffer->data();
-  if (!JS_WriteUint32Pair(aWriter, data.Size(), JS_STRUCTURED_CLONE_VERSION) ||
+  if (!JS_WriteUint32Pair(aWriter, mData->Size(),
+                          JS_STRUCTURED_CLONE_VERSION) ||
       !JS_WriteUint32Pair(aWriter, aHolder->BlobImpls().Length(),
                           BlobImpls().Length())) {
     return false;
@@ -221,7 +222,7 @@ bool StructuredCloneBlob::Holder::WriteStructuredClone(
 
   aHolder->BlobImpls().AppendElements(BlobImpls());
 
-  return data.ForEachDataChunk([&](const char* aData, size_t aSize) {
+  return mData->ForEachDataChunk([&](const char* aData, size_t aSize) {
     return JS_WriteBytes(aWriter, aData, aSize);
   });
 }

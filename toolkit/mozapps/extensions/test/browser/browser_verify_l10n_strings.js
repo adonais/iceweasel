@@ -7,7 +7,6 @@ const { getL10nIdForThemeProp, getL10nThemeString } =
     "resource://gre/modules/addons/ThemesBundledLocalization.sys.mjs"
   );
 
-const PREF_NOVA_ENABLED = "browser.nova.enabled";
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 
 add_task(async function test_ensure_builtin_themes_are_localized() {
@@ -56,15 +55,8 @@ add_task(async function test_ensure_builtin_themes_are_localized() {
     );
   }
 
-  for (let novaEnabled of [true, false]) {
-    info(`Run with Nova ${novaEnabled ? "enabled" : "disabled"}`);
-    await SpecialPowers.pushPrefEnv({
-      set: [[PREF_NOVA_ENABLED, novaEnabled]],
-    });
-    for (let standardTheme of standardBuiltInThemes) {
-      testLocalizedThemeWrapperProperty(standardTheme);
-    }
-    await SpecialPowers.popPrefEnv();
+  for (let standardTheme of standardBuiltInThemes) {
+    testLocalizedThemeWrapperProperty(standardTheme);
   }
 });
 

@@ -905,7 +905,7 @@ Result<std::nullptr_t, nsresult> ExternalAgentBackend::DoAnalyzeRequest(
     auto map = mRequestTokenToBasicRequestInfoMap.Lock();
     map->InsertOrUpdate(
         nsCString(aRequest.request_token()),
-        MakeUnique<ExternalAgentBackend::BasicRequestInfo>(
+        std::make_unique<ExternalAgentBackend::BasicRequestInfo>(
             ExternalAgentBackend::BasicRequestInfo{
                 aUserActionId, timerId, std::move(analysisConnectorName),
                 aAutoAcknowledge, std::move(aPrintDataHandle)}));

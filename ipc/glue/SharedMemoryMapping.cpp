@@ -29,7 +29,7 @@ class MappingReporter final : public nsIMemoryReporter {
 
   NS_IMETHOD
   CollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
-                 bool aAnonymize) override {
+                 bool /*aAnonymize*/) override {
     MOZ_COLLECT_REPORT(
         "shmem-mapped", KIND_OTHER, UNITS_BYTES, mapped,
         "Memory shared with other processes that is mapped into the address "
@@ -43,11 +43,9 @@ Atomic<size_t> MappingReporter::mapped;
 
 NS_IMPL_ISUPPORTS(MappingReporter, nsIMemoryReporter)
 
-static void RegisterMappingMemoryReporter() {
-  static Atomic<bool> registered;
-  if (registered.compareExchange(false, true)) {
-    RegisterStrongMemoryReporter(MakeAndAddRef<MappingReporter>());
-  }
+// Used in IPCModule.cpp
+nsresult RegisterMappingMemoryReporter() {
+  return RegisterStrongMemoryReporter(MakeAndAddRef<MappingReporter>());
 }
 
 MappingBase::MappingBase() = default;
@@ -98,8 +96,6 @@ bool MappingBase::MapSubregion(const HandleBase& aHandle, uint64_t aOffset,
                 "cannot map region exceeding aHandle.Size()");
     return false;
   }
-
-  RegisterMappingMemoryReporter();
 
   if (auto mem =
           Platform::Map(aHandle, aOffset, aSize, aFixedAddress, aReadOnly)) {

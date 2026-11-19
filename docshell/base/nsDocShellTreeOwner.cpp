@@ -407,22 +407,25 @@ nsDocShellTreeOwner::GetPrimaryContentBrowsingContext(
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::GetPrimaryContentSize(int32_t* aWidth, int32_t* aHeight) {
+nsDocShellTreeOwner::GetPrimaryContentSize(int32_t* /*aWidth*/,
+                                           int32_t* /*aHeight*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::SetPrimaryContentSize(int32_t aWidth, int32_t aHeight) {
+nsDocShellTreeOwner::SetPrimaryContentSize(int32_t /*aWidth*/,
+                                           int32_t /*aHeight*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::GetRootShellSize(int32_t* aWidth, int32_t* aHeight) {
+nsDocShellTreeOwner::GetRootShellSize(int32_t* /*aWidth*/,
+                                      int32_t* /*aHeight*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::SetRootShellSize(int32_t aWidth, int32_t aHeight) {
+nsDocShellTreeOwner::SetRootShellSize(int32_t /*aWidth*/, int32_t /*aHeight*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -528,7 +531,7 @@ nsDocShellTreeOwner::GetPosition(int32_t* aX, int32_t* aY) {
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::SetSize(int32_t aCX, int32_t aCY, bool aRepaint) {
+nsDocShellTreeOwner::SetSize(int32_t aCX, int32_t aCY, bool /*aRepaint*/) {
   return SetDimensions(
       {DimensionKind::Outer, Nothing(), Nothing(), Some(aCX), Some(aCY)});
 }
@@ -540,7 +543,7 @@ nsDocShellTreeOwner::GetSize(int32_t* aCX, int32_t* aCY) {
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::SetPositionAndSize(int32_t aX, int32_t aY, int32_t aCX,
-                                        int32_t aCY, uint32_t aFlags) {
+                                        int32_t aCY, uint32_t /*aFlags*/) {
   return SetDimensions(
       {DimensionKind::Outer, Some(aX), Some(aY), Some(aCX), Some(aCY)});
 }
@@ -577,17 +580,17 @@ nsDocShellTreeOwner::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::GetParentWidget(nsIWidget** aParentWidget) {
+nsDocShellTreeOwner::GetParentWidget(nsIWidget** /*aParentWidget*/) {
   return NS_ERROR_NULL_POINTER;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::SetParentWidget(nsIWidget* aParentWidget) {
+nsDocShellTreeOwner::SetParentWidget(nsIWidget* /*aParentWidget*/) {
   return NS_ERROR_NULL_POINTER;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::GetNativeHandle(nsAString& aNativeHandle) {
+nsDocShellTreeOwner::GetNativeHandle(nsAString& /*aNativeHandle*/) {
   // the nativeHandle should be accessed from nsIAppWindow
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -619,12 +622,12 @@ nsDocShellTreeOwner::GetEnabled(bool* aEnabled) {
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::SetEnabled(bool aEnabled) {
+nsDocShellTreeOwner::SetEnabled(bool /*aEnabled*/) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::GetMainWidget(nsIWidget** aMainWidget) {
+nsDocShellTreeOwner::GetMainWidget(nsIWidget** /*aMainWidget*/) {
   return NS_ERROR_NULL_POINTER;
 }
 
@@ -651,12 +654,12 @@ nsDocShellTreeOwner::SetTitle(const nsAString& aTitle) {
 //*****************************************************************************
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::OnProgressChange(nsIWebProgress* aProgress,
-                                      nsIRequest* aRequest,
-                                      int32_t aCurSelfProgress,
-                                      int32_t aMaxSelfProgress,
-                                      int32_t aCurTotalProgress,
-                                      int32_t aMaxTotalProgress) {
+nsDocShellTreeOwner::OnProgressChange(nsIWebProgress* /*aProgress*/,
+                                      nsIRequest* /*aRequest*/,
+                                      int32_t /*aCurSelfProgress*/,
+                                      int32_t /*aMaxSelfProgress*/,
+                                      int32_t /*aCurTotalProgress*/,
+                                      int32_t /*aMaxTotalProgress*/) {
   // In the absence of DOM document creation event, this method is the
   // most convenient place to install the mouse listener on the
   // DOM document.
@@ -664,17 +667,17 @@ nsDocShellTreeOwner::OnProgressChange(nsIWebProgress* aProgress,
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::OnStateChange(nsIWebProgress* aProgress,
-                                   nsIRequest* aRequest,
-                                   uint32_t aProgressStateFlags,
-                                   nsresult aStatus) {
+nsDocShellTreeOwner::OnStateChange(nsIWebProgress* /*aProgress*/,
+                                   nsIRequest* /*aRequest*/,
+                                   uint32_t /*aProgressStateFlags*/,
+                                   nsresult /*aStatus*/) {
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::OnLocationChange(nsIWebProgress* aWebProgress,
-                                      nsIRequest* aRequest, nsIURI* aURI,
-                                      uint32_t aFlags) {
+                                      nsIRequest* /*aRequest*/,
+                                      nsIURI* /*aURI*/, uint32_t aFlags) {
   if (mChromeTooltipListener && aWebProgress &&
       !(aFlags & nsIWebProgressListener::LOCATION_CHANGE_SAME_DOCUMENT) &&
       mChromeTooltipListener->WebProgressShowedTooltip(aWebProgress)) {
@@ -684,22 +687,24 @@ nsDocShellTreeOwner::OnLocationChange(nsIWebProgress* aWebProgress,
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::OnStatusChange(nsIWebProgress* aWebProgress,
-                                    nsIRequest* aRequest, nsresult aStatus,
-                                    const char16_t* aMessage) {
+nsDocShellTreeOwner::OnStatusChange(nsIWebProgress* /*aWebProgress*/,
+                                    nsIRequest* /*aRequest*/,
+                                    nsresult /*aStatus*/,
+                                    const char16_t* /*aMessage*/) {
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::OnSecurityChange(nsIWebProgress* aWebProgress,
-                                      nsIRequest* aRequest, uint32_t aState) {
+nsDocShellTreeOwner::OnSecurityChange(nsIWebProgress* /*aWebProgress*/,
+                                      nsIRequest* /*aRequest*/,
+                                      uint32_t /*aState*/) {
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
-                                            nsIRequest* aRequest,
-                                            uint32_t aEvent) {
+nsDocShellTreeOwner::OnContentBlockingEvent(nsIWebProgress* /*aWebProgress*/,
+                                            nsIRequest* /*aRequest*/,
+                                            uint32_t /*aEvent*/) {
   return NS_OK;
 }
 
@@ -1231,7 +1236,7 @@ bool ChromeTooltipListener::WebProgressShowedTooltip(
 // object passed to us by the timer:
 //   -- the x/y coordinates of the mouse      (mMouseClientY, mMouseClientX)
 //   -- the dom node the user hovered over    (mPossibleTooltipNode)
-void ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
+void ChromeTooltipListener::sTooltipCallback(nsITimer* /*aTimer*/,
                                              void* aChromeTooltipListener) {
   RefPtr<ChromeTooltipListener> self =
       static_cast<ChromeTooltipListener*>(aChromeTooltipListener);

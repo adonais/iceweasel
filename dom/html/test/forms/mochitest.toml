@@ -21,6 +21,8 @@ prefs = [
 
 ["test_bug1286509.html"]
 
+["test_bug2068351.html"]
+
 ["test_button_attributes_reflection.html"]
 
 ["test_change_event.html"]

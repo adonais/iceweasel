@@ -60,6 +60,11 @@ function dynamicAttributeForm(newValue, triggerEvent = "focus") {
   </script>`;
 }
 
+async function getDropdownSuppressedEvents() {
+  await Services.fog.testFlushAllChildren();
+  return Glean.formautofill.dropdownSuppressed.testGetValue() ?? [];
+}
+
 function dynamicAttributeUrl(newValue, triggerEvent = "focus") {
   return (
     TOP_LEVEL_HOST +
@@ -105,6 +110,7 @@ add_task(
             .setAttribute("autocomplete", "none");
         });
 
+        Services.fog.testResetFOG();
         await BrowserTestUtils.synthesizeMouseAtCenter(
           "#street-address",
           {},
@@ -112,6 +118,25 @@ add_task(
         );
         await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
         await ensureNoAutocompletePopup(browser);
+        await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+        await ensureNoAutocompletePopup(browser);
+
+        const events = await getDropdownSuppressedEvents();
+        Assert.equal(
+          events.length,
+          1,
+          "Withholding the dropdown is recorded once for the focus"
+        );
+        Assert.equal(
+          events[0].extra.category,
+          "address",
+          "The event names the address category"
+        );
+        Assert.equal(
+          events[0].extra.field_name,
+          "address-line1",
+          "The event names the field the dropdown was withheld on"
+        );
       }
     );
     await SpecialPowers.popPrefEnv();
@@ -207,11 +232,17 @@ add_task(
 add_task(async function test_live_gate_is_pref_gated() {
   // With the feature pref off, the live gate must not run either.
   await SpecialPowers.pushPrefEnv({ set: [[SUPPRESS_PREF, false]] });
+  Services.fog.testResetFOG();
   await BrowserTestUtils.withNewTab(
     dynamicAttributeUrl("none"),
     async browser => {
       await openPopupOn(browser, "#street-address");
     }
+  );
+  Assert.deepEqual(
+    await getDropdownSuppressedEvents(),
+    [],
+    "Nothing is recorded while the pref is off"
   );
   await SpecialPowers.popPrefEnv();
 });
@@ -246,5 +277,128 @@ add_task(async function test_live_gate_survives_repeated_focus_cycles() {
       });
     }
   });
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_live_gate_records_telemetry_once_per_focus() {
+  await SpecialPowers.pushPrefEnv({ set: [[SUPPRESS_PREF, true]] });
+  await BrowserTestUtils.withNewTab(
+    dynamicAttributeUrl("none", "click"),
+    async browser => {
+      await focusAndWaitForFieldsIdentified(browser, "#address-level2");
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document
+          .getElementById("street-address")
+          .setAttribute("autocomplete", "none");
+      });
+
+      Services.fog.testResetFOG();
+      for (let i = 0; i < 3; i++) {
+        info(`focus cycle ${i}`);
+        await SpecialPowers.spawn(browser, [], () => {
+          content.document.getElementById("street-address").focus();
+        });
+        await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+        await ensureNoAutocompletePopup(browser);
+        await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+        await ensureNoAutocompletePopup(browser);
+
+        await SpecialPowers.spawn(browser, [], () => {
+          content.document.getElementById("address-level2").focus();
+        });
+      }
+
+      Assert.equal(
+        (await getDropdownSuppressedEvents()).length,
+        3,
+        "Withholding the dropdown is recorded once per focus"
+      );
+    }
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * Identifies the form via a sibling, makes street-address unrecognized and
+ * focuses it twice, so the dropdown is withheld twice.
+ *
+ * @param {object} browser
+ */
+async function suppressDropdownTwice(browser) {
+  await focusAndWaitForFieldsIdentified(browser, "#address-level2");
+  await SpecialPowers.spawn(browser, [], () => {
+    content.document
+      .getElementById("street-address")
+      .setAttribute("autocomplete", "none");
+  });
+  for (let i = 0; i < 2; i++) {
+    await SpecialPowers.spawn(browser, [], () => {
+      content.document.getElementById("street-address").focus();
+    });
+    await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+    await ensureNoAutocompletePopup(browser);
+    await SpecialPowers.spawn(browser, [], () => {
+      content.document.getElementById("address-level2").focus();
+    });
+  }
+}
+
+async function getDropdownSuppressedTotalEvents() {
+  await Services.fog.testFlushAllChildren();
+  return Glean.formautofill.dropdownSuppressedTotal.testGetValue() ?? [];
+}
+
+add_task(async function test_suppressed_total_is_recorded_on_page_leave() {
+  await SpecialPowers.pushPrefEnv({ set: [[SUPPRESS_PREF, true]] });
+  await BrowserTestUtils.withNewTab(
+    dynamicAttributeUrl("none", "click"),
+    async browser => {
+      Services.fog.testResetFOG();
+      await suppressDropdownTwice(browser);
+      Assert.deepEqual(
+        await getDropdownSuppressedTotalEvents(),
+        [],
+        "Nothing is recorded while the user is still on the page"
+      );
+
+      const nextUrl = TOP_LEVEL_HOST + "/document-builder.sjs?html=next";
+      const loaded = BrowserTestUtils.browserLoaded(browser, false, nextUrl);
+      BrowserTestUtils.startLoadingURIString(browser, nextUrl);
+      await loaded;
+
+      const events = await getDropdownSuppressedTotalEvents();
+      Assert.equal(events.length, 1, "One total is recorded for the form");
+      Assert.equal(events[0].extra.count, "2", "The total counts both focuses");
+    }
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_suppressed_total_is_recorded_on_submit() {
+  await SpecialPowers.pushPrefEnv({ set: [[SUPPRESS_PREF, true]] });
+  await BrowserTestUtils.withNewTab(
+    dynamicAttributeUrl("none", "click"),
+    async browser => {
+      Services.fog.testResetFOG();
+      await suppressDropdownTwice(browser);
+
+      await SpecialPowers.spawn(browser, [], () => {
+        const form = content.document.querySelector("form");
+        form.addEventListener("submit", e => e.preventDefault());
+        content.document
+          .getElementById("address-level2")
+          .setUserInput("Cambridge");
+        form.requestSubmit();
+      });
+
+      await TestUtils.waitForCondition(
+        async () => (await getDropdownSuppressedTotalEvents()).length,
+        "Waiting for the total to be recorded on submit"
+      );
+      const events = await getDropdownSuppressedTotalEvents();
+      Assert.equal(events.length, 1, "One total is recorded for the form");
+      Assert.equal(events[0].extra.count, "2", "The total counts both focuses");
+    }
+  );
   await SpecialPowers.popPrefEnv();
 });

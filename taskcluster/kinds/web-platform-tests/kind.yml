@@ -259,6 +259,7 @@ tasks:
             - openh264
             # We don't need sw or nofis testing.
             - geckoview-isolated-process
+            - geckoview-java-media
         run-on-projects:
             by-variant:
                 openh264:
@@ -266,6 +267,10 @@ tasks:
                         linux2404-64/.*: ['autoland', 'mozilla-central']
                         default: []
                 geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
+                        default: []
+                geckoview-java-media:
                     by-test-platform:
                         android-em.*/debug: built-projects
                         default: []
@@ -308,6 +313,7 @@ tasks:
             - eme-signed
             - eme-wmf
             - geckoview-isolated-process
+            - geckoview-java-media
         run-on-projects:
             by-variant:
                 eme-signed: ['mozilla-central']
@@ -316,6 +322,10 @@ tasks:
                         windows1.*-64.*: ['autoland', 'mozilla-central']
                         default: []
                 geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
+                        default: []
+                geckoview-java-media:
                     by-test-platform:
                         android-em.*/debug: built-projects
                         default: []
@@ -378,7 +388,6 @@ tasks:
         chunks: dynamic
         default-chunks: 1
         max-run-time: 7200
-        # Runs in socket-process mode by default, no need for spi variants.
         # We don't *really* need to be running these in nofis either.
         # We do some things differently in private browsing mode though.
         # Running with a real OpenH264 plugin reflects release best.
@@ -386,10 +395,15 @@ tasks:
             - privatebrowsing
             - openh264
             - geckoview-isolated-process
+            - geckoview-java-media
         run-on-projects:
             by-variant:
                 openh264: []
                 geckoview-isolated-process:
+                    by-test-platform:
+                        android-em.*/debug: built-projects
+                        default: []
+                geckoview-java-media:
                     by-test-platform:
                         android-em.*/debug: built-projects
                         default: []

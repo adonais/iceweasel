@@ -849,8 +849,8 @@ static int obfsOpen(sqlite3_vfs* pVfs, const char* zName, sqlite3_file* pFile,
   p = (ObfsFile*)pFile;
   memset(p, 0, sizeof(*p));
 
-  auto encryptCipherStrategy = MakeUnique<IPCStreamCipherStrategy>();
-  auto decryptCipherStrategy = MakeUnique<IPCStreamCipherStrategy>();
+  auto encryptCipherStrategy = std::make_unique<IPCStreamCipherStrategy>();
+  auto decryptCipherStrategy = std::make_unique<IPCStreamCipherStrategy>();
 
   auto resetMethods = MakeScopeExit([pFile] { pFile->pMethods = nullptr; });
 
@@ -998,7 +998,7 @@ UniquePtr<sqlite3_vfs> ConstructVFS(const char* aBaseVFSName) {
       obfsNextSystemCall    /* xNextSystemCall */
   };
 
-  return MakeUnique<sqlite3_vfs>(obfs_vfs);
+  return std::make_unique<sqlite3_vfs>(obfs_vfs);
 }
 
 already_AddRefed<QuotaObject> GetQuotaObjectForFile(sqlite3_file* pFile) {

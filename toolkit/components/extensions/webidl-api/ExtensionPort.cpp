@@ -61,7 +61,7 @@ UniquePtr<dom::ExtensionPortDescriptor> ExtensionPort::ToPortDescriptor(
 
   dom::AutoEntryScript aes(&aDescriptorValue.toObject(), __func__);
   JSContext* acx = aes.cx();
-  auto portDescriptor = MakeUnique<dom::ExtensionPortDescriptor>();
+  auto portDescriptor = std::make_unique<dom::ExtensionPortDescriptor>();
   if (!portDescriptor->Init(acx, aDescriptorValue, __func__)) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;

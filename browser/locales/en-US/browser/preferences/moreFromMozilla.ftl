@@ -44,12 +44,6 @@ more-from-moz-mozilla-monitor-title = { -mozmonitor-brand-name }
 more-from-moz-mozilla-monitor-global-description = Get alerts when your data has been in a breach.
 more-from-moz-mozilla-monitor-button = Get { -monitor-brand-short-name }
 
-## These strings are for the Solo card in about:preferences moreFromMozilla page
-
-more-from-moz-solo-title-2 = { -solo-ai-brand-name } AI Website Creator
-more-from-moz-solo-description = Create your website instantly and connect your own custom domain for free.
-more-from-moz-solo-button = Try { -solo-ai-brand-name }
-
 ## These strings are for the MDN card in about:preferences moreFromMozilla page
 
 more-from-moz-mdn-title2 = { -mdn-brand-name }
@@ -99,9 +93,9 @@ more-from-moz-thunderbird-card =
     .label = { -thunderbird-brand-name }
     .description = Access your email, calendars, and contacts in one fast app.
 
-more-from-moz-solo-card-1 =
-    .label = { -solo-ai-brand-name }
-    .description = Create your website instantly and connect your own custom domain for free.
+more-from-moz-firefox-enterprise-card =
+    .label = { -firefox-enterprise-brand-name }
+    .description = Browser governance for regulated and security-sensitive organizations.
 
 more-from-moz-new-products-card2 =
     .label = { -vendor-short-name } New Products
@@ -122,8 +116,8 @@ more-from-moz-mdn-box-link =
 more-from-moz-thunderbird-box-link =
     .label = Get { -thunderbird-brand-short-name }
 
-more-from-moz-solo-box-link =
-    .label = Try { -solo-ai-brand-name }
+more-from-moz-firefox-enterprise-box-link =
+    .label = Learn about { -firefox-enterprise-brand-name }
 
 more-from-moz-new-products-box-link =
     .label = See new products

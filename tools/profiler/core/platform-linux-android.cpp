@@ -521,7 +521,7 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
 #if defined(USE_LUL_STACKWALK)
   lul::LUL* lul = CorePS::Lul();
   if (!lul && ProfilerFeature::HasStackWalk(aFeatures)) {
-    CorePS::SetLul(MakeUnique<lul::LUL>(logging_sink_for_LUL));
+    CorePS::SetLul(std::make_unique<lul::LUL>(logging_sink_for_LUL));
     // Read all the unwind info currently available.
     lul = CorePS::Lul();
     read_procmaps(lul);

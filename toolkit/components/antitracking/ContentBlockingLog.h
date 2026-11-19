@@ -74,7 +74,7 @@ class ContentBlockingLog final {
   };
 
   struct OriginEntry {
-    OriginEntry() { mData = MakeUnique<OriginDataEntry>(); }
+    OriginEntry() { mData = std::make_unique<OriginDataEntry>(); }
 
     nsCString mOrigin;
     UniquePtr<OriginDataEntry> mData;

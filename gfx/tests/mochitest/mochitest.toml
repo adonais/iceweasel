@@ -11,7 +11,3 @@ subsuite = "gpu"
 ["test_bug513439.html"]
 
 ["test_font_whitelist.html"]
-skip-if = [
-  "asan", #  Race between pref service and gfx platform IPC causes frequent failures on debug/ASan
-  "debug", # Race between pref service and gfx platform IPC causes frequent failures on debug/ASan
-]

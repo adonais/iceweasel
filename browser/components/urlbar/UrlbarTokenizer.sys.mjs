@@ -122,6 +122,48 @@ export var UrlbarTokenizer = {
       token.type <= UrlbarShared.TOKEN_TYPE.RESTRICT_URL
     );
   },
+
+  /**
+   * Returns the host and path of a token that looks like an http(s) origin or
+   * URL, like "example.com" or "https://example.com/foo".
+   *
+   * @param {UrlbarSearchStringTokenData} token
+   * @returns {{host: string, path: string}|null}
+   *   `host` is the lower case hostname, without any leading "www." or trailing
+   *   dot, and `path` the unparsed text from the first "/" after the host, or an
+   *   empty string. Null if the token is not an http(s) origin or URL, or has
+   *   user info.
+   */
+  getOriginInfo(token) {
+    if (
+      token.type != UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN &&
+      token.type !=
+        UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED &&
+      token.type != UrlbarShared.TOKEN_TYPE.POSSIBLE_URL
+    ) {
+      return null;
+    }
+    let prefix = lazy.UrlUtils.REGEXP_PREFIX.exec(token.value)?.[0] ?? "";
+    let url = URL.parse(prefix ? token.value : `http://${token.value}`);
+    if (
+      !url ||
+      !["http:", "https:"].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      !url.hostname
+    ) {
+      return null;
+    }
+    let rest = token.value.slice(prefix.length);
+    let slashIndex = rest.indexOf("/");
+    return {
+      host: UrlbarShared.stripPrefixAndTrim(url.hostname, {
+        stripWww: true,
+        trimTrailingDot: true,
+      })[0],
+      path: slashIndex == -1 ? "" : rest.slice(slashIndex),
+    };
+  },
 };
 
 /** @type {Map<string, Values<typeof UrlbarShared.RESTRICT_TOKENS>>} */

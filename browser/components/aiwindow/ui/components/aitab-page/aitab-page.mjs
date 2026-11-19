@@ -5,22 +5,22 @@
 import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 import { componentTypeName } from "chrome://browser/content/aiwindow/modules/AITabUtils.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-header.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-list.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-timeline.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-table.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-highlights.mjs";
 
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-error.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-footer.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/aitab-text-block.mjs";
 
 // The same names the child and parent actors use, so a message can be traced
@@ -328,7 +328,7 @@ export class AITabPage extends MozLitElement {
       return nothing;
     }
 
-    return html`<aitab-error></aitab-error>`;
+    return html`<aitab-error .status=${this.status}></aitab-error>`;
   }
 
   render() {

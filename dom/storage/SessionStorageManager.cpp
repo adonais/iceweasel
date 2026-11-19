@@ -226,7 +226,7 @@ SessionStorageManagerBase::GetOriginRecord(
         ->LookupOrInsertWith(
             aOriginKey,
             [&] {
-              auto newOriginRecord = MakeUnique<OriginRecord>();
+              auto newOriginRecord = std::make_unique<OriginRecord>();
               if (aCloneFrom) {
                 newOriginRecord->mCache = aCloneFrom->Clone();
               } else {

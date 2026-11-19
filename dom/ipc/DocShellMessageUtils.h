@@ -32,7 +32,7 @@ struct ParamTraits<mozilla::dom::PermitUnloadResult>
     : public ContiguousEnumSerializerInclusive<
           mozilla::dom::PermitUnloadResult,
           mozilla::dom::PermitUnloadResult::eContinue,
-          mozilla::dom::PermitUnloadResult::eCanceledByNavigate> {};
+          mozilla::dom::PermitUnloadResult::eInterceptedByNavigate> {};
 
 template <>
 struct ParamTraits<mozilla::dom::XPCOMPermitUnloadAction>

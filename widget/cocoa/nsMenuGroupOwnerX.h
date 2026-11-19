@@ -7,9 +7,11 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include "mozilla/Maybe.h"
 #include "mozilla/WeakPtr.h"
 
 #include "nsHashKeys.h"
+#include "nsIDOMEventListener.h"
 #include "nsIObserver.h"
 #include "nsMenuBarX.h"
 #include "nsString.h"
@@ -43,7 +45,9 @@ enum {
 // The menu group owner observes DOM mutations, notifies registered
 // nsChangeObservers, and manages command registration. There is one owner per
 // menubar, and one per standalone native menu.
-class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
+class nsMenuGroupOwnerX : public nsMultiMutationObserver,
+                          public nsIObserver,
+                          public nsIDOMEventListener {
  public:
   // Both parameters can be null.
   nsMenuGroupOwnerX(mozilla::dom::Element* aElement,
@@ -59,6 +63,18 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
   void RegisterForLocaleChanges();
   void UnregisterForLocaleChanges();
 
+  // Listen for XUL key elements of the document running their command, to
+  // highlight the menu item that shows the shortcut.
+  void RegisterForKeyCommands();
+  void UnregisterForKeyCommands();
+
+  // Remember that aMenuItem shows the shortcut of aKeyElement. aMenuItem must
+  // unregister before it goes away.
+  void RegisterKeyElement(mozilla::dom::Element* aKeyElement,
+                          nsMenuItemX* aMenuItem);
+  void UnregisterKeyElement(mozilla::dom::Element* aKeyElement,
+                            nsMenuItemX* aMenuItem);
+
   // The representedObject that's used for all menu items under this menu group
   // owner.
   MOZMenuItemRepresentedObject* GetRepresentedObject() {
@@ -69,9 +85,35 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
   // nullptr.
   nsMenuBarX* GetMenuBar() { return mMenuBar.get(); }
 
+  // The attributes of a XUL key element that define its shortcut.
+  struct KeyElementAttributes {
+    mozilla::Maybe<nsString> mKey;
+    mozilla::Maybe<nsString> mKeyCode;
+    mozilla::Maybe<nsString> mModifiers;
+    mozilla::Maybe<nsString> mL10nId;
+  };
+
+  // Makes the key element of aMenuItemElement carry the shortcut that
+  // aNativeMenuItem has. When the user assigned a shortcut to the item in
+  // System Settings, AppKit reports it as the item's key equivalent, and the
+  // key element is rewritten to match: the built-in shortcut stops working in
+  // Gecko and the front-end displays the assigned one. The element keeps its
+  // own attributes in data-builtin-* and is marked with
+  // data-has-system-shortcut while this lasts, and gets them back when the
+  // assignment is removed.
+  static void CopyUserKeyEquivalentToKeyElement(
+      NSMenuItem* aNativeMenuItem, mozilla::dom::Element* aMenuItemElement);
+
+  // The shortcut aKeyElement defines on its own, underneath a shortcut
+  // assigned in System Settings that CopyUserKeyEquivalentToKeyElement wrote
+  // over it.
+  static KeyElementAttributes BuiltInKeyElementAttributes(
+      mozilla::dom::Element* aKeyElement);
+
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIMUTATIONOBSERVER
+  NS_DECL_NSIDOMEVENTLISTENER
 
  protected:
   virtual ~nsMenuGroupOwnerX();
@@ -91,6 +133,10 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
 
   // stores mapping of command IDs to menu objects
   nsTHashMap<nsUint32HashKey, nsMenuItemX*> mCommandToMenuObjectTable;
+
+  // The menu item that shows each key element's shortcut.
+  nsTHashMap<nsRefPtrHashKey<mozilla::dom::Element>, nsMenuItemX*>
+      mKeyElementToMenuItemTable;
 
   MOZMenuItemRepresentedObject* mRepresentedObject = nil;  // [strong]
   mozilla::WeakPtr<nsMenuBarX> mMenuBar;

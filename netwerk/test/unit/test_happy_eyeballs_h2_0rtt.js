@@ -334,10 +334,7 @@ async function runHe0RttRace(host, ipv6DelayMs, ipv4DelayMs) {
 add_task(
   {
     skip_if: () =>
-      AppConstants.MOZ_SYSTEM_NSS ||
-      !gServerStarted ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+      AppConstants.MOZ_SYSTEM_NSS || !gServerStarted || mozinfo.os == "android",
   },
   async function test_he_h2_0rtt_ipv4_wins_race() {
     // See H1 ipv4_wins_race: fetch#1 falls to IPv4 because IPv6's
@@ -352,10 +349,7 @@ add_task(
 add_task(
   {
     skip_if: () =>
-      AppConstants.MOZ_SYSTEM_NSS ||
-      !gServerStarted ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+      AppConstants.MOZ_SYSTEM_NSS || !gServerStarted || mozinfo.os == "android",
   },
   async function test_he_h2_0rtt_ipv6_wins_race() {
     // IPv6 is unimpeded and wins both fetches; fetch#2 resumes via

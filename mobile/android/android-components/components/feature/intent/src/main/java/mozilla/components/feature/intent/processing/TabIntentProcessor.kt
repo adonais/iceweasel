@@ -23,10 +23,12 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.externalPackage
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags.Companion.APP_LINK_LAUNCH_TYPE_UNKNOWN
 import mozilla.components.feature.search.SearchUseCases
+import mozilla.components.feature.search.ext.waitForSelectedOrDefaultSearchEngine
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.isUrl
@@ -37,6 +39,7 @@ import mozilla.components.support.utils.WebURLFinder
 /**
  * Processor for intents which should trigger session-related actions.
  *
+ * @property store The [BrowserStore] used to wait for the search engine list to finish loading.
  * @property tabsUseCases An instance of [TabsUseCases] used to open new tabs.
  * @property newTabSearchUseCase A reference to [SearchUseCases.NewTabSearchUseCase] to be used for ACTION_SEND intents
  *   if the provided text is not a URL.
@@ -44,6 +47,7 @@ import mozilla.components.support.utils.WebURLFinder
  * @property applicationScope A [CoroutineScope] tied to the lifetime of the application process.
  */
 class TabIntentProcessor(
+    private val store: BrowserStore,
     private val tabsUseCases: TabsUseCases,
     private val newTabSearchUseCase: SearchUseCases.NewTabSearchUseCase,
     private val isPrivate: Boolean = false,
@@ -164,18 +168,22 @@ class TabIntentProcessor(
 
     private fun processSearchIntent(intent: SafeIntent): Boolean {
         val searchQuery = intent.getStringExtra(SearchManager.QUERY)
-
-        return if (searchQuery.isNullOrBlank()) {
-            false
-        } else {
-            val source = SessionState.Source.External.ActionSearch(intent.externalPackage())
-            if (searchQuery.isUrl()) {
-                addNewTab(searchQuery, source)
-            } else {
-                newTabSearchUseCase(searchQuery, source)
-            }
-            true
+        if (searchQuery.isNullOrBlank()) {
+            return false
         }
+
+        val source = SessionState.Source.External.ActionSearch(intent.externalPackage())
+        if (searchQuery.isUrl()) {
+            addNewTab(searchQuery, source)
+        } else {
+            // An external search intent can arrive before the search engine list has loaded.
+            store.waitForSelectedOrDefaultSearchEngine { searchEngine ->
+                if (searchEngine != null) {
+                    newTabSearchUseCase(searchQuery, source)
+                }
+            }
+        }
+        return true
     }
 
     private fun addNewTab(url: String, source: SessionState.Source) {

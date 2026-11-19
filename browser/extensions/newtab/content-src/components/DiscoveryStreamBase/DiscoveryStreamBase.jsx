@@ -207,7 +207,12 @@ export class _DiscoveryStreamBase extends React.PureComponent {
       case "PrivacyLink":
         return <PrivacyLink properties={component.properties} />;
       case "Widgets":
-        return <Widgets widgetIds={component.widgetIds} />;
+        return (
+          <Widgets
+            widgetIds={component.widgetIds}
+            placement={component.widgetPlacement}
+          />
+        );
       default:
         return <div>{component.type}</div>;
     }
@@ -424,6 +429,8 @@ export class _DiscoveryStreamBase extends React.PureComponent {
                         {
                           type: "Widgets",
                           widgetIds: thematicSpaces.spaces[id].widgetIds,
+                          widgetPlacement:
+                            thematicSpaces.spaces[id].widgetPlacement,
                         },
                       ],
                       sectionType: "widgets",

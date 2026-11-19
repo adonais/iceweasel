@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <memory>
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 
 using namespace mozilla;
@@ -26,10 +26,10 @@ struct HasWeakPtrToC {
 
 TEST(MFBT_MainThreadWeakPtr, Basic)
 {
-  auto c = MakeUnique<C>();
+  auto c = std::make_unique<C>();
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  auto weakRef = MakeUnique<HasWeakPtrToC>(c.get());
+  auto weakRef = std::make_unique<HasWeakPtrToC>(c.get());
 
   std::thread t([weakRef = std::move(weakRef)] {});
 

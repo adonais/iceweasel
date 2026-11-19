@@ -50,9 +50,7 @@ add_task(async function test_toolbar_field_focus() {
     "Text Color is changed"
   );
   Assert.equal(
-    Services.prefs.getBoolPref("browser.nova.enabled", false)
-      ? style.borderColor
-      : style.outlineColor,
+    style.borderColor,
     `rgb(${hexToRGB(TOOLBAR_FOCUS_BORDER).join(", ")})`,
     "Focus ring color"
   );

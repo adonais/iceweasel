@@ -18,6 +18,7 @@ support-files = [
   "matrixUtils.js",
   "object-delayed-intrinsic-size.sjs",
   "object-immediate-intrinsic-size.sjs",
+  "!/dom/html/test/reflect.js",
   "scientific-helper.svg",
   "selectSubString-helper.svg",
   "switch-helper.svg",
@@ -76,6 +77,8 @@ support-files = [
 ["test_bug872812.html"]
 
 ["test_bug1426594.html"]
+
+["test_bug2079321.html"]
 
 ["test_dataTypes.html"]
 

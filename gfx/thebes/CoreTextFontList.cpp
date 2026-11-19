@@ -526,9 +526,8 @@ void CTFontEntry::InitSkrifaFontFace() {
   }
 
   // Instantiate a Skrifa font, if the file is a single font face.
-  const uint8_t* data = static_cast<const uint8_t*>(file.Data());
-  const size_t size = file.Size();
-  if (auto* skf = skrifa_font_new(data, size)) {
+  const Span<const uint8_t> span = file.AsSpan();
+  if (auto* skf = skrifa_font_new(span.data(), span.size())) {
     SetSkrifaFont(skf, std::move(file));
     return;
   }
@@ -536,7 +535,8 @@ void CTFontEntry::InitSkrifaFontFace() {
   // Try to find a face that matches this entry's name, treating data as a
   // collection.
   uint32_t index = 0;
-  while (SkrifaFontRef* skf = skrifa_font_new_from_index(data, size, index++)) {
+  while (SkrifaFontRef* skf =
+             skrifa_font_new_from_index(span.data(), span.size(), index++)) {
     // Loop as long as we can create fonts for successive indexes until finding
     // the right face.
     nsAutoCString psname;

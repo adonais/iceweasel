@@ -46,6 +46,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuAccessPoint
+import org.mozilla.fenix.components.menu.MenuTarget
 import org.mozilla.fenix.components.menu.fake.FakeMenuHost
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.robolectric.RobolectricTestRunner
@@ -68,7 +69,22 @@ class MozillaAccountMenuItemProviderTest {
                 summary = Text.Resource(R.string.browser_menu_sign_in_caption_3),
                 accountState = NotAuthenticated,
             ),
-            provider().itemFlow.value,
+            provider().itemsFlow.value.single(),
+        )
+    }
+
+    @Test
+    fun `GIVEN target is CustomizeMenu WHEN providing the item THEN show item without click event`() = runTest {
+        syncState.value = SyncState(accountState = NotAuthenticated)
+
+        assertEquals(
+            StandardMenuItem(
+                title = MenuItemTitle(Text.Resource(R.string.browser_menu_sign_in)),
+                icon = MenuItemIconRes(iconsR.drawable.mozac_ic_avatar_circle_24),
+                onClickEvent = null,
+                state = MenuItemState.DEFAULT,
+            ),
+            provider(target = MenuTarget.CustomizeMenu).itemsFlow.value.single(),
         )
     }
 
@@ -82,7 +98,7 @@ class MozillaAccountMenuItemProviderTest {
                 summary = Text.Resource(R.string.browser_menu_sign_in_caption_3),
                 accountState = Unknown,
             ),
-            provider().itemFlow.value,
+            provider().itemsFlow.value.single(),
         )
     }
 
@@ -96,7 +112,7 @@ class MozillaAccountMenuItemProviderTest {
                 summary = Text.Resource(R.string.browser_menu_signed_in_caption),
                 accountState = Authenticated,
             ),
-            provider().itemFlow.value,
+            provider().itemsFlow.value.single(),
         )
     }
 
@@ -110,7 +126,7 @@ class MozillaAccountMenuItemProviderTest {
                 summary = Text.Resource(R.string.browser_menu_signed_in_caption),
                 accountState = Authenticated,
             ),
-            provider().itemFlow.value,
+            provider().itemsFlow.value.single(),
         )
     }
 
@@ -125,7 +141,7 @@ class MozillaAccountMenuItemProviderTest {
                 summary = Text.Resource(R.string.browser_menu_signed_in_caption),
                 accountState = Authenticated,
             ),
-            provider().itemFlow.value,
+            provider().itemsFlow.value.single(),
         )
     }
 
@@ -134,7 +150,7 @@ class MozillaAccountMenuItemProviderTest {
         runTest {
             syncState.value = SyncState(account = account, accountState = AuthenticationProblem)
 
-            val item = provider().itemFlow.value as StandardMenuItem
+            val item = provider().itemsFlow.value.single() as StandardMenuItem
 
             assertEquals(Text.String(DISPLAY_NAME), item.title.text)
             assertEquals(
@@ -158,7 +174,7 @@ class MozillaAccountMenuItemProviderTest {
                     accountState = AuthenticationProblem,
                 )
 
-            val item = provider().itemFlow.value as StandardMenuItem
+            val item = provider().itemsFlow.value.single() as StandardMenuItem
 
             assertEquals(Text.Resource(R.string.browser_menu_sign_back_in_to_sync), item.title.text)
         }
@@ -173,9 +189,10 @@ class MozillaAccountMenuItemProviderTest {
         val provider = provider(httpClient = clientReturning(avatarBytes))
 
         // The item is shown with a placeholder icon until the avatar is downloaded.
-        assertIs<MenuItemIconRes>((provider.itemFlow.value as StandardMenuItem).icon)
+        assertIs<MenuItemIconRes>((provider.itemsFlow.value.single() as StandardMenuItem).icon)
 
-        val menuItemWithAvatar = provider.itemFlow.first { (it as StandardMenuItem).icon is MenuItemIconBitmap }
+        val menuItemWithAvatar =
+            provider.itemsFlow.first { (it.single() as StandardMenuItem).icon is MenuItemIconBitmap }.single()
 
         val avatar = ((menuItemWithAvatar as StandardMenuItem).icon as MenuItemIconBitmap).icon
         assertEquals(avatar.width, avatar.height)
@@ -191,7 +208,7 @@ class MozillaAccountMenuItemProviderTest {
                 )
             val httpClient = clientReturning(avatarBytes)
 
-            val item = provider(httpClient = httpClient).itemFlow.value as StandardMenuItem
+            val item = provider(httpClient = httpClient).itemsFlow.value.single() as StandardMenuItem
 
             assertIs<MenuItemIconDrawable>(item.icon)
             verify(exactly = 0) { httpClient.fetch(any()) }
@@ -201,13 +218,13 @@ class MozillaAccountMenuItemProviderTest {
     fun `WHEN the account changes THEN update the item`() = runTest {
         syncState.value = SyncState(accountState = NotAuthenticated)
         val provider = provider()
-        assertEquals(Text.Resource(R.string.browser_menu_sign_in), provider.itemFlow.value?.title?.text)
+        assertEquals(Text.Resource(R.string.browser_menu_sign_in), provider.itemsFlow.value.single().title.text)
 
         syncState.value = SyncState(account = account, accountState = Authenticated)
 
-        val updated = provider.itemFlow.first { it?.title?.text == Text.String(DISPLAY_NAME) }
+        val updated = provider.itemsFlow.first { it.single().title.text == Text.String(DISPLAY_NAME) }.single()
 
-        assertEquals(Text.String(DISPLAY_NAME), updated?.title?.text)
+        assertEquals(Text.String(DISPLAY_NAME), updated.title.text)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -221,7 +238,7 @@ class MozillaAccountMenuItemProviderTest {
                 )
             val httpClient = clientReturning(avatarBytes)
             val provider = provider(httpClient = httpClient)
-            provider.itemFlow.first { (it as StandardMenuItem).icon is MenuItemIconBitmap }
+            provider.itemsFlow.first { (it.single() as StandardMenuItem).icon is MenuItemIconBitmap }
 
             syncState.value = syncState.value.copy(status = SyncStatus.Started)
             runCurrent()
@@ -272,12 +289,16 @@ class MozillaAccountMenuItemProviderTest {
     }
 
     // The account is observed and its avatar downloaded on a scope that runTest cancels at the end of each test.
-    private fun TestScope.provider(httpClient: Client = mockk(relaxed = true)) =
+    private fun TestScope.provider(
+        httpClient: Client = mockk(relaxed = true),
+        target: MenuTarget = MenuTarget.BrowserTab,
+    ) =
         MozillaAccountMenuItemProvider(
             syncStore = syncStore,
             httpClient = httpClient,
             context = testContext,
             accessPoint = MenuAccessPoint.Browser,
+            target = target,
             scope = backgroundScope,
         )
 
